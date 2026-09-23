@@ -111,20 +111,33 @@ export function AssessmentRunner() {
     await enterSection("career_interests", progress);
   }
 
-  async function answerQuestion(
+  function answerQuestion(
     section: SectionKey,
     questionIndex: number,
     selectedOption: string,
     progress: AttemptProgress,
     questions: SectionQuestion[]
   ) {
-    await fetch(`/api/assessment/${section}/responses`, {
+    // Optimistic: the radio button must react instantly on click, not
+    // after a round trip. The POST persists in the background; a failure
+    // reverts just that one question rather than blocking the whole UI.
+    const updated = questions.map((q) => (q.index === questionIndex ? { ...q, answeredOption: selectedOption } : q));
+    setState({ kind: "section", progress, section, questions: updated });
+
+    fetch(`/api/assessment/${section}/responses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionIndex, selectedOption }),
+    }).then((res) => {
+      if (res.ok) return;
+      setState((prev) => {
+        if (prev.kind !== "section" || prev.section !== section) return prev;
+        const reverted = prev.questions.map((q) =>
+          q.index === questionIndex ? { ...q, answeredOption: null } : q
+        );
+        return { ...prev, questions: reverted };
+      });
     });
-    const updated = questions.map((q) => (q.index === questionIndex ? { ...q, answeredOption: selectedOption } : q));
-    setState({ kind: "section", progress, section, questions: updated });
   }
 
   async function submitSection(section: SectionKey) {
@@ -333,8 +346,17 @@ function TargetRoleForm({ onSubmit }: { onSubmit: (role: string) => void }) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-lp-surface px-4 py-16">
-      {children}
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-lp-surface px-4 py-16">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
+        style={{
+          backgroundImage: "url(/logo-mark.jpg)",
+          backgroundRepeat: "repeat",
+          backgroundSize: "140px 140px",
+        }}
+      />
+      <div className="relative z-10 flex w-full items-center justify-center">{children}</div>
     </main>
   );
 }

@@ -580,6 +580,18 @@ export type Database = {
         Args: { institution_name: string }
         Returns: string
       }
+      get_or_start_section: {
+        Args: { p_section: Database["public"]["Enums"]["assessment_section"] }
+        Returns: Json
+      }
+      record_assessment_response: {
+        Args: {
+          p_question_index: number
+          p_section: Database["public"]["Enums"]["assessment_section"]
+          p_selected_option: string
+        }
+        Returns: Json
+      }
       role_requires_verification: {
         Args: { role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean

@@ -1,7 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/supabase/types";
+import type { Database, Enums } from "@/lib/supabase/types";
 import { SECTION_ORDER, type AssessmentSection } from "./sections";
-import type { BranchContext } from "./select-questions";
+
+export interface BranchContext {
+  collegeType: Enums<"college_type"> | null;
+  branch: string | null;
+}
 
 export interface SectionStatus {
   section: AssessmentSection;
@@ -40,17 +44,16 @@ export async function getAttemptProgress(
   supabase: SupabaseClient<Database>,
   attemptId: string
 ): Promise<AttemptProgress> {
-  const { data: attempt, error: attemptError } = await supabase
-    .from("assessment_attempts")
-    .select("id, status")
-    .eq("id", attemptId)
-    .single();
+  // Independent of each other — both only need attemptId — so fire
+  // together instead of paying two sequential round trips.
+  const [
+    { data: attempt, error: attemptError },
+    { data: progressRows, error: progressError },
+  ] = await Promise.all([
+    supabase.from("assessment_attempts").select("id, status").eq("id", attemptId).single(),
+    supabase.from("assessment_section_progress").select("section, status").eq("attempt_id", attemptId),
+  ]);
   if (attemptError) throw attemptError;
-
-  const { data: progressRows, error: progressError } = await supabase
-    .from("assessment_section_progress")
-    .select("section, status")
-    .eq("attempt_id", attemptId);
   if (progressError) throw progressError;
 
   const bySection = new Map(progressRows?.map((row) => [row.section, row.status]) ?? []);
