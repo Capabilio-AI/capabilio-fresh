@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { getGuidePaths } from "@/lib/guide-path/read";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
@@ -9,11 +8,7 @@ import { GuidePathPanel } from "@/components/dashboard/GuidePathPanel";
 export const metadata: Metadata = { title: "My Path — SkillStudio — Capabilio AI" };
 
 export default async function SkillStudioMyPathPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const [careerMatches, guidePaths] = await Promise.all([
     matchCareersForStudent(supabase, user.id),

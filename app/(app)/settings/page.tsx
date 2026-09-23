@@ -1,17 +1,12 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { EditableNameForm } from "@/components/settings/EditableNameForm";
 
 export const metadata: Metadata = { title: "Settings — Capabilio AI" };
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const viewer = await getViewerSummary(supabase, user.id);
 

@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { PulseTabs } from "@/components/pulse/PulseTabs";
 import { PulseSidebar } from "@/components/pulse/PulseSidebar";
 
@@ -10,14 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PulsePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const { supabase, user } = await requireAuthedUser();
 
   return (
     <div>

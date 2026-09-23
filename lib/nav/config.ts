@@ -6,9 +6,6 @@ import {
   Rocket,
   MessagesSquare,
   Sparkles,
-  Bell,
-  Settings,
-  UserCircle,
   type LucideIcon,
 } from "lucide-react";
 import { UNLOCK_STAGE_KEY } from "@/lib/journey/stage";
@@ -42,12 +39,6 @@ export const PRIMARY_NAV: NavItem[] = [
     lockedMessage: "Complete your 3-2 development stage to unlock AI-powered interview preparation.",
   },
   { label: "AI Mentor", href: "/mentor", icon: Sparkles },
-];
-
-export const UTILITY_NAV: NavItem[] = [
-  { label: "Notifications", href: "/notifications", icon: Bell },
-  { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Profile", href: "/profile", icon: UserCircle },
 ];
 
 export function isNavItemActive(pathname: string, href: string): boolean {

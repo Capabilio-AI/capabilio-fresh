@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { MOCK_CERTIFICATIONS } from "@/lib/mock/skillstudio";
@@ -9,11 +8,7 @@ import { CatalogGrid } from "@/components/skillstudio/CatalogGrid";
 export const metadata: Metadata = { title: "Certifications — SkillStudio — Capabilio AI" };
 
 export default async function CertificationsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const careerMatches = await matchCareersForStudent(supabase, user.id);
   const gapSkills = new Set((careerMatches[0]?.skillGaps ?? []).filter((g) => g.gap > 0).map((g) => g.skill));

@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Briefcase, Calendar, Lock, MapPin, Rocket } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { currentStageIndex, isStageUnlocked, JOURNEY_STAGES, UNLOCK_STAGE_KEY } from "@/lib/journey/stage";
@@ -17,11 +16,7 @@ const TYPE_COLOR: Record<OpportunityType, string> = {
 };
 
 export default async function LaunchpadPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const [viewer, careerMatches] = await Promise.all([
     getViewerSummary(supabase, user.id),

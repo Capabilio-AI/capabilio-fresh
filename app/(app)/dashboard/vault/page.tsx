@@ -1,17 +1,12 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { VaultTab } from "@/components/dashboard/VaultTab";
 
 export const metadata: Metadata = { title: "Vault — Capabilio AI" };
 
 export default async function VaultPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   return (
     <div>

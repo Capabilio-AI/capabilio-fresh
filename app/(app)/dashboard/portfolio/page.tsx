@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Award, ExternalLink, FileText, Link2, Sparkles, Trophy, type LucideIcon } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getVaultItems } from "@/lib/vault/data";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 
@@ -16,11 +15,7 @@ const TYPE_ICON: Record<string, LucideIcon> = {
 };
 
 export default async function PortfolioPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const [items, { data: rating }] = await Promise.all([
     getVaultItems(supabase, user.id),

@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { getGuidePaths } from "@/lib/guide-path/read";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
@@ -10,11 +9,7 @@ import { TIER_CONTAINER, scoreTier } from "@/components/dashboard/tier";
 export const metadata: Metadata = { title: "Career Path — Capabilio AI" };
 
 export default async function CareerPathPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const [careerMatches, guidePaths] = await Promise.all([
     matchCareersForStudent(supabase, user.id),

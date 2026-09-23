@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Clock } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { MOCK_ARENA_PROJECTS } from "@/lib/mock/arena";
 
@@ -14,11 +13,7 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 };
 
 export default async function ArenaProjectsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   return (
     <div>

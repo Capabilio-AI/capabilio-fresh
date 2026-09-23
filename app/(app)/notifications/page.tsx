@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AlertTriangle, CheckCircle2, Info, Sparkles } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getDashboardData, DashboardNotReadyError } from "@/lib/dashboard/data";
 import { getVaultItems } from "@/lib/vault/data";
 import { getGuidePaths } from "@/lib/guide-path/read";
@@ -25,11 +25,7 @@ const TONE_CLASS: Record<Notification["tone"], string> = {
 };
 
 export default async function NotificationsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   let dashboardData;
   try {

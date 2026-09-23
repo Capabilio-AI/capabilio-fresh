@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Lock, MessagesSquare } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { JOURNEY_STAGES, currentStageIndex, isStageUnlocked, UNLOCK_STAGE_KEY } from "@/lib/journey/stage";
 import { InterviewTabs } from "@/components/interview/InterviewTabs";
@@ -9,11 +8,7 @@ import { InterviewTabs } from "@/components/interview/InterviewTabs";
 export const metadata: Metadata = { title: "AI Interview — Capabilio AI" };
 
 export default async function InterviewPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const viewer = await getViewerSummary(supabase, user.id);
   const unlocked = isStageUnlocked(viewer.year, UNLOCK_STAGE_KEY);
