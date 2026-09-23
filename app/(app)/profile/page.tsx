@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { GraduationCap, Layers, School } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary, initialsOf } from "@/lib/dashboard/viewer";
 import { getSkills } from "@/lib/dashboard/data";
 import { getVaultItems } from "@/lib/vault/data";
@@ -18,11 +17,7 @@ function formatYearSemester(year: string | null): string | null {
 }
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const [viewer, skills, vaultItems, careerMatches] = await Promise.all([
     getViewerSummary(supabase, user.id),

@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getSkills } from "@/lib/dashboard/data";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { SkillsTab } from "@/components/dashboard/SkillsTab";
@@ -8,11 +7,7 @@ import { SkillsTab } from "@/components/dashboard/SkillsTab";
 export const metadata: Metadata = { title: "Skills — Capabilio AI" };
 
 export default async function SkillsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const skills = await getSkills(supabase, user.id);
 

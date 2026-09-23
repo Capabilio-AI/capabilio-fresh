@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { SkillGapsTab } from "@/components/dashboard/SkillGapsTab";
@@ -8,11 +7,7 @@ import { SkillGapsTab } from "@/components/dashboard/SkillGapsTab";
 export const metadata: Metadata = { title: "Skill Gap — Capabilio AI" };
 
 export default async function SkillGapPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const careerMatches = await matchCareersForStudent(supabase, user.id);
 

@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { computeNextAction } from "@/lib/dashboard/next-action";
 import { MentorChat } from "@/components/mentor/MentorChat";
@@ -18,11 +17,7 @@ function buildOpeningMessage(topCareer: string | null, gapSkill: string | null):
 }
 
 export default async function MentorPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const careerMatches = await matchCareersForStudent(supabase, user.id);
   const top = careerMatches[0] ?? null;

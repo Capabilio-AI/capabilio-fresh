@@ -1,18 +1,13 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Calendar, Users } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { MOCK_COMPETITIONS } from "@/lib/mock/arena";
 
 export const metadata: Metadata = { title: "Competitions — Arena — Capabilio AI" };
 
 export default async function ArenaCompetitionsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   return (
     <div>

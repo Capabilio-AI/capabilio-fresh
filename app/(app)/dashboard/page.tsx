@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getDashboardData, getSkills, DashboardNotReadyError } from "@/lib/dashboard/data";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { getVaultItems } from "@/lib/vault/data";
@@ -25,11 +25,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   try {
     const [data, skills, careerMatches, vaultItems] = await Promise.all([

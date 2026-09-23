@@ -1,19 +1,14 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, FolderKanban, Swords, Trophy, Wrench } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getLeaderboard } from "@/lib/arena/data";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 
 export const metadata: Metadata = { title: "Arena — Capabilio AI", description: "Execute, compete, and prove your skills." };
 
 export default async function ArenaHubPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireAuthedUser();
 
   const leaderboard = await getLeaderboard(supabase, user.id);
   const viewer = leaderboard.find((e) => e.isViewer);
