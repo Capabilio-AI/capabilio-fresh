@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { CardChrome } from "./CardChrome";
 import { RoleSelector } from "./RoleSelector";
@@ -20,6 +21,14 @@ import {
 import { RoleId } from "./roles";
 
 type ErrorStatus = Exclude<AuthOutcome["status"], "success">;
+
+// Only the student flow has a real destination built (the assessment).
+// Every other role's portal doesn't exist yet — this app has never had
+// staff/institution pages, so route() returning null means "not built
+// yet", not a bug to silently paper over with a fake redirect.
+function routeFor(role: RoleId): string | null {
+  return role === "student" ? "/assessment" : null;
+}
 
 function AuthModals({
   forgotOpen,
@@ -53,6 +62,7 @@ function AuthModals({
 }
 
 export function AuthCard() {
+  const router = useRouter();
   const [role, setRole] = useState<RoleId>("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +74,12 @@ export function AuthCard() {
   const [pendingRole, setPendingRole] = useState<RoleId | null>(null);
   const [pendingName, setPendingName] = useState<string>("there");
   const [redirectPortal, setRedirectPortal] = useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+
+  useEffect(() => {
+    if (redirectPath) router.push(redirectPath);
+  }, [redirectPath, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -87,6 +102,7 @@ export function AuthCard() {
     }
 
     setRedirectPortal(portalFor(outcome.resolvedRole));
+    setRedirectPath(routeFor(outcome.resolvedRole));
   };
 
   const handleResend = async () => {
@@ -99,10 +115,19 @@ export function AuthCard() {
     return (
       <CardChrome>
         <div className="flex min-h-[340px] flex-col items-center justify-center text-center">
-          <Loader2 size={22} className="animate-spin text-lp-accent-indigo" />
-          <p className="mt-4 font-lp-body text-lp-body-sm font-medium text-lp-on-surface-variant">
-            Redirecting to {redirectPortal}…
-          </p>
+          {redirectPath ? (
+            <>
+              <Loader2 size={22} className="animate-spin text-lp-accent-indigo" />
+              <p className="mt-4 font-lp-body text-lp-body-sm font-medium text-lp-on-surface-variant">
+                Redirecting to {redirectPortal}…
+              </p>
+            </>
+          ) : (
+            <p className="font-lp-body text-lp-body-sm font-medium text-lp-on-surface-variant">
+              {redirectPortal} isn&apos;t available yet — you&apos;re signed in, but this role's
+              workspace hasn&apos;t been built.
+            </p>
+          )}
         </div>
       </CardChrome>
     );
@@ -243,6 +268,7 @@ export function AuthCard() {
         onInstitutionsContinue={(institution) => {
           setInstitutions(null);
           setRedirectPortal(`${institution.name} — ${pendingRole ? portalFor(pendingRole) : "Portal"}`);
+          setRedirectPath(pendingRole ? routeFor(pendingRole) : null);
         }}
       />
     </>
