@@ -14,6 +14,85 @@ export type Database = {
   }
   public: {
     Tables: {
+      arena_challenge_attempts: {
+        Row: {
+          answered_count: number
+          completed_at: string | null
+          correct_count: number
+          id: string
+          question_order: string[]
+          rating_after: number | null
+          rating_before: number | null
+          rating_delta: number | null
+          section: Database["public"]["Enums"]["assessment_section"]
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          answered_count?: number
+          completed_at?: string | null
+          correct_count?: number
+          id?: string
+          question_order: string[]
+          rating_after?: number | null
+          rating_before?: number | null
+          rating_delta?: number | null
+          section: Database["public"]["Enums"]["assessment_section"]
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          answered_count?: number
+          completed_at?: string | null
+          correct_count?: number
+          id?: string
+          question_order?: string[]
+          rating_after?: number | null
+          rating_before?: number | null
+          rating_delta?: number | null
+          section?: Database["public"]["Enums"]["assessment_section"]
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_challenge_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_ratings: {
+        Row: {
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          rating?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_attempts: {
         Row: {
           completed_at: string | null
@@ -715,12 +794,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      finish_arena_challenge: { Args: { p_attempt_id: string }; Returns: Json }
       get_or_create_institution: {
         Args: { institution_name: string }
         Returns: string
       }
       get_or_start_section: {
         Args: { p_section: Database["public"]["Enums"]["assessment_section"] }
+        Returns: Json
+      }
+      get_public_profiles: {
+        Args: { p_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
+      record_arena_answer: {
+        Args: {
+          p_attempt_id: string
+          p_question_index: number
+          p_selected_option: string
+        }
         Returns: Json
       }
       record_assessment_response: {
@@ -734,6 +830,13 @@ export type Database = {
       role_requires_verification: {
         Args: { role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
+      }
+      start_arena_challenge: {
+        Args: {
+          p_question_count?: number
+          p_section: Database["public"]["Enums"]["assessment_section"]
+        }
+        Returns: Json
       }
     }
     Enums: {
