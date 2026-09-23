@@ -609,11 +609,12 @@ export type Database = {
         | "professional"
       assessment_attempt_status: "in_progress" | "completed"
       assessment_section:
-        | "technical_fundamentals"
-        | "aptitude_reasoning"
-        | "communication"
-        | "problem_solving"
-        | "digital_ai_literacy"
+        | "quantitative_aptitude"
+        | "logical_reasoning"
+        | "verbal_communication"
+        | "programming_fundamentals"
+        | "engineering_mathematics"
+        | "basic_sciences"
         | "career_interests"
       capability_confidence: "low" | "medium" | "high"
       capability_evidence_source:
@@ -771,11 +772,12 @@ export const Constants = {
       ],
       assessment_attempt_status: ["in_progress", "completed"],
       assessment_section: [
-        "technical_fundamentals",
-        "aptitude_reasoning",
-        "communication",
-        "problem_solving",
-        "digital_ai_literacy",
+        "quantitative_aptitude",
+        "logical_reasoning",
+        "verbal_communication",
+        "programming_fundamentals",
+        "engineering_mathematics",
+        "basic_sciences",
         "career_interests",
       ],
       capability_confidence: ["low", "medium", "high"],

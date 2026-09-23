@@ -14,13 +14,15 @@ const GeneratedQuestionSchema = z.object({
   skill_probe: z.string().min(1),
 });
 
-// A single request for QUESTIONS_PER_SECTION (25) questions is unreliable —
+const TARGET_Q_COUNT = QUESTIONS_PER_SECTION.career_interests;
+
+// A single request for TARGET_Q_COUNT (25) questions is unreliable —
 // live testing against this model returned anywhere from 6 to 28 items
 // across repeated attempts, never converging. Small, focused batches are
 // the standard fix for reliable long-list LLM generation: each batch asks
 // for far fewer items, which this model hits consistently.
 const BATCH_SIZE = 5;
-const BATCH_COUNT = Math.ceil(QUESTIONS_PER_SECTION / BATCH_SIZE);
+const BATCH_COUNT = Math.ceil(TARGET_Q_COUNT / BATCH_SIZE);
 
 const QuestionBatchSchema = z.object({
   questions: z.array(GeneratedQuestionSchema).min(BATCH_SIZE),
@@ -75,7 +77,7 @@ async function generateAllQuestions(statedRole: string) {
     );
     questions.push(...result.questions.slice(0, BATCH_SIZE));
   }
-  return questions.slice(0, QUESTIONS_PER_SECTION);
+  return questions.slice(0, TARGET_Q_COUNT);
 }
 
 /**

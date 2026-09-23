@@ -18,10 +18,9 @@ export async function submitSection(
     .eq("section", section);
   if (countError) throw countError;
 
-  if ((count ?? 0) < QUESTIONS_PER_SECTION) {
-    throw new SectionIncompleteError(
-      `Only ${count ?? 0} of ${QUESTIONS_PER_SECTION} questions answered`
-    );
+  const total = QUESTIONS_PER_SECTION[section];
+  if ((count ?? 0) < total) {
+    throw new SectionIncompleteError(`Only ${count ?? 0} of ${total} questions answered`);
   }
 
   const { error: sectionError } = await supabase

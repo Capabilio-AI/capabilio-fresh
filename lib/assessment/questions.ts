@@ -57,7 +57,7 @@ export async function getSectionQuestions(
     section,
     status: result.status,
     currentIndex: result.currentIndex,
-    totalQuestions: QUESTIONS_PER_SECTION,
+    totalQuestions: QUESTIONS_PER_SECTION[section],
     questions: result.questions,
   };
 }

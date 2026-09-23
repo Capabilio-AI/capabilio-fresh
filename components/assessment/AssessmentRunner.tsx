@@ -1,34 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Timer, X } from "lucide-react";
+import { SECONDS_PER_QUESTION, SECTION_LABEL, SECTION_ORDER } from "@/lib/assessment/sections";
+import type { AssessmentSection } from "@/lib/assessment/sections";
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
-type SectionKey =
-  | "technical_fundamentals"
-  | "aptitude_reasoning"
-  | "communication"
-  | "problem_solving"
-  | "digital_ai_literacy"
-  | "career_interests";
-
-const SECTION_LABEL: Record<SectionKey, string> = {
-  technical_fundamentals: "Technical Fundamentals",
-  aptitude_reasoning: "Aptitude / Reasoning",
-  communication: "Communication",
-  problem_solving: "Problem-Solving",
-  digital_ai_literacy: "Digital / AI Literacy",
-  career_interests: "Career Interests",
-};
-const SECTION_ORDER: SectionKey[] = [
-  "technical_fundamentals",
-  "aptitude_reasoning",
-  "communication",
-  "problem_solving",
-  "digital_ai_literacy",
-  "career_interests",
-];
+type SectionKey = AssessmentSection;
 
 interface SectionStatus {
   section: SectionKey;
@@ -308,6 +287,35 @@ function TargetRoleForm({ onSubmit }: { onSubmit: (role: string) => void }) {
   );
 }
 
+const CODE_FENCE = /```[a-zA-Z]*\n([\s\S]*?)```/;
+
+// Some question_bank content (e.g. programming_fundamentals) embeds a
+// fenced code snippet in the question text — render it in a <pre> so
+// whitespace/newlines survive instead of collapsing in a plain <p>.
+function QuestionText({ text }: { text: string }) {
+  const match = text.match(CODE_FENCE);
+  if (!match || match.index === undefined) {
+    return (
+      <p className="font-lp-body text-lp-body-lg font-medium leading-relaxed text-lp-text-ink">{text}</p>
+    );
+  }
+  const before = text.slice(0, match.index).trim();
+  const after = text.slice(match.index + match[0].length).trim();
+  return (
+    <>
+      {before && (
+        <p className="font-lp-body text-lp-body-lg font-medium leading-relaxed text-lp-text-ink">{before}</p>
+      )}
+      <pre className="mt-3 overflow-x-auto rounded-lg border border-lp-border-hairline bg-lp-text-ink px-5 py-4 font-lp-mono text-lp-body-sm leading-relaxed text-lp-surface-card">
+        <code>{match[1]}</code>
+      </pre>
+      {after && (
+        <p className="mt-3 font-lp-body text-lp-body-lg font-medium leading-relaxed text-lp-text-ink">{after}</p>
+      )}
+    </>
+  );
+}
+
 function SectionView({
   state,
   onAnswer,
@@ -323,11 +331,31 @@ function SectionView({
   const total = questions.length;
   const firstUnanswered = questions.findIndex((q) => !q.answeredOption);
   const [pos, setPos] = useState(() => (firstUnanswered === -1 ? 0 : firstUnanswered));
+  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
+
+  // Hard 45s-per-question timer: resets whenever the visible question
+  // changes, auto-advances to the next question on expiry (a no-op on the
+  // last question — it just freezes at 0, never blocking submission).
+  useEffect(() => {
+    setTimeLeft(SECONDS_PER_QUESTION);
+    const id = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          setPos((p) => Math.min(total - 1, p + 1));
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [pos, total]);
 
   const q = questions[Math.min(pos, total - 1)];
   const answeredCount = questions.filter((q) => q.answeredOption).length;
   const allAnswered = total > 0 && answeredCount === total;
   const isLast = pos === total - 1;
+  const timeCritical = timeLeft <= 10;
 
   return (
     <div className="w-full max-w-2xl rounded-2xl border border-lp-border-hairline bg-lp-surface-card shadow-sm">
@@ -351,6 +379,16 @@ function SectionView({
               </p>
             </div>
           </div>
+          <div
+            className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-lp-mono text-lp-label-sm font-bold transition-colors ${
+              timeCritical
+                ? "border-red-200 bg-red-50 text-red-600"
+                : "border-lp-border-hairline bg-lp-surface-subtle text-lp-text-muted"
+            }`}
+          >
+            <Timer size={14} />
+            00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+          </div>
         </div>
         <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-lp-surface-subtle">
           <div
@@ -361,9 +399,7 @@ function SectionView({
       </div>
 
       <div className="px-8 py-8">
-        <p className="font-lp-body text-lp-body-lg font-medium leading-relaxed text-lp-text-ink">
-          {q.questionText}
-        </p>
+        <QuestionText text={q.questionText} />
         <div className="mt-7 flex flex-col gap-3">
           {q.options.map((opt, i) => {
             const isSelected = q.answeredOption === opt.key;
