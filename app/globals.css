@@ -20,6 +20,9 @@
   --lp-error-container: #ffdad6;
   --lp-on-error-container: #93000a;
   --lp-secondary-fixed: #ffdbd1;
+  --lp-success: #1a7d4d;
+  --lp-success-container: #d3f3e0;
+  --lp-on-success-container: #003919;
 }
 
 @theme inline {
@@ -41,6 +44,9 @@
   --color-lp-error-container: var(--lp-error-container);
   --color-lp-on-error-container: var(--lp-on-error-container);
   --color-lp-secondary-fixed: var(--lp-secondary-fixed);
+  --color-lp-success: var(--lp-success);
+  --color-lp-success-container: var(--lp-success-container);
+  --color-lp-on-success-container: var(--lp-on-success-container);
 
   --font-lp-display: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-lp-body: "Inter", ui-sans-serif, system-ui, sans-serif;

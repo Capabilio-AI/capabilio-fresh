@@ -20,7 +20,7 @@ export async function recordResponse(
   section: AssessmentSection,
   questionIndex: number,
   selectedOption: string
-): Promise<{ isCorrect: boolean }> {
+): Promise<{ isCorrect: boolean; correctOption: string }> {
   const { data, error } = await supabase.rpc("record_assessment_response", {
     p_section: section,
     p_question_index: questionIndex,
@@ -36,5 +36,5 @@ export async function recordResponse(
     throw error;
   }
 
-  return data as unknown as { isCorrect: boolean };
+  return data as unknown as { isCorrect: boolean; correctOption: string };
 }

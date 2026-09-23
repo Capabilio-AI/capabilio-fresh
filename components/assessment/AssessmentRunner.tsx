@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Timer, X } from "lucide-react";
 import { SECONDS_PER_QUESTION, SECTION_LABEL, SECTION_ORDER } from "@/lib/assessment/sections";
 import type { AssessmentSection } from "@/lib/assessment/sections";
+import { BrandBackdrop } from "@/components/BrandBackdrop";
+import { SECTION_ICON } from "@/components/section-icons";
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
@@ -29,11 +32,13 @@ interface SectionQuestion {
   questionText: string;
   options: QuestionOption[];
   answeredOption: string | null;
+  correctOption: string | null;
 }
 
-const CARD = "w-full max-w-2xl rounded-xl border border-lp-border-hairline bg-lp-surface-card p-8 shadow-sm";
+const CARD =
+  "w-full max-w-2xl rounded-2xl border border-lp-border-hairline bg-lp-surface-card p-8 shadow-lg shadow-black/[0.03]";
 const BUTTON_PRIMARY =
-  "flex items-center justify-center gap-2 rounded bg-lp-text-ink px-5 py-3 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card transition-colors hover:bg-lp-inverse-surface disabled:cursor-not-allowed disabled:opacity-60";
+  "flex items-center justify-center gap-2 rounded-lg bg-lp-text-ink px-5 py-3 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card shadow-sm transition-all hover:-translate-y-0.5 hover:bg-lp-inverse-surface hover:shadow-md disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none";
 
 type ViewState =
   | { kind: "loading" }
@@ -45,6 +50,7 @@ type ViewState =
   | { kind: "error"; message: string };
 
 export function AssessmentRunner() {
+  const router = useRouter();
   const [state, setState] = useState<ViewState>({ kind: "loading" });
 
   useEffect(() => {
@@ -99,9 +105,12 @@ export function AssessmentRunner() {
     progress: AttemptProgress,
     questions: SectionQuestion[]
   ) {
-    // Optimistic: the radio button must react instantly on click, not
-    // after a round trip. The POST persists in the background; a failure
-    // reverts just that one question rather than blocking the whole UI.
+    // A question locks the moment it's answered (see SectionView) — this
+    // only ever fires once per question, so there's nothing to guard here.
+    // Optimistic: the option must react instantly on click, not after a
+    // round trip. correctOption stays null until the grading response
+    // comes back, which is what drives the brief "selected" → green/red
+    // transition in the UI.
     const updated = questions.map((q) => (q.index === questionIndex ? { ...q, answeredOption: selectedOption } : q));
     setState({ kind: "section", progress, section, questions: updated });
 
@@ -109,14 +118,22 @@ export function AssessmentRunner() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionIndex, selectedOption }),
-    }).then((res) => {
-      if (res.ok) return;
+    }).then(async (res) => {
+      if (!res.ok) {
+        setState((prev) => {
+          if (prev.kind !== "section" || prev.section !== section) return prev;
+          const reverted = prev.questions.map((q) =>
+            q.index === questionIndex ? { ...q, answeredOption: null } : q
+          );
+          return { ...prev, questions: reverted };
+        });
+        return;
+      }
+      const { correctOption } = await res.json();
       setState((prev) => {
         if (prev.kind !== "section" || prev.section !== section) return prev;
-        const reverted = prev.questions.map((q) =>
-          q.index === questionIndex ? { ...q, answeredOption: null } : q
-        );
-        return { ...prev, questions: reverted };
+        const graded = prev.questions.map((q) => (q.index === questionIndex ? { ...q, correctOption } : q));
+        return { ...prev, questions: graded };
       });
     });
   }
@@ -131,75 +148,82 @@ export function AssessmentRunner() {
       );
       return;
     }
+    const result = await res.json();
+    if (result.attemptCompleted) {
+      router.push("/dashboard");
+      return;
+    }
     await startOrLoad();
   }
 
   if (state.kind === "loading") {
     return (
-      <Shell>
+      <BrandBackdrop>
         <div className={`${CARD} flex flex-col items-center gap-3 py-16 text-center`}>
           <Loader2 size={22} className="animate-spin text-lp-accent-indigo" />
           <p className="font-lp-body text-lp-body-sm text-lp-text-muted">Loading…</p>
         </div>
-      </Shell>
+      </BrandBackdrop>
     );
   }
 
   if (state.kind === "error") {
     return (
-      <Shell>
+      <BrandBackdrop>
         <div className={`${CARD} text-center`}>
           <p className="font-lp-body text-lp-body-sm text-lp-text-ink">{state.message}</p>
           <button className={`${BUTTON_PRIMARY} mt-5`} onClick={startOrLoad}>
             Try again
           </button>
         </div>
-      </Shell>
+      </BrandBackdrop>
     );
   }
 
   if (state.kind === "complete") {
     return (
-      <Shell>
+      <BrandBackdrop>
         <div className={`${CARD} text-center`}>
           <CheckCircle2 size={28} className="mx-auto text-lp-accent-indigo" />
           <h1 className="mt-4 font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">
             Assessment complete
           </h1>
           <p className="mt-2 font-lp-body text-lp-body-sm text-lp-text-muted">
-            Your capability profile and Guide Path are being generated. The full dashboard is coming soon.
+            Your results are ready.
           </p>
+          <button className={`${BUTTON_PRIMARY} mt-5`} onClick={() => router.push("/dashboard")}>
+            Go to dashboard
+            <ArrowRight size={16} />
+          </button>
         </div>
-      </Shell>
+      </BrandBackdrop>
     );
   }
 
   if (state.kind === "needs-target-role") {
     return (
-      <Shell>
-        <TargetRoleForm
-          onSubmit={(role) => submitTargetRole(role, state.progress)}
-        />
-      </Shell>
+      <BrandBackdrop>
+        <TargetRoleForm onSubmit={(role) => submitTargetRole(role, state.progress)} />
+      </BrandBackdrop>
     );
   }
 
   if (state.kind === "generating-career-questions") {
     return (
-      <Shell>
+      <BrandBackdrop>
         <div className={`${CARD} flex flex-col items-center gap-3 py-16 text-center`}>
           <Loader2 size={22} className="animate-spin text-lp-accent-indigo" />
           <p className="font-lp-body text-lp-body-sm text-lp-text-muted">
             Generating your Career Interests questions — this can take up to a minute.
           </p>
         </div>
-      </Shell>
+      </BrandBackdrop>
     );
   }
 
   if (state.kind === "section") {
     return (
-      <Shell>
+      <BrandBackdrop>
         <SectionView
           state={state}
           onAnswer={(questionIndex, selectedOption) =>
@@ -208,42 +232,51 @@ export function AssessmentRunner() {
           onSubmit={() => submitSection(state.section)}
           onExit={startOrLoad}
         />
-      </Shell>
+      </BrandBackdrop>
     );
   }
 
   // overview
   const { progress } = state;
   return (
-    <Shell>
+    <BrandBackdrop>
       <div className={CARD}>
-        <h1 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">
-          Your assessment
-        </h1>
+        <h1 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Your assessment</h1>
         <p className="mt-1.5 font-lp-body text-lp-body-sm text-lp-text-muted">
           {progress.completedCount} of {SECTION_ORDER.length} sections complete.
         </p>
-        <div className="mt-6 flex flex-col gap-2">
+        <div className="mt-6 flex flex-col gap-2.5">
           {progress.sections.map((s) => {
             const isCurrent = s.section === progress.currentSection;
+            const Icon = SECTION_ICON[s.section];
             return (
               <div
                 key={s.section}
-                className="flex items-center justify-between rounded border border-lp-border-hairline px-4 py-3"
+                className={`flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all ${
+                  s.status === "completed"
+                    ? "border-lp-success-container bg-lp-success-container/30"
+                    : isCurrent
+                      ? "border-lp-accent-indigo/30 bg-lp-accent-indigo/[0.04] hover:-translate-y-0.5 hover:shadow-md"
+                      : "border-lp-border-hairline"
+                }`}
               >
-                <div className="flex items-center gap-2.5">
-                  {s.status === "completed" ? (
-                    <CheckCircle2 size={16} className="text-lp-accent-indigo" />
-                  ) : (
-                    <span className="h-4 w-4 rounded-full border border-lp-border-strong" />
-                  )}
-                  <span className="font-lp-body text-lp-body-sm text-lp-text-ink">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      s.status === "completed"
+                        ? "bg-lp-success text-lp-surface-card"
+                        : "bg-lp-surface-subtle text-lp-text-muted"
+                    }`}
+                  >
+                    {s.status === "completed" ? <CheckCircle2 size={18} /> : <Icon size={17} />}
+                  </span>
+                  <span className="font-lp-body text-lp-body-sm font-medium text-lp-text-ink">
                     {SECTION_LABEL[s.section]}
                   </span>
                 </div>
                 {isCurrent && (
                   <button
-                    className="font-lp-mono text-lp-label-sm font-medium text-lp-accent-indigo hover:underline"
+                    className="rounded-full bg-lp-accent-indigo px-3.5 py-1.5 font-lp-mono text-lp-label-sm font-semibold text-lp-surface-card shadow-sm transition-transform hover:scale-105"
                     onClick={() => enterSection(s.section, progress)}
                   >
                     {s.status === "in_progress" ? "Continue" : "Start"}
@@ -254,7 +287,7 @@ export function AssessmentRunner() {
           })}
         </div>
       </div>
-    </Shell>
+    </BrandBackdrop>
   );
 }
 
@@ -262,9 +295,7 @@ function TargetRoleForm({ onSubmit }: { onSubmit: (role: string) => void }) {
   const [role, setRole] = useState("");
   return (
     <div className={CARD}>
-      <h1 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">
-        Career Interests
-      </h1>
+      <h1 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Career Interests</h1>
       <p className="mt-2 font-lp-body text-lp-body-sm text-lp-text-muted">
         Which career role do you want to pursue after graduation? We&apos;ll generate 25 questions
         calibrated to it.
@@ -273,7 +304,7 @@ function TargetRoleForm({ onSubmit }: { onSubmit: (role: string) => void }) {
         value={role}
         onChange={(e) => setRole(e.target.value)}
         placeholder="e.g. Data Analyst, Software Engineer"
-        className="mt-4 w-full rounded border border-lp-border-hairline bg-lp-surface-card px-4 py-3 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"
+        className="mt-4 w-full rounded-lg border border-lp-border-hairline bg-lp-surface-card px-4 py-3 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"
       />
       <button
         className={`${BUTTON_PRIMARY} mt-5 w-full`}
@@ -316,6 +347,32 @@ function QuestionText({ text }: { text: string }) {
   );
 }
 
+type OptionState = "correct" | "wrong-selected" | "pending-selected" | "dimmed" | "neutral";
+
+function optionState(optionKey: string, q: SectionQuestion): OptionState {
+  if (!q.answeredOption) return "neutral";
+  if (!q.correctOption) return optionKey === q.answeredOption ? "pending-selected" : "dimmed";
+  if (optionKey === q.correctOption) return "correct";
+  if (optionKey === q.answeredOption) return "wrong-selected";
+  return "dimmed";
+}
+
+const OPTION_CLASSES: Record<OptionState, string> = {
+  correct: "border-lp-success bg-lp-success-container text-lp-on-success-container font-semibold",
+  "wrong-selected": "border-lp-error bg-lp-error-container text-lp-on-error-container font-semibold",
+  "pending-selected": "border-lp-accent-indigo bg-lp-accent-indigo/10 font-semibold text-lp-text-ink",
+  dimmed: "border-lp-border-hairline text-lp-text-muted opacity-50",
+  neutral:
+    "border-lp-border-hairline text-lp-text-ink hover:border-lp-border-strong hover:bg-lp-surface-subtle hover:-translate-y-0.5",
+};
+const BADGE_CLASSES: Record<OptionState, string> = {
+  correct: "bg-lp-success text-lp-surface-card",
+  "wrong-selected": "bg-lp-error text-lp-surface-card",
+  "pending-selected": "bg-lp-accent-indigo text-lp-surface-card",
+  dimmed: "bg-lp-surface-subtle text-lp-text-muted",
+  neutral: "bg-lp-surface-subtle text-lp-text-muted",
+};
+
 function SectionView({
   state,
   onAnswer,
@@ -333,10 +390,15 @@ function SectionView({
   const [pos, setPos] = useState(() => (firstUnanswered === -1 ? 0 : firstUnanswered));
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
 
+  const q = questions[Math.min(pos, total - 1)];
+  const isAnswered = q.answeredOption !== null;
+
   // Hard 45s-per-question timer: resets whenever the visible question
   // changes, auto-advances to the next question on expiry (a no-op on the
   // last question — it just freezes at 0, never blocking submission).
+  // Stops the moment the question is answered — see the isAnswered dep.
   useEffect(() => {
+    if (isAnswered) return;
     setTimeLeft(SECONDS_PER_QUESTION);
     const id = setInterval(() => {
       setTimeLeft((prev) => {
@@ -349,16 +411,16 @@ function SectionView({
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [pos, total]);
+  }, [pos, total, isAnswered]);
 
-  const q = questions[Math.min(pos, total - 1)];
   const answeredCount = questions.filter((q) => q.answeredOption).length;
   const allAnswered = total > 0 && answeredCount === total;
   const isLast = pos === total - 1;
   const timeCritical = timeLeft <= 10;
 
   return (
-    <div className="w-full max-w-2xl rounded-2xl border border-lp-border-hairline bg-lp-surface-card shadow-sm">
+    <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-lp-border-hairline bg-lp-surface-card shadow-lg shadow-black/[0.04]">
+      <div className="h-1 w-full bg-gradient-to-r from-lp-accent-indigo to-lp-accent-ochre" />
       <div className="border-b border-lp-border-hairline px-8 py-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -379,16 +441,23 @@ function SectionView({
               </p>
             </div>
           </div>
-          <div
-            className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-lp-mono text-lp-label-sm font-bold transition-colors ${
-              timeCritical
-                ? "border-red-200 bg-red-50 text-red-600"
-                : "border-lp-border-hairline bg-lp-surface-subtle text-lp-text-muted"
-            }`}
-          >
-            <Timer size={14} />
-            00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
-          </div>
+          {isAnswered ? (
+            <div className="flex items-center gap-1.5 rounded-full border border-lp-success-container bg-lp-success-container/50 px-3.5 py-1.5 font-lp-mono text-lp-label-sm font-bold text-lp-on-success-container">
+              <CheckCircle2 size={14} />
+              Answered
+            </div>
+          ) : (
+            <div
+              className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-lp-mono text-lp-label-sm font-bold transition-colors ${
+                timeCritical
+                  ? "border-lp-error-container bg-lp-error-container text-lp-error"
+                  : "border-lp-border-hairline bg-lp-surface-subtle text-lp-text-muted"
+              }`}
+            >
+              <Timer size={14} />
+              00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+            </div>
+          )}
         </div>
         <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-lp-surface-subtle">
           <div
@@ -402,22 +471,17 @@ function SectionView({
         <QuestionText text={q.questionText} />
         <div className="mt-7 flex flex-col gap-3">
           {q.options.map((opt, i) => {
-            const isSelected = q.answeredOption === opt.key;
+            const optState = optionState(opt.key, q);
             return (
               <button
                 key={opt.key}
                 type="button"
                 onClick={() => onAnswer(q.index, opt.key)}
-                className={`flex items-center gap-4 rounded-xl border-2 px-5 py-4 text-left font-lp-body text-lp-body-sm transition-colors ${
-                  isSelected
-                    ? "border-lp-accent-indigo bg-lp-accent-indigo/10 font-semibold text-lp-text-ink"
-                    : "border-lp-border-hairline text-lp-text-ink hover:border-lp-border-strong hover:bg-lp-surface-subtle"
-                }`}
+                disabled={isAnswered}
+                className={`flex items-center gap-4 rounded-xl border-2 px-5 py-4 text-left font-lp-body text-lp-body-sm transition-all ${OPTION_CLASSES[optState]}`}
               >
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-lp-mono text-lp-label-sm font-bold ${
-                    isSelected ? "bg-lp-accent-indigo text-lp-surface-card" : "bg-lp-surface-subtle text-lp-text-muted"
-                  }`}
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-lp-mono text-lp-label-sm font-bold ${BADGE_CLASSES[optState]}`}
                 >
                   {OPTION_LABELS[i] ?? "?"}
                 </span>
@@ -438,7 +502,9 @@ function SectionView({
           <ArrowLeft size={15} />
           Previous
         </button>
-        <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">{answeredCount} of {total} answered</p>
+        <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">
+          {answeredCount} of {total} answered
+        </p>
         {isLast ? (
           <button
             type="button"
@@ -461,37 +527,5 @@ function SectionView({
         )}
       </div>
     </div>
-  );
-}
-
-const BANNER_TILE_COUNT = 48;
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="lp-bg-grid relative flex min-h-screen items-center justify-center overflow-hidden bg-lp-surface px-4 py-16">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 grid grid-cols-2 content-start gap-x-10 gap-y-16 p-10 opacity-[0.08] sm:grid-cols-3 md:grid-cols-4"
-      >
-        {Array.from({ length: BANNER_TILE_COUNT }).map((_, i) => (
-          <div key={i} className="flex select-none items-center justify-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element -- decorative, repeated many times; a plain img skips Next/Image's per-instance overhead */}
-            <img
-              src="/logo-mark.jpg"
-              alt=""
-              width={24}
-              height={24}
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-6 shrink-0 rounded object-cover"
-            />
-            <span className="whitespace-nowrap font-lp-display text-lp-body-lg font-semibold tracking-tight text-lp-text-ink">
-              Capabilio <span className="text-lp-accent-ochre">AI</span>
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="relative z-10 flex w-full items-center justify-center">{children}</div>
-    </main>
   );
 }

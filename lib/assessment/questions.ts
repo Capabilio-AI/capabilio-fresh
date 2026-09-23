@@ -9,6 +9,10 @@ export interface SectionQuestion {
   questionText: string;
   options: unknown;
   answeredOption: string | null;
+  // Populated only once this question has been answered — see the
+  // get_or_start_section RPC, which never exposes the answer key ahead
+  // of the student actually answering that specific question.
+  correctOption: string | null;
 }
 
 export interface SectionQuestionsResult {
@@ -28,6 +32,7 @@ interface RpcResult {
     questionText: string;
     options: unknown;
     answeredOption: string | null;
+    correctOption: string | null;
   }[];
 }
 

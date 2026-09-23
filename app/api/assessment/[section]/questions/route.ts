@@ -50,7 +50,7 @@ export async function GET(
     const [{ data: questions }, { data: responses }] = await Promise.all([
       supabase
         .from("career_interest_questions")
-        .select("question_index, question_text, options")
+        .select("question_index, question_text, options, correct_option")
         .eq("attempt_id", attempt.id)
         .order("question_index"),
       supabase
@@ -66,12 +66,18 @@ export async function GET(
     return NextResponse.json({
       section,
       status: progress.status,
-      questions: (questions ?? []).map((q) => ({
-        index: q.question_index,
-        questionText: q.question_text,
-        options: q.options,
-        answeredOption: answeredByIndex.get(q.question_index) ?? null,
-      })),
+      questions: (questions ?? []).map((q) => {
+        const answeredOption = answeredByIndex.get(q.question_index) ?? null;
+        return {
+          index: q.question_index,
+          questionText: q.question_text,
+          options: q.options,
+          answeredOption,
+          // Same answer-key protection as the bank-backed RPC: only
+          // reveal correct_option for a question already answered.
+          correctOption: answeredOption !== null ? q.correct_option : null,
+        };
+      }),
     });
   }
 
