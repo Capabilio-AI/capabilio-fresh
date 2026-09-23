@@ -1,0 +1,42 @@
+import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
+import { matchCareersForStudent } from "@/lib/career/match";
+import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
+import { MOCK_CERTIFICATIONS } from "@/lib/mock/skillstudio";
+import { CatalogGrid } from "@/components/skillstudio/CatalogGrid";
+
+export const metadata: Metadata = { title: "Certifications — SkillStudio — Capabilio AI" };
+
+export default async function CertificationsPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const careerMatches = await matchCareersForStudent(supabase, user.id);
+  const gapSkills = new Set((careerMatches[0]?.skillGaps ?? []).filter((g) => g.gap > 0).map((g) => g.skill));
+
+  return (
+    <div>
+      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">SkillStudio</h1>
+      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Your personalized learning path, foundations, courses, and certifications.</p>
+      <div className="mt-4">
+        <SkillStudioSubNav />
+      </div>
+      <div className="pt-6">
+        <CatalogGrid
+          items={MOCK_CERTIFICATIONS.map((c) => ({
+            id: c.id,
+            title: c.title,
+            level: c.level,
+            skills: c.skills,
+            meta: c.issuer,
+            matchesGap: c.skills.some((s) => gapSkills.has(s)),
+          }))}
+        />
+      </div>
+    </div>
+  );
+}

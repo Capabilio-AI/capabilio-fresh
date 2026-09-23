@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
+import { getVaultItems } from "@/lib/vault/data";
 
 const ItemTypeSchema = z.enum(["certificate", "project", "resume", "link", "other"]);
 
@@ -17,14 +18,8 @@ export async function GET() {
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
 
-  const { data, error } = await supabase
-    .from("vault_items")
-    .select("id, item_type, title, url, description, created_at")
-    .eq("user_id", auth.userId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-
-  return NextResponse.json({ items: data });
+  const items = await getVaultItems(supabase, auth.userId);
+  return NextResponse.json({ items });
 }
 
 export async function POST(request: Request) {

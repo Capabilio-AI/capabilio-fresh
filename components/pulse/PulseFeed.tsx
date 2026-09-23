@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, Loader2, MessageCircle, Send } from "lucide-react";
+import { Award, Heart, HelpCircle, Loader2, MessageCircle, Send, Sparkles } from "lucide-react";
 import type { PulseComment, PulsePost } from "@/lib/pulse/data";
+
+const POST_TYPES = [
+  { key: "post", label: "Post", icon: Send, prefix: "" },
+  { key: "project", label: "Project", icon: Sparkles, prefix: "[Project] " },
+  { key: "question", label: "Question", icon: HelpCircle, prefix: "[Question] " },
+  { key: "achievement", label: "Achievement", icon: Award, prefix: "[Achievement] " },
+] as const;
+type PostTypeKey = (typeof POST_TYPES)[number]["key"];
 
 function initialsOf(name: string | null): string {
   if (!name) return "?";
@@ -28,6 +36,7 @@ const AVATAR =
 export function PulseFeed() {
   const [posts, setPosts] = useState<PulsePost[] | null>(null);
   const [draft, setDraft] = useState("");
+  const [postType, setPostType] = useState<PostTypeKey>("post");
   const [posting, setPosting] = useState(false);
 
   useEffect(() => {
@@ -39,16 +48,18 @@ export function PulseFeed() {
   async function submitPost() {
     if (draft.trim().length === 0) return;
     setPosting(true);
+    const prefix = POST_TYPES.find((t) => t.key === postType)?.prefix ?? "";
     const res = await fetch("/api/pulse/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: draft.trim() }),
+      body: JSON.stringify({ content: `${prefix}${draft.trim()}` }),
     });
     setPosting(false);
     if (!res.ok) return;
     const data = await res.json();
     setPosts(data.posts);
     setDraft("");
+    setPostType("post");
   }
 
   function toggleLike(postId: string) {
@@ -80,6 +91,28 @@ export function PulseFeed() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
       <div className="rounded-xl border border-lp-border-hairline bg-lp-surface-card p-5 shadow-sm">
+        <p className="mb-2 font-lp-body text-lp-body-sm font-medium text-lp-text-ink">What are you building?</p>
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {POST_TYPES.map((t) => {
+            const TypeIcon = t.icon;
+            const selected = postType === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setPostType(t.key)}
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-lp-mono text-lp-label-sm font-medium transition-colors ${
+                  selected
+                    ? "border-app-orange bg-app-orange-container text-app-orange"
+                    : "border-lp-border-hairline text-lp-text-muted hover:text-lp-text-ink"
+                }`}
+              >
+                <TypeIcon size={12} />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
