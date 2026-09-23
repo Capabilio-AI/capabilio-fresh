@@ -417,7 +417,7 @@ export type Database = {
           status: Database["public"]["Enums"]["membership_status"]
           updated_at: string
           user_id: string
-          year: number | null
+          year: string | null
         }
         Insert: {
           branch?: string | null
@@ -428,7 +428,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id: string
-          year?: number | null
+          year?: string | null
         }
         Update: {
           branch?: string | null
@@ -439,7 +439,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string
-          year?: number | null
+          year?: string | null
         }
         Relationships: [
           {

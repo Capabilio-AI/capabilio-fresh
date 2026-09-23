@@ -48,10 +48,11 @@ Respond with JSON only:
 function buildUserPrompt(
   targetCareer: string,
   branch: string | null,
-  year: number | null,
+  year: string | null,
   gaps: SkillGap[]
 ): string {
-  const context = `Target career: ${targetCareer}\nStudent: ${branch ?? "unspecified branch"}, year ${
+  // year is "<year>-<semester>", e.g. "2-1" = 2nd year, 1st semester.
+  const context = `Target career: ${targetCareer}\nStudent: ${branch ?? "unspecified branch"}, currently in year-semester ${
     year ?? "unspecified"
   }`;
   const gapLines = gaps

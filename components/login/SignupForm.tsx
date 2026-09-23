@@ -11,11 +11,14 @@ import { BranchOption, getBranches } from "./directory";
 const MIN_PASSWORD_LENGTH = 8;
 
 const YEAR_OPTIONS = [
-  { value: 1, label: "1st year" },
-  { value: 2, label: "2nd year" },
-  { value: 3, label: "3rd year" },
-  { value: 4, label: "4th year" },
-  { value: 5, label: "5th year" },
+  { value: "1-1", label: "1-1" },
+  { value: "1-2", label: "1-2" },
+  { value: "2-1", label: "2-1" },
+  { value: "2-2", label: "2-2" },
+  { value: "3-1", label: "3-1" },
+  { value: "3-2", label: "3-2" },
+  { value: "4-1", label: "4-1" },
+  { value: "4-2", label: "4-2" },
 ];
 
 const FIELD_LABEL = "mb-2 block font-lp-body text-lp-body-sm font-medium text-lp-on-surface-variant";
@@ -78,7 +81,7 @@ export function SignupForm() {
       lastName,
       collegeName,
       branch,
-      year: Number(year),
+      year,
       email,
       password,
     });

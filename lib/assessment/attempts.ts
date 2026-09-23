@@ -78,7 +78,7 @@ function buildProgress(
 }
 
 export interface AcademicContext extends BranchContext {
-  year: number | null;
+  year: string | null;
 }
 
 export async function getStudentBranchContext(

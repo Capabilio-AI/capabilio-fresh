@@ -89,7 +89,7 @@ export interface SignUpInput {
   lastName: string;
   collegeName: string;
   branch: string;
-  year: number;
+  year: string;
   email: string;
   password: string;
 }
