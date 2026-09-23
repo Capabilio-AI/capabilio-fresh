@@ -109,6 +109,44 @@
   --spacing-gutter-mobile: 1rem;
 }
 
+/* ---- App product design system (dashboard/arena/pulse/etc.) ---- */
+:root {
+  --app-orange: #ff5701;
+  --app-orange-container: #fff0e8;
+  --app-charcoal: #171717;
+  --app-background: #fafaf8;
+  --app-card: #ffffff;
+  --app-muted: #6b7280;
+  --app-border: #e5e7eb;
+  --app-blue: #3457a6;
+  --app-blue-container: #eaf0fb;
+  --app-success: #1a7d4d;
+  --app-success-container: #e4f6ec;
+  --app-warning: #b25e09;
+  --app-warning-container: #fdf0e0;
+  --app-attention: #4b5563;
+  --app-attention-container: #f1f2f4;
+}
+
+@theme inline {
+  --color-app-orange: var(--app-orange);
+  --color-app-orange-container: var(--app-orange-container);
+  --color-app-charcoal: var(--app-charcoal);
+  --color-app-background: var(--app-background);
+  --color-app-card: var(--app-card);
+  --color-app-muted: var(--app-muted);
+  --color-app-border: var(--app-border);
+  --color-app-blue: var(--app-blue);
+  --color-app-blue-container: var(--app-blue-container);
+  --color-app-success: var(--app-success);
+  --color-app-success-container: var(--app-success-container);
+  --color-app-warning: var(--app-warning);
+  --color-app-warning-container: var(--app-warning-container);
+  --color-app-attention: var(--app-attention);
+  --color-app-attention-container: var(--app-attention-container);
+}
+/* ---- End app product design system ---- */
+
 .lp-bg-grid {
   background-image:
     linear-gradient(rgba(17, 19, 21, 0.035) 1px, transparent 1px),
