@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, X } from "lucide-react";
+
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
 type SectionKey =
   | "technical_fundamentals"
@@ -217,54 +219,16 @@ export function AssessmentRunner() {
   }
 
   if (state.kind === "section") {
-    const { progress, section, questions } = state;
-    const answeredCount = questions.filter((q) => q.answeredOption).length;
-    const allAnswered = questions.length > 0 && answeredCount === questions.length;
     return (
       <Shell>
-        <div className={CARD}>
-          <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">
-            {SECTION_LABEL[section]} — {answeredCount} of {questions.length} answered
-          </p>
-          <div className="mt-6 flex flex-col gap-6">
-            {questions.map((q) => (
-              <div key={q.index} className="border-b border-lp-border-hairline pb-6 last:border-0 last:pb-0">
-                <p className="font-lp-body text-lp-body-sm font-medium text-lp-text-ink">
-                  {q.index + 1}. {q.questionText}
-                </p>
-                <div className="mt-3 flex flex-col gap-2">
-                  {q.options.map((opt) => (
-                    <label
-                      key={opt.key}
-                      className={`flex cursor-pointer items-center gap-3 rounded border px-4 py-2.5 font-lp-body text-lp-body-sm transition-colors ${
-                        q.answeredOption === opt.key
-                          ? "border-lp-accent-indigo bg-lp-surface-subtle"
-                          : "border-lp-border-hairline hover:bg-lp-surface-subtle"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name={`q-${q.index}`}
-                        checked={q.answeredOption === opt.key}
-                        onChange={() => answerQuestion(section, q.index, opt.key, progress, questions)}
-                        className="accent-[var(--lp-accent-indigo)]"
-                      />
-                      <span className="text-lp-text-ink">{opt.text}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <button
-            className={`${BUTTON_PRIMARY} mt-8 w-full`}
-            disabled={!allAnswered}
-            onClick={() => submitSection(section)}
-          >
-            Submit section
-            <ArrowRight size={16} />
-          </button>
-        </div>
+        <SectionView
+          state={state}
+          onAnswer={(questionIndex, selectedOption) =>
+            answerQuestion(state.section, questionIndex, selectedOption, state.progress, state.questions)
+          }
+          onSubmit={() => submitSection(state.section)}
+          onExit={startOrLoad}
+        />
       </Shell>
     );
   }
@@ -340,6 +304,126 @@ function TargetRoleForm({ onSubmit }: { onSubmit: (role: string) => void }) {
         Continue
         <ArrowRight size={16} />
       </button>
+    </div>
+  );
+}
+
+function SectionView({
+  state,
+  onAnswer,
+  onSubmit,
+  onExit,
+}: {
+  state: Extract<ViewState, { kind: "section" }>;
+  onAnswer: (questionIndex: number, selectedOption: string) => void;
+  onSubmit: () => void;
+  onExit: () => void;
+}) {
+  const { section, questions } = state;
+  const total = questions.length;
+  const firstUnanswered = questions.findIndex((q) => !q.answeredOption);
+  const [pos, setPos] = useState(() => (firstUnanswered === -1 ? 0 : firstUnanswered));
+
+  const q = questions[Math.min(pos, total - 1)];
+  const answeredCount = questions.filter((q) => q.answeredOption).length;
+  const allAnswered = total > 0 && answeredCount === total;
+  const isLast = pos === total - 1;
+
+  return (
+    <div className="w-full max-w-2xl rounded-2xl border border-lp-border-hairline bg-lp-surface-card shadow-sm">
+      <div className="border-b border-lp-border-hairline px-8 py-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onExit}
+              className="flex items-center gap-1.5 rounded-full border border-lp-border-hairline bg-lp-surface-subtle px-3 py-1.5 font-lp-body text-lp-label-sm font-medium text-lp-text-muted transition-colors hover:bg-lp-surface-container-high hover:text-lp-text-ink"
+            >
+              <X size={13} />
+              Exit
+            </button>
+            <div>
+              <p className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">
+                Question {pos + 1} <span className="text-lp-text-muted">of {total}</span>
+              </p>
+              <p className="mt-0.5 font-lp-mono text-lp-label-sm font-semibold uppercase tracking-wide text-lp-accent-indigo">
+                {SECTION_LABEL[section]}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-lp-surface-subtle">
+          <div
+            className="h-full rounded-full bg-lp-accent-indigo transition-[width] duration-300 ease-out"
+            style={{ width: `${((pos + 1) / total) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="px-8 py-8">
+        <p className="font-lp-body text-lp-body-lg font-medium leading-relaxed text-lp-text-ink">
+          {q.questionText}
+        </p>
+        <div className="mt-7 flex flex-col gap-3">
+          {q.options.map((opt, i) => {
+            const isSelected = q.answeredOption === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => onAnswer(q.index, opt.key)}
+                className={`flex items-center gap-4 rounded-xl border-2 px-5 py-4 text-left font-lp-body text-lp-body-sm transition-colors ${
+                  isSelected
+                    ? "border-lp-accent-indigo bg-lp-accent-indigo/10 font-semibold text-lp-text-ink"
+                    : "border-lp-border-hairline text-lp-text-ink hover:border-lp-border-strong hover:bg-lp-surface-subtle"
+                }`}
+              >
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-lp-mono text-lp-label-sm font-bold ${
+                    isSelected ? "bg-lp-accent-indigo text-lp-surface-card" : "bg-lp-surface-subtle text-lp-text-muted"
+                  }`}
+                >
+                  {OPTION_LABELS[i] ?? "?"}
+                </span>
+                {opt.text}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-lp-border-hairline px-8 py-5">
+        <button
+          type="button"
+          onClick={() => setPos((p) => Math.max(0, p - 1))}
+          disabled={pos === 0}
+          className="flex items-center gap-1.5 rounded px-3 py-2 font-lp-body text-lp-body-sm font-medium text-lp-text-muted transition-colors hover:text-lp-text-ink disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ArrowLeft size={15} />
+          Previous
+        </button>
+        <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">{answeredCount} of {total} answered</p>
+        {isLast ? (
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={!allAnswered}
+            className={`${BUTTON_PRIMARY} px-5 py-2.5`}
+          >
+            Submit section
+            <ArrowRight size={15} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPos((p) => Math.min(total - 1, p + 1))}
+            className="flex items-center gap-1.5 rounded px-3 py-2 font-lp-body text-lp-body-sm font-medium text-lp-text-ink transition-colors hover:text-lp-accent-indigo"
+          >
+            Next
+            <ArrowRight size={15} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
