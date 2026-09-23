@@ -6,13 +6,18 @@ import { QUESTIONS_PER_SECTION } from "./sections";
 export interface SectionQuestion {
   index: number;
   id: string;
+  questionKind: "mcq" | "coding";
   questionText: string;
   options: unknown;
+  language: string | null;
+  starterCode: string | null;
+  stdin: string | null;
   answeredOption: string | null;
   // Populated only once this question has been answered — see the
   // get_or_start_section RPC, which never exposes the answer key ahead
   // of the student actually answering that specific question.
   correctOption: string | null;
+  isCorrect: boolean | null;
 }
 
 export interface SectionQuestionsResult {
@@ -29,10 +34,15 @@ interface RpcResult {
   questions: {
     index: number;
     id: string;
+    questionKind: "mcq" | "coding";
     questionText: string;
     options: unknown;
+    language: string | null;
+    starterCode: string | null;
+    stdin: string | null;
     answeredOption: string | null;
     correctOption: string | null;
+    isCorrect: boolean | null;
   }[];
 }
 

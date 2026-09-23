@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Timer, X } from "lucide-react";
-import { SECONDS_PER_QUESTION, SECTION_LABEL, SECTION_ORDER } from "@/lib/assessment/sections";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Play, Timer, X, XCircle } from "lucide-react";
+import { CODING_SECONDS_PER_QUESTION, SECONDS_PER_QUESTION, SECTION_LABEL, SECTION_ORDER } from "@/lib/assessment/sections";
 import type { AssessmentSection } from "@/lib/assessment/sections";
 import { BrandBackdrop } from "@/components/BrandBackdrop";
 import { SECTION_ICON } from "@/components/section-icons";
@@ -29,10 +29,15 @@ interface QuestionOption {
 }
 interface SectionQuestion {
   index: number;
+  questionKind: "mcq" | "coding";
   questionText: string;
   options: QuestionOption[];
+  language: string | null;
+  starterCode: string | null;
+  stdin: string | null;
   answeredOption: string | null;
   correctOption: string | null;
+  isCorrect: boolean | null;
 }
 
 const CARD =
@@ -138,6 +143,31 @@ export function AssessmentRunner() {
     });
   }
 
+  // Coding questions are graded by actually running the code (see
+  // /api/assessment/[section]/coding-submit), not a client-side string
+  // match — this fires the request and waits for the verdict rather than
+  // optimistically assuming success, unlike answerQuestion above.
+  async function submitCode(
+    section: SectionKey,
+    questionIndex: number,
+    code: string,
+    progress: AttemptProgress,
+    questions: SectionQuestion[]
+  ): Promise<{ isCorrect: boolean; stdout: string; stderr: string } | null> {
+    const res = await fetch(`/api/assessment/${section}/coding-submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionIndex, code }),
+    });
+    if (!res.ok) return null;
+    const { isCorrect, stdout, stderr } = await res.json();
+    const graded = questions.map((q) =>
+      q.index === questionIndex ? { ...q, answeredOption: code, isCorrect } : q
+    );
+    setState({ kind: "section", progress, section, questions: graded });
+    return { isCorrect, stdout, stderr };
+  }
+
   async function submitSection(section: SectionKey) {
     setState({ kind: "loading" });
     const res = await fetch(`/api/assessment/${section}/submit`, { method: "POST" });
@@ -228,6 +258,9 @@ export function AssessmentRunner() {
           onAnswer={(questionIndex, selectedOption) =>
             answerQuestion(state.section, questionIndex, selectedOption, state.progress, state.questions)
           }
+          onSubmitCode={(questionIndex, code) =>
+            submitCode(state.section, questionIndex, code, state.progress, state.questions)
+          }
           onSubmit={() => submitSection(state.section)}
           onExit={startOrLoad}
         />
@@ -317,6 +350,12 @@ function TargetRoleForm({ onSubmit }: { onSubmit: (role: string) => void }) {
   );
 }
 
+function formatClock(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 const CODE_FENCE = /```[a-zA-Z]*\n([\s\S]*?)```/;
 
 // Some question_bank content (e.g. programming_fundamentals) embeds a
@@ -343,6 +382,105 @@ function QuestionText({ text }: { text: string }) {
         <p className="mt-3 font-lp-body text-lp-body-lg font-medium leading-relaxed text-lp-text-ink">{after}</p>
       )}
     </>
+  );
+}
+
+function CodingPanel({
+  question,
+  onSubmit,
+  onAdvance,
+}: {
+  question: SectionQuestion;
+  onSubmit: (code: string) => Promise<{ isCorrect: boolean; stdout: string; stderr: string } | null>;
+  onAdvance: () => void;
+}) {
+  const isAnswered = question.answeredOption !== null;
+  const [code, setCode] = useState(question.answeredOption ?? question.starterCode ?? "");
+  const [running, setRunning] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [runOutput, setRunOutput] = useState<{ stdout: string; stderr: string } | null>(null);
+  const [result, setResult] = useState<{ isCorrect: boolean } | null>(
+    isAnswered ? { isCorrect: question.isCorrect ?? false } : null
+  );
+
+  async function handleRun() {
+    setRunning(true);
+    setRunOutput(null);
+    const res = await fetch("/api/code/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: question.language, code, stdin: question.stdin ?? "" }),
+    });
+    setRunning(false);
+    if (!res.ok) {
+      setRunOutput({ stdout: "", stderr: "Could not run code — try again." });
+      return;
+    }
+    const data = await res.json();
+    setRunOutput({ stdout: data.stdout ?? "", stderr: data.stderr || data.compileError || "" });
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    const verdict = await onSubmit(code);
+    setSubmitting(false);
+    if (!verdict) return;
+    setResult({ isCorrect: verdict.isCorrect });
+    setRunOutput({ stdout: verdict.stdout, stderr: verdict.stderr });
+    setTimeout(onAdvance, 2200);
+  }
+
+  return (
+    <div className="mt-6 flex flex-col gap-3">
+      {question.stdin && (
+        <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">
+          Sample input: <span className="text-lp-text-ink">{question.stdin}</span>
+        </p>
+      )}
+      <textarea
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        disabled={isAnswered}
+        spellCheck={false}
+        rows={9}
+        className="w-full resize-none rounded-lg border border-lp-border-hairline bg-lp-text-ink px-4 py-3 font-lp-mono text-lp-body-sm leading-relaxed text-lp-surface-card focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/40 disabled:opacity-80"
+      />
+      {runOutput && (
+        <div className="rounded-lg border border-lp-border-hairline bg-lp-surface-subtle px-4 py-3 font-lp-mono text-lp-body-sm">
+          <p className="text-lp-text-muted">Output:</p>
+          <pre className="mt-1 whitespace-pre-wrap text-lp-text-ink">{runOutput.stdout || "(no output)"}</pre>
+          {runOutput.stderr && <pre className="mt-1 whitespace-pre-wrap text-lp-error">{runOutput.stderr}</pre>}
+        </div>
+      )}
+      {result && (
+        <div
+          className={`flex items-center gap-2 rounded-lg border px-4 py-3 font-lp-body text-lp-body-sm font-semibold ${
+            result.isCorrect
+              ? "border-lp-success bg-lp-success-container text-lp-on-success-container"
+              : "border-lp-error bg-lp-error-container text-lp-on-error-container"
+          }`}
+        >
+          {result.isCorrect ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+          {result.isCorrect ? "Correct — output matched." : "Not quite — output didn't match expected."}
+        </div>
+      )}
+      {!isAnswered && (
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleRun}
+            disabled={running || submitting}
+            className="flex items-center gap-2 rounded-lg border border-lp-border-hairline px-4 py-2.5 font-lp-body text-lp-body-sm font-medium text-lp-text-ink transition-colors hover:bg-lp-surface-subtle disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {running ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+            Run
+          </button>
+          <button type="button" onClick={handleSubmit} disabled={submitting || running} className={`${BUTTON_PRIMARY} flex-1`}>
+            {submitting ? <Loader2 size={15} className="animate-spin" /> : "Submit"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -375,11 +513,16 @@ const BADGE_CLASSES: Record<OptionState, string> = {
 function SectionView({
   state,
   onAnswer,
+  onSubmitCode,
   onSubmit,
   onExit,
 }: {
   state: Extract<ViewState, { kind: "section" }>;
   onAnswer: (questionIndex: number, selectedOption: string) => void;
+  onSubmitCode: (
+    questionIndex: number,
+    code: string
+  ) => Promise<{ isCorrect: boolean; stdout: string; stderr: string } | null>;
   onSubmit: () => void;
   onExit: () => void;
 }) {
@@ -387,9 +530,11 @@ function SectionView({
   const total = questions.length;
   const firstUnanswered = questions.findIndex((q) => !q.answeredOption);
   const [pos, setPos] = useState(() => (firstUnanswered === -1 ? 0 : firstUnanswered));
-  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
 
   const q = questions[Math.min(pos, total - 1)];
+  const isCoding = q.questionKind === "coding";
+  const timeLimit = isCoding ? CODING_SECONDS_PER_QUESTION : SECONDS_PER_QUESTION;
+  const [timeLeft, setTimeLeft] = useState(timeLimit);
   const isAnswered = q.answeredOption !== null;
   const isLast = pos === total - 1;
 
@@ -398,14 +543,15 @@ function SectionView({
     else setPos((p) => Math.min(total - 1, p + 1));
   }
 
-  // Hard 45s-per-question timer: resets whenever the visible question
-  // changes. On expiry it moves on regardless of whether the student
-  // answered — an unanswered question just stays unanswered and the flow
-  // keeps going (advance() submits instead of advancing past the last
-  // question). Stops the moment the question is answered — see isAnswered.
+  // Per-question timer (45s MCQ, 150s coding): resets whenever the visible
+  // question changes. On expiry it moves on regardless of whether the
+  // student answered — an unanswered question just stays unanswered and
+  // the flow keeps going (advance() submits instead of advancing past the
+  // last question). Stops the moment the question is answered — see
+  // isAnswered.
   useEffect(() => {
     if (isAnswered) return;
-    setTimeLeft(SECONDS_PER_QUESTION);
+    setTimeLeft(timeLimit);
     const id = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -418,21 +564,22 @@ function SectionView({
     }, 1000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- advance()/onSubmit closes over isLast/onSubmit, which don't need to restart the timer themselves
-  }, [pos, total, isAnswered]);
+  }, [pos, total, isAnswered, timeLimit]);
 
-  // Auto-advance shortly after a question is answered AND graded — the
-  // brief window between answeredOption and correctOption both being set
-  // is exactly the "selected -> green/red flash" the student sees before
-  // moving on.
+  // Auto-advance shortly after an MCQ is answered AND graded — the brief
+  // window between answeredOption and correctOption both being set is
+  // exactly the "selected -> green/red flash" the student sees before
+  // moving on. Coding questions advance from inside CodingPanel instead
+  // (its own pass/fail flash has a longer, code-reading-friendly delay).
   useEffect(() => {
-    if (!q.answeredOption || !q.correctOption) return;
+    if (isCoding || !q.answeredOption || !q.correctOption) return;
     const timeout = setTimeout(advance, 900);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- advance() intentionally excluded, see above
-  }, [q.answeredOption, q.correctOption]);
+  }, [isCoding, q.answeredOption, q.correctOption]);
 
   const answeredCount = questions.filter((q) => q.answeredOption).length;
-  const timeCritical = timeLeft <= 10;
+  const timeCritical = isCoding ? timeLeft <= 20 : timeLeft <= 10;
 
   return (
     <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-lp-border-hairline bg-lp-surface-card shadow-lg shadow-black/[0.04]">
@@ -471,7 +618,7 @@ function SectionView({
               }`}
             >
               <Timer size={14} />
-              00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+              {formatClock(timeLeft)}
             </div>
           )}
         </div>
@@ -488,6 +635,9 @@ function SectionView({
           otherwise. Text wraps normally inside; overflow just scrolls. */}
       <div className="h-[440px] overflow-y-auto px-8 py-8">
         <QuestionText text={q.questionText} />
+        {isCoding ? (
+          <CodingPanel key={q.index} question={q} onSubmit={(code) => onSubmitCode(q.index, code)} onAdvance={advance} />
+        ) : (
         <div className="mt-7 flex flex-col gap-3">
           {q.options.map((opt, i) => {
             const optState = optionState(opt.key, q);
@@ -509,11 +659,13 @@ function SectionView({
             );
           })}
         </div>
+        )}
       </div>
 
-      {/* Forward motion is automatic (answer -> flash -> next, or the 45s
-          timer expires) — Previous is here only to review a question already
-          behind you, not to change how the flow moves forward. */}
+      {/* Forward motion is automatic (answer -> flash -> next, or the
+          per-question timer expires) — Previous is here only to review a
+          question already behind you, not to change how the flow moves
+          forward. */}
       <div className="flex items-center justify-between border-t border-lp-border-hairline px-8 py-5">
         <button
           type="button"

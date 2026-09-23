@@ -17,6 +17,9 @@ export const QUESTIONS_PER_SECTION: Record<AssessmentSection, number> = {
 // Each question gets a hard 45s timer client-side (see AssessmentRunner).
 export const SECONDS_PER_QUESTION = 45;
 
+// Coding (write-and-run) questions get longer — 2.5 minutes instead of 45s.
+export const CODING_SECONDS_PER_QUESTION = 150;
+
 // Canonical order. career_interests is last and generated dynamically —
 // see lib/assessment/career-interests.ts — not pulled from question_bank.
 export const SECTION_ORDER: AssessmentSection[] = [

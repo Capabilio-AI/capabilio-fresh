@@ -70,12 +70,17 @@ export async function GET(
         const answeredOption = answeredByIndex.get(q.question_index) ?? null;
         return {
           index: q.question_index,
+          questionKind: "mcq" as const,
           questionText: q.question_text,
           options: q.options,
+          language: null,
+          starterCode: null,
+          stdin: null,
           answeredOption,
           // Same answer-key protection as the bank-backed RPC: only
           // reveal correct_option for a question already answered.
           correctOption: answeredOption !== null ? q.correct_option : null,
+          isCorrect: null,
         };
       }),
     });

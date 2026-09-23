@@ -712,42 +712,57 @@ export type Database = {
           branches: string[] | null
           capability: string
           college_type: Database["public"]["Enums"]["college_type"] | null
-          correct_option: string
+          correct_option: string | null
           difficulty: number
           domain: string
+          expected_output: string | null
           id: string
-          options: Json
+          language: string | null
+          options: Json | null
+          question_kind: string
           question_text: string
           section: Database["public"]["Enums"]["assessment_section"]
           skill: string
+          starter_code: string | null
+          stdin: string | null
         }
         Insert: {
           active?: boolean
           branches?: string[] | null
           capability: string
           college_type?: Database["public"]["Enums"]["college_type"] | null
-          correct_option: string
+          correct_option?: string | null
           difficulty?: number
           domain: string
+          expected_output?: string | null
           id?: string
-          options: Json
+          language?: string | null
+          options?: Json | null
+          question_kind?: string
           question_text: string
           section: Database["public"]["Enums"]["assessment_section"]
           skill: string
+          starter_code?: string | null
+          stdin?: string | null
         }
         Update: {
           active?: boolean
           branches?: string[] | null
           capability?: string
           college_type?: Database["public"]["Enums"]["college_type"] | null
-          correct_option?: string
+          correct_option?: string | null
           difficulty?: number
           domain?: string
+          expected_output?: string | null
           id?: string
-          options?: Json
+          language?: string | null
+          options?: Json | null
+          question_kind?: string
           question_text?: string
           section?: Database["public"]["Enums"]["assessment_section"]
           skill?: string
+          starter_code?: string | null
+          stdin?: string | null
         }
         Relationships: []
       }
@@ -799,6 +814,13 @@ export type Database = {
         Args: { institution_name: string }
         Returns: string
       }
+      get_coding_question_for_grading: {
+        Args: {
+          p_question_index: number
+          p_section: Database["public"]["Enums"]["assessment_section"]
+        }
+        Returns: Json
+      }
       get_or_start_section: {
         Args: { p_section: Database["public"]["Enums"]["assessment_section"] }
         Returns: Json
@@ -824,6 +846,15 @@ export type Database = {
           p_question_index: number
           p_section: Database["public"]["Enums"]["assessment_section"]
           p_selected_option: string
+        }
+        Returns: Json
+      }
+      record_coding_response: {
+        Args: {
+          p_is_correct: boolean
+          p_question_index: number
+          p_section: Database["public"]["Enums"]["assessment_section"]
+          p_submitted_code: string
         }
         Returns: Json
       }
