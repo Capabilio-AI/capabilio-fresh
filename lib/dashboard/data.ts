@@ -97,3 +97,28 @@ export async function getDashboardData(
     },
   };
 }
+
+export interface SkillRow {
+  skill: string;
+  domain: string;
+  score: number;
+  confidence: Database["public"]["Enums"]["capability_confidence"];
+}
+
+/** Raw per-skill capability rows for the dashboard's Skills tab, grouped by domain in the UI layer. */
+export async function getSkills(supabase: SupabaseClient<Database>, userId: string): Promise<SkillRow[]> {
+  const { data, error } = await supabase
+    .from("capabilities")
+    .select("skill, domain, capability_score, confidence")
+    .eq("user_id", userId)
+    .order("domain")
+    .order("capability_score", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    skill: row.skill,
+    domain: row.domain,
+    score: row.capability_score,
+    confidence: row.confidence,
+  }));
+}

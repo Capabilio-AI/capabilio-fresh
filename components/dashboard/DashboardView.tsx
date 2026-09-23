@@ -1,7 +1,12 @@
 import { GraduationCap, Layers, School } from "lucide-react";
-import type { DashboardData, SectionScore } from "@/lib/dashboard/data";
-import { BrandBackdrop } from "@/components/BrandBackdrop";
-import { SECTION_ICON } from "@/components/section-icons";
+import type { DashboardData, SkillRow } from "@/lib/dashboard/data";
+import type { CareerMatch } from "@/lib/career/skill-gap";
+import { scoreTier, TIER_TEXT } from "@/components/dashboard/tier";
+import { OverviewTab } from "@/components/dashboard/OverviewTab";
+import { SkillsTab } from "@/components/dashboard/SkillsTab";
+import { SkillGapsTab } from "@/components/dashboard/SkillGapsTab";
+import { VaultTab } from "@/components/dashboard/VaultTab";
+import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
 
 function initialsOf(name: string | null, email: string): string {
   if (name) {
@@ -19,32 +24,23 @@ function formatYearSemester(year: string | null): string | null {
   return `${ordinal[y] ?? y} Year, Sem ${s}`;
 }
 
-function scoreTier(percentage: number): "high" | "mid" | "low" {
-  if (percentage >= 80) return "high";
-  if (percentage >= 50) return "mid";
-  return "low";
-}
-
-const TIER_BAR: Record<ReturnType<typeof scoreTier>, string> = {
-  high: "bg-lp-success",
-  mid: "bg-lp-accent-ochre",
-  low: "bg-lp-error",
-};
-const TIER_TEXT: Record<ReturnType<typeof scoreTier>, string> = {
-  high: "text-lp-success",
-  mid: "text-lp-accent-ochre",
-  low: "text-lp-error",
-};
-
-export function DashboardView({ data }: { data: DashboardData }) {
+export function DashboardView({
+  data,
+  skills,
+  careerMatches,
+}: {
+  data: DashboardData;
+  skills: SkillRow[];
+  careerMatches: CareerMatch[];
+}) {
   const initials = initialsOf(data.fullName, data.email);
   const yearLabel = formatYearSemester(data.year);
   const overallTier = scoreTier(data.overall.percentage);
 
   return (
-    <BrandBackdrop>
-      <div className="flex w-full max-w-4xl flex-col gap-6">
-        <div className="overflow-hidden rounded-2xl border border-lp-border-hairline bg-lp-surface-card shadow-lg shadow-black/[0.04]">
+    <main className="min-h-screen bg-lp-surface">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        <div className="overflow-hidden rounded-2xl border border-lp-border-hairline bg-lp-surface-card shadow-sm">
           <div className="h-1.5 w-full bg-gradient-to-r from-lp-accent-indigo to-lp-accent-ochre" />
           <div className="flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-5">
@@ -93,43 +89,15 @@ export function DashboardView({ data }: { data: DashboardData }) {
           </div>
         </div>
 
-        <div>
-          <h2 className="mb-3 font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">
-            Section scores
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.sectionScores.map((score) => (
-              <SectionScoreCard key={score.section} score={score} />
-            ))}
-          </div>
+        <div className="mt-6">
+          <DashboardTabs
+            overview={<OverviewTab data={data} />}
+            skills={<SkillsTab skills={skills} />}
+            skillGaps={<SkillGapsTab matches={careerMatches} />}
+            vault={<VaultTab />}
+          />
         </div>
       </div>
-    </BrandBackdrop>
-  );
-}
-
-function SectionScoreCard({ score }: { score: SectionScore }) {
-  const Icon = SECTION_ICON[score.section];
-  const tier = scoreTier(score.percentage);
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-lp-border-hairline bg-lp-surface-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-center justify-between">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-lp-surface-subtle text-lp-text-muted">
-          <Icon size={17} />
-        </span>
-        <span className={`font-lp-display text-lp-headline-sm font-semibold ${TIER_TEXT[tier]}`}>
-          {score.percentage}%
-        </span>
-      </div>
-      <div>
-        <p className="font-lp-body text-lp-body-sm font-medium text-lp-text-ink">{score.label}</p>
-        <p className="mt-0.5 font-lp-mono text-lp-label-sm text-lp-text-muted">
-          {score.correct} / {score.total} correct
-        </p>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-lp-surface-subtle">
-        <div className={`h-full rounded-full ${TIER_BAR[tier]}`} style={{ width: `${score.percentage}%` }} />
-      </div>
-    </div>
+    </main>
   );
 }
