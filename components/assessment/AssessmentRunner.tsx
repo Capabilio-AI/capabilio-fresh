@@ -148,11 +148,10 @@ export function AssessmentRunner() {
       );
       return;
     }
-    const result = await res.json();
-    if (result.attemptCompleted) {
-      router.push("/dashboard");
-      return;
-    }
+    // Whether this was the last section or not, startOrLoad() re-fetches
+    // attempt status and routes accordingly — attemptStatus === "completed"
+    // lands on the "complete" card (Go to Dashboard button), otherwise the
+    // section overview. No separate redirect branch needed here.
     await startOrLoad();
   }
 
@@ -392,11 +391,18 @@ function SectionView({
 
   const q = questions[Math.min(pos, total - 1)];
   const isAnswered = q.answeredOption !== null;
+  const isLast = pos === total - 1;
+
+  function advance() {
+    if (isLast) onSubmit();
+    else setPos((p) => Math.min(total - 1, p + 1));
+  }
 
   // Hard 45s-per-question timer: resets whenever the visible question
-  // changes, auto-advances to the next question on expiry (a no-op on the
-  // last question — it just freezes at 0, never blocking submission).
-  // Stops the moment the question is answered — see the isAnswered dep.
+  // changes. On expiry it moves on regardless of whether the student
+  // answered — an unanswered question just stays unanswered and the flow
+  // keeps going (advance() submits instead of advancing past the last
+  // question). Stops the moment the question is answered — see isAnswered.
   useEffect(() => {
     if (isAnswered) return;
     setTimeLeft(SECONDS_PER_QUESTION);
@@ -404,18 +410,28 @@ function SectionView({
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(id);
-          setPos((p) => Math.min(total - 1, p + 1));
+          advance();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- advance()/onSubmit closes over isLast/onSubmit, which don't need to restart the timer themselves
   }, [pos, total, isAnswered]);
 
+  // Auto-advance shortly after a question is answered AND graded — the
+  // brief window between answeredOption and correctOption both being set
+  // is exactly the "selected -> green/red flash" the student sees before
+  // moving on.
+  useEffect(() => {
+    if (!q.answeredOption || !q.correctOption) return;
+    const timeout = setTimeout(advance, 900);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- advance() intentionally excluded, see above
+  }, [q.answeredOption, q.correctOption]);
+
   const answeredCount = questions.filter((q) => q.answeredOption).length;
-  const allAnswered = total > 0 && answeredCount === total;
-  const isLast = pos === total - 1;
   const timeCritical = timeLeft <= 10;
 
   return (
@@ -467,7 +483,10 @@ function SectionView({
         </div>
       </div>
 
-      <div className="px-8 py-8">
+      {/* Fixed height + internal scroll: a long question must never resize
+          this box — the whole page would visibly jump between questions
+          otherwise. Text wraps normally inside; overflow just scrolls. */}
+      <div className="h-[440px] overflow-y-auto px-8 py-8">
         <QuestionText text={q.questionText} />
         <div className="mt-7 flex flex-col gap-3">
           {q.options.map((opt, i) => {
@@ -492,6 +511,9 @@ function SectionView({
         </div>
       </div>
 
+      {/* Forward motion is automatic (answer -> flash -> next, or the 45s
+          timer expires) — Previous is here only to review a question already
+          behind you, not to change how the flow moves forward. */}
       <div className="flex items-center justify-between border-t border-lp-border-hairline px-8 py-5">
         <button
           type="button"
@@ -505,26 +527,7 @@ function SectionView({
         <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">
           {answeredCount} of {total} answered
         </p>
-        {isLast ? (
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={!allAnswered}
-            className={`${BUTTON_PRIMARY} px-5 py-2.5`}
-          >
-            Submit section
-            <ArrowRight size={15} />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setPos((p) => Math.min(total - 1, p + 1))}
-            className="flex items-center gap-1.5 rounded px-3 py-2 font-lp-body text-lp-body-sm font-medium text-lp-text-ink transition-colors hover:text-lp-accent-indigo"
-          >
-            Next
-            <ArrowRight size={15} />
-          </button>
-        )}
+        <span className="w-[71px]" aria-hidden="true" />
       </div>
     </div>
   );
