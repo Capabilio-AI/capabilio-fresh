@@ -155,30 +155,6 @@ export type Database = {
           },
         ]
       }
-      branches: {
-        Row: {
-          college_type: Database["public"]["Enums"]["college_type"]
-          created_at: string
-          id: string
-          name: string
-          sort_order: number
-        }
-        Insert: {
-          college_type: Database["public"]["Enums"]["college_type"]
-          created_at?: string
-          id?: string
-          name: string
-          sort_order?: number
-        }
-        Update: {
-          college_type?: Database["public"]["Enums"]["college_type"]
-          created_at?: string
-          id?: string
-          name?: string
-          sort_order?: number
-        }
-        Relationships: []
-      }
       capabilities: {
         Row: {
           capability_score: number

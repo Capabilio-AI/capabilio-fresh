@@ -1,12 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { CardChrome } from "./CardChrome";
 import { CollegeAutocomplete, CollegeMatch } from "./CollegeAutocomplete";
+import { BranchAutocomplete } from "./BranchAutocomplete";
 import { PasswordField } from "./PasswordField";
 import { signUp } from "./auth";
-import { BranchOption, getBranches } from "./directory";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -29,8 +29,7 @@ export function SignupForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [collegeName, setCollegeName] = useState("");
-  const [selectedCollege, setSelectedCollege] = useState<CollegeMatch | null>(null);
-  const [branchOptions, setBranchOptions] = useState<BranchOption[]>([]);
+  const [, setSelectedCollege] = useState<CollegeMatch | null>(null);
   const [branch, setBranch] = useState("");
   const [year, setYear] = useState("");
   const [email, setEmail] = useState("");
@@ -40,23 +39,6 @@ export function SignupForm() {
   const [error, setError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (!selectedCollege) {
-      setBranchOptions([]);
-      return;
-    }
-    let cancelled = false;
-    getBranches(selectedCollege.college_type).then((options) => {
-      if (!cancelled) {
-        setBranchOptions(options);
-        setBranch("");
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedCollege]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -180,34 +162,7 @@ export function SignupForm() {
             <label htmlFor="branch-name" className={FIELD_LABEL}>
               Branch name
             </label>
-            {branchOptions.length > 0 ? (
-              <select
-                id="branch-name"
-                required
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
-                className={FIELD_INPUT}
-              >
-                <option value="" disabled>
-                  Select your branch
-                </option>
-                {branchOptions.map((option) => (
-                  <option key={option.id} value={option.name}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                id="branch-name"
-                type="text"
-                required
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
-                placeholder="Computer Science"
-                className={FIELD_INPUT}
-              />
-            )}
+            <BranchAutocomplete id="branch-name" value={branch} onChange={setBranch} />
           </div>
           <div>
             <label htmlFor="year" className={FIELD_LABEL}>
