@@ -54,7 +54,7 @@ export default function Arena() {
                   </p>
                 </div>
                 <div className="rounded border border-lp-border-hairline bg-lp-surface p-space-sm font-lp-mono text-lp-label-sm">
-                  <div className="mb-1 text-[11px] text-lp-text-muted">// TELEMETRY LOG TRACE</div>
+                  <div className="mb-1 text-[11px] text-lp-text-muted">{"// TELEMETRY LOG TRACE"}</div>
                   <div className="text-lp-error">
                     [21:04:12] ERROR: Lock wait timeout exceeded; try restarting transaction
                   </div>

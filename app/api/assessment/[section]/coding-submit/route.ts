@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
+import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { SECTION_ORDER, type AssessmentSection } from "@/lib/assessment/sections";
 
@@ -31,6 +32,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
+
+  const rateLimit = await checkRateLimit(auth.userId, { bucket: "assessment_coding_submit", maxRequests: 20, windowSeconds: 60 });
+  if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
 
   const section = parseSection((await params).section);
   if (!section) {

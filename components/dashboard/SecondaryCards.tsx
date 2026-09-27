@@ -20,7 +20,7 @@ export function SkillGapsPreviewCard({ match }: { match: CareerMatch | null }) {
       </div>
       {gaps.length === 0 ? (
         <p className="mt-4 font-lp-body text-[13px] text-app-muted">
-          No priority gaps right now — you're on track for your top career match.
+          No priority gaps right now — you&apos;re on track for your top career match.
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-3">
@@ -55,7 +55,7 @@ export function CurrentProjectCard() {
       </div>
       <div className="mt-4 flex flex-1 flex-col items-start justify-center gap-2">
         <p className="font-lp-body text-[13px] text-app-muted">
-          You haven't started a project yet. Projects turn skills into verifiable evidence for your Portfolio.
+          You haven&apos;t started a project yet. Projects turn skills into verifiable evidence for your Portfolio.
         </p>
         <Link
           href="/arena/projects"

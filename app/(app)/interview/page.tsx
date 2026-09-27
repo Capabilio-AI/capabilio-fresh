@@ -33,7 +33,7 @@ export default async function InterviewPage() {
               Complete your 3-2 development stage to unlock AI-powered interview preparation.
             </h2>
             <p className="font-lp-body text-[13px] text-app-muted">
-              You're currently at the <span className="font-medium text-app-charcoal">{stageLabel}</span> stage.
+              You&apos;re currently at the <span className="font-medium text-app-charcoal">{stageLabel}</span> stage.
             </p>
             <button
               type="button"

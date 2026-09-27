@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
+import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { getSectionQuestions } from "@/lib/assessment/questions";
 import { SECTION_ORDER, type AssessmentSection } from "@/lib/assessment/sections";
 
@@ -15,6 +16,9 @@ export async function GET(
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
+
+  const rateLimit = await checkRateLimit(auth.userId, { bucket: "assessment_questions", maxRequests: 120, windowSeconds: 60 });
+  if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
 
   const section = parseSection((await params).section);
   if (!section) {

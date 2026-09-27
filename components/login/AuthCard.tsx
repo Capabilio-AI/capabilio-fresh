@@ -124,7 +124,7 @@ export function AuthCard() {
             </>
           ) : (
             <p className="font-lp-body text-lp-body-sm font-medium text-lp-on-surface-variant">
-              {redirectPortal} isn&apos;t available yet — you&apos;re signed in, but this role's
+              {redirectPortal} isn&apos;t available yet — you&apos;re signed in, but this role&apos;s
               workspace hasn&apos;t been built.
             </p>
           )}

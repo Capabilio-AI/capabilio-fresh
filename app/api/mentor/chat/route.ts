@@ -6,6 +6,11 @@ import { getGroqClient, GROQ_MODEL } from "@/lib/ai/groq";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { computeNextAction } from "@/lib/dashboard/next-action";
 import { getDashboardData, DashboardNotReadyError } from "@/lib/dashboard/data";
+import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
+
+// Every message is a Groq call — a real cost surface with no prior limit
+// (docs/audit/2026-09-27-full-audit.md §5).
+const RATE_LIMIT = { bucket: "mentor_chat", maxRequests: 20, windowSeconds: 60 };
 
 const BodySchema = z.object({
   message: z.string().min(1).max(2000),
@@ -66,6 +71,9 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
+
+  const rateLimit = await checkRateLimit(auth.userId, RATE_LIMIT);
+  if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
 
   const parsed = BodySchema.safeParse(await request.json());
   if (!parsed.success) {

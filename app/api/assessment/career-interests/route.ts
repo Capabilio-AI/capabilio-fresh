@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
+import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { generateCareerInterestSection } from "@/lib/assessment/career-interests";
 
 const BodySchema = z.object({ statedRole: z.string().trim().min(2).max(200) });
@@ -11,6 +12,9 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
+
+  const rateLimit = await checkRateLimit(auth.userId, { bucket: "assessment_career_interests", maxRequests: 10, windowSeconds: 60 });
+  if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
 
   const parsed = BodySchema.safeParse(await request.json());
   if (!parsed.success) {
