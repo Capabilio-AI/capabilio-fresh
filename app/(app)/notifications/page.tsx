@@ -53,14 +53,14 @@ export default async function NotificationsPage() {
     <div>
       <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Notifications</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-        What's worth your attention right now — computed from your current profile, not a static feed.
+        What&apos;s worth your attention right now — computed from your current profile, not a static feed.
       </p>
 
       <div className="mt-6 flex flex-col gap-3">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
             <Sparkles size={20} className="text-app-success" />
-            <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">You're all caught up</p>
+            <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">You&apos;re all caught up</p>
             <p className="font-lp-body text-[12.5px] text-app-muted">
               No open items right now — check back as your profile grows.
             </p>

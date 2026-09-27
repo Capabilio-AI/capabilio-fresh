@@ -43,7 +43,7 @@ export default async function LaunchpadPage() {
             and internships.
           </p>
           <p className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">
-            You're currently at: {stage.label} ({stage.yearSemester})
+            You&apos;re currently at: {stage.label} ({stage.yearSemester})
           </p>
           <button
             type="button"

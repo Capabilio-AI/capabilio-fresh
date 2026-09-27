@@ -102,7 +102,7 @@ export function MentorChat({ openingMessage }: { openingMessage: string }) {
       </div>
       <div className="flex items-center gap-1.5 border-t border-app-border px-3 py-2 font-lp-mono text-[10.5px] text-app-muted">
         <Sparkles size={11} />
-        This conversation isn't saved between visits yet.
+        This conversation isn&apos;t saved between visits yet.
       </div>
     </div>
   );

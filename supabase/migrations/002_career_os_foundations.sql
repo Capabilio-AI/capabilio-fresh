@@ -6,9 +6,9 @@
 -- belongs to a student is tenant-scoped through institution_memberships
 -- (directly or via a join), per docs/architecture/06-security.md.
 --
--- NOT applied automatically — this file is reviewed and run manually
--- (Supabase SQL editor or `supabase db push`) against the project's own
--- Supabase instance. See docs/architecture/08-roadmap.md for sequencing.
+-- STATUS: APPLIED to production 2026-09-27 (via Supabase MCP apply_migration,
+-- after explicit approval). This file is kept identical to what was run —
+-- see docs/platform-evolution/07-execution-log.md.
 
 -- ============================================================================
 -- 1. Institutional hierarchy: College (institutions, existing) -> Program ->

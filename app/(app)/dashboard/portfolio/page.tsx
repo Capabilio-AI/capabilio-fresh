@@ -26,7 +26,7 @@ export default async function PortfolioPage() {
     <div>
       <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Portfolio</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-        Your public-facing evidence. Vault is where you add it; Portfolio is how it's shown.
+        Your public-facing evidence. Vault is where you add it; Portfolio is how it&apos;s shown.
       </p>
       <div className="mt-4">
         <DashboardSubNav />
@@ -48,7 +48,7 @@ export default async function PortfolioPage() {
         {items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
             <p className="font-lp-body text-[13.5px] text-app-muted">
-              Nothing to show yet. Add certificates, projects, or links to your Vault — they'll appear here.
+              Nothing to show yet. Add certificates, projects, or links to your Vault — they&apos;ll appear here.
             </p>
           </div>
         ) : (

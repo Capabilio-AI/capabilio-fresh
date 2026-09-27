@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          applied_at: string
+          id: string
+          opportunity_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          id?: string
+          opportunity_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          id?: string
+          opportunity_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arena_challenge_attempts: {
         Row: {
           answered_count: number
@@ -234,6 +266,50 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          access_reason: string | null
+          action: string
+          actor_id: string | null
+          consent_context: Json | null
+          created_at: string
+          id: string
+          organisation_id: string | null
+          resource_id: string | null
+          resource_type: string
+        }
+        Insert: {
+          access_reason?: string | null
+          action: string
+          actor_id?: string | null
+          consent_context?: Json | null
+          created_at?: string
+          id?: string
+          organisation_id?: string | null
+          resource_id?: string | null
+          resource_type: string
+        }
+        Update: {
+          access_reason?: string | null
+          action?: string
+          actor_id?: string | null
+          consent_context?: Json | null
+          created_at?: string
+          id?: string
+          organisation_id?: string | null
+          resource_id?: string | null
+          resource_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       capabilities: {
         Row: {
           capability_score: number
@@ -424,6 +500,147 @@ export type Database = {
         }
         Relationships: []
       }
+      cohorts: {
+        Row: {
+          created_at: string
+          department_id: string
+          entry_year_semester: string
+          graduation_year_semester: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          entry_year_semester: string
+          graduation_year_semester: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          entry_year_semester?: string
+          graduation_year_semester?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cohorts_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          program_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          program_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          program_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence: {
+        Row: {
+          capability_delta: number | null
+          confidence: Database["public"]["Enums"]["capability_confidence"]
+          created_at: string
+          evaluated_by: string | null
+          id: string
+          skill: string
+          source_id: string | null
+          source_type: Database["public"]["Enums"]["capability_evidence_source"]
+          user_id: string
+        }
+        Insert: {
+          capability_delta?: number | null
+          confidence?: Database["public"]["Enums"]["capability_confidence"]
+          created_at?: string
+          evaluated_by?: string | null
+          id?: string
+          skill: string
+          source_id?: string | null
+          source_type: Database["public"]["Enums"]["capability_evidence_source"]
+          user_id: string
+        }
+        Update: {
+          capability_delta?: number | null
+          confidence?: Database["public"]["Enums"]["capability_confidence"]
+          created_at?: string
+          evaluated_by?: string | null
+          id?: string
+          skill?: string
+          source_id?: string | null
+          source_type?: Database["public"]["Enums"]["capability_evidence_source"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      executive_context: {
+        Row: {
+          capability_framework: Json
+          created_at: string
+          leadership_goals: Json
+          organisation_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capability_framework?: Json
+          created_at?: string
+          leadership_goals?: Json
+          organisation_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capability_framework?: Json
+          created_at?: string
+          leadership_goals?: Json
+          organisation_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_context_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guide_paths: {
         Row: {
           generated_at: string
@@ -465,6 +682,7 @@ export type Database = {
       institution_memberships: {
         Row: {
           branch: string | null
+          cohort_id: string | null
           created_at: string
           id: string
           institution_id: string
@@ -476,6 +694,7 @@ export type Database = {
         }
         Insert: {
           branch?: string | null
+          cohort_id?: string | null
           created_at?: string
           id?: string
           institution_id: string
@@ -487,6 +706,7 @@ export type Database = {
         }
         Update: {
           branch?: string | null
+          cohort_id?: string | null
           created_at?: string
           id?: string
           institution_id?: string
@@ -497,6 +717,13 @@ export type Database = {
           year?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "institution_memberships_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "institution_memberships_institution_id_fkey"
             columns: ["institution_id"]
@@ -574,6 +801,222 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      journey_phases: {
+        Row: {
+          axis: Database["public"]["Enums"]["journey_axis"]
+          created_at: string
+          id: string
+          key: string
+          label: string
+          sequence: number
+          template_id: string
+        }
+        Insert: {
+          axis: Database["public"]["Enums"]["journey_axis"]
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          sequence: number
+          template_id: string
+        }
+        Update: {
+          axis?: Database["public"]["Enums"]["journey_axis"]
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          sequence?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_phases_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "journey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_templates: {
+        Row: {
+          config: Json
+          created_at: string
+          entry_semester: string
+          id: string
+          institution_id: string | null
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          entry_semester: string
+          id?: string
+          institution_id?: string | null
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          entry_semester?: string
+          id?: string
+          institution_id?: string | null
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_templates_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_evaluations: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          mentor_id: string
+          project_id: string | null
+          score: number | null
+          skill: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          mentor_id: string
+          project_id?: string | null
+          score?: number | null
+          skill?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          mentor_id?: string
+          project_id?: string | null
+          score?: number | null
+          skill?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_evaluations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunities: {
+        Row: {
+          company: string
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          eligibility: string | null
+          id: string
+          institution_id: string | null
+          location: string | null
+          opportunity_type: string
+          recruiter_id: string | null
+          role: string
+          skills: Json
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          eligibility?: string | null
+          id?: string
+          institution_id?: string | null
+          location?: string | null
+          opportunity_type: string
+          recruiter_id?: string | null
+          role: string
+          skills?: Json
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          eligibility?: string | null
+          id?: string
+          institution_id?: string | null
+          location?: string | null
+          opportunity_type?: string
+          recruiter_id?: string | null
+          role?: string
+          skills?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "recruiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_b_explorations: {
+        Row: {
+          career_concepts: Json
+          created_at: string
+          extracted_interests: Json
+          id: string
+          raw_input: string
+          skill_gaps: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          career_concepts?: Json
+          created_at?: string
+          extracted_interests?: Json
+          id?: string
+          raw_input: string
+          skill_gaps?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          career_concepts?: Json
+          created_at?: string
+          extracted_interests?: Json
+          id?: string
+          raw_input?: string
+          skill_gaps?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       post_comments: {
         Row: {
@@ -676,6 +1119,44 @@ export type Database = {
           },
         ]
       }
+      professional_context: {
+        Row: {
+          created_at: string
+          current_job_role: string | null
+          organisation_id: string | null
+          started_at: string | null
+          target_job_role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_job_role?: string | null
+          organisation_id?: string | null
+          started_at?: string | null
+          target_job_role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_job_role?: string | null
+          organisation_id?: string | null
+          started_at?: string | null
+          target_job_role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_context_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -702,6 +1183,183 @@ export type Database = {
           full_name?: string | null
           id?: string
           primary_role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      programs: {
+        Row: {
+          created_at: string
+          id: string
+          institution_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          institution_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          institution_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programs_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_contributions: {
+        Row: {
+          created_at: string
+          description: string
+          evaluated_score: number | null
+          evaluator_id: string | null
+          id: string
+          milestone_id: string | null
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          evaluated_score?: number | null
+          evaluator_id?: string | null
+          id?: string
+          milestone_id?: string | null
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          evaluated_score?: number | null
+          evaluator_id?: string | null
+          id?: string
+          milestone_id?: string | null
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_contributions_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_contributions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_members: {
+        Row: {
+          joined_at: string
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          project_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          project_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_milestones: {
+        Row: {
+          created_at: string
+          due_at: string | null
+          id: string
+          project_id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          project_id: string
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          project_id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          mentor_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          mentor_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          mentor_id?: string | null
+          status?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -766,6 +1424,189 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          bucket: string
+          hit_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hit_count?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hit_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      recruiters: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          action: string
+          resource: string
+          role_id: string
+        }
+        Insert: {
+          action: string
+          resource: string
+          role_id: string
+        }
+        Update: {
+          action?: string
+          resource?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          label: string
+          scope: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          scope: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          scope?: string
+        }
+        Relationships: []
+      }
+      skills: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      student_journey_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          student_journey_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          student_journey_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          student_journey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_journey_events_student_journey_id_fkey"
+            columns: ["student_journey_id"]
+            isOneToOne: false
+            referencedRelation: "student_journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_journeys: {
+        Row: {
+          current_capability_phase: string
+          current_career_phase: string
+          id: string
+          started_at: string
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_capability_phase: string
+          current_career_phase: string
+          id?: string
+          started_at?: string
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_capability_phase?: string
+          current_career_phase?: string
+          id?: string
+          started_at?: string
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_journeys_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "journey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vault_items: {
         Row: {
           created_at: string
@@ -810,16 +1651,16 @@ export type Database = {
     }
     Functions: {
       finish_arena_challenge: { Args: { p_attempt_id: string }; Returns: Json }
-      get_or_create_institution: {
-        Args: { institution_name: string }
-        Returns: string
-      }
       get_coding_question_for_grading: {
         Args: {
           p_question_index: number
           p_section: Database["public"]["Enums"]["assessment_section"]
         }
         Returns: Json
+      }
+      get_or_create_institution: {
+        Args: { institution_name: string }
+        Returns: string
       }
       get_or_start_section: {
         Args: { p_section: Database["public"]["Enums"]["assessment_section"] }
@@ -832,6 +1673,10 @@ export type Database = {
           full_name: string
           id: string
         }[]
+      }
+      increment_rate_limit: {
+        Args: { p_bucket: string; p_user_id: string; p_window_start: string }
+        Returns: number
       }
       record_arena_answer: {
         Args: {
@@ -904,6 +1749,7 @@ export type Database = {
         | "pharmacy"
         | "law"
         | "other"
+      journey_axis: "capability" | "career"
       membership_status: "pending" | "active" | "revoked"
       section_progress_status: "not_started" | "in_progress" | "completed"
     }
@@ -1070,6 +1916,7 @@ export const Constants = {
         "law",
         "other",
       ],
+      journey_axis: ["capability", "career"],
       membership_status: ["pending", "active", "revoked"],
       section_progress_status: ["not_started", "in_progress", "completed"],
     },

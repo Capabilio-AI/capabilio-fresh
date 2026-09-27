@@ -3,38 +3,20 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
+import { can } from "@/lib/auth/authorize";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { getSkills } from "@/lib/dashboard/data";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { computeNextAction } from "@/lib/dashboard/next-action";
 import { JOURNEY_STAGES, currentStageIndex } from "@/lib/journey/stage";
 
-// Staff roles that may look at a student they don't own — see docs/architecture/06-security.md.
-const STAFF_ROLES = new Set(["faculty", "hod", "principal", "vice_principal", "ceo", "mentor"]);
-
-interface MembershipRow {
-  institution_id: string;
-  role: Database["public"]["Enums"]["app_role"];
-  status: Database["public"]["Enums"]["membership_status"];
-}
-
-async function getMembership(
-  supabase: SupabaseClient<Database>,
-  userId: string
-): Promise<MembershipRow | null> {
-  const { data } = await supabase
-    .from("institution_memberships")
-    .select("institution_id, role, status")
-    .eq("user_id", userId)
-    .maybeSingle();
-  return data;
-}
-
 /**
  * Self-access is always allowed. Cross-student access requires the viewer
- * to hold an active staff role in the SAME institution as the target
- * student — enforced here in code (in addition to each underlying table's
- * own RLS), per docs/architecture/06-security.md.
+ * to hold a role granting "person: read" (or better) within the SAME
+ * institution as the target student — driven by the roles/role_permissions
+ * tables (lib/auth/authorize.ts), not a hardcoded role list. Enforced here
+ * in application code, in addition to each underlying table's own RLS —
+ * per docs/platform-evolution/03-authorization-matrix.md.
  */
 async function canAccessStudent(
   supabase: SupabaseClient<Database>,
@@ -43,15 +25,16 @@ async function canAccessStudent(
 ): Promise<boolean> {
   if (viewerId === studentId) return true;
 
-  const [viewerMembership, studentMembership] = await Promise.all([
-    getMembership(supabase, viewerId),
-    getMembership(supabase, studentId),
-  ]);
+  const { data: studentMembership } = await supabase
+    .from("institution_memberships")
+    .select("institution_id")
+    .eq("user_id", studentId)
+    .maybeSingle();
+  if (!studentMembership) return false;
 
-  if (!viewerMembership || !studentMembership) return false;
-  if (viewerMembership.status !== "active") return false;
-  if (!STAFF_ROLES.has(viewerMembership.role)) return false;
-  return viewerMembership.institution_id === studentMembership.institution_id;
+  return can(supabase, viewerId, "person", "read", {
+    organisationId: studentMembership.institution_id,
+  });
 }
 
 function aggregateCapabilityDimensions(skills: Awaited<ReturnType<typeof getSkills>>) {
