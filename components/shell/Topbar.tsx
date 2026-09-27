@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Bell, Search, Settings } from "lucide-react";
-import { initialsOf, type ViewerSummary } from "@/lib/dashboard/viewer";
+import type { ViewerSummary } from "@/lib/dashboard/viewer";
+import { AccountMenu } from "@/components/shell/AccountMenu";
 
 function firstName(fullName: string | null, email: string): string {
   if (fullName) return fullName.trim().split(/\s+/)[0];
@@ -55,13 +56,7 @@ export function Topbar({ viewer }: { viewer: ViewerSummary }) {
         >
           <Settings size={18} />
         </Link>
-        <Link
-          href="/profile"
-          aria-label="Your profile"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-app-charcoal font-lp-display text-[12px] font-semibold text-white"
-        >
-          {initialsOf(viewer.fullName, viewer.email)}
-        </Link>
+        <AccountMenu viewer={viewer} />
       </div>
     </header>
   );

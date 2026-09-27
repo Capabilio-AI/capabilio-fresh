@@ -5,6 +5,9 @@ import { getDashboardData, getSkills, DashboardNotReadyError } from "@/lib/dashb
 import { matchCareersForStudent } from "@/lib/career/match";
 import { getVaultItems } from "@/lib/vault/data";
 import { computeNextAction } from "@/lib/dashboard/next-action";
+import { getStatedCareerInterest } from "@/lib/career/interest-statement";
+import { explainRecommendation } from "@/lib/career/explain-recommendation";
+import { CareerDirectionExplainerModal } from "@/components/dashboard/CareerDirectionExplainerModal";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { CareerDirectionCard } from "@/components/dashboard/CareerDirectionCard";
@@ -31,13 +34,23 @@ export default async function DashboardPage() {
   let skills: Awaited<ReturnType<typeof getSkills>>;
   let careerMatches: Awaited<ReturnType<typeof matchCareersForStudent>>;
   let vaultItems: Awaited<ReturnType<typeof getVaultItems>>;
+  let statedInterest: string | null;
+  let hasSeenIntro: boolean;
   try {
-    [data, skills, careerMatches, vaultItems] = await Promise.all([
+    const [dashboardData, skillRows, matches, vault, interest, { data: profile }] = await Promise.all([
       getDashboardData(supabase, user.id),
       getSkills(supabase, user.id),
       matchCareersForStudent(supabase, user.id),
       getVaultItems(supabase, user.id),
+      getStatedCareerInterest(supabase, user.id),
+      supabase.from("profiles").select("has_seen_career_direction_intro").eq("id", user.id).single(),
     ]);
+    data = dashboardData;
+    skills = skillRows;
+    careerMatches = matches;
+    vaultItems = vault;
+    statedInterest = interest;
+    hasSeenIntro = profile?.has_seen_career_direction_intro ?? true;
   } catch (error) {
     if (error instanceof DashboardNotReadyError) {
       redirect("/assessment");
@@ -47,9 +60,18 @@ export default async function DashboardPage() {
 
   const topMatch = careerMatches[0] ?? null;
   const nextAction = computeNextAction(topMatch);
+  const showCareerDirectionIntro = !hasSeenIntro && topMatch !== null && Boolean(statedInterest);
 
   return (
     <div>
+      {showCareerDirectionIntro && topMatch && statedInterest && (
+        <CareerDirectionExplainerModal
+          statedInterest={statedInterest}
+          recommendedRole={topMatch.careerRole}
+          readiness={topMatch.overallReadiness}
+          explanation={explainRecommendation(topMatch, statedInterest)}
+        />
+      )}
       <DashboardHeader data={data} />
       <DashboardSubNav />
 
