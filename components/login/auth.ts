@@ -156,3 +156,14 @@ export async function signInWithGoogle(): Promise<void> {
 export function portalFor(role: RoleId): string {
   return getRole(role).portal;
 }
+
+export async function signOut(): Promise<void> {
+  const supabase = createClient();
+  // Default scope is "global" — invalidates the refresh token server-side
+  // (not just a local no-op) and clears the SSR-managed auth cookies this
+  // client stores the session in (lib/supabase/client.ts uses
+  // @supabase/ssr's createBrowserClient specifically so cookies, not
+  // localStorage, are the source of truth — the same cookies
+  // lib/supabase/server.ts reads on every server-rendered request).
+  await supabase.auth.signOut();
+}

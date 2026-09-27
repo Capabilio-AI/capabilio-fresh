@@ -1163,6 +1163,7 @@ export type Database = {
           created_at: string
           email: string
           full_name: string | null
+          has_seen_career_direction_intro: boolean
           id: string
           primary_role: Database["public"]["Enums"]["app_role"]
           updated_at: string
@@ -1172,6 +1173,7 @@ export type Database = {
           created_at?: string
           email: string
           full_name?: string | null
+          has_seen_career_direction_intro?: boolean
           id: string
           primary_role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
@@ -1181,6 +1183,7 @@ export type Database = {
           created_at?: string
           email?: string
           full_name?: string | null
+          has_seen_career_direction_intro?: boolean
           id?: string
           primary_role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
