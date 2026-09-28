@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { GraduationCap, Layers, School } from "lucide-react";
+import Link from "next/link";
+import { Building2, GraduationCap, Layers, School } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary, initialsOf } from "@/lib/dashboard/viewer";
 import { getSkills } from "@/lib/dashboard/data";
 import { getVaultItems } from "@/lib/vault/data";
+import { getEducationHistory } from "@/lib/dashboard/education";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { CapabilityCard } from "@/components/dashboard/CapabilityCard";
+import { AvatarUpload } from "@/components/profile/AvatarUpload";
 
 export const metadata: Metadata = { title: "Profile — Capabilio AI" };
 
@@ -19,22 +22,24 @@ function formatYearSemester(year: string | null): string | null {
 export default async function ProfilePage() {
   const { supabase, user } = await requireAuthedUser();
 
-  const [viewer, skills, vaultItems, careerMatches] = await Promise.all([
+  const [viewer, skills, vaultItems, careerMatches, education] = await Promise.all([
     getViewerSummary(supabase, user.id),
     getSkills(supabase, user.id),
     getVaultItems(supabase, user.id),
     matchCareersForStudent(supabase, user.id),
+    getEducationHistory(supabase, user.id),
   ]);
   const yearLabel = formatYearSemester(viewer.year);
   const topMatch = careerMatches[0] ?? null;
+  const initials = initialsOf(viewer.fullName, viewer.email);
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center gap-4">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-app-charcoal font-lp-display text-[18px] font-semibold text-white">
-          {initialsOf(viewer.fullName, viewer.email)}
-        </span>
-        <div>
+      <div className="h-24 w-full rounded-2xl bg-gradient-to-r from-app-blue to-app-charcoal" />
+
+      <div className="-mt-10 flex items-end gap-4 px-1">
+        <AvatarUpload avatarUrl={viewer.avatarUrl} initials={initials} />
+        <div className="pb-1">
           <h1 className="font-lp-display text-[24px] font-semibold text-app-charcoal">
             {viewer.fullName ?? "Student"}
           </h1>
@@ -70,6 +75,29 @@ export default async function ProfilePage() {
         <CapabilityCard skills={skills} />
 
         <div className="rounded-xl border border-app-border bg-white p-5">
+          <div className="flex items-center gap-2">
+            <Building2 size={16} className="text-app-charcoal" />
+            <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Education</h2>
+          </div>
+          {education.institutionName ? (
+            <div className="mt-3">
+              <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{education.institutionName}</p>
+              <p className="mt-0.5 font-lp-mono text-[11px] text-app-muted">
+                {[education.branch, formatYearSemester(education.year)].filter(Boolean).join(" · ") || "—"}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-3 font-lp-body text-[13px] text-app-muted">No institution on record yet.</p>
+          )}
+          <Link
+            href="/dashboard/education"
+            className="mt-3 inline-block font-lp-mono text-[11px] text-app-blue hover:underline"
+          >
+            View educational history
+          </Link>
+        </div>
+
+        <div className="rounded-xl border border-app-border bg-white p-5 sm:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Portfolio</h2>
             <a href="/dashboard/portfolio" className="font-lp-mono text-[11px] text-app-blue hover:underline">

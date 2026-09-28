@@ -5,6 +5,7 @@ import type { Database } from "@/lib/supabase/types";
 export interface ViewerSummary {
   fullName: string | null;
   email: string;
+  avatarUrl: string | null;
   collegeName: string | null;
   branch: string | null;
   year: string | null;
@@ -15,7 +16,7 @@ export async function getViewerSummary(
   userId: string
 ): Promise<ViewerSummary> {
   const [{ data: profile }, { data: membership }] = await Promise.all([
-    supabase.from("profiles").select("full_name, email").eq("id", userId).single(),
+    supabase.from("profiles").select("full_name, email, avatar_url").eq("id", userId).single(),
     supabase
       .from("institution_memberships")
       .select("branch, year, institutions ( name )")
@@ -26,6 +27,7 @@ export async function getViewerSummary(
   return {
     fullName: profile?.full_name ?? null,
     email: profile?.email ?? "",
+    avatarUrl: profile?.avatar_url ?? null,
     collegeName: institution?.name ?? null,
     branch: membership?.branch ?? null,
     year: membership?.year ?? null,

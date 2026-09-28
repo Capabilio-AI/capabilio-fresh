@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Award, ExternalLink, FileText, Link2, Loader2, Plus, Sparkles, Trash2, type LucideIcon } from "lucide-react";
+import {
+  Award,
+  BadgeCheck,
+  ExternalLink,
+  FileText,
+  Link2,
+  Loader2,
+  Plus,
+  Sparkles,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react";
 import { EmptyState } from "@/components/dashboard/SkillsTab";
 import { CodeDnaCard } from "@/components/vault/CodeDnaCard";
 
@@ -14,6 +25,8 @@ interface VaultItem {
   url: string | null;
   description: string | null;
   created_at: string;
+  verified: boolean;
+  fileUrl: string | null;
 }
 
 const TYPE_ICON: Record<ItemType, LucideIcon> = {
@@ -97,7 +110,14 @@ export function VaultTab() {
                       <Icon size={15} />
                     </span>
                     <div>
-                      <p className="font-lp-body text-lp-body-sm font-medium text-lp-text-ink">{item.title}</p>
+                      <p className="flex items-center gap-1 font-lp-body text-lp-body-sm font-medium text-lp-text-ink">
+                        {item.title}
+                        {item.verified && (
+                          <span title="Uploaded file verified" className="flex items-center text-lp-success">
+                            <BadgeCheck size={13} />
+                          </span>
+                        )}
+                      </p>
                       <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">{TYPE_LABEL[item.item_type]}</p>
                     </div>
                   </div>
@@ -113,15 +133,15 @@ export function VaultTab() {
                 {item.description && (
                   <p className="mt-2 font-lp-body text-lp-body-sm text-lp-text-muted">{item.description}</p>
                 )}
-                {item.url && (
+                {(item.url ?? item.fileUrl) && (
                   <a
-                    href={item.url}
+                    href={item.url ?? item.fileUrl ?? undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-2 flex items-center gap-1 font-lp-mono text-lp-label-sm text-lp-accent-indigo hover:underline"
                   >
                     <ExternalLink size={12} />
-                    View
+                    {item.fileUrl ? "View certificate" : "View"}
                   </a>
                 )}
               </div>

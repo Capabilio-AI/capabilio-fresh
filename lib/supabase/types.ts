@@ -1674,29 +1674,35 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          file_path: string | null
           id: string
           item_type: string
           title: string
           url: string | null
           user_id: string
+          verified: boolean
         }
         Insert: {
           created_at?: string
           description?: string | null
+          file_path?: string | null
           id?: string
           item_type: string
           title: string
           url?: string | null
           user_id: string
+          verified?: boolean
         }
         Update: {
           created_at?: string
           description?: string | null
+          file_path?: string | null
           id?: string
           item_type?: string
           title?: string
           url?: string | null
           user_id?: string
+          verified?: boolean
         }
         Relationships: [
           {
