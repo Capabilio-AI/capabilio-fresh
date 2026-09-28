@@ -1,19 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Enums } from "@/lib/supabase/types";
-
-type Confidence = Enums<"capability_confidence">;
-
-// Never present a capability score as certain when it's based on 1-2 data
-// points (brief's explicit requirement) — thresholds for how many answered
-// questions on a skill are needed before trusting the score.
-const HIGH_CONFIDENCE_MIN = 5;
-const MEDIUM_CONFIDENCE_MIN = 3;
-
-function confidenceFor(dataPoints: number): Confidence {
-  if (dataPoints >= HIGH_CONFIDENCE_MIN) return "high";
-  if (dataPoints >= MEDIUM_CONFIDENCE_MIN) return "medium";
-  return "low";
-}
+import type { Database } from "@/lib/supabase/types";
+import { confidenceFor } from "./confidence";
 
 interface SkillTally {
   domain: string;

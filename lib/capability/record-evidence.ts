@@ -1,18 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Enums } from "@/lib/supabase/types";
 import { generateGuidePathForCareer } from "@/lib/guide-path/generate";
+import { confidenceFor } from "./confidence";
 
 type EvidenceSource = Enums<"capability_evidence_source">;
 type Confidence = Enums<"capability_confidence">;
-
-const HIGH_CONFIDENCE_MIN = 5;
-const MEDIUM_CONFIDENCE_MIN = 3;
-
-function confidenceFor(dataPoints: number): Confidence {
-  if (dataPoints >= HIGH_CONFIDENCE_MIN) return "high";
-  if (dataPoints >= MEDIUM_CONFIDENCE_MIN) return "medium";
-  return "low";
-}
 
 // A project milestone or Arena challenge is worth interrupting the student
 // for; a routine learning-module check-in or an already-triggered

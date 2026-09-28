@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, GitBranch, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, GitBranch, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import type { CapabilityCategory, ConfidenceLevel } from "@/lib/code-dna/capability-derivation";
+
+interface CapabilityProfileEntry {
+  category: CapabilityCategory;
+  score: number;
+  confidence: ConfidenceLevel;
+  evidenceCount: number;
+}
 
 interface CodeDnaState {
   connected: boolean;
@@ -19,9 +27,16 @@ interface CodeDnaState {
   nextScanAt?: string | null;
   lastScanError?: string | null;
   canScanNow?: boolean;
+  capabilityProfile?: CapabilityProfileEntry[];
+  arenaAttemptCount?: number;
 }
 
 const CONFIDENCE_LABEL: Record<string, string> = { low: "Low confidence", medium: "Medium confidence", high: "High confidence" };
+const CONFIDENCE_DOT: Record<ConfidenceLevel, string> = {
+  low: "bg-lp-text-muted/40",
+  medium: "bg-lp-accent-ochre",
+  high: "bg-lp-success",
+};
 
 function relativeCooldown(nextScanAt: string | null | undefined): string | null {
   if (!nextScanAt) return null;
@@ -33,19 +48,33 @@ function relativeCooldown(nextScanAt: string | null | undefined): string | null 
 
 export function CodeDnaCard() {
   const [state, setState] = useState<CodeDnaState | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const res = await fetch("/api/code-dna");
-    setState(await res.json());
+    try {
+      const res = await fetch("/api/code-dna");
+      if (!res.ok) throw new Error("Request failed");
+      setState(await res.json());
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    }
   }
 
   useEffect(() => {
     fetch("/api/code-dna")
-      .then((res) => res.json())
-      .then(setState);
+      .then((res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
+      .then((data) => {
+        setState(data);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true));
   }, []);
 
   async function connect() {
@@ -94,6 +123,22 @@ export function CodeDnaCard() {
     await load();
   }
 
+  if (loadError) {
+    return (
+      <div className="mb-5 rounded-xl border border-lp-border-hairline bg-lp-surface-card p-5 text-center shadow-sm">
+        <AlertTriangle size={18} className="mx-auto text-lp-error" />
+        <p className="mt-2 font-lp-body text-lp-body-sm text-lp-text-muted">Couldn&rsquo;t load Code DNA.</p>
+        <button
+          type="button"
+          onClick={load}
+          className="mt-2 rounded-lg border border-lp-border-hairline px-3 py-1.5 font-lp-mono text-lp-label-sm text-lp-text-ink hover:bg-lp-surface-subtle"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   if (!state) {
     return (
       <div className="mb-5 flex justify-center rounded-xl border border-lp-border-hairline bg-lp-surface-card py-8 shadow-sm">
@@ -102,6 +147,9 @@ export function CodeDnaCard() {
     );
   }
 
+  const capabilityProfile = state.capabilityProfile ?? [];
+  const hasAnyEvidence = state.connected || capabilityProfile.length > 0;
+
   return (
     <div className="mb-5 rounded-xl border border-lp-border-hairline bg-lp-surface-card p-5 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
@@ -109,8 +157,51 @@ export function CodeDnaCard() {
         <h3 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Code DNA</h3>
       </div>
 
+      {!hasAnyEvidence && (
+        <div className="mb-4 flex flex-col gap-2 rounded-lg bg-lp-surface-subtle p-3.5">
+          <p className="flex items-center gap-1.5 font-lp-body text-lp-body-sm font-medium text-lp-text-ink">
+            <Sparkles size={14} className="text-lp-accent-indigo" />
+            Your Code DNA is starting
+          </p>
+          <p className="font-lp-body text-lp-body-sm text-lp-text-muted">
+            It builds from real evidence — complete an Arena challenge or connect your GitHub below.
+          </p>
+          <Link
+            href="/arena"
+            className="w-fit rounded-lg bg-lp-text-ink px-3.5 py-2 font-lp-mono text-lp-label-sm font-semibold text-lp-surface-card"
+          >
+            Enter Arena
+          </Link>
+        </div>
+      )}
+
+      {capabilityProfile.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-2 font-lp-mono text-lp-label-sm font-semibold uppercase tracking-wide text-lp-text-muted">
+            Capability Profile
+          </p>
+          <div className="flex flex-col gap-2">
+            {capabilityProfile.slice(0, 4).map((c) => (
+              <div key={c.category} className="flex items-center justify-between font-lp-body text-lp-body-sm">
+                <span className="flex items-center gap-1.5 text-lp-text-ink">
+                  <span className={`h-1.5 w-1.5 rounded-full ${CONFIDENCE_DOT[c.confidence]}`} title={CONFIDENCE_LABEL[c.confidence]} />
+                  {c.category}
+                </span>
+                <span className="font-lp-mono text-lp-label-sm text-lp-text-muted">{c.score}</span>
+              </div>
+            ))}
+          </div>
+          <Link
+            href="/dashboard/vault/code-dna"
+            className="mt-2 inline-block font-lp-mono text-lp-label-sm text-lp-accent-indigo hover:underline"
+          >
+            View full Code DNA
+          </Link>
+        </div>
+      )}
+
       {!state.connected && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 border-t border-lp-border-hairline pt-4">
           <p className="font-lp-body text-lp-body-sm text-lp-text-muted">
             Connect your public GitHub to turn your real repositories, commits, and pull requests into verified
             engineering evidence.
