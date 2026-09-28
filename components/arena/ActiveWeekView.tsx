@@ -25,16 +25,30 @@ const POINTS_BY_DIFFICULTY: Record<string, number> = { easy: 50, medium: 70, har
 export function ActiveWeekView({ track, state, emptyHint, onRefresh }: { track: "stream" | "domain"; state: TrackState; emptyHint: string; onRefresh: () => void }) {
   const [openChallenge, setOpenChallenge] = useState<ChallengeDetail | null>(null);
   const [scratchRevealing, setScratchRevealing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function spin() {
+    setError(null);
     const res = await fetch(`/api/arena/challenges/${track}/spin`, { method: "POST" });
-    if (res.ok) onRefresh();
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Could not spin — try again.");
+      return;
+    }
+    onRefresh();
   }
 
   async function reveal() {
     if (scratchRevealing) return;
     setScratchRevealing(true);
-    await fetch(`/api/arena/challenges/${track}/scratch`, { method: "POST" });
+    setError(null);
+    const res = await fetch(`/api/arena/challenges/${track}/scratch`, { method: "POST" });
+    setScratchRevealing(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Could not reveal this week's challenges — try again.");
+      return;
+    }
     onRefresh();
   }
 
@@ -65,6 +79,15 @@ export function ActiveWeekView({ track, state, emptyHint, onRefresh }: { track: 
         <p className="font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-muted">{state.scopeLabel}</p>
         <h2 className="mt-1 font-lp-display text-[22px] font-bold text-app-charcoal">Weekly Challenges</h2>
       </div>
+
+      {error && (
+        <div className="mx-auto mb-5 flex w-fit items-center gap-3 rounded-lg border border-app-attention bg-app-attention-container px-4 py-2.5">
+          <p className="font-lp-body text-[12.5px] text-app-charcoal">{error}</p>
+          <button type="button" onClick={state.week?.status === "spun" ? reveal : spin} className="font-lp-mono text-[11px] font-semibold text-app-charcoal underline">
+            Try again
+          </button>
+        </div>
+      )}
 
       {!state.week && (
         <div className="flex justify-center">

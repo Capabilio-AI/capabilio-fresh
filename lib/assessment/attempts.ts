@@ -84,20 +84,34 @@ export interface AcademicContext extends BranchContext {
   year: string | null;
 }
 
+/**
+ * A student can end up with more than one institution_memberships row in
+ * real data (re-signup, a college switch, a stray duplicate) --
+ * `.maybeSingle()` errors on more than one match and silently resolves to
+ * "no branch on record" (confirmed live: a real account had one active
+ * row with a real branch plus two other rows with branch null). Picks the
+ * best row instead of failing: active membership with a branch set, then
+ * any row with a branch set, then the most recent row at all, rather than
+ * an arbitrary/undefined one.
+ */
 export async function getStudentBranchContext(
   supabase: SupabaseClient<Database>,
   userId: string
 ): Promise<AcademicContext> {
   const { data } = await supabase
     .from("institution_memberships")
-    .select("branch, year, institutions ( college_type )")
+    .select("branch, year, status, institutions ( college_type )")
     .eq("user_id", userId)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
-  const institution = data?.institutions as { college_type: BranchContext["collegeType"] } | null;
+  const rows = data ?? [];
+  const best =
+    rows.find((r) => r.status === "active" && r.branch) ?? rows.find((r) => r.branch) ?? rows[0] ?? null;
+
+  const institution = best?.institutions as { college_type: BranchContext["collegeType"] } | null;
   return {
     collegeType: institution?.college_type ?? null,
-    branch: data?.branch ?? null,
-    year: data?.year ?? null,
+    branch: best?.branch ?? null,
+    year: best?.year ?? null,
   };
 }
