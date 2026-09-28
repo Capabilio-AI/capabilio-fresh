@@ -641,6 +641,66 @@ export type Database = {
           },
         ]
       }
+      github_connections: {
+        Row: {
+          analysis: Json | null
+          code_dna_score: number | null
+          confidence_level: string | null
+          consecutive_failures: number
+          created_at: string
+          last_scan_error: string | null
+          last_scanned_at: string | null
+          next_scan_at: string | null
+          profile_url: string
+          recruiter_summary: string | null
+          repositories_analyzed: number | null
+          scan_status: string
+          updated_at: string
+          user_id: string
+          username: string
+          verification_code: string
+          verification_state: string
+        }
+        Insert: {
+          analysis?: Json | null
+          code_dna_score?: number | null
+          confidence_level?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          last_scan_error?: string | null
+          last_scanned_at?: string | null
+          next_scan_at?: string | null
+          profile_url: string
+          recruiter_summary?: string | null
+          repositories_analyzed?: number | null
+          scan_status?: string
+          updated_at?: string
+          user_id: string
+          username: string
+          verification_code: string
+          verification_state?: string
+        }
+        Update: {
+          analysis?: Json | null
+          code_dna_score?: number | null
+          confidence_level?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          last_scan_error?: string | null
+          last_scanned_at?: string | null
+          next_scan_at?: string | null
+          profile_url?: string
+          recruiter_summary?: string | null
+          repositories_analyzed?: number | null
+          scan_status?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+          verification_code?: string
+          verification_state?: string
+        }
+        Relationships: []
+      }
       guide_paths: {
         Row: {
           generated_at: string

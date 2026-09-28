@@ -7,6 +7,7 @@ import clsx from "clsx";
 const TABS = [
   { label: "Overview", href: "/dashboard" },
   { label: "Career Path", href: "/dashboard/career-path" },
+  { label: "Educational History", href: "/dashboard/education" },
   { label: "Portfolio", href: "/dashboard/portfolio" },
   { label: "Skills", href: "/dashboard/skills" },
   { label: "Skill Gap", href: "/dashboard/skill-gap" },
