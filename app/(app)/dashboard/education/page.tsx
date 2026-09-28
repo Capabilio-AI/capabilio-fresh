@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendarClock } from "lucide-react";
+import { Award, CalendarClock, GraduationCap } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getEducationHistory, getEducationTimeline } from "@/lib/dashboard/education";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
@@ -38,6 +38,8 @@ export default async function EducationHistoryPage() {
           state={history.state}
           branch={history.branch}
           year={history.year}
+          memberSince={history.memberSince}
+          hasVerifiedCertificate={history.hasVerifiedCertificate}
         />
 
         <div className="rounded-xl border border-app-border bg-white p-5">
@@ -49,19 +51,30 @@ export default async function EducationHistoryPage() {
             <p className="mt-4 font-lp-body text-[13px] text-app-muted">Nothing recorded yet.</p>
           ) : (
             <div className="mt-4 flex flex-col gap-4">
-              {timeline.map((m, i) => (
-                <div key={`${m.label}-${i}`} className="flex gap-3 border-l-2 border-app-border pl-3">
-                  <div>
-                    <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{m.label}</p>
-                    <p className="font-lp-mono text-[11px] text-app-muted">{formatDate(m.date)}</p>
+              {timeline.map((m, i) => {
+                const Icon = m.kind === "certificate" ? Award : GraduationCap;
+                return (
+                  <div key={`${m.label}-${i}`} className="flex items-start gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-app-background text-app-charcoal">
+                      <Icon size={13} />
+                    </span>
+                    <div>
+                      <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{m.label}</p>
+                      <p className="font-lp-mono text-[11px] text-app-muted">{formatDate(m.date)}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        <CertificateUpload />
+        {history.hasVerifiedCertificate && (
+          <CertificateUpload
+            heading="Add another certificate"
+            description="Semester marksheets, extra credentials — PDF, JPG, or PNG, up to 5MB."
+          />
+        )}
       </div>
     </div>
   );

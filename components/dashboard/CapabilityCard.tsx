@@ -18,6 +18,12 @@ function aggregateByDomain(skills: SkillRow[]) {
     .slice(0, MAX_DIMENSIONS);
 }
 
+export function overallCapabilityScore(skills: SkillRow[]): number | null {
+  const dimensions = aggregateByDomain(skills);
+  if (dimensions.length === 0) return null;
+  return Math.round(dimensions.reduce((sum, d) => sum + d.score, 0) / dimensions.length);
+}
+
 export function CapabilityCard({ skills }: { skills: SkillRow[] }) {
   const dimensions = aggregateByDomain(skills);
 
@@ -35,7 +41,7 @@ export function CapabilityCard({ skills }: { skills: SkillRow[] }) {
     );
   }
 
-  const overall = Math.round(dimensions.reduce((sum, d) => sum + d.score, 0) / dimensions.length);
+  const overall = overallCapabilityScore(skills);
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-app-border bg-white p-5">

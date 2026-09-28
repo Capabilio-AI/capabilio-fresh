@@ -38,7 +38,7 @@ export function AvatarUpload({
 
   return (
     <div className="relative shrink-0">
-      <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-app-charcoal font-lp-display text-[20px] font-semibold text-white">
+      <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-app-orange font-lp-display text-[20px] font-semibold text-white ring-2 ring-white/20">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element -- storage-hosted user avatar, arbitrary origin
           <img src={preview} alt="" className="h-full w-full object-cover" />
@@ -63,7 +63,7 @@ export function AvatarUpload({
         className="hidden"
       />
       {error && (
-        <p className="absolute top-full mt-1 w-40 font-lp-body text-[11px] text-app-warning">{error}</p>
+        <p className="absolute top-full mt-1 w-40 font-lp-body text-[11px] text-app-orange">{error}</p>
       )}
     </div>
   );

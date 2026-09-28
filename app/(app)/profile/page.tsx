@@ -7,7 +7,7 @@ import { getSkills } from "@/lib/dashboard/data";
 import { getVaultItems } from "@/lib/vault/data";
 import { getEducationHistory } from "@/lib/dashboard/education";
 import { matchCareersForStudent } from "@/lib/career/match";
-import { CapabilityCard } from "@/components/dashboard/CapabilityCard";
+import { CapabilityCard, overallCapabilityScore } from "@/components/dashboard/CapabilityCard";
 import { AvatarUpload } from "@/components/profile/AvatarUpload";
 
 export const metadata: Metadata = { title: "Profile — Capabilio AI" };
@@ -32,21 +32,40 @@ export default async function ProfilePage() {
   const yearLabel = formatYearSemester(viewer.year);
   const topMatch = careerMatches[0] ?? null;
   const initials = initialsOf(viewer.fullName, viewer.email);
+  const capabilityScore = overallCapabilityScore(skills);
+  const verifiedCount = vaultItems.filter((v) => v.verified).length;
 
   return (
     <div className="max-w-3xl">
-      <div className="h-24 w-full rounded-2xl bg-gradient-to-r from-app-blue to-app-charcoal" />
+      <div className="overflow-hidden rounded-2xl bg-app-charcoal">
+        <div className="flex items-center gap-4 p-6">
+          <AvatarUpload avatarUrl={viewer.avatarUrl} initials={initials} />
+          <div className="min-w-0">
+            <h1 className="font-lp-display text-[22px] font-semibold text-white">{viewer.fullName ?? "Student"}</h1>
+            <p className="font-lp-body text-[13px] text-white/60">{viewer.email}</p>
+            {topMatch && (
+              <span className="mt-1.5 inline-block rounded-full bg-app-orange/15 px-2.5 py-0.5 font-lp-mono text-[11px] font-semibold text-app-orange">
+                Aiming for {topMatch.careerRole}
+              </span>
+            )}
+          </div>
+        </div>
 
-      <div className="-mt-10 flex items-end gap-4 px-1">
-        <AvatarUpload avatarUrl={viewer.avatarUrl} initials={initials} />
-        <div className="pb-1">
-          <h1 className="font-lp-display text-[24px] font-semibold text-app-charcoal">
-            {viewer.fullName ?? "Student"}
-          </h1>
-          <p className="font-lp-body text-[13px] text-app-muted">{viewer.email}</p>
-          {topMatch && (
-            <p className="mt-1 font-lp-mono text-[11px] text-app-orange">Aiming for {topMatch.careerRole}</p>
-          )}
+        <div className="grid grid-cols-3 divide-x divide-white/10 border-t border-white/10">
+          <div className="flex flex-col items-center gap-0.5 py-3">
+            <span className="font-lp-display text-[18px] font-semibold text-white">
+              {capabilityScore ?? "—"}
+            </span>
+            <span className="font-lp-mono text-[10px] uppercase tracking-wide text-white/50">Capability</span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5 py-3">
+            <span className="font-lp-display text-[18px] font-semibold text-white">{vaultItems.length}</span>
+            <span className="font-lp-mono text-[10px] uppercase tracking-wide text-white/50">Vault items</span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5 py-3">
+            <span className="font-lp-display text-[18px] font-semibold text-white">{verifiedCount}</span>
+            <span className="font-lp-mono text-[10px] uppercase tracking-wide text-white/50">Verified</span>
+          </div>
         </div>
       </div>
 
