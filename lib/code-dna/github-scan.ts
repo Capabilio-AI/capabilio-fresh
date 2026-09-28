@@ -320,24 +320,53 @@ async function aggregateAuthorPullRequests(fullName: string, username: string): 
   return { opened, merged };
 }
 
-async function countContributors(owner: string, repo: string): Promise<number | null> {
-  const res = await fetchWithBackoff(`${GITHUB_API}/repos/${owner}/${repo}/contributors?per_page=1&anon=true`);
-  if (!res.ok) return null;
+// A type alias (not `interface`) so this structurally satisfies Supabase's
+// Json type when persisted to a jsonb column — interfaces don't get the
+// implicit index signature that makes an object type Json-assignable.
+export type ContributorSummary = {
+  login: string;
+  contributions: number;
+};
+
+const TOP_CONTRIBUTORS_LIMIT = 10;
+
+/** GitHub's contributors list is already sorted by contribution count, so one request (per_page=10) gets both the top contributors and, via the Link header, the exact total count — no extra call needed. */
+async function fetchContributors(owner: string, repo: string): Promise<{ count: number | null; top: ContributorSummary[] }> {
+  const res = await fetchWithBackoff(`${GITHUB_API}/repos/${owner}/${repo}/contributors?per_page=${TOP_CONTRIBUTORS_LIMIT}&anon=true`);
+  if (!res.ok) return { count: null, top: [] };
+  const body = (await res.json()) as { login?: string; contributions: number; type: string }[];
+  const top = body.filter((c) => c.type !== "Anonymous" && c.login).map((c) => ({ login: c.login as string, contributions: c.contributions }));
   const lastPage = lastPageFromLinkHeader(res.headers.get("link"));
-  if (lastPage) return lastPage;
-  const body = (await res.json()) as unknown[];
-  return Array.isArray(body) ? body.length : null;
+  const count = lastPage ?? body.length;
+  return { count, top };
+}
+
+export function languagePercentages(bytesByLanguage: Record<string, number>): { name: string; percentage: number }[] {
+  const total = Object.values(bytesByLanguage).reduce((sum, b) => sum + b, 0);
+  if (total === 0) return [];
+  return Object.entries(bytesByLanguage)
+    .map(([name, bytes]) => ({ name, percentage: Math.round((bytes / total) * 1000) / 10 }))
+    .sort((a, b) => b.percentage - a.percentage);
+}
+
+async function fetchLanguages(owner: string, repo: string): Promise<{ name: string; percentage: number }[]> {
+  const res = await fetchWithBackoff(`${GITHUB_API}/repos/${owner}/${repo}/languages`);
+  if (!res.ok) return [];
+  const body = (await res.json()) as Record<string, number>;
+  return languagePercentages(body);
 }
 
 export interface FullRepoAnalysis {
   name: string;
   fullName: string;
+  owner: string;
   htmlUrl: string;
   description: string | null;
   isFork: boolean;
   forkSourceFullName: string | null;
   forkSourceUrl: string | null;
   primaryLanguage: string | null;
+  languages: { name: string; percentage: number }[];
   topics: string[];
   license: string | null;
   stars: number;
@@ -351,7 +380,7 @@ export interface FullRepoAnalysis {
   candidatePrMergedCount: number;
   firstCandidateCommitAt: string | null;
   lastCandidateCommitAt: string | null;
-  /** 0-1 share of a recent commit sample authored by the profile owner; null for forks or when commit history isn't readable. */
+  /** 0-1 share of a recent commit sample authored by the profile owner; null when commit history isn't readable. */
   authorshipSample: number | null;
   techSignals: string[];
   hasTests: boolean;
@@ -361,6 +390,7 @@ export interface FullRepoAnalysis {
   hasDatabaseSignal: boolean;
   hasAuthSignal: boolean;
   contributorsCount: number | null;
+  topContributors: ContributorSummary[];
   scanStatus: "ok" | "partial" | "failed";
   scanError: string | null;
 }
@@ -371,15 +401,18 @@ export interface FullRepoAnalysis {
  * can never take down the whole scan (the route continues past it).
  */
 export async function scanOneRepository(username: string, repo: GithubRepoListItem): Promise<FullRepoAnalysis> {
+  const [repoOwner] = repo.full_name.split("/");
   const base: FullRepoAnalysis = {
     name: repo.name,
     fullName: repo.full_name,
+    owner: repoOwner,
     htmlUrl: repo.html_url,
     description: repo.description,
     isFork: repo.fork,
     forkSourceFullName: null,
     forkSourceUrl: null,
     primaryLanguage: repo.language,
+    languages: [],
     topics: repo.topics ?? [],
     license: repo.license?.name ?? null,
     stars: repo.stargazers_count,
@@ -402,18 +435,25 @@ export async function scanOneRepository(username: string, repo: GithubRepoListIt
     hasDatabaseSignal: false,
     hasAuthSignal: false,
     contributorsCount: null,
+    topContributors: [],
     scanStatus: "ok",
     scanError: null,
   };
 
   try {
-    const [owner] = repo.full_name.split("/");
-    const [rootNames, detail, commits, prs, contributors] = await Promise.all([
+    const owner = repoOwner;
+    // Commits are aggregated for every repo, forks included: a candidate
+    // can make substantial original commits on their own fork (e.g.
+    // building on a starter template), and zeroing that out contradicted
+    // the "candidate activity after fork" requirement — the fork itself is
+    // still disclosed via forkSourceFullName, never hidden.
+    const [rootNames, detail, commits, prs, contributors, languages] = await Promise.all([
       listRootContents(owner, repo.name),
       fetchRepoDetail(owner, repo.name, repo.fork),
-      repo.fork ? Promise.resolve<CommitAggregate>({ count: 0, firstAt: null, lastAt: null, authorshipSample: null }) : aggregateAuthorCommits(owner, repo.name, username),
+      aggregateAuthorCommits(owner, repo.name, username),
       aggregateAuthorPullRequests(repo.full_name, username),
-      countContributors(owner, repo.name),
+      fetchContributors(owner, repo.name),
+      fetchLanguages(owner, repo.name),
     ]);
 
     const techSignals = detectTechSignals(rootNames);
@@ -427,6 +467,7 @@ export async function scanOneRepository(username: string, repo: GithubRepoListIt
       ...base,
       forkSourceFullName: detail.forkSourceFullName,
       forkSourceUrl: detail.forkSourceUrl,
+      languages,
       candidateCommitCount: commits.count,
       candidatePrCount: prs.opened,
       candidatePrMergedCount: prs.merged,
@@ -440,7 +481,8 @@ export async function scanOneRepository(username: string, repo: GithubRepoListIt
       hasDependencies: techSignals.length > 0,
       hasDatabaseSignal: dependencySignals.hasDatabaseSignal,
       hasAuthSignal: dependencySignals.hasAuthSignal,
-      contributorsCount: contributors,
+      contributorsCount: contributors.count,
+      topContributors: contributors.top,
       scanStatus: "ok",
     };
   } catch (error) {
@@ -480,6 +522,84 @@ export async function scanGithubProfileFull(
 }
 
 export type { GithubRepoListItem };
+
+/** A stored github_repositories row, shaped for the derivation modules — same fields scanOneRepository produces, read back from the database instead of a live scan. */
+export interface StoredRepositoryRow {
+  name: string;
+  full_name: string;
+  html_url: string;
+  description: string | null;
+  is_fork: boolean;
+  fork_source_full_name: string | null;
+  fork_source_url: string | null;
+  primary_language: string | null;
+  languages: unknown;
+  topics: string[];
+  license: string | null;
+  stars: number;
+  forks_count: number;
+  is_archived: boolean;
+  size_kb: number;
+  repo_created_at: string | null;
+  repo_updated_at: string | null;
+  candidate_commit_count: number;
+  candidate_pr_count: number;
+  candidate_pr_merged_count: number;
+  first_candidate_commit_at: string | null;
+  last_candidate_commit_at: string | null;
+  tech_signals: string[];
+  has_tests: boolean;
+  has_ci: boolean;
+  has_readme: boolean;
+  has_dependencies: boolean;
+  has_database_signal: boolean;
+  has_auth_signal: boolean;
+  contributors_count: number | null;
+  top_contributors: unknown;
+  scan_status: string;
+  scan_error: string | null;
+}
+
+/** Converts a stored row back into the shape the derivation modules and the UI expect — the one place that mapping happens, instead of duplicated per route/page. */
+export function rowToFullRepoAnalysis(r: StoredRepositoryRow): FullRepoAnalysis {
+  return {
+    name: r.name,
+    fullName: r.full_name,
+    owner: r.full_name.split("/")[0],
+    htmlUrl: r.html_url,
+    description: r.description,
+    isFork: r.is_fork,
+    forkSourceFullName: r.fork_source_full_name,
+    forkSourceUrl: r.fork_source_url,
+    primaryLanguage: r.primary_language,
+    languages: (r.languages ?? []) as { name: string; percentage: number }[],
+    topics: r.topics,
+    license: r.license,
+    stars: r.stars,
+    forksCount: r.forks_count,
+    isArchived: r.is_archived,
+    sizeKb: r.size_kb,
+    repoCreatedAt: r.repo_created_at,
+    repoUpdatedAt: r.repo_updated_at,
+    candidateCommitCount: r.candidate_commit_count,
+    candidatePrCount: r.candidate_pr_count,
+    candidatePrMergedCount: r.candidate_pr_merged_count,
+    firstCandidateCommitAt: r.first_candidate_commit_at,
+    lastCandidateCommitAt: r.last_candidate_commit_at,
+    authorshipSample: null,
+    techSignals: r.tech_signals,
+    hasTests: r.has_tests,
+    hasCi: r.has_ci,
+    hasReadme: r.has_readme,
+    hasDependencies: r.has_dependencies,
+    hasDatabaseSignal: r.has_database_signal,
+    hasAuthSignal: r.has_auth_signal,
+    contributorsCount: r.contributors_count,
+    topContributors: (r.top_contributors ?? []) as ContributorSummary[],
+    scanStatus: r.scan_status as "ok" | "partial" | "failed",
+    scanError: r.scan_error,
+  };
+}
 
 /**
  * Searches for other public repositories with the same name, owned by

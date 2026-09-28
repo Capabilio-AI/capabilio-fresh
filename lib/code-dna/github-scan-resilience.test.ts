@@ -97,6 +97,34 @@ describe("scanOneRepository — one repository's failure never fails the whole s
     expect(result.techSignals).toEqual([]);
     expect(result.candidateCommitCount).toBe(0);
   });
+
+  it("still counts the candidate's real commits on a fork, instead of hardcoding 0", async () => {
+    // Regression: a fork can carry substantial original work (e.g. building
+    // on a starter template) — the scan must not zero out commit evidence
+    // just because is_fork is true. The fork itself is still disclosed
+    // separately via forkSourceFullName.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/commits?author=")) {
+          return Promise.resolve(jsonResponse([{ commit: { author: { date: "2026-01-01T00:00:00Z" } } }]));
+        }
+        if (url.includes("/commits?per_page=")) {
+          return Promise.resolve(
+            jsonResponse([{ author: { login: "student" }, commit: { author: { date: "2026-01-01T00:00:00Z" } } }])
+          );
+        }
+        // contributors/languages/repo-detail/root-contents all tolerate an
+        // empty array or object response without throwing.
+        return Promise.resolve(jsonResponse([]));
+      })
+    );
+
+    const result = await scanOneRepository("student", repoListItem({ fork: true }));
+
+    expect(result.isFork).toBe(true);
+    expect(result.candidateCommitCount).toBeGreaterThan(0);
+  });
 });
 
 describe("scanGithubProfileFull — partial coverage", () => {

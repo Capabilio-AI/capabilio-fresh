@@ -84,6 +84,7 @@ export async function POST() {
           fork_source_full_name: r.forkSourceFullName,
           fork_source_url: r.forkSourceUrl,
           primary_language: r.primaryLanguage,
+          languages: r.languages,
           topics: r.topics,
           license: r.license,
           stars: r.stars,
@@ -105,6 +106,7 @@ export async function POST() {
           has_database_signal: r.hasDatabaseSignal,
           has_auth_signal: r.hasAuthSignal,
           contributors_count: r.contributorsCount,
+          top_contributors: r.topContributors,
           scan_status: r.scanStatus,
           scan_error: r.scanError,
         }))

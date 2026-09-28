@@ -5,7 +5,7 @@ import { deriveCapabilityProfile, type ArenaProgrammingEvidence } from "@/lib/co
 import { deriveTechnologyObservations } from "@/lib/code-dna/technology-derivation";
 import { derivePracticeSignals } from "@/lib/code-dna/practice-signals";
 import { deriveAuthenticityAndReview } from "@/lib/code-dna/authenticity-and-review-signals";
-import type { GithubScanResult, RepoAnalysis } from "@/lib/code-dna/github-scan";
+import { rowToFullRepoAnalysis, type GithubScanResult, type RepoAnalysis } from "@/lib/code-dna/github-scan";
 import type { Database } from "@/lib/supabase/types";
 
 type RepositoryRow = Database["public"]["Tables"]["github_repositories"]["Row"];
@@ -31,43 +31,6 @@ function toLegacyGithubScanResult(username: string, repos: RepositoryRow[]): Git
     repos: repoAnalyses,
     pullRequestsOpened: repos.reduce((sum, r) => sum + r.candidate_pr_count, 0),
     pullRequestsMerged: repos.reduce((sum, r) => sum + r.candidate_pr_merged_count, 0),
-  };
-}
-
-function toFullRepoAnalysis(r: RepositoryRow) {
-  return {
-    name: r.name,
-    fullName: r.full_name,
-    htmlUrl: r.html_url,
-    description: r.description,
-    isFork: r.is_fork,
-    forkSourceFullName: r.fork_source_full_name,
-    forkSourceUrl: r.fork_source_url,
-    primaryLanguage: r.primary_language,
-    topics: r.topics,
-    license: r.license,
-    stars: r.stars,
-    forksCount: r.forks_count,
-    isArchived: r.is_archived,
-    sizeKb: r.size_kb,
-    repoCreatedAt: r.repo_created_at,
-    repoUpdatedAt: r.repo_updated_at,
-    candidateCommitCount: r.candidate_commit_count,
-    candidatePrCount: r.candidate_pr_count,
-    candidatePrMergedCount: r.candidate_pr_merged_count,
-    firstCandidateCommitAt: r.first_candidate_commit_at,
-    lastCandidateCommitAt: r.last_candidate_commit_at,
-    authorshipSample: null,
-    techSignals: r.tech_signals,
-    hasTests: r.has_tests,
-    hasCi: r.has_ci,
-    hasReadme: r.has_readme,
-    hasDependencies: r.has_dependencies,
-    hasDatabaseSignal: r.has_database_signal,
-    hasAuthSignal: r.has_auth_signal,
-    contributorsCount: r.contributors_count,
-    scanStatus: r.scan_status as "ok" | "partial" | "failed",
-    scanError: r.scan_error,
   };
 }
 
@@ -126,7 +89,7 @@ export async function GET() {
     connection.scan_status !== "scanning" &&
     (!connection.next_scan_at || new Date(connection.next_scan_at) <= new Date());
 
-  const fullRepos = repos.map(toFullRepoAnalysis);
+  const fullRepos = repos.map(rowToFullRepoAnalysis);
   const technologies = repos.length > 0 ? deriveTechnologyObservations(fullRepos) : [];
   const practices = repos.length > 0 ? derivePracticeSignals(fullRepos) : [];
   const { authenticitySignals, reviewSignals } = repos.length > 0 ? deriveAuthenticityAndReview(fullRepos) : { authenticitySignals: [], reviewSignals: [] };
@@ -151,12 +114,14 @@ export async function GET() {
     repositories: repos.map((r) => ({
       name: r.name,
       fullName: r.full_name,
+      owner: r.full_name.split("/")[0],
       htmlUrl: r.html_url,
       description: r.description,
       isFork: r.is_fork,
       forkSourceFullName: r.fork_source_full_name,
       forkSourceUrl: r.fork_source_url,
       primaryLanguage: r.primary_language,
+      languages: r.languages,
       topics: r.topics,
       license: r.license,
       stars: r.stars,
@@ -178,6 +143,7 @@ export async function GET() {
       hasDatabaseSignal: r.has_database_signal,
       hasAuthSignal: r.has_auth_signal,
       contributorsCount: r.contributors_count,
+      topContributors: r.top_contributors,
       scanStatus: r.scan_status,
       similaritySignals: (similarityRows ?? [])
         .filter((s) => s.repository_id === r.id)

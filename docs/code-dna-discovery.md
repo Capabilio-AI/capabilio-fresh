@@ -363,3 +363,28 @@ codebase's actual pattern and is backed by code-level facts, not a new test harn
 - Mobile/desktop UI check — **not verified**. No browser or credentials are available in this
   background session. Disclosed rather than claimed; the responsive classes follow the same
   Tailwind patterns already used elsewhere in Vault, but visual confirmation is outstanding.
+
+## Post-launch fix — commit count, owner, languages, contributors
+
+A candidate reported a fork showing 0 commits in Code DNA despite having 42 real commits on
+GitHub, and asked for the repo owner, language percentages, and per-contributor breakdown,
+none of which were shown.
+
+**Root cause of the 0-commits bug**: `scanOneRepository` special-cased forks to skip
+`aggregateAuthorCommits` entirely and hardcode `candidateCommitCount: 0` — a leftover
+implementation shortcut that directly contradicted the brief's own requirement to show
+"candidate activity after fork" for forks, not hide it. Fixed by always aggregating commits,
+fork or not; the fork itself is still disclosed via `forkSourceFullName`, never hidden.
+
+**New evidence captured** (migration `017_github_repositories_languages_contributors.sql`):
+- `languages` (jsonb array of `{name, percentage}`) — real bytes-based percentages from
+  GitHub's own `/languages` endpoint, replacing the single `primaryLanguage` string as the
+  detailed breakdown.
+- `top_contributors` (jsonb array of `{login, contributions}`) — captured from the same
+  `/contributors` call already being made for the count (previously discarded the body and
+  kept only the Link-header count), so this adds zero extra API cost.
+- `owner` needed no new column — it's `full_name.split("/")[0]`, derived wherever displayed.
+
+Extracted the duplicated row-to-`FullRepoAnalysis` mapping (previously copy-pasted identically
+in both the GET route and the detail page) into a single `rowToFullRepoAnalysis` in
+`github-scan.ts`, since it now had three more fields to keep in sync in two places.

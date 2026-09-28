@@ -723,6 +723,7 @@ export type Database = {
           id: string
           is_archived: boolean
           is_fork: boolean
+          languages: Json
           last_candidate_commit_at: string | null
           license: string | null
           name: string
@@ -735,6 +736,7 @@ export type Database = {
           size_kb: number
           stars: number
           tech_signals: string[]
+          top_contributors: Json
           topics: string[]
           user_id: string
         }
@@ -759,6 +761,7 @@ export type Database = {
           id?: string
           is_archived?: boolean
           is_fork?: boolean
+          languages?: Json
           last_candidate_commit_at?: string | null
           license?: string | null
           name: string
@@ -771,6 +774,7 @@ export type Database = {
           size_kb?: number
           stars?: number
           tech_signals?: string[]
+          top_contributors?: Json
           topics?: string[]
           user_id: string
         }
@@ -795,6 +799,7 @@ export type Database = {
           id?: string
           is_archived?: boolean
           is_fork?: boolean
+          languages?: Json
           last_candidate_commit_at?: string | null
           license?: string | null
           name?: string
@@ -807,6 +812,7 @@ export type Database = {
           size_kb?: number
           stars?: number
           tech_signals?: string[]
+          top_contributors?: Json
           topics?: string[]
           user_id?: string
         }

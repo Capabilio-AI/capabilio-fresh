@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { rowToFullRepoAnalysis } from "@/lib/code-dna/github-scan";
 import { deriveTechnologyObservations, type TechnologyObservation } from "@/lib/code-dna/technology-derivation";
 import { derivePracticeSignals, type PracticeSignal } from "@/lib/code-dna/practice-signals";
 import { deriveAuthenticityAndReview } from "@/lib/code-dna/authenticity-and-review-signals";
@@ -32,43 +33,6 @@ function formatDate(iso: string | null): string | null {
 
 function daysSince(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-}
-
-function toFullRepoAnalysis(r: RepositoryRow) {
-  return {
-    name: r.name,
-    fullName: r.full_name,
-    htmlUrl: r.html_url,
-    description: r.description,
-    isFork: r.is_fork,
-    forkSourceFullName: r.fork_source_full_name,
-    forkSourceUrl: r.fork_source_url,
-    primaryLanguage: r.primary_language,
-    topics: r.topics,
-    license: r.license,
-    stars: r.stars,
-    forksCount: r.forks_count,
-    isArchived: r.is_archived,
-    sizeKb: r.size_kb,
-    repoCreatedAt: r.repo_created_at,
-    repoUpdatedAt: r.repo_updated_at,
-    candidateCommitCount: r.candidate_commit_count,
-    candidatePrCount: r.candidate_pr_count,
-    candidatePrMergedCount: r.candidate_pr_merged_count,
-    firstCandidateCommitAt: r.first_candidate_commit_at,
-    lastCandidateCommitAt: r.last_candidate_commit_at,
-    authorshipSample: null,
-    techSignals: r.tech_signals,
-    hasTests: r.has_tests,
-    hasCi: r.has_ci,
-    hasReadme: r.has_readme,
-    hasDependencies: r.has_dependencies,
-    hasDatabaseSignal: r.has_database_signal,
-    hasAuthSignal: r.has_auth_signal,
-    contributorsCount: r.contributors_count,
-    scanStatus: r.scan_status as "ok" | "partial" | "failed",
-    scanError: r.scan_error,
-  };
 }
 
 export default async function CodeDnaDetailPage() {
@@ -169,7 +133,7 @@ function CodeDnaEvidence({
   lastScannedAt: string | null;
   repositoriesAnalyzed: number | null;
 }) {
-  const fullRepos = repos.map(toFullRepoAnalysis);
+  const fullRepos = repos.map(rowToFullRepoAnalysis);
   const okRepos = repos.filter((r) => r.scan_status === "ok");
   const failedRepos = repos.filter((r) => r.scan_status === "failed");
   const hasPartialCoverage = failedRepos.length > 0;
@@ -447,6 +411,10 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 function RepoCard({ repo, similarity }: { repo: RepositoryRow; similarity: SimilaritySignalRow[] }) {
+  const owner = repo.full_name.split("/")[0];
+  const languages = (repo.languages ?? []) as { name: string; percentage: number }[];
+  const topContributors = (repo.top_contributors ?? []) as { login: string; contributions: number }[];
+
   return (
     <div className="rounded-lg border border-app-border p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -454,6 +422,7 @@ function RepoCard({ repo, similarity }: { repo: RepositoryRow; similarity: Simil
           <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">
             {repo.name}
           </a>
+          <span className="ml-1.5 font-lp-mono text-[11px] text-app-muted">by {owner}</span>
           {repo.description && <p className="mt-0.5 font-lp-body text-[12.5px] text-app-muted">{repo.description}</p>}
         </div>
         <div className="flex items-center gap-3 font-lp-mono text-[11px] text-app-muted">
@@ -496,6 +465,29 @@ function RepoCard({ repo, similarity }: { repo: RepositoryRow; similarity: Simil
         <Stat label="Active" value={formatDate(repo.repo_updated_at) ?? "—"} />
         <Stat label="Created" value={formatDate(repo.repo_created_at) ?? "—"} />
       </div>
+
+      {languages.length > 0 && (
+        <div className="mt-3 border-t border-app-border pt-3">
+          <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">Languages</p>
+          <div className="mt-1.5 flex h-1.5 w-full overflow-hidden rounded-full bg-app-background">
+            {languages.map((l) => (
+              <span key={l.name} style={{ width: `${l.percentage}%` }} className="h-full bg-app-blue first:rounded-l-full last:rounded-r-full odd:opacity-100 even:opacity-70" />
+            ))}
+          </div>
+          <p className="mt-1.5 font-lp-body text-[11.5px] text-app-muted">
+            {languages.map((l) => `${l.name} ${l.percentage}%`).join(" · ")}
+          </p>
+        </div>
+      )}
+
+      {topContributors.length > 0 && (
+        <div className="mt-3 border-t border-app-border pt-3">
+          <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">Contributors</p>
+          <p className="mt-1.5 font-lp-body text-[11.5px] text-app-muted">
+            {topContributors.map((c) => `${c.login} (${c.contributions})`).join(" · ")}
+          </p>
+        </div>
+      )}
 
       {similarity.length > 0 && (
         <p className="mt-2 flex items-center gap-1 font-lp-mono text-[10.5px] text-app-attention">

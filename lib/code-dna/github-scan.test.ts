@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { detectDependencySignals, detectReadme, detectTechSignals, detectTestDir, normalizeGithubUsername } from "./github-scan";
+import { detectDependencySignals, detectReadme, detectTechSignals, detectTestDir, languagePercentages, normalizeGithubUsername } from "./github-scan";
+
+describe("languagePercentages", () => {
+  it("converts bytes-per-language into rounded percentages, sorted largest first", () => {
+    const result = languagePercentages({ TypeScript: 900, CSS: 100 });
+    expect(result).toEqual([
+      { name: "TypeScript", percentage: 90 },
+      { name: "CSS", percentage: 10 },
+    ]);
+  });
+
+  it("returns an empty list rather than dividing by zero when there is no language data", () => {
+    expect(languagePercentages({})).toEqual([]);
+  });
+});
 
 describe("normalizeGithubUsername", () => {
   it("extracts the username from a pasted profile URL", () => {
