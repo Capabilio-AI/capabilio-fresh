@@ -126,6 +126,10 @@
   --app-warning-container: #fdf0e0;
   --app-attention: #4b5563;
   --app-attention-container: #f1f2f4;
+  --app-rose: #c2410c;
+  --app-rose-container: #fee2e2;
+  --app-purple: #7c3aed;
+  --app-purple-container: #ede9fe;
 }
 
 @theme inline {
@@ -144,6 +148,10 @@
   --color-app-warning-container: var(--app-warning-container);
   --color-app-attention: var(--app-attention);
   --color-app-attention-container: var(--app-attention-container);
+  --color-app-rose: var(--app-rose);
+  --color-app-rose-container: var(--app-rose-container);
+  --color-app-purple: var(--app-purple);
+  --color-app-purple-container: var(--app-purple-container);
 }
 /* ---- End app product design system ---- */
 

@@ -5,14 +5,11 @@ import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
 
 interface Completion {
   id: string;
-  track: "stream" | "domain";
   isCorrect: boolean;
   pointsEarned: number;
   completedAt: string;
   challenge: { id: string; title: string; category: string; difficulty: string } | null;
 }
-
-const TRACK_LABEL: Record<string, string> = { stream: "Stream", domain: "Domain" };
 
 export function ChallengeHistory() {
   const [completions, setCompletions] = useState<Completion[] | null>(null);
@@ -49,7 +46,7 @@ export function ChallengeHistory() {
                 <div>
                   <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">{c.challenge?.title ?? "Deleted challenge"}</p>
                   <p className="mt-0.5 font-lp-mono text-[11px] text-app-muted">
-                    {TRACK_LABEL[c.track]} · {new Date(c.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    {new Date(c.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   </p>
                 </div>
               </div>

@@ -184,3 +184,56 @@ Points/streak (`arena_challenge_stats`), the leaderboard, and the evidence-write
 (`lib/evidence/from-arena-challenges.ts`) were unaffected by this pivot — none of them actually
 depended on the weekly-batch mechanism, only on `completed_at` timestamps and per-challenge
 correctness.
+
+## v4 — drop Domain entirely, colorful cards, starter_code can never leak the solution
+
+Three explicit asks in one message, alongside a reference screenshot of a colorful pastel card
+grid (`>_ EASY` prefix, `+50 Pts` white pill, bold title, short description, colored "Solve
+Task →" link):
+
+1. **Domain removed outright**, not deprioritized. The user's own words: "that is different to
+   stream challenges, because stream challenges is mainly focus on stream and circullam related
+   missions only." Domain (career-based) challenges were a different concept mixed into a
+   feature that should only be about the student's branch/curriculum.
+2. **starter_code must never already solve the problem.** The user's concern was structural, not
+   cosmetic: "if we give the solution in workspace, then what is point of giving that challenges
+   to students." A stronger prompt instruction alone doesn't guarantee this, so
+   `starterCodeLeaksSolution()` (`lib/arena-challenges/generate.ts`) actually runs each generated
+   challenge's `starter_code` through the same `runCode()` a real submission uses and discards
+   any challenge whose unmodified starter code already produces `expected_output`. Generation
+   retries up to `MAX_ATTEMPTS = 10` batches before giving up on topping up a scope's pool.
+3. **Card restyle** to match the reference — `TrackWorkspaceView.tsx`'s grid now cycles each
+   card through a 5-color pastel palette (`CARD_PALETTE`: orange, green, blue, rose, purple —
+   `app-rose`/`app-purple` added to `globals.css` alongside the existing orange/blue/success
+   tokens), with a `>_ {difficulty}` mono prefix, a white points pill, and a colored "Solve
+   Task →" link matching the card's accent.
+
+### What this removed
+
+- `ChallengeTrack` narrowed from `"stream" | "domain"` to `"stream"` only
+  (`lib/arena-challenges/generate.ts`); all domain generation/prompt code deleted, not just
+  unused.
+- `resolveTrackScope` → `resolveStreamScope(supabase, userId)`
+  (`lib/arena-challenges/resolve-scope.ts`) — no more track parameter, no more
+  `getStatedCareerInterest` domain-resolution branch.
+- `app/api/arena/challenges/[track]/submit/route.ts` → flattened to
+  `app/api/arena/challenges/submit/route.ts` (no `[track]` param; hardcodes `track: "stream"`
+  everywhere it used to branch on the URL segment).
+- The Stream/Domain switcher UI in `ArenaChallengesBoard.tsx`, and the `track` prop threaded
+  through `TrackWorkspaceView`/`ChallengeSolvePanel`.
+
+### What changed shape
+
+`GET /api/arena/challenges` now returns a single flat `{scopeKey, scopeLabel, challenges,
+nextChallengeId}` object instead of `{stream: {...}, domain: {...}}` — there's only one track
+left, so the per-track wrapper was pure overhead.
+
+### Verification for the starter_code guarantee
+
+This is a runtime check, not a documentation promise: `starterCodeLeaksSolution()` actually
+executes the model-generated `starter_code` via Wandbox and compares stdout to `expected_output`
+with the same exact-match logic the real submit route uses. A challenge fails this check → it's
+discarded and logged (`console.warn`), never written to `arena_challenges`. This runs at
+generation time, before a student ever sees the challenge, using the identical evaluation path a
+real submission goes through later — so "the starter code doesn't already solve it" is enforced
+the same way correctness itself is: by actually running the code, not by trusting the prompt.

@@ -24,7 +24,7 @@ export const DIFFICULTY_CLASS: Record<string, string> = {
   hard: "bg-app-attention-container text-app-attention",
 };
 
-export function ChallengeSolvePanel({ track, challenge, onDone }: { track: "stream" | "domain"; challenge: ChallengeDetail; onDone: () => void }) {
+export function ChallengeSolvePanel({ challenge, onDone }: { challenge: ChallengeDetail; onDone: () => void }) {
   const [code, setCode] = useState(challenge.starter_code ?? "");
   const [running, setRunning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +50,7 @@ export function ChallengeSolvePanel({ track, challenge, onDone }: { track: "stre
 
   async function handleSubmit() {
     setSubmitting(true);
-    const res = await fetch(`/api/arena/challenges/${track}/submit`, {
+    const res = await fetch("/api/arena/challenges/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ challengeId: challenge.id, code }),

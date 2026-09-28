@@ -5,7 +5,6 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
-import { isChallengeTrack } from "@/lib/arena-challenges/resolve-scope";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 import { advanceStreak } from "@/lib/arena-challenges/streak";
 import { currentWeekStart } from "@/lib/arena-challenges/week";
@@ -14,19 +13,14 @@ import { recordEvidence } from "@/lib/evidence/record";
 
 const BodySchema = z.object({ challengeId: z.string().uuid(), code: z.string().min(1) });
 
-/** Any active challenge for the resolved scope can be submitted directly — there is no weekly batch/reveal gate. "Once passed it locks": a challenge already solved correctly can't be re-awarded points. */
-export async function POST(request: Request, { params }: { params: Promise<{ track: string }> }) {
+/** Any active Stream challenge can be submitted directly — there is no batch/reveal gate. "Once passed it locks": a challenge already solved correctly can't be re-awarded points. */
+export async function POST(request: Request) {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
 
   const rateLimit = await checkRateLimit(auth.userId, { bucket: "arena_challenge_submit", maxRequests: 20, windowSeconds: 60 });
   if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
-
-  const { track } = await params;
-  if (!isChallengeTrack(track)) {
-    return NextResponse.json({ error: "Unknown track" }, { status: 404 });
-  }
 
   const parsed = BodySchema.safeParse(await request.json());
   if (!parsed.success) {
@@ -38,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
     .from("arena_challenges")
     .select("id, title, category, scope_key, language, stdin, expected_output, difficulty, skill_tags")
     .eq("id", parsed.data.challengeId)
-    .eq("track", track)
+    .eq("track", "stream")
     .eq("active", true)
     .maybeSingle();
   if (!challenge) {
@@ -74,7 +68,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
       {
         user_id: auth.userId,
         challenge_id: challenge.id,
-        track,
+        track: "stream",
         scope_key: challenge.scope_key,
         code_submitted: parsed.data.code,
         is_correct: isCorrect,
@@ -114,7 +108,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
     const evidenceRows = deriveArenaChallengeEvidence({
       id: completion.id,
       challengeTitle: challenge.title,
-      track: track,
+      track: "stream",
       scopeKey: challenge.scope_key,
       skillTags: challenge.skill_tags,
       isCorrect,

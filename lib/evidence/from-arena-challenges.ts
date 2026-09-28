@@ -5,7 +5,7 @@ export const ARENA_CHALLENGES_ANALYSIS_VERSION = "arena-challenges.v1";
 export interface ChallengeCompletionForEvidence {
   id: string;
   challengeTitle: string;
-  track: "stream" | "domain";
+  track: "stream";
   scopeKey: string;
   skillTags: string[];
   isCorrect: boolean;
