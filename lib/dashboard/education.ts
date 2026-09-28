@@ -21,7 +21,10 @@ export interface EducationEntry {
 export interface EducationTimelineEvent {
   kind: "enrolled" | "certificate";
   label: string;
-  date: string;
+  /** Human-readable — a bare year ("2015") for entries whose only known date is start_year, a full date for real timestamps (certificate uploads). */
+  displayDate: string;
+  /** Sort key only — never shown as-is (would misrepresent an entry's real start_year as a fabricated day/month). */
+  sortDate: string;
 }
 
 interface MembershipRow {
@@ -36,6 +39,10 @@ interface MembershipRow {
   institutions: { name: string; college_type: string; city: string | null; state: string | null } | null;
 }
 
+function entrySortYear(e: Pick<EducationEntry, "endYear" | "startYear" | "memberSince">): number {
+  return e.endYear ?? e.startYear ?? new Date(e.memberSince).getFullYear();
+}
+
 /**
  * Every institution a student has added — real, multi-entry (schooling,
  * Intermediate, B.Tech, a later M.Tech — same as LinkedIn's Education
@@ -43,7 +50,9 @@ interface MembershipRow {
  * at the DB level (unique on user_id+institution_id, never on user_id
  * alone); only the application layer used to assume a single row.
  * Ordered by the most recent stage of education first (end year, or start
- * year for an ongoing entry, or when it was added as a last resort).
+ * year for an ongoing entry, or when it was added as a last resort — never
+ * by when the row happened to be added to Capabilio, which could put a
+ * just-added "10th" entry ahead of a years-earlier-added B.Tech one).
  */
 export async function getEducationEntries(
   supabase: SupabaseClient<Database>,
@@ -86,13 +95,16 @@ export async function getEducationEntries(
       memberSince: m.created_at,
       hasVerifiedCertificate: verifiedMembershipIds.has(m.id),
     }))
-    .sort((a, b) => {
-      const sortYear = (e: EducationEntry) => e.endYear ?? e.startYear ?? new Date(e.memberSince).getFullYear();
-      return sortYear(b) - sortYear(a) || new Date(b.memberSince).getTime() - new Date(a.memberSince).getTime();
-    });
+    .sort((a, b) => entrySortYear(b) - entrySortYear(a) || new Date(b.memberSince).getTime() - new Date(a.memberSince).getTime());
 }
 
-/** Pure educational timeline: enrollments plus certificates added to the Vault. */
+/**
+ * Pure educational timeline: enrollments plus certificates added to the
+ * Vault, in real chronological order. Enrollment events are anchored to
+ * the entry's own start_year, not when it was added to Capabilio — a
+ * student entering their 10th/Intermediate/B.Tech history in one sitting
+ * today must not have all three "Enrolled" events pile up on today's date.
+ */
 export async function getEducationTimeline(
   supabase: SupabaseClient<Database>,
   userId: string
@@ -100,7 +112,7 @@ export async function getEducationTimeline(
   const [{ data: memberships }, { data: certificates }] = await Promise.all([
     supabase
       .from("institution_memberships")
-      .select("created_at, institutions ( name )")
+      .select("created_at, start_year, institutions ( name )")
       .eq("user_id", userId),
     supabase
       .from("vault_items")
@@ -113,14 +125,33 @@ export async function getEducationTimeline(
   const events: EducationTimelineEvent[] = [];
   for (const m of memberships ?? []) {
     const institution = m.institutions as { name: string } | null;
-    events.push({
-      kind: "enrolled",
-      label: institution ? `Enrolled at ${institution.name}` : "Enrolled",
-      date: m.created_at,
-    });
+    const label = institution ? `Enrolled at ${institution.name}` : "Enrolled";
+    if (m.start_year) {
+      events.push({ kind: "enrolled", label, displayDate: String(m.start_year), sortDate: `${m.start_year}-01-01` });
+    } else {
+      events.push({
+        kind: "enrolled",
+        label,
+        displayDate: new Date(m.created_at).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        sortDate: m.created_at,
+      });
+    }
   }
   for (const cert of certificates ?? []) {
-    events.push({ kind: "certificate", label: `Certificate added: ${cert.title}`, date: cert.created_at });
+    events.push({
+      kind: "certificate",
+      label: `Certificate added: ${cert.title}`,
+      displayDate: new Date(cert.created_at).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      sortDate: cert.created_at,
+    });
   }
-  return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  return events.sort((a, b) => new Date(a.sortDate).getTime() - new Date(b.sortDate).getTime());
 }

@@ -7,10 +7,6 @@ import { EducationHistoryList } from "@/components/education/EducationHistoryLis
 
 export const metadata: Metadata = { title: "Educational History — Capabilio AI" };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
-
 export default async function EducationHistoryPage() {
   const { supabase, user } = await requireAuthedUser();
 
@@ -50,7 +46,7 @@ export default async function EducationHistoryPage() {
                     </span>
                     <div>
                       <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{m.label}</p>
-                      <p className="font-lp-mono text-[11px] text-app-muted">{formatDate(m.date)}</p>
+                      <p className="font-lp-mono text-[11px] text-app-muted">{m.displayDate}</p>
                     </div>
                   </div>
                 );
