@@ -30,7 +30,7 @@ export default async function ArenaHubPage() {
               href="/arena/challenges"
               icon={Swords}
               title="Challenges"
-              description="10-question timed quizzes. Your score updates your Arena rating."
+              description="Weekly Stream and Domain challenges from your branch and chosen career."
               meta={viewer ? `Rating ${viewer.rating}` : "Not rated yet"}
             />
             <FeatureCard

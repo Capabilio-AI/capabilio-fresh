@@ -99,6 +99,167 @@ export type Database = {
           },
         ]
       }
+      arena_challenge_completions: {
+        Row: {
+          challenge_id: string
+          code_submitted: string | null
+          completed_at: string
+          elo_delta: number
+          id: string
+          is_correct: boolean
+          scope_key: string
+          slot_id: string
+          track: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          code_submitted?: string | null
+          completed_at?: string
+          elo_delta?: number
+          id?: string
+          is_correct: boolean
+          scope_key: string
+          slot_id: string
+          track: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          code_submitted?: string | null
+          completed_at?: string
+          elo_delta?: number
+          id?: string
+          is_correct?: boolean
+          scope_key?: string
+          slot_id?: string
+          track?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_challenge_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_challenge_completions_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenge_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_challenge_slots: {
+        Row: {
+          assigned_at: string | null
+          challenge_id: string | null
+          cooldown_until: string | null
+          created_at: string
+          id: string
+          recent_categories: string[]
+          recent_challenge_ids: string[]
+          slot_index: number
+          track: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          challenge_id?: string | null
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          recent_categories?: string[]
+          recent_challenge_ids?: string[]
+          slot_index: number
+          track: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          challenge_id?: string | null
+          cooldown_until?: string | null
+          created_at?: string
+          id?: string
+          recent_categories?: string[]
+          recent_challenge_ids?: string[]
+          slot_index?: number
+          track?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_challenge_slots_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_challenges: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          difficulty: string
+          elo_gain: number
+          expected_output: string
+          id: string
+          language: string
+          objective: string
+          scenario: string
+          scope_key: string
+          skill_tags: string[]
+          starter_code: string | null
+          stdin: string | null
+          time_limit_minutes: number
+          title: string
+          track: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          difficulty: string
+          elo_gain?: number
+          expected_output: string
+          id?: string
+          language: string
+          objective: string
+          scenario: string
+          scope_key: string
+          skill_tags?: string[]
+          starter_code?: string | null
+          stdin?: string | null
+          time_limit_minutes?: number
+          title: string
+          track: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          difficulty?: string
+          elo_gain?: number
+          expected_output?: string
+          id?: string
+          language?: string
+          objective?: string
+          scenario?: string
+          scope_key?: string
+          skill_tags?: string[]
+          starter_code?: string | null
+          stdin?: string | null
+          time_limit_minutes?: number
+          title?: string
+          track?: string
+        }
+        Relationships: []
+      }
       arena_ratings: {
         Row: {
           rating: number
