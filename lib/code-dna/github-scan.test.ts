@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { detectReadme, detectTechSignals, detectTestDir } from "./github-scan";
+import { detectReadme, detectTechSignals, detectTestDir, normalizeGithubUsername } from "./github-scan";
+
+describe("normalizeGithubUsername", () => {
+  it("extracts the username from a pasted profile URL", () => {
+    expect(normalizeGithubUsername("https://github.com/Capabilio-AI")).toBe("Capabilio-AI");
+  });
+
+  it("extracts the username from a pasted repo URL (a common mistake — pasting the repo, not the profile)", () => {
+    expect(normalizeGithubUsername("https://github.com/Capabilio-AI/capabilio-fresh")).toBe("Capabilio-AI");
+  });
+
+  it("works without a protocol or www", () => {
+    expect(normalizeGithubUsername("github.com/Capabilio-AI")).toBe("Capabilio-AI");
+  });
+
+  it("strips a leading @", () => {
+    expect(normalizeGithubUsername("@Capabilio-AI")).toBe("Capabilio-AI");
+  });
+
+  it("leaves a bare username unchanged", () => {
+    expect(normalizeGithubUsername("Capabilio-AI")).toBe("Capabilio-AI");
+  });
+
+  it("trims surrounding whitespace", () => {
+    expect(normalizeGithubUsername("  Capabilio-AI  ")).toBe("Capabilio-AI");
+  });
+});
 
 describe("detectTechSignals", () => {
   it("detects known signal files only, by exact presence — never guesses", () => {

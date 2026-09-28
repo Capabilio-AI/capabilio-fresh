@@ -24,6 +24,19 @@ export interface GithubProfile {
   htmlUrl: string;
 }
 
+/**
+ * Accepts a bare username or a pasted GitHub profile/repo URL and extracts
+ * just the username — pasting the URL from the address bar instead of
+ * typing the username is a common, understandable mistake, not something
+ * that should hard-fail with "not a valid GitHub username."
+ */
+export function normalizeGithubUsername(input: string): string {
+  const trimmed = input.trim();
+  const urlMatch = trimmed.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([^/?#\s]+)/i);
+  if (urlMatch) return urlMatch[1];
+  return trimmed.replace(/^@/, "");
+}
+
 export async function fetchGithubProfile(username: string): Promise<GithubProfile | null> {
   const res = await fetch(`${GITHUB_API}/users/${encodeURIComponent(username)}`, { headers: authHeaders() });
   if (!res.ok) return null;

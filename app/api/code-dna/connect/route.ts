@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
-import { fetchGithubProfile } from "@/lib/code-dna/github-scan";
+import { fetchGithubProfile, normalizeGithubUsername } from "@/lib/code-dna/github-scan";
 import { generateVerificationCode } from "@/lib/code-dna/verification";
 
 const BodySchema = z.object({
@@ -20,7 +20,11 @@ export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(auth.userId, { bucket: "code_dna_connect", maxRequests: 10, windowSeconds: 60 });
   if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
 
-  const parsed = BodySchema.safeParse(await request.json());
+  const body = await request.json();
+  const parsed = BodySchema.safeParse({
+    ...body,
+    username: typeof body.username === "string" ? normalizeGithubUsername(body.username) : body.username,
+  });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }

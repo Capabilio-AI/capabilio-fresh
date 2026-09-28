@@ -210,7 +210,7 @@ export function CodeDnaCard() {
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="GitHub username"
+              placeholder="GitHub username or profile URL"
               className="flex-1 rounded-lg border border-lp-border-hairline bg-lp-surface px-3.5 py-2.5 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"
             />
             <button
