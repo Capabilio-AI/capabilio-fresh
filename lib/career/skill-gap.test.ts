@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { buildCareerMatch, computeSkillGaps } from "./skill-gap";
+import { buildCareerMatch, computeSkillGaps, gapTier } from "./skill-gap";
+
+describe("gapTier", () => {
+  it("is 'met' when the gap is zero or negative", () => {
+    expect(gapTier(0)).toBe("met");
+    expect(gapTier(-5)).toBe("met");
+  });
+
+  it("is 'moderate' for a gap up to 10 points", () => {
+    expect(gapTier(1)).toBe("moderate");
+    expect(gapTier(10)).toBe("moderate");
+  });
+
+  it("is 'critical' for a gap over 10 points", () => {
+    expect(gapTier(11)).toBe("critical");
+  });
+});
 
 describe("computeSkillGaps", () => {
   it("returns zero gap when current score meets or exceeds the requirement", () => {

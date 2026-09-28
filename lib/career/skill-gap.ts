@@ -12,6 +12,15 @@ export interface SkillGap {
   gap: number;
 }
 
+export type GapTier = "critical" | "moderate" | "met";
+
+/** Pure, deterministic bucketing of a gap's magnitude — no AI involved. */
+export function gapTier(gap: number): GapTier {
+  if (gap <= 0) return "met";
+  if (gap <= 10) return "moderate";
+  return "critical";
+}
+
 export type CareerRecommendation = "Ready" | "Explore" | "Long-term pathway";
 
 export interface CareerMatch {
