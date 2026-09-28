@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Award, ExternalLink, FileText, Link2, Loader2, Plus, Sparkles, Trash2, type LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/SkillsTab";
+import { CodeDnaCard } from "@/components/vault/CodeDnaCard";
 
 type ItemType = "certificate" | "project" | "resume" | "link" | "other";
 
@@ -66,6 +67,8 @@ export function VaultTab() {
 
   return (
     <div>
+      <CodeDnaCard />
+
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Vault</h2>
         <button
