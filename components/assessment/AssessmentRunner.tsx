@@ -551,6 +551,7 @@ function SectionView({
   // isAnswered.
   useEffect(() => {
     if (isAnswered) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- tied to the interval subscription below, not a derived value
     setTimeLeft(timeLimit);
     const id = setInterval(() => {
       setTimeLeft((prev) => {

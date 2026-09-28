@@ -264,6 +264,10 @@ function ChallengeView({
 
   useEffect(() => {
     if (isAnswered) return;
+    // Resets the countdown as part of setting up this question's interval
+    // subscription below — tied to the interval's lifecycle, not a plain
+    // derived value, so it belongs in the effect rather than render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTimeLeft(SECONDS_PER_QUESTION);
     const id = setInterval(() => {
       setTimeLeft((prev) => {

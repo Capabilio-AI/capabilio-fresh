@@ -15,14 +15,19 @@ const MIN_QUERY_LENGTH = 1;
 export function BranchAutocomplete({ id, value, onChange }: BranchAutocompleteProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [prevValue, setPrevValue] = useState(value);
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
 
   const matches = value.trim().length >= MIN_QUERY_LENGTH ? searchBranches(value) : [];
 
-  useEffect(() => {
+  // Reset the highlighted option when `value` changes, computed during
+  // render rather than in an effect (react.dev: "Adjusting state when a
+  // prop changes") — avoids the extra render pass a useEffect would cause.
+  if (value !== prevValue) {
+    setPrevValue(value);
     setActiveIndex(-1);
-  }, [value]);
+  }
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {

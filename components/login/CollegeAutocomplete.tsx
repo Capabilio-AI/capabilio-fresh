@@ -34,6 +34,10 @@ export function CollegeAutocomplete({ id, value, onChange, onSelect }: CollegeAu
   useEffect(() => {
     const query = value.trim();
     if (query.length < MIN_QUERY_LENGTH) {
+      // matches/open also get set asynchronously below (debounced network
+      // fetch), so they can't be computed at render time like a plain
+      // derived value — this early clear just cancels a stale result set.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMatches([]);
       setOpen(false);
       return;
