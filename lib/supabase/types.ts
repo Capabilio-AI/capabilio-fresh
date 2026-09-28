@@ -176,12 +176,14 @@ export type Database = {
       arena_challenges: {
         Row: {
           active: boolean
+          answer_unit: string | null
           category: string
           created_at: string
           difficulty: string
           elo_gain: number
           expected_output: string
           id: string
+          kind: string
           language: string
           objective: string
           scenario: string
@@ -195,12 +197,14 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          answer_unit?: string | null
           category: string
           created_at?: string
           difficulty: string
           elo_gain?: number
           expected_output: string
           id?: string
+          kind?: string
           language: string
           objective: string
           scenario: string
@@ -214,12 +218,14 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          answer_unit?: string | null
           category?: string
           created_at?: string
           difficulty?: string
           elo_gain?: number
           expected_output?: string
           id?: string
+          kind?: string
           language?: string
           objective?: string
           scenario?: string

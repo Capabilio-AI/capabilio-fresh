@@ -6,12 +6,18 @@ import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
+import { isNumericAnswerCorrect } from "@/lib/arena-challenges/numeric-answer";
 import { advanceStreak } from "@/lib/arena-challenges/streak";
 import { currentWeekStart } from "@/lib/arena-challenges/week";
 import { deriveArenaChallengeEvidence, ARENA_CHALLENGES_ANALYSIS_VERSION } from "@/lib/evidence/from-arena-challenges";
 import { recordEvidence } from "@/lib/evidence/record";
 
-const BodySchema = z.object({ challengeId: z.string().uuid(), code: z.string().min(1) });
+const BodySchema = z.object({
+  challengeId: z.string().uuid(),
+  code: z.string().min(1).max(20000).optional(),
+  answer: z.string().min(1).max(100).optional(),
+  working: z.string().max(5000).optional(),
+});
 
 /** Any active Stream challenge can be submitted directly — there is no batch/reveal gate. "Once passed it locks": a challenge already solved correctly can't be re-awarded points. */
 export async function POST(request: Request) {
@@ -30,7 +36,7 @@ export async function POST(request: Request) {
   const service = createServiceClient();
   const { data: challenge } = await service
     .from("arena_challenges")
-    .select("id, title, category, scope_key, language, stdin, expected_output, difficulty, skill_tags")
+    .select("id, kind, title, category, scope_key, language, stdin, expected_output, answer_unit, difficulty, skill_tags")
     .eq("id", parsed.data.challengeId)
     .eq("track", "stream")
     .eq("active", true)
@@ -38,21 +44,32 @@ export async function POST(request: Request) {
   if (!challenge) {
     return NextResponse.json({ error: "Challenge not found." }, { status: 404 });
   }
-  if (!isSupportedLanguage(challenge.language)) {
-    return NextResponse.json({ error: "Unsupported language" }, { status: 500 });
+
+  let isCorrect: boolean;
+  let stdout = "";
+  let stderr = "";
+  let submission: string;
+
+  if (challenge.kind === "numeric") {
+    if (!parsed.data.answer) return NextResponse.json({ error: "Enter your answer." }, { status: 400 });
+    isCorrect = isNumericAnswerCorrect(parsed.data.answer, challenge.expected_output);
+    submission = `Answer: ${parsed.data.answer} ${challenge.answer_unit ?? ""}`.trim() + (parsed.data.working ? `\n\nWorking:\n${parsed.data.working}` : "");
+  } else {
+    if (!parsed.data.code) return NextResponse.json({ error: "Write your code first." }, { status: 400 });
+    if (!isSupportedLanguage(challenge.language)) {
+      return NextResponse.json({ error: "Unsupported language" }, { status: 500 });
+    }
+    try {
+      const result = await runCode(challenge.language, parsed.data.code, challenge.stdin ?? "");
+      stdout = result.stdout;
+      stderr = result.stderr || result.compileError;
+    } catch {
+      return NextResponse.json({ error: "Code execution service is unavailable — try again." }, { status: 502 });
+    }
+    isCorrect = stdout.trim() === challenge.expected_output.trim();
+    submission = parsed.data.code;
   }
 
-  let stdout: string;
-  let stderr: string;
-  try {
-    const result = await runCode(challenge.language, parsed.data.code, challenge.stdin ?? "");
-    stdout = result.stdout;
-    stderr = result.stderr || result.compileError;
-  } catch {
-    return NextResponse.json({ error: "Code execution service is unavailable — try again." }, { status: 502 });
-  }
-
-  const isCorrect = stdout.trim() === challenge.expected_output.trim();
   const pointsEarned = isCorrect ? pointsForDifficulty(challenge.difficulty) : 0;
   const nowIso = new Date().toISOString();
 
@@ -70,7 +87,7 @@ export async function POST(request: Request) {
         challenge_id: challenge.id,
         track: "stream",
         scope_key: challenge.scope_key,
-        code_submitted: parsed.data.code,
+        code_submitted: submission,
         is_correct: isCorrect,
         elo_delta: pointsEarned,
         completed_at: nowIso,

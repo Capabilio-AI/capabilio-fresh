@@ -237,3 +237,25 @@ discarded and logged (`console.warn`), never written to `arena_challenges`. This
 generation time, before a student ever sees the challenge, using the identical evaluation path a
 real submission goes through later — so "the starter code doesn't already solve it" is enforced
 the same way correctness itself is: by actually running the code, not by trusting the prompt.
+
+## v5 — calculation workspace for non-IT branches, grid matched to the reference
+
+A Mechanical Engineering student got mechanical-themed challenges that still opened a Python
+editor: every challenge was a coding task. Now:
+
+- **IT cluster** (`it-cluster` scope) keeps coding challenges (unchanged, including the
+  starter-code leak check).
+- **Every other branch** gets `kind = 'numeric'` calculation challenges (migration 023 adds
+  `kind` + `answer_unit`). The workspace shows the problem, a "Your working" area, and a final
+  answer box with the unit; scoring is deterministic, within 1% of the official value
+  (`lib/arena-challenges/numeric-answer.ts`).
+- **The official answer is never the model's arithmetic.** The generator writes a hidden Python
+  reference solution that is executed via `runCode()`; a second, independent model call solves
+  the problem from the student-visible text alone (and prints `UNDERSPECIFIED` if a needed value
+  is missing), and the challenge is kept only if both executed results agree within 1%. In the
+  first live run this rejected a spur-gear contact ratio of 3.30 (correct ≈ 1.56).
+- Existing non-IT code challenges and all domain rows were deactivated (not deleted) — there
+  were zero completions.
+- Grid matched to the reference screenshot: centered heading, two columns, larger cards, a
+  per-workspace description line, difficulty sorted easy → medium → hard. The "Continue"
+  shortcut card (and `recommend-next.ts`) was removed — the reference has no such card.

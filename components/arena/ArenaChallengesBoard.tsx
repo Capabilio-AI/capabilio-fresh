@@ -6,7 +6,7 @@ import { TrackWorkspaceView, type TrackState } from "./TrackWorkspaceView";
 import { ChallengeLeaderboard } from "./ChallengeLeaderboard";
 import { ChallengeHistory } from "./ChallengeHistory";
 
-const EMPTY_STATE: TrackState = { scopeKey: null, scopeLabel: null, challenges: [], nextChallengeId: null };
+const EMPTY_STATE: TrackState = { scopeKey: null, scopeLabel: null, challenges: [] };
 
 type Tab = "workspace" | "leaderboard" | "history";
 
