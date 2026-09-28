@@ -105,7 +105,9 @@ export default async function ProfilePage() {
                 <li key={entry.id}>
                   <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{entry.institutionName}</p>
                   <p className="mt-0.5 font-lp-mono text-[11px] text-app-muted">
-                    {[entry.branch, formatYearSemester(entry.year)].filter(Boolean).join(" · ") || "—"}
+                    {[entry.degree, entry.fieldOfStudy].filter(Boolean).join(", ") ||
+                      [entry.branch, formatYearSemester(entry.year)].filter(Boolean).join(" · ") ||
+                      "—"}
                   </p>
                 </li>
               ))}

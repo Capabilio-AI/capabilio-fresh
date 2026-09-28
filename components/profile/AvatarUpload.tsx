@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2 } from "lucide-react";
+import { compressImage } from "@/lib/image/compress";
 
 export function AvatarUpload({
   avatarUrl,
@@ -22,8 +23,15 @@ export function AvatarUpload({
     if (!file) return;
     setUploading(true);
     setError(null);
+    let upload: Blob = file;
+    try {
+      upload = await compressImage(file);
+    } catch {
+      // Fall back to the original file if compression fails for any reason
+      // (unsupported format, etc.) — the server still validates it.
+    }
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", upload, "avatar.jpg");
     const res = await fetch("/api/profile/avatar", { method: "POST", body: formData });
     setUploading(false);
     if (!res.ok) {

@@ -7,6 +7,11 @@ export interface EducationEntry {
   collegeType: string | null;
   city: string | null;
   state: string | null;
+  degree: string | null;
+  fieldOfStudy: string | null;
+  startYear: number | null;
+  endYear: number | null;
+  /** Legacy fields from the signup trigger — used only as a display fallback until an entry is edited into the degree/fieldOfStudy shape. */
   branch: string | null;
   year: string | null;
   memberSince: string;
@@ -23,18 +28,22 @@ interface MembershipRow {
   id: string;
   branch: string | null;
   year: string | null;
+  degree: string | null;
+  field_of_study: string | null;
+  start_year: number | null;
+  end_year: number | null;
   created_at: string;
   institutions: { name: string; college_type: string; city: string | null; state: string | null } | null;
 }
 
 /**
- * Every institution a student has added — real, multi-entry (a previous
- * school plus a current college, same as LinkedIn's Education section).
- * institution_memberships already allowed multiple rows per user at the DB
- * level (unique on user_id+institution_id, never on user_id alone); only
- * the application layer used to assume a single row. Ordered newest-added
- * first — there's no separate "attended from/to" date in this schema, only
- * when the record was added to Capabilio.
+ * Every institution a student has added — real, multi-entry (schooling,
+ * Intermediate, B.Tech, a later M.Tech — same as LinkedIn's Education
+ * section). institution_memberships already allowed multiple rows per user
+ * at the DB level (unique on user_id+institution_id, never on user_id
+ * alone); only the application layer used to assume a single row.
+ * Ordered by the most recent stage of education first (end year, or start
+ * year for an ongoing entry, or when it was added as a last resort).
  */
 export async function getEducationEntries(
   supabase: SupabaseClient<Database>,
@@ -43,9 +52,10 @@ export async function getEducationEntries(
   const [{ data: memberships }, { data: verifiedCerts }] = await Promise.all([
     supabase
       .from("institution_memberships")
-      .select("id, branch, year, created_at, institutions ( name, college_type, city, state )")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .select(
+        "id, branch, year, degree, field_of_study, start_year, end_year, created_at, institutions ( name, college_type, city, state )"
+      )
+      .eq("user_id", userId),
     supabase
       .from("vault_items")
       .select("institution_membership_id")
@@ -67,11 +77,19 @@ export async function getEducationEntries(
       collegeType: m.institutions.college_type,
       city: m.institutions.city,
       state: m.institutions.state,
+      degree: m.degree,
+      fieldOfStudy: m.field_of_study,
+      startYear: m.start_year,
+      endYear: m.end_year,
       branch: m.branch,
       year: m.year,
       memberSince: m.created_at,
       hasVerifiedCertificate: verifiedMembershipIds.has(m.id),
-    }));
+    }))
+    .sort((a, b) => {
+      const sortYear = (e: EducationEntry) => e.endYear ?? e.startYear ?? new Date(e.memberSince).getFullYear();
+      return sortYear(b) - sortYear(a) || new Date(b.memberSince).getTime() - new Date(a.memberSince).getTime();
+    });
 }
 
 /** Pure educational timeline: enrollments plus certificates added to the Vault. */

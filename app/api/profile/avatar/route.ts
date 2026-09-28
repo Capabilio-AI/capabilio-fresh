@@ -3,7 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
 
 const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
-const MAX_BYTES = 3 * 1024 * 1024;
+// The client always compresses/resizes to ~512px JPEG before this route
+// ever sees the file (see lib/image/compress.ts), so a real photo lands
+// well under 1MB — this is only a backstop against something malformed,
+// never a limit a normal upload should hit.
+const MAX_BYTES = 15 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -20,7 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Only PNG, JPG, or WEBP images are accepted." }, { status: 400 });
   }
   if (file.size === 0 || file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Image must be non-empty and under 3MB." }, { status: 400 });
+    return NextResponse.json({ error: "That image couldn't be processed — try a different photo." }, { status: 400 });
   }
 
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";

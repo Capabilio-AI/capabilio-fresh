@@ -744,9 +744,13 @@ export type Database = {
           branch: string | null
           cohort_id: string | null
           created_at: string
+          degree: string | null
+          end_year: number | null
+          field_of_study: string | null
           id: string
           institution_id: string
           role: Database["public"]["Enums"]["app_role"]
+          start_year: number | null
           status: Database["public"]["Enums"]["membership_status"]
           updated_at: string
           user_id: string
@@ -756,9 +760,13 @@ export type Database = {
           branch?: string | null
           cohort_id?: string | null
           created_at?: string
+          degree?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
           id?: string
           institution_id: string
           role: Database["public"]["Enums"]["app_role"]
+          start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id: string
@@ -768,9 +776,13 @@ export type Database = {
           branch?: string | null
           cohort_id?: string | null
           created_at?: string
+          degree?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
           id?: string
           institution_id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string

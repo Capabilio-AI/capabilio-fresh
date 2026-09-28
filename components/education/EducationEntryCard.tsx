@@ -26,6 +26,20 @@ function formatEnrolledSince(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 }
 
+function subtitleLine(entry: EducationEntry): string {
+  if (entry.degree || entry.fieldOfStudy) {
+    return [entry.degree, entry.fieldOfStudy].filter(Boolean).join(", ");
+  }
+  return [entry.branch, formatYearSemester(entry.year)].filter(Boolean).join(" · ") || "Details not set";
+}
+
+function dateRangeLine(entry: EducationEntry): string | null {
+  if (entry.startYear || entry.endYear) {
+    return `${entry.startYear ?? "—"} – ${entry.endYear ?? "Present"}`;
+  }
+  return null;
+}
+
 type Mode = "view" | "edit" | "verify";
 
 export function EducationEntryCard({
@@ -48,8 +62,10 @@ export function EducationEntryCard({
       <AddEducationHistoryForm
         membershipId={entry.id}
         initialCollegeName={entry.institutionName}
-        initialBranch={entry.branch ?? ""}
-        initialYear={entry.year ?? ""}
+        initialDegree={entry.degree ?? ""}
+        initialFieldOfStudy={entry.fieldOfStudy ?? entry.branch ?? ""}
+        initialStartYear={entry.startYear ? String(entry.startYear) : ""}
+        initialEndYear={entry.endYear ? String(entry.endYear) : ""}
         onSaved={onSaved}
       />
     );
@@ -94,17 +110,15 @@ export function EducationEntryCard({
                 </span>
               )}
             </h2>
-            <p className="mt-0.5 font-lp-body text-[12.5px] text-app-muted">
-              {[entry.branch, formatYearSemester(entry.year)].filter(Boolean).join(" · ") || "Branch not set"}
-            </p>
+            <p className="mt-0.5 font-lp-body text-[12.5px] text-app-muted">{subtitleLine(entry)}</p>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-lp-mono text-[11px] text-app-muted">
+              {dateRangeLine(entry) ?? `Enrolled ${formatEnrolledSince(entry.memberSince)}`}
               {(entry.city || entry.state) && (
                 <span className="flex items-center gap-1">
                   <MapPin size={11} />
                   {[entry.city, entry.state].filter(Boolean).join(", ")}
                 </span>
               )}
-              <span>· Enrolled {formatEnrolledSince(entry.memberSince)}</span>
             </p>
           </div>
         </div>

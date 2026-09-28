@@ -4,28 +4,38 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 
-const VALID_YEARS = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"] as const;
+const CURRENT_YEAR = new Date().getFullYear();
 
-const BodySchema = z.object({
-  membershipId: z.string().uuid().optional(),
-  collegeName: z.string().trim().min(2).max(200),
-  branch: z.string().trim().max(200).optional(),
-  year: z.enum(VALID_YEARS).optional(),
-});
+const BodySchema = z
+  .object({
+    membershipId: z.string().uuid().optional(),
+    collegeName: z.string().trim().min(2).max(200),
+    degree: z.string().trim().max(200).optional(),
+    fieldOfStudy: z.string().trim().max(200).optional(),
+    startYear: z.number().int().min(1980).max(CURRENT_YEAR + 10).optional(),
+    endYear: z.number().int().min(1980).max(CURRENT_YEAR + 10).optional(),
+  })
+  .refine((v) => !v.startYear || !v.endYear || v.endYear >= v.startYear, {
+    message: "End year must be on or after the start year.",
+    path: ["endYear"],
+  });
 
 /**
  * Lets a student add or correct entries in their educational history —
  * previously this was only ever set once, by a DB trigger, at signup, and
- * only as a single record. A student can now add more than one entry
- * (e.g. a previous school plus their current college) — the DB already
- * allowed multiple institution_memberships rows per user (unique on
- * user_id+institution_id, never on user_id alone); only this route used
- * to assume a single row. Passing membershipId edits that specific entry;
- * omitting it always creates a new one. Uses the service client because
- * get_or_create_institution() is only granted to service_role (by
- * design — it's the same institution-dedup logic the signup trigger uses,
- * not something a client should call with an arbitrary string without the
- * dedup guarantee being enforced server-side).
+ * only as a single record shaped for an ongoing B.Tech (branch + semester
+ * `year`). A student can now add more than one entry across every stage of
+ * Indian education (10th, Intermediate, B.Tech, M.Tech/MSc — same as
+ * LinkedIn's Education section), described by degree/fieldOfStudy/
+ * startYear/endYear instead. The DB already allowed multiple
+ * institution_memberships rows per user (unique on user_id+institution_id,
+ * never on user_id alone); only this route used to assume a single row.
+ * Passing membershipId edits that specific entry (leaving its legacy
+ * branch/year columns untouched); omitting it always creates a new one.
+ * Uses the service client because get_or_create_institution() is only
+ * granted to service_role (by design — it's the same institution-dedup
+ * logic the signup trigger uses, not something a client should call with
+ * an arbitrary string without the dedup guarantee enforced server-side).
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -36,7 +46,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { membershipId, collegeName, branch, year } = parsed.data;
+  const { membershipId, collegeName, degree, fieldOfStudy, startYear, endYear } = parsed.data;
 
   const service = createServiceClient();
 
@@ -46,6 +56,14 @@ export async function POST(request: Request) {
   if (institutionError || !institutionId) {
     return NextResponse.json({ error: "Could not resolve institution." }, { status: 500 });
   }
+
+  const fields = {
+    institution_id: institutionId,
+    degree: degree ?? null,
+    field_of_study: fieldOfStudy ?? null,
+    start_year: startYear ?? null,
+    end_year: endYear ?? null,
+  };
 
   if (membershipId) {
     const { data: existing } = await service
@@ -57,10 +75,7 @@ export async function POST(request: Request) {
     if (!existing) {
       return NextResponse.json({ error: "Entry not found." }, { status: 404 });
     }
-    const { error } = await service
-      .from("institution_memberships")
-      .update({ institution_id: institutionId, branch: branch ?? null, year: year ?? null })
-      .eq("id", membershipId);
+    const { error } = await service.from("institution_memberships").update(fields).eq("id", membershipId);
     if (error) return NextResponse.json({ error: "Could not update entry." }, { status: 500 });
     return NextResponse.json({ membershipId });
   }
@@ -69,13 +84,7 @@ export async function POST(request: Request) {
 
   const { data: inserted, error } = await service
     .from("institution_memberships")
-    .insert({
-      user_id: auth.userId,
-      institution_id: institutionId,
-      role: profile?.primary_role ?? "student",
-      branch: branch ?? null,
-      year: year ?? null,
-    })
+    .insert({ user_id: auth.userId, role: profile?.primary_role ?? "student", ...fields })
     .select("id")
     .single();
   if (error || !inserted) return NextResponse.json({ error: "Could not save entry." }, { status: 500 });
