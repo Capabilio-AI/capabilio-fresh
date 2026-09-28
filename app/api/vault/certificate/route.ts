@@ -20,9 +20,21 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("file");
   const title = formData.get("title");
+  const institutionMembershipId = formData.get("institutionMembershipId");
 
   if (!(file instanceof File) || typeof title !== "string" || title.trim().length === 0) {
     return NextResponse.json({ error: "A file and a title are required." }, { status: 400 });
+  }
+  if (typeof institutionMembershipId === "string" && institutionMembershipId.length > 0) {
+    const { data: membership } = await supabase
+      .from("institution_memberships")
+      .select("id")
+      .eq("id", institutionMembershipId)
+      .eq("user_id", auth.userId)
+      .maybeSingle();
+    if (!membership) {
+      return NextResponse.json({ error: "Educational history entry not found." }, { status: 404 });
+    }
   }
   if (!ALLOWED_TYPES.has(file.type)) {
     return NextResponse.json({ error: "Only PDF, JPG, or PNG files are accepted." }, { status: 400 });
@@ -50,6 +62,10 @@ export async function POST(request: Request) {
       title: title.trim(),
       file_path: filePath,
       verified: true,
+      institution_membership_id:
+        typeof institutionMembershipId === "string" && institutionMembershipId.length > 0
+          ? institutionMembershipId
+          : null,
     })
     .select("id, item_type, title, url, description, created_at, verified, file_path")
     .single();

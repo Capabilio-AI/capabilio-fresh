@@ -1,14 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
-export interface EducationHistory {
-  institutionName: string | null;
+export interface EducationEntry {
+  id: string;
+  institutionName: string;
   collegeType: string | null;
   city: string | null;
   state: string | null;
   branch: string | null;
   year: string | null;
-  memberSince: string | null;
+  memberSince: string;
   hasVerifiedCertificate: boolean;
 }
 
@@ -18,7 +19,8 @@ export interface EducationTimelineEvent {
   date: string;
 }
 
-interface MembershipEmbed {
+interface MembershipRow {
+  id: string;
   branch: string | null;
   year: string | null;
   created_at: string;
@@ -26,54 +28,62 @@ interface MembershipEmbed {
 }
 
 /**
- * The student's real institutional record — not a fabricated multi-school
- * history (no such data exists). Only branch/year/institution are ever
- * populated in production; program/department/cohort are a separate,
- * unpopulated schema (Journey Engine work) and are deliberately not
- * surfaced here.
+ * Every institution a student has added — real, multi-entry (a previous
+ * school plus a current college, same as LinkedIn's Education section).
+ * institution_memberships already allowed multiple rows per user at the DB
+ * level (unique on user_id+institution_id, never on user_id alone); only
+ * the application layer used to assume a single row. Ordered newest-added
+ * first — there's no separate "attended from/to" date in this schema, only
+ * when the record was added to Capabilio.
  */
-export async function getEducationHistory(
+export async function getEducationEntries(
   supabase: SupabaseClient<Database>,
   userId: string
-): Promise<EducationHistory> {
-  const [{ data: membership }, { data: verifiedCert }] = await Promise.all([
+): Promise<EducationEntry[]> {
+  const [{ data: memberships }, { data: verifiedCerts }] = await Promise.all([
     supabase
       .from("institution_memberships")
-      .select("branch, year, created_at, institutions ( name, college_type, city, state )")
+      .select("id, branch, year, created_at, institutions ( name, college_type, city, state )")
       .eq("user_id", userId)
-      .maybeSingle(),
+      .order("created_at", { ascending: false }),
     supabase
       .from("vault_items")
-      .select("id")
+      .select("institution_membership_id")
       .eq("user_id", userId)
       .eq("item_type", "certificate")
       .eq("verified", true)
-      .limit(1)
-      .maybeSingle(),
+      .not("institution_membership_id", "is", null),
   ]);
 
-  const m = membership as MembershipEmbed | null;
-  const institution = m?.institutions ?? null;
+  const verifiedMembershipIds = new Set((verifiedCerts ?? []).map((c) => c.institution_membership_id));
 
-  return {
-    institutionName: institution?.name ?? null,
-    collegeType: institution?.college_type ?? null,
-    city: institution?.city ?? null,
-    state: institution?.state ?? null,
-    branch: m?.branch ?? null,
-    year: m?.year ?? null,
-    memberSince: m?.created_at ?? null,
-    hasVerifiedCertificate: Boolean(verifiedCert),
-  };
+  return ((memberships as MembershipRow[] | null) ?? [])
+    .filter((m): m is MembershipRow & { institutions: NonNullable<MembershipRow["institutions"]> } =>
+      Boolean(m.institutions)
+    )
+    .map((m) => ({
+      id: m.id,
+      institutionName: m.institutions.name,
+      collegeType: m.institutions.college_type,
+      city: m.institutions.city,
+      state: m.institutions.state,
+      branch: m.branch,
+      year: m.year,
+      memberSince: m.created_at,
+      hasVerifiedCertificate: verifiedMembershipIds.has(m.id),
+    }));
 }
 
-/** Pure educational timeline: enrollment plus certificates added to the Vault. */
+/** Pure educational timeline: enrollments plus certificates added to the Vault. */
 export async function getEducationTimeline(
   supabase: SupabaseClient<Database>,
   userId: string
 ): Promise<EducationTimelineEvent[]> {
-  const [{ data: membership }, { data: certificates }] = await Promise.all([
-    supabase.from("institution_memberships").select("created_at").eq("user_id", userId).maybeSingle(),
+  const [{ data: memberships }, { data: certificates }] = await Promise.all([
+    supabase
+      .from("institution_memberships")
+      .select("created_at, institutions ( name )")
+      .eq("user_id", userId),
     supabase
       .from("vault_items")
       .select("title, created_at")
@@ -83,8 +93,13 @@ export async function getEducationTimeline(
   ]);
 
   const events: EducationTimelineEvent[] = [];
-  if (membership?.created_at) {
-    events.push({ kind: "enrolled", label: "Enrolled", date: membership.created_at });
+  for (const m of memberships ?? []) {
+    const institution = m.institutions as { name: string } | null;
+    events.push({
+      kind: "enrolled",
+      label: institution ? `Enrolled at ${institution.name}` : "Enrolled",
+      date: m.created_at,
+    });
   }
   for (const cert of certificates ?? []) {
     events.push({ kind: "certificate", label: `Certificate added: ${cert.title}`, date: cert.created_at });

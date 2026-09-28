@@ -1676,6 +1676,7 @@ export type Database = {
           description: string | null
           file_path: string | null
           id: string
+          institution_membership_id: string | null
           item_type: string
           title: string
           url: string | null
@@ -1687,6 +1688,7 @@ export type Database = {
           description?: string | null
           file_path?: string | null
           id?: string
+          institution_membership_id?: string | null
           item_type: string
           title: string
           url?: string | null
@@ -1698,6 +1700,7 @@ export type Database = {
           description?: string | null
           file_path?: string | null
           id?: string
+          institution_membership_id?: string | null
           item_type?: string
           title?: string
           url?: string | null
@@ -1705,6 +1708,13 @@ export type Database = {
           verified?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "vault_items_institution_membership_id_fkey"
+            columns: ["institution_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vault_items_user_id_fkey"
             columns: ["user_id"]

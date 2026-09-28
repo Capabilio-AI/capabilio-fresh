@@ -19,15 +19,17 @@ const INPUT =
   "w-full rounded-lg border border-app-border bg-white px-3.5 py-2.5 font-lp-body text-[13px] text-app-charcoal placeholder:text-app-muted focus:border-app-blue focus:outline-none focus:ring-2 focus:ring-app-blue/25";
 
 export function AddEducationHistoryForm({
-  initialCollegeName,
-  initialBranch,
-  initialYear,
+  membershipId,
+  initialCollegeName = "",
+  initialBranch = "",
+  initialYear = "",
   onSaved,
 }: {
-  initialCollegeName: string;
-  initialBranch: string;
-  initialYear: string;
-  onSaved: () => void;
+  membershipId?: string;
+  initialCollegeName?: string;
+  initialBranch?: string;
+  initialYear?: string;
+  onSaved: (membershipId: string) => void;
 }) {
   const router = useRouter();
   const [collegeName, setCollegeName] = useState(initialCollegeName);
@@ -46,20 +48,28 @@ export function AddEducationHistoryForm({
     const res = await fetch("/api/education/institution", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ collegeName: collegeName.trim(), branch: branch.trim() || undefined, year: year || undefined }),
+      body: JSON.stringify({
+        membershipId,
+        collegeName: collegeName.trim(),
+        branch: branch.trim() || undefined,
+        year: year || undefined,
+      }),
     });
     setSaving(false);
     if (!res.ok) {
       setError("Could not save — check the fields and try again.");
       return;
     }
+    const data = await res.json();
     router.refresh();
-    onSaved();
+    onSaved(data.membershipId);
   }
 
   return (
     <div className="rounded-xl border border-app-border bg-white p-5">
-      <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Add educational history</h2>
+      <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">
+        {membershipId ? "Edit educational history" : "Add educational history"}
+      </h2>
       <div className="mt-3 flex flex-col gap-3">
         <div>
           <label className="mb-1 block font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">

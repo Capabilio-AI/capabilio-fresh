@@ -12,11 +12,13 @@ function stripExtension(fileName: string): string {
 export function CertificateUpload({
   heading = "Add a certificate",
   description = "PDF, JPG, or PNG, up to 5MB. Verified uploads appear in your Vault automatically.",
+  institutionMembershipId,
   onUploaded,
   onSkip,
 }: {
   heading?: string;
   description?: string;
+  institutionMembershipId?: string;
   onUploaded?: () => void;
   onSkip?: () => void;
 }) {
@@ -46,6 +48,7 @@ export function CertificateUpload({
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title.trim());
+    if (institutionMembershipId) formData.append("institutionMembershipId", institutionMembershipId);
 
     const res = await fetch("/api/vault/certificate", { method: "POST", body: formData });
     setUploading(false);

@@ -55,9 +55,14 @@ export function AccountMenu({ viewer }: { viewer: ViewerSummary }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-app-charcoal font-lp-display text-[12px] font-semibold text-white"
+        className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-app-charcoal font-lp-display text-[12px] font-semibold text-white"
       >
-        {initialsOf(viewer.fullName, viewer.email)}
+        {viewer.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- storage-hosted user avatar, arbitrary origin
+          <img src={viewer.avatarUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          initialsOf(viewer.fullName, viewer.email)
+        )}
       </button>
 
       {open && (

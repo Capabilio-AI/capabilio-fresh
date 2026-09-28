@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Award, CalendarClock, GraduationCap } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
-import { getEducationHistory, getEducationTimeline } from "@/lib/dashboard/education";
+import { getEducationEntries, getEducationTimeline } from "@/lib/dashboard/education";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
-import { EducationInstitutionCard } from "@/components/education/EducationInstitutionCard";
-import { CertificateUpload } from "@/components/education/CertificateUpload";
+import { EducationHistoryList } from "@/components/education/EducationHistoryList";
 
 export const metadata: Metadata = { title: "Educational History — Capabilio AI" };
 
@@ -15,8 +14,8 @@ function formatDate(iso: string): string {
 export default async function EducationHistoryPage() {
   const { supabase, user } = await requireAuthedUser();
 
-  const [history, timeline] = await Promise.all([
-    getEducationHistory(supabase, user.id),
+  const [entries, timeline] = await Promise.all([
+    getEducationEntries(supabase, user.id),
     getEducationTimeline(supabase, user.id),
   ]);
 
@@ -24,23 +23,14 @@ export default async function EducationHistoryPage() {
     <div>
       <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Educational History</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-        Your institution and academic timeline — nothing else.
+        Your institutions and academic timeline — nothing else.
       </p>
       <div className="mt-4">
         <DashboardSubNav />
       </div>
 
       <div className="flex flex-col gap-5 pt-6">
-        <EducationInstitutionCard
-          institutionName={history.institutionName}
-          collegeType={history.collegeType}
-          city={history.city}
-          state={history.state}
-          branch={history.branch}
-          year={history.year}
-          memberSince={history.memberSince}
-          hasVerifiedCertificate={history.hasVerifiedCertificate}
-        />
+        <EducationHistoryList entries={entries} />
 
         <div className="rounded-xl border border-app-border bg-white p-5">
           <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-blue">
@@ -68,13 +58,6 @@ export default async function EducationHistoryPage() {
             </div>
           )}
         </div>
-
-        {history.hasVerifiedCertificate && (
-          <CertificateUpload
-            heading="Add another certificate"
-            description="Semester marksheets, extra credentials — PDF, JPG, or PNG, up to 5MB."
-          />
-        )}
       </div>
     </div>
   );
