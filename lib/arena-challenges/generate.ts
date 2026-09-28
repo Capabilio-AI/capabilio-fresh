@@ -12,7 +12,10 @@ import { completeJson } from "@/lib/ai/groq";
 const SUPPORTED_LANGUAGES = ["python", "c"] as const;
 
 const BATCH_SIZE = 4;
-const MIN_POOL_SIZE = 6;
+// A week can unlock up to 10 tasks at once (see points.ts's
+// TASK_COUNT_OPTIONS) -- the pool needs headroom above that so a weekly
+// reveal isn't always just "everything that exists."
+const MIN_POOL_SIZE = 14;
 
 const GeneratedChallengeSchema = z.object({
   title: z.string().min(1),
@@ -28,15 +31,15 @@ const GeneratedChallengeSchema = z.object({
 });
 const BatchSchema = z.object({ challenges: z.array(GeneratedChallengeSchema).min(1) });
 
-function streamSystemPrompt(branch: string): string {
-  return `You write short, real, solvable coding challenges for a "${branch}" engineering/science student on a
+function streamSystemPrompt(promptLabel: string): string {
+  return `You write short, real, solvable coding challenges for a "${promptLabel}" engineering/science student on a
 career-readiness platform's Arena. These are Stream challenges: practical, branch-relevant problems a
-${branch} student should be able to reason through with basic programming (Python or C), not abstract
+${promptLabel} student should be able to reason through with basic programming (Python or C), not abstract
 computer-science trivia unrelated to their field.
 
-Ground each challenge in something a ${branch} student would actually compute or simulate in their coursework
+Ground each challenge in something a ${promptLabel} student would actually compute or simulate in their coursework
 or early career (e.g. a numeric calculation, a simple data-processing task, a basic simulation relevant to
-${branch}) -- not a generic LeetCode-style array/string puzzle unless ${branch} genuinely is a CS-adjacent field.
+${promptLabel}) -- not a generic LeetCode-style array/string puzzle unless ${promptLabel} genuinely is a CS-adjacent field.
 
 Respond with JSON only, matching this exact shape:
 {
@@ -104,11 +107,17 @@ export type ChallengeTrack = "stream" | "domain";
  * from the challenges API route when a scope's pool is thin) without
  * regenerating what already exists, same top-up shape as
  * generateQuestionBankForSection.
+ *
+ * `scopeKey` is the storage/lookup key (e.g. "it-cluster" or
+ * "branch-mba") -- `promptLabel` is what actually goes in front of the
+ * model (e.g. "Computer Science / IT / AI-ML" or "MBA"), since a cluster
+ * key isn't a real subject to write challenges about.
  */
 export async function ensureChallengePool(
   serviceClient: SupabaseClient<Database>,
   track: ChallengeTrack,
-  scopeKey: string
+  scopeKey: string,
+  promptLabel: string
 ): Promise<{ inserted: number }> {
   const { count } = await serviceClient
     .from("arena_challenges")
@@ -126,7 +135,7 @@ export async function ensureChallengePool(
     .eq("track", track)
     .eq("scope_key", scopeKey);
 
-  const systemPrompt = track === "stream" ? streamSystemPrompt(scopeKey) : domainSystemPrompt(scopeKey);
+  const systemPrompt = track === "stream" ? streamSystemPrompt(promptLabel) : domainSystemPrompt(promptLabel);
   const target = MIN_POOL_SIZE - existing;
   const generated: z.infer<typeof GeneratedChallengeSchema>[] = [];
   const avoidTitles = (existingTitles ?? []).map((t) => t.title);

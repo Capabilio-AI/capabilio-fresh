@@ -108,9 +108,9 @@ export type Database = {
           id: string
           is_correct: boolean
           scope_key: string
-          slot_id: string
           track: string
           user_id: string
+          week_id: string | null
         }
         Insert: {
           challenge_id: string
@@ -120,9 +120,9 @@ export type Database = {
           id?: string
           is_correct: boolean
           scope_key: string
-          slot_id: string
           track: string
           user_id: string
+          week_id?: string | null
         }
         Update: {
           challenge_id?: string
@@ -132,9 +132,9 @@ export type Database = {
           id?: string
           is_correct?: boolean
           scope_key?: string
-          slot_id?: string
           track?: string
           user_id?: string
+          week_id?: string | null
         }
         Relationships: [
           {
@@ -145,60 +145,79 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "arena_challenge_completions_slot_id_fkey"
-            columns: ["slot_id"]
+            foreignKeyName: "arena_challenge_completions_week_id_fkey"
+            columns: ["week_id"]
             isOneToOne: false
-            referencedRelation: "arena_challenge_slots"
+            referencedRelation: "arena_challenge_weeks"
             referencedColumns: ["id"]
           },
         ]
       }
-      arena_challenge_slots: {
+      arena_challenge_stats: {
         Row: {
-          assigned_at: string | null
-          challenge_id: string | null
-          cooldown_until: string | null
-          created_at: string
-          id: string
-          recent_categories: string[]
-          recent_challenge_ids: string[]
-          slot_index: number
-          track: string
+          current_streak: number
+          last_completed_week: string | null
+          longest_streak: number
+          points: number
+          tasks_completed: number
+          updated_at: string
           user_id: string
         }
         Insert: {
-          assigned_at?: string | null
-          challenge_id?: string | null
-          cooldown_until?: string | null
-          created_at?: string
-          id?: string
-          recent_categories?: string[]
-          recent_challenge_ids?: string[]
-          slot_index: number
-          track: string
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
-          assigned_at?: string | null
-          challenge_id?: string | null
-          cooldown_until?: string | null
-          created_at?: string
-          id?: string
-          recent_categories?: string[]
-          recent_challenge_ids?: string[]
-          slot_index?: number
-          track?: string
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "arena_challenge_slots_challenge_id_fkey"
-            columns: ["challenge_id"]
-            isOneToOne: false
-            referencedRelation: "arena_challenges"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      arena_challenge_weeks: {
+        Row: {
+          challenge_ids: string[]
+          id: string
+          revealed_at: string | null
+          spun_at: string
+          status: string
+          task_count: number
+          track: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          challenge_ids?: string[]
+          id?: string
+          revealed_at?: string | null
+          spun_at?: string
+          status?: string
+          task_count: number
+          track: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          challenge_ids?: string[]
+          id?: string
+          revealed_at?: string | null
+          spun_at?: string
+          status?: string
+          task_count?: number
+          track?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
       }
       arena_challenges: {
         Row: {

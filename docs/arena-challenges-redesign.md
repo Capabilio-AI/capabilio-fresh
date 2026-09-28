@@ -5,10 +5,53 @@
 Arena's Challenges section (`/arena/challenges`) currently serves generic 10-question MCQ
 quizzes pulled from `question_bank`, disconnected from the student's branch or career. Replace
 it with two tracks — Stream (the student's own branch) and Domain (their chosen career) — no
-MCQs. Every week each track gives the student a real animated spinning-wheel pick from a
-rotating pool, ported from the equivalent mechanism in the sibling `Capabilio-new` codebase.
-"Common challenges" = the shared rotation mechanism powering both tracks, not a third category
-(confirmed with the user).
+MCQs.
+
+## v2 — wheel + scratch card + weekly batch (supersedes the first pass's per-slot rotation)
+
+The user shared reference screenshots of a wheel → scratch card → task-grid → leaderboard →
+history flow and asked for the same mechanic, plus two things confirmed via clarifying
+questions:
+
+1. **Branch clustering for Stream challenges**: CSE, IT, AI/ML, AI & DS, Data Science, and CSBS
+   share one "IT cluster" pool (`lib/arena-challenges/branch-clusters.ts`, reusing
+   `BRANCH_CATALOG`'s own names/keywords rather than re-declaring them). Every other branch
+   (ECE, EEE, Mech, Civil, MBA, MCA, ...) gets its own distinct pool via slugification — they're
+   too different from each other and from IT to share content meaningfully.
+2. **One weekly batch, not independent slots**: a single spin per track per week picks a task
+   count (5-10, matching the reference wheel's segments), a scratch card reveals it, and that
+   many challenges unlock together as a grid — not the first pass's 3 independently-rotating
+   slots. `arena_challenge_weeks` (one row per user/track/week) replaced
+   `arena_challenge_slots` outright (020_arena_challenge_weekly_batches.sql); no real data
+   existed in the slot table yet, so it was dropped rather than migrated in place.
+
+"Common challenges" in the user's phrasing turned out to mean the shared rotation/generation
+*mechanism* behind both Stream and Domain, not a third challenge category — confirmed, not
+guessed.
+
+### Points, streak, and the leaderboard — genuinely new
+
+- `arena_challenge_stats` (one row per user): running `points`, `tasks_completed`,
+  `current_streak`, `longest_streak` — a different, simpler mechanism from `arena_ratings`'
+  ELO, matching the reference's Easy/Medium/Hard → 50/70/100 point scale
+  (`lib/arena-challenges/points.ts`, computed server-side from difficulty at submit time, never
+  trusted from the AI generator's own output).
+- Streak advances at most once per week regardless of how many challenges are solved that week,
+  and resets (not decrements) after a skipped week (`lib/arena-challenges/streak.ts`, pure,
+  tested against `lib/arena-challenges/week.ts`'s Monday-anchored week boundaries).
+- `GET /api/arena/challenges/leaderboard?scope=global|branch` — Global or same-branch-as-viewer
+  (the student's own literal branch, a finer grain than the shared IT-cluster pool), reusing the
+  existing `get_public_profiles` RPC the quiz leaderboard already depends on.
+- `GET /api/arena/challenges/history` — past (non-current) revealed weeks with solved-count,
+  backing the reference's History tab.
+
+### AI-generation-failure fallback (explicit requirement)
+
+The reveal (`POST /api/arena/challenges/[track]/scratch`) tries to top up the catalog via AI
+first, but the top-up call is wrapped so a Groq failure never blocks the reveal — it just
+proceeds with whatever's already stored in `arena_challenges` for that scope. Only a genuinely
+empty pool (first-ever request for a scope, and generation also failing) produces an honest
+"not ready yet" error instead of either crashing or faking a reveal.
 
 ## What already exists and is reused, not duplicated
 
@@ -32,14 +75,19 @@ rotating pool, ported from the equivalent mechanism in the sibling `Capabilio-ne
 ## What's genuinely new
 
 - `arena_challenges` — the challenge catalog, scoped by `track` (`'stream' | 'domain'`) and
-  `scope_key` (a branch name or a `career_role`). Nothing existing models this.
-- `arena_challenge_slots` — per-student, per-track rotating slots (3 per track). Ported directly
-  from Capabilio-new's `useDomainChallengeSlots.js` selection algorithm (4-tier fallback:
-  different-category-and-unseen → different-category → unseen → anything), with the cooldown
-  changed from 24h to 7 days per this brief's "every week."
+  `scope_key` (an IT-cluster key, a per-branch key, or a `career_role`). Nothing existing models
+  this.
+- `arena_challenge_weeks` — one row per (user, track, week), holding the wheel's task-count
+  result and, once scratched, the picked challenge ids (`lib/arena-challenges/batch-select.ts`
+  for the picking logic — prefers challenges not used the previous week, falls back to reuse
+  rather than under-delivering, never returns more than the pool actually has).
 - `arena_challenge_completions` — the attempt record for a Stream/Domain challenge, source table
   for a new evidence writer (`lib/evidence/from-arena-challenges.ts`, extending today's evidence
-  work rather than duplicating `from-arena.ts`'s quiz-shaped logic).
+  work rather than duplicating `from-arena.ts`'s quiz-shaped logic). Unique on
+  `(week_id, challenge_id)` so a resubmission updates the same row instead of double-awarding
+  points on retry.
+- `arena_challenge_stats` — running points/streak per student, public-read like `arena_ratings`
+  (a leaderboard needs to see everyone's numbers).
 
 ## Explicitly NOT touched
 
@@ -54,15 +102,15 @@ rotating pool, ported from the equivalent mechanism in the sibling `Capabilio-ne
   engine's own `CodingPanel`, is the right scope for v1; a full IDE-in-browser is a separate,
   much larger undertaking not requested here.
 
-## Rating impact — simple and separate from the quiz's ELO
+## Points impact — simple and separate from the quiz's ELO
 
-A correct Stream/Domain challenge submission adds that challenge's own fixed `elo_gain`
-(10-30, set per challenge at generation time) directly to `arena_ratings.rating` via the
-service-role client. Deliberately not routed through `finish_arena_challenge` (that RPC's shape
-— `answered_count`/`correct_count`/`question_order` — is quiz-specific and left untouched) and
-deliberately not a new ELO formula (a single pass/fail challenge isn't a "match" in the ELO
-sense a quiz score is). Documented as a distinct, simpler mechanism, not a fabricated second ELO
-system.
+A correct Stream/Domain challenge submission adds a fixed, difficulty-based point value
+(50/70/100, `lib/arena-challenges/points.ts`) to `arena_challenge_stats.points`, not to
+`arena_ratings.rating`. Deliberately not routed through `finish_arena_challenge` (that RPC's
+shape — `answered_count`/`correct_count`/`question_order` — is quiz-specific and left untouched)
+and deliberately not folded into the quiz's ELO (a single pass/fail challenge isn't a "match" in
+the ELO sense a quiz score is). A separate, simpler, and — per the reference screenshots — more
+legible number for this specific gamification loop.
 
 ## Wheel UI
 
