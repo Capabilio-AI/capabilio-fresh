@@ -1,6 +1,9 @@
+"use client";
+
 import { gapTier, type CareerMatch, type GapTier, type SkillGap } from "@/lib/career/skill-gap";
 import { DECAY_LABEL, type SkillPracticeRecency } from "@/lib/career/skill-decay";
 import { EmptyState } from "@/components/dashboard/SkillsTab";
+import { SkillRadarChart } from "@/components/dashboard/SkillRadarChart";
 
 const RECOMMENDATION_CLASSES: Record<CareerMatch["recommendation"], string> = {
   Ready: "bg-lp-success-container text-lp-on-success-container",
@@ -100,6 +103,23 @@ export function SkillGapsTab({
                   </span>
                 ))}
             </div>
+
+            {match.skillGaps.length >= 3 && (
+              <div className="mt-4">
+                <SkillRadarChart
+                  data={match.skillGaps.map((g) => ({
+                    subject: g.skill,
+                    current: g.current ?? 0,
+                    required: g.required,
+                  }))}
+                  series={[
+                    { key: "required", label: "Required", color: "#9ca3af" },
+                    { key: "current", label: "Your level", color: "#3457a6" },
+                  ]}
+                  height={280}
+                />
+              </div>
+            )}
 
             <div className="mt-4 flex flex-col gap-5">
               {(["critical", "moderate", "met"] as const)

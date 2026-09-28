@@ -5,16 +5,6 @@ import { AddEducationHistoryForm } from "./AddEducationHistoryForm";
 import { CertificateUpload } from "./CertificateUpload";
 import type { EducationEntry } from "@/lib/dashboard/education";
 
-const COLLEGE_TYPE_LABEL: Record<string, string> = {
-  engineering: "Engineering & Technology (AICTE)",
-  medical: "Medical & Health Sciences",
-  management: "Management Studies (AICTE)",
-  arts_science: "Arts & Science",
-  pharmacy: "Pharmacy (AICTE)",
-  law: "Law",
-  other: "General / Other",
-};
-
 function formatYearSemester(year: string | null): string | null {
   if (!year) return null;
   const [y, s] = year.split("-");
@@ -132,25 +122,17 @@ export function EducationEntryCard({
         </button>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 border-t border-app-border pt-4 sm:grid-cols-2">
-        <div>
-          <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">College type</p>
-          <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">
-            {entry.collegeType ? (COLLEGE_TYPE_LABEL[entry.collegeType] ?? entry.collegeType) : "—"}
-          </p>
+      {!entry.hasVerifiedCertificate && (
+        <div className="mt-4 flex justify-end border-t border-app-border pt-4">
+          <button
+            type="button"
+            onClick={onVerify}
+            className="rounded-lg bg-app-blue px-3 py-1.5 font-lp-mono text-[11px] font-semibold text-white"
+          >
+            Verify with a certificate
+          </button>
         </div>
-        {!entry.hasVerifiedCertificate && (
-          <div className="flex items-center justify-start sm:justify-end">
-            <button
-              type="button"
-              onClick={onVerify}
-              className="rounded-lg bg-app-blue px-3 py-1.5 font-lp-mono text-[11px] font-semibold text-white"
-            >
-              Verify with a certificate
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

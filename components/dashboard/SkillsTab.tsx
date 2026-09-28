@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SkillRow } from "@/lib/dashboard/data";
 import { scoreTier, TIER_BAR, TIER_TEXT } from "@/components/dashboard/tier";
+import { SkillRadarChart } from "@/components/dashboard/SkillRadarChart";
 
 const CONFIDENCE_LABEL: Record<SkillRow["confidence"], string> = {
   low: "Low confidence",
@@ -34,8 +35,19 @@ export function SkillsTab({
     byDomain.set(skill.domain, bucket);
   }
 
+  const radarData = [...byDomain.entries()].map(([domain, domainSkills]) => ({
+    subject: domain,
+    score: Math.round(domainSkills.reduce((sum, s) => sum + s.score, 0) / domainSkills.length),
+  }));
+
   return (
     <div className="flex flex-col gap-6">
+      {radarData.length >= 3 && (
+        <div className="rounded-xl border border-lp-border-hairline bg-lp-surface-card p-4 shadow-sm">
+          <SkillRadarChart data={radarData} series={[{ key: "score", label: "Average score", color: "#3457a6" }]} />
+        </div>
+      )}
+
       {canFilter && (
         <div className="flex items-center gap-2">
           <button

@@ -60,7 +60,10 @@ export function CodeDnaCard() {
     setBusy(false);
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error?.username?.[0] ?? data.error ?? "Couldn't connect that username.");
+      // data.error is a Zod .flatten() object ({formErrors, fieldErrors})
+      // on validation failure, or a plain string on every other failure —
+      // never render it directly, it's not always a string.
+      setError(data.error?.fieldErrors?.username?.[0] ?? (typeof data.error === "string" ? data.error : null) ?? "Couldn't connect that username.");
       return;
     }
     await load();
