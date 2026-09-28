@@ -16,7 +16,7 @@ export default async function SettingsPage() {
   const viewer = await getViewerSummary(supabase, user.id);
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Settings</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Manage your account, profile, and security.</p>
 

@@ -57,7 +57,7 @@ export default async function CodeDnaDetailPage() {
     : { data: [] as SimilaritySignalRow[] };
 
   return (
-    <div className="max-w-4xl">
+    <div className="mx-auto max-w-4xl">
       <Link href="/dashboard/vault" className="flex items-center gap-1.5 font-lp-mono text-[11px] text-app-muted hover:text-app-charcoal">
         <ArrowLeft size={12} />
         Back to Vault
