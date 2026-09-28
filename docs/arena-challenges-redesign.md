@@ -133,3 +133,54 @@ architecture.
 A student with no branch on record, or no stated career interest yet, sees a real empty state
 directing them to set it (Education/Profile for branch, the career-interest assessment step for
 career) — never a fake/generic challenge pool standing in for "we don't know your branch yet."
+
+## v3 — full grid, no wheel at all (supersedes v2's wheel/scratch/weekly-batch)
+
+After v2 shipped, the user was unsatisfied with the wheel and pointed at
+`Capabilio-new`'s real `ArenaCollegeStream.jsx` a second time, more specifically:
+"look for challenges, arenacollegestream, all other pages." Reading that source directly (not
+summarizing it via a fork this time) showed the real, production reference has **no wheel, no
+scratch card, and no weekly batch reveal at all** — the earlier fork's report undersold this
+because it was scoped to the rotation *algorithm*, not the actual page layout. The real pattern,
+confirmed by reading `CollegeWorkspaceCard`/`ProfessionalWorkspaceCard`/the `domainMainTab ===
+"workspace"` render block directly:
+
+- A full grid of every active challenge for the scope, always visible, pickable in any order —
+  "Pick any mission below. Once passed it locks — no resubmitting a completed task."
+- An optional "Continue" card above the grid, showing one recommended next challenge as a
+  one-click shortcut — never a gate. Capabilio-new's own comment: "the old summary card
+  duplicated 'today's task' info the grid already shows per-card" — i.e. even *they* trimmed it
+  down over time in favor of the grid being the primary surface.
+- A per-role/branch quota-and-countdown mechanic (`QuotaLockedNotice`) gates the *Continue
+  shortcut* specifically, tied to their subscription tiers — not ported, since Capabilio-fresh
+  has no paid-tier system and inventing one would be well out of scope for this request.
+
+Confirmed with the user before rebuilding (a third structural pivot on this feature was too
+costly to guess wrong): drop the wheel/scratch/weekly-batch entirely, show the full grid
+immediately, keep an optional "Continue" shortcut with no gating attached to it.
+
+### What this removed
+
+- `arena_challenge_weeks` (dropped, migration 022 — again no real data existed yet), and the
+  `POST /api/arena/challenges/[track]/spin` / `.../scratch` routes.
+- `components/arena/SpinWheel.tsx`, `ScratchCard.tsx`, the old `ActiveWeekView.tsx`.
+- `lib/arena-challenges/batch-select.ts` (weekly-batch picking) and `points.ts`'s
+  `pickTaskCount`/`TASK_COUNT_OPTIONS` (the wheel's random outcome).
+
+### What replaced it
+
+- `lib/arena-challenges/recommend-next.ts` — pure, picks the easiest/oldest unsolved challenge
+  as the "Continue" shortcut. Not a gate: every other unsolved challenge is already directly
+  clickable in the grid below it.
+- `arena_challenge_completions` is now keyed on `(user_id, challenge_id)` directly — "once
+  passed it locks" per challenge, not per weekly batch.
+- `GET /api/arena/challenges` returns the full active-challenge list per track (with per-
+  challenge `solved` state) plus a `nextChallengeId` recommendation, instead of one week's
+  worth of hidden-then-revealed picks.
+- Tab renamed "Active Week" → "Workspace" to match Capabilio-new's own naming
+  (`domainMainTab: "workspace"`).
+
+Points/streak (`arena_challenge_stats`), the leaderboard, and the evidence-writer
+(`lib/evidence/from-arena-challenges.ts`) were unaffected by this pivot — none of them actually
+depended on the weekly-batch mechanism, only on `completed_at` timestamps and per-challenge
+correctness.

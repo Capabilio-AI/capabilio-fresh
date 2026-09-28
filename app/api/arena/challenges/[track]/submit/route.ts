@@ -14,6 +14,7 @@ import { recordEvidence } from "@/lib/evidence/record";
 
 const BodySchema = z.object({ challengeId: z.string().uuid(), code: z.string().min(1) });
 
+/** Any active challenge for the resolved scope can be submitted directly — there is no weekly batch/reveal gate. "Once passed it locks": a challenge already solved correctly can't be re-awarded points. */
 export async function POST(request: Request, { params }: { params: Promise<{ track: string }> }) {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
@@ -33,25 +34,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
   }
 
   const service = createServiceClient();
-  const { data: week } = await service
-    .from("arena_challenge_weeks")
-    .select("id, status, challenge_ids")
-    .eq("user_id", auth.userId)
-    .eq("track", track)
-    .eq("week_start", currentWeekStart())
-    .maybeSingle();
-
-  if (!week || week.status !== "revealed" || !week.challenge_ids.includes(parsed.data.challengeId)) {
-    return NextResponse.json({ error: "That challenge isn't part of your current revealed week." }, { status: 404 });
-  }
-
   const { data: challenge } = await service
     .from("arena_challenges")
     .select("id, title, category, scope_key, language, stdin, expected_output, difficulty, skill_tags")
     .eq("id", parsed.data.challengeId)
-    .single();
+    .eq("track", track)
+    .eq("active", true)
+    .maybeSingle();
   if (!challenge) {
-    return NextResponse.json({ error: "Challenge no longer exists." }, { status: 404 });
+    return NextResponse.json({ error: "Challenge not found." }, { status: 404 });
   }
   if (!isSupportedLanguage(challenge.language)) {
     return NextResponse.json({ error: "Unsupported language" }, { status: 500 });
@@ -71,15 +62,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
   const pointsEarned = isCorrect ? pointsForDifficulty(challenge.difficulty) : 0;
   const nowIso = new Date().toISOString();
 
-  // Points/streak are only ever awarded the first time this (week,
-  // challenge) pair goes correct -- a resubmission (retry after a wrong
+  // Points/streak are only ever awarded the first time this challenge goes
+  // correct for this student -- a resubmission (retry after a wrong
   // answer, or re-running an already-solved one) must never double-count.
-  const { data: existing } = await service
-    .from("arena_challenge_completions")
-    .select("is_correct")
-    .eq("week_id", week.id)
-    .eq("challenge_id", challenge.id)
-    .maybeSingle();
+  const { data: existing } = await service.from("arena_challenge_completions").select("is_correct").eq("user_id", auth.userId).eq("challenge_id", challenge.id).maybeSingle();
   const alreadyAwarded = existing?.is_correct === true;
 
   const { data: completion, error: completionError } = await service
@@ -87,7 +73,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
     .upsert(
       {
         user_id: auth.userId,
-        week_id: week.id,
         challenge_id: challenge.id,
         track,
         scope_key: challenge.scope_key,
@@ -96,7 +81,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
         elo_delta: pointsEarned,
         completed_at: nowIso,
       },
-      { onConflict: "week_id,challenge_id" }
+      { onConflict: "user_id,challenge_id" }
     )
     .select("id")
     .single();

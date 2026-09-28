@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, Loader2, Trophy, Zap } from "lucide-react";
-import { ActiveWeekView, type TrackState } from "./ActiveWeekView";
+import { Briefcase, Clock, GraduationCap, Loader2, Trophy } from "lucide-react";
+import { TrackWorkspaceView, type TrackState } from "./TrackWorkspaceView";
 import { ChallengeLeaderboard } from "./ChallengeLeaderboard";
 import { ChallengeHistory } from "./ChallengeHistory";
 
@@ -11,10 +11,15 @@ interface BoardData {
   domain: TrackState;
 }
 
-type Tab = "active" | "leaderboard" | "history";
+const EMPTY_STATE: BoardData = {
+  stream: { scopeKey: null, scopeLabel: null, challenges: [], nextChallengeId: null },
+  domain: { scopeKey: null, scopeLabel: null, challenges: [], nextChallengeId: null },
+};
+
+type Tab = "workspace" | "leaderboard" | "history";
 
 export function ArenaChallengesBoard() {
-  const [tab, setTab] = useState<Tab>("active");
+  const [tab, setTab] = useState<Tab>("workspace");
   const [track, setTrack] = useState<"stream" | "domain">("stream");
   const [data, setData] = useState<BoardData | null>(null);
 
@@ -26,19 +31,19 @@ export function ArenaChallengesBoard() {
     fetch("/api/arena/challenges")
       .then((res) => res.json())
       .then(setData)
-      .catch(() => setData({ stream: { scopeKey: null, scopeLabel: null, week: null }, domain: { scopeKey: null, scopeLabel: null, week: null } }));
+      .catch(() => setData(EMPTY_STATE));
   }
 
   return (
     <div>
       <div className="flex gap-1 rounded-lg border border-app-border bg-white p-1">
-        <TabButton active={tab === "active"} onClick={() => setTab("active")} icon={Zap} label="Active Week" />
+        <TabButton active={tab === "workspace"} onClick={() => setTab("workspace")} icon={Briefcase} label="Workspace" />
         <TabButton active={tab === "leaderboard"} onClick={() => setTab("leaderboard")} icon={Trophy} label="Leaderboard" />
         <TabButton active={tab === "history"} onClick={() => setTab("history")} icon={Clock} label="History" />
       </div>
 
       <div className="pt-6">
-        {tab === "active" &&
+        {tab === "workspace" &&
           (!data ? (
             <div className="flex justify-center py-16">
               <Loader2 size={22} className="animate-spin text-app-muted" />
@@ -49,19 +54,21 @@ export function ArenaChallengesBoard() {
                 <button
                   type="button"
                   onClick={() => setTrack("stream")}
-                  className={`rounded-md px-4 py-1.5 font-lp-body text-[12.5px] font-semibold ${track === "stream" ? "bg-app-charcoal text-white" : "text-app-muted"}`}
+                  className={`flex items-center gap-1.5 rounded-md px-4 py-1.5 font-lp-body text-[12.5px] font-semibold ${track === "stream" ? "bg-app-charcoal text-white" : "text-app-muted"}`}
                 >
+                  <GraduationCap size={13} />
                   Stream Challenges
                 </button>
                 <button
                   type="button"
                   onClick={() => setTrack("domain")}
-                  className={`rounded-md px-4 py-1.5 font-lp-body text-[12.5px] font-semibold ${track === "domain" ? "bg-app-charcoal text-white" : "text-app-muted"}`}
+                  className={`flex items-center gap-1.5 rounded-md px-4 py-1.5 font-lp-body text-[12.5px] font-semibold ${track === "domain" ? "bg-app-charcoal text-white" : "text-app-muted"}`}
                 >
+                  <Briefcase size={13} />
                   Domain Challenges
                 </button>
               </div>
-              <ActiveWeekView
+              <TrackWorkspaceView
                 track={track}
                 state={track === "stream" ? data.stream : data.domain}
                 emptyHint={
@@ -81,7 +88,7 @@ export function ArenaChallengesBoard() {
   );
 }
 
-function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof Zap; label: string }) {
+function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof Briefcase; label: string }) {
   return (
     <button
       type="button"

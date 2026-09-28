@@ -110,7 +110,6 @@ export type Database = {
           scope_key: string
           track: string
           user_id: string
-          week_id: string | null
         }
         Insert: {
           challenge_id: string
@@ -122,7 +121,6 @@ export type Database = {
           scope_key: string
           track: string
           user_id: string
-          week_id?: string | null
         }
         Update: {
           challenge_id?: string
@@ -134,7 +132,6 @@ export type Database = {
           scope_key?: string
           track?: string
           user_id?: string
-          week_id?: string | null
         }
         Relationships: [
           {
@@ -142,13 +139,6 @@ export type Database = {
             columns: ["challenge_id"]
             isOneToOne: false
             referencedRelation: "arena_challenges"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arena_challenge_completions_week_id_fkey"
-            columns: ["week_id"]
-            isOneToOne: false
-            referencedRelation: "arena_challenge_weeks"
             referencedColumns: ["id"]
           },
         ]
@@ -180,42 +170,6 @@ export type Database = {
           tasks_completed?: number
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      arena_challenge_weeks: {
-        Row: {
-          challenge_ids: string[]
-          id: string
-          revealed_at: string | null
-          spun_at: string
-          status: string
-          task_count: number
-          track: string
-          user_id: string
-          week_start: string
-        }
-        Insert: {
-          challenge_ids?: string[]
-          id?: string
-          revealed_at?: string | null
-          spun_at?: string
-          status?: string
-          task_count: number
-          track: string
-          user_id: string
-          week_start: string
-        }
-        Update: {
-          challenge_ids?: string[]
-          id?: string
-          revealed_at?: string | null
-          spun_at?: string
-          status?: string
-          task_count?: number
-          track?: string
-          user_id?: string
-          week_start?: string
         }
         Relationships: []
       }
