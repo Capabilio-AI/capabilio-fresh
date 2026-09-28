@@ -701,6 +701,158 @@ export type Database = {
         }
         Relationships: []
       }
+      github_repositories: {
+        Row: {
+          candidate_commit_count: number
+          candidate_pr_count: number
+          candidate_pr_merged_count: number
+          contributors_count: number | null
+          description: string | null
+          first_candidate_commit_at: string | null
+          fork_source_full_name: string | null
+          fork_source_url: string | null
+          forks_count: number
+          full_name: string
+          has_auth_signal: boolean
+          has_ci: boolean
+          has_database_signal: boolean
+          has_dependencies: boolean
+          has_readme: boolean
+          has_tests: boolean
+          html_url: string
+          id: string
+          is_archived: boolean
+          is_fork: boolean
+          last_candidate_commit_at: string | null
+          license: string | null
+          name: string
+          primary_language: string | null
+          repo_created_at: string | null
+          repo_updated_at: string | null
+          scan_error: string | null
+          scan_status: string
+          scanned_at: string
+          size_kb: number
+          stars: number
+          tech_signals: string[]
+          topics: string[]
+          user_id: string
+        }
+        Insert: {
+          candidate_commit_count?: number
+          candidate_pr_count?: number
+          candidate_pr_merged_count?: number
+          contributors_count?: number | null
+          description?: string | null
+          first_candidate_commit_at?: string | null
+          fork_source_full_name?: string | null
+          fork_source_url?: string | null
+          forks_count?: number
+          full_name: string
+          has_auth_signal?: boolean
+          has_ci?: boolean
+          has_database_signal?: boolean
+          has_dependencies?: boolean
+          has_readme?: boolean
+          has_tests?: boolean
+          html_url: string
+          id?: string
+          is_archived?: boolean
+          is_fork?: boolean
+          last_candidate_commit_at?: string | null
+          license?: string | null
+          name: string
+          primary_language?: string | null
+          repo_created_at?: string | null
+          repo_updated_at?: string | null
+          scan_error?: string | null
+          scan_status?: string
+          scanned_at?: string
+          size_kb?: number
+          stars?: number
+          tech_signals?: string[]
+          topics?: string[]
+          user_id: string
+        }
+        Update: {
+          candidate_commit_count?: number
+          candidate_pr_count?: number
+          candidate_pr_merged_count?: number
+          contributors_count?: number | null
+          description?: string | null
+          first_candidate_commit_at?: string | null
+          fork_source_full_name?: string | null
+          fork_source_url?: string | null
+          forks_count?: number
+          full_name?: string
+          has_auth_signal?: boolean
+          has_ci?: boolean
+          has_database_signal?: boolean
+          has_dependencies?: boolean
+          has_readme?: boolean
+          has_tests?: boolean
+          html_url?: string
+          id?: string
+          is_archived?: boolean
+          is_fork?: boolean
+          last_candidate_commit_at?: string | null
+          license?: string | null
+          name?: string
+          primary_language?: string | null
+          repo_created_at?: string | null
+          repo_updated_at?: string | null
+          scan_error?: string | null
+          scan_status?: string
+          scanned_at?: string
+          size_kb?: number
+          stars?: number
+          tech_signals?: string[]
+          topics?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      github_similarity_signals: {
+        Row: {
+          affected_area: string | null
+          detected_at: string
+          id: string
+          matched_repo_full_name: string
+          matched_repo_url: string
+          possible_explanations: string[]
+          repository_id: string
+          similarity_level: string
+        }
+        Insert: {
+          affected_area?: string | null
+          detected_at?: string
+          id?: string
+          matched_repo_full_name: string
+          matched_repo_url: string
+          possible_explanations?: string[]
+          repository_id: string
+          similarity_level: string
+        }
+        Update: {
+          affected_area?: string | null
+          detected_at?: string
+          id?: string
+          matched_repo_full_name?: string
+          matched_repo_url?: string
+          possible_explanations?: string[]
+          repository_id?: string
+          similarity_level?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "github_similarity_signals_repository_id_fkey"
+            columns: ["repository_id"]
+            isOneToOne: false
+            referencedRelation: "github_repositories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guide_paths: {
         Row: {
           generated_at: string

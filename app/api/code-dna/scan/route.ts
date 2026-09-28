@@ -3,17 +3,23 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
-import { scanGithubProfile } from "@/lib/code-dna/github-scan";
-import { scoreFingerprint } from "@/lib/code-dna/fingerprint";
-import type { Json } from "@/lib/supabase/types";
+import { MAX_REPOS_TO_ANALYZE, scanGithubProfileFull, searchRepositoriesByName } from "@/lib/code-dna/github-scan";
+import { selectSignificantRepositories } from "@/lib/code-dna/github-repository-selection";
+import { deriveTechnologyObservations } from "@/lib/code-dna/technology-derivation";
+import { deriveAuthenticityAndReview } from "@/lib/code-dna/authenticity-and-review-signals";
+import { buildRecruiterSummary } from "@/lib/code-dna/recruiter-summary";
+import { classifyNameCollision, eligibleForSimilarityCheck } from "@/lib/code-dna/similarity";
 
 const SCAN_COOLDOWN_MINUTES = 15;
+const MAX_SIMILARITY_LOOKUPS = 3;
 
 /**
- * Runs a real scan + AI-scored fingerprint. Claims the row atomically
- * (scan_status: idle|failed -> scanning, only when off cooldown) so two
- * concurrent requests can't both scan the same connection — the same
- * state-machine shape as capabilio-web's Code DNA.
+ * Runs a real, multi-repo scan and persists normalized per-repository
+ * evidence — no AI involvement anywhere in this route. Claims the
+ * connection row atomically (scan_status: idle|failed -> scanning, only
+ * when off cooldown) so two concurrent requests can't both scan it.
+ * One repository failing never fails the whole scan: each
+ * github_repositories row carries its own scan_status.
  */
 export async function POST() {
   const supabase = await createClient();
@@ -56,18 +62,94 @@ export async function POST() {
   }
 
   try {
-    const scan = await scanGithubProfile(connection.username);
-    const fingerprint = await scoreFingerprint(scan);
+    const scan = await scanGithubProfileFull(connection.username, (repos) =>
+      selectSignificantRepositories(repos, MAX_REPOS_TO_ANALYZE)
+    );
+
+    // Replace-on-rescan: this user's previous repository rows (and their
+    // similarity signals, via cascade delete) are removed before the
+    // fresh set is inserted, so a rescan can't leave stale repos behind.
+    await service.from("github_repositories").delete().eq("user_id", auth.userId);
+
+    const { data: insertedRepos, error: insertError } = await service
+      .from("github_repositories")
+      .insert(
+        scan.repositories.map((r) => ({
+          user_id: auth.userId,
+          name: r.name,
+          full_name: r.fullName,
+          html_url: r.htmlUrl,
+          description: r.description,
+          is_fork: r.isFork,
+          fork_source_full_name: r.forkSourceFullName,
+          fork_source_url: r.forkSourceUrl,
+          primary_language: r.primaryLanguage,
+          topics: r.topics,
+          license: r.license,
+          stars: r.stars,
+          forks_count: r.forksCount,
+          is_archived: r.isArchived,
+          size_kb: r.sizeKb,
+          repo_created_at: r.repoCreatedAt,
+          repo_updated_at: r.repoUpdatedAt,
+          candidate_commit_count: r.candidateCommitCount,
+          candidate_pr_count: r.candidatePrCount,
+          candidate_pr_merged_count: r.candidatePrMergedCount,
+          first_candidate_commit_at: r.firstCandidateCommitAt,
+          last_candidate_commit_at: r.lastCandidateCommitAt,
+          tech_signals: r.techSignals,
+          has_tests: r.hasTests,
+          has_ci: r.hasCi,
+          has_readme: r.hasReadme,
+          has_dependencies: r.hasDependencies,
+          has_database_signal: r.hasDatabaseSignal,
+          has_auth_signal: r.hasAuthSignal,
+          contributors_count: r.contributorsCount,
+          scan_status: r.scanStatus,
+          scan_error: r.scanError,
+        }))
+      )
+      .select("id, name, is_fork, is_archived, scan_status, primary_language");
+    if (insertError) throw insertError;
+
+    // Similarity: bounded, only eligible (non-fork, non-archived, real
+    // scan) repos, capped independently of the main scan budget — never
+    // bulk-compares. A name collision is only ever surfaced as low/
+    // moderate (see similarity.ts); this pass never produces "high".
+    const eligibleRepos = scan.repositories.filter(eligibleForSimilarityCheck).slice(0, MAX_SIMILARITY_LOOKUPS);
+    for (const repo of eligibleRepos) {
+      const insertedRow = insertedRepos?.find((r) => r.name === repo.name);
+      if (!insertedRow) continue;
+      const matches = await searchRepositoriesByName(repo.name, connection.username);
+      const signals = matches.map((m) => classifyNameCollision(repo, m)).filter((s) => s !== null);
+      if (signals.length > 0) {
+        await service.from("github_similarity_signals").insert(
+          signals.map((s) => ({
+            repository_id: insertedRow.id,
+            matched_repo_full_name: s.matchedRepoFullName,
+            matched_repo_url: s.matchedRepoUrl,
+            similarity_level: s.similarityLevel,
+            affected_area: s.affectedArea,
+            possible_explanations: s.possibleExplanations,
+          }))
+        );
+      }
+    }
+
+    const okRepos = scan.repositories.filter((r) => r.scanStatus !== "failed");
+    const technologies = deriveTechnologyObservations(scan.repositories);
+    const { evidenceConfidence } = deriveAuthenticityAndReview(scan.repositories);
+    const recruiterSummary = buildRecruiterSummary(connection.username, scan.repositories, technologies);
 
     await service
       .from("github_connections")
       .update({
         scan_status: "idle",
-        code_dna_score: fingerprint.score,
-        confidence_level: fingerprint.confidence,
-        repositories_analyzed: scan.repositoriesAnalyzed,
-        analysis: scan as unknown as Json,
-        recruiter_summary: fingerprint.recruiterSummary,
+        code_dna_score: evidenceConfidence,
+        confidence_level: null,
+        repositories_analyzed: okRepos.length,
+        analysis: null,
+        recruiter_summary: recruiterSummary,
         last_scanned_at: new Date().toISOString(),
         next_scan_at: new Date(Date.now() + SCAN_COOLDOWN_MINUTES * 60_000).toISOString(),
         consecutive_failures: 0,
@@ -75,7 +157,7 @@ export async function POST() {
       })
       .eq("user_id", auth.userId);
 
-    return NextResponse.json({ score: fingerprint.score, summary: fingerprint.summary });
+    return NextResponse.json({ evidenceConfidence, repositoriesAnalyzed: okRepos.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Scan failed";
     console.error("[code-dna/scan] failed:", message);

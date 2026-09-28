@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectReadme, detectTechSignals, detectTestDir, normalizeGithubUsername } from "./github-scan";
+import { detectDependencySignals, detectReadme, detectTechSignals, detectTestDir, normalizeGithubUsername } from "./github-scan";
 
 describe("normalizeGithubUsername", () => {
   it("extracts the username from a pasted profile URL", () => {
@@ -63,5 +63,24 @@ describe("detectReadme", () => {
 
   it("returns false when there is no README", () => {
     expect(detectReadme(["src", "package.json"])).toBe(false);
+  });
+});
+
+describe("detectDependencySignals", () => {
+  it("detects a real, declared database dependency — never from file content, only the dependency's own name", () => {
+    const result = detectDependencySignals(["express", "prisma", "react"]);
+    expect(result.hasDatabaseSignal).toBe(true);
+    expect(result.labels).toContain("Prisma ORM");
+  });
+
+  it("detects a real, declared auth dependency", () => {
+    expect(detectDependencySignals(["next-auth"]).hasAuthSignal).toBe(true);
+  });
+
+  it("ignores dependencies outside the curated, unambiguous allowlist — never guesses", () => {
+    const result = detectDependencySignals(["left-pad", "lodash", "some-random-package"]);
+    expect(result.labels).toEqual([]);
+    expect(result.hasDatabaseSignal).toBe(false);
+    expect(result.hasAuthSignal).toBe(false);
   });
 });

@@ -1,350 +1,542 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft, Award, BadgeCheck, CheckCircle2, GitBranch, MinusCircle, Sparkles, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Building2,
+  CheckCircle2,
+  Clock,
+  Eye,
+  GitFork,
+  MinusCircle,
+  RefreshCw,
+  ShieldAlert,
+  Star,
+  Users,
+} from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
-import { buildEvidenceProfile, type EngineeringPracticeState } from "@/lib/code-dna/evidence-profile";
-import { categorySlug, deriveCapabilityProfile, CAPABILITY_CATEGORIES, type ArenaProgrammingEvidence } from "@/lib/code-dna/capability-derivation";
-import type { GithubScanResult } from "@/lib/code-dna/github-scan";
-import { CodeDnaTrajectoryChart, type TrajectoryPoint } from "@/components/vault/CodeDnaTrajectoryChart";
-import { SECTION_LABEL } from "@/lib/assessment/sections";
+import { deriveTechnologyObservations, type TechnologyObservation } from "@/lib/code-dna/technology-derivation";
+import { derivePracticeSignals, type PracticeSignal } from "@/lib/code-dna/practice-signals";
+import { deriveAuthenticityAndReview } from "@/lib/code-dna/authenticity-and-review-signals";
+import type { Database } from "@/lib/supabase/types";
 
 export const metadata: Metadata = { title: "Code DNA — Capabilio AI" };
 
-const PRACTICE_ICON: Record<EngineeringPracticeState, typeof CheckCircle2> = {
-  observed: CheckCircle2,
-  not_observed: MinusCircle,
-  not_available: XCircle,
-};
-const PRACTICE_LABEL: Record<EngineeringPracticeState, string> = {
-  observed: "Observed",
-  not_observed: "Not observed",
-  not_available: "Not enough data",
-};
-const PRACTICE_CLASS: Record<EngineeringPracticeState, string> = {
-  observed: "text-app-success",
-  not_observed: "text-app-attention",
-  not_available: "text-app-muted",
-};
-const CONFIDENCE_CLASS: Record<string, string> = {
-  low: "bg-app-attention-container text-app-attention",
-  medium: "bg-app-warning-container text-app-warning",
-  high: "bg-app-success-container text-app-success",
-};
+type RepositoryRow = Database["public"]["Tables"]["github_repositories"]["Row"];
+type SimilaritySignalRow = Database["public"]["Tables"]["github_similarity_signals"]["Row"];
+
+function formatDate(iso: string | null): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function daysSince(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
+function toFullRepoAnalysis(r: RepositoryRow) {
+  return {
+    name: r.name,
+    fullName: r.full_name,
+    htmlUrl: r.html_url,
+    description: r.description,
+    isFork: r.is_fork,
+    forkSourceFullName: r.fork_source_full_name,
+    forkSourceUrl: r.fork_source_url,
+    primaryLanguage: r.primary_language,
+    topics: r.topics,
+    license: r.license,
+    stars: r.stars,
+    forksCount: r.forks_count,
+    isArchived: r.is_archived,
+    sizeKb: r.size_kb,
+    repoCreatedAt: r.repo_created_at,
+    repoUpdatedAt: r.repo_updated_at,
+    candidateCommitCount: r.candidate_commit_count,
+    candidatePrCount: r.candidate_pr_count,
+    candidatePrMergedCount: r.candidate_pr_merged_count,
+    firstCandidateCommitAt: r.first_candidate_commit_at,
+    lastCandidateCommitAt: r.last_candidate_commit_at,
+    authorshipSample: null,
+    techSignals: r.tech_signals,
+    hasTests: r.has_tests,
+    hasCi: r.has_ci,
+    hasReadme: r.has_readme,
+    hasDependencies: r.has_dependencies,
+    hasDatabaseSignal: r.has_database_signal,
+    hasAuthSignal: r.has_auth_signal,
+    contributorsCount: r.contributors_count,
+    scanStatus: r.scan_status as "ok" | "partial" | "failed",
+    scanError: r.scan_error,
+  };
+}
 
 export default async function CodeDnaDetailPage() {
   const { supabase, user } = await requireAuthedUser();
 
-  const [{ data: connection }, { data: allArenaAttempts }] = await Promise.all([
-    supabase
-      .from("github_connections")
-      .select("username, profile_url, code_dna_score, confidence_level, recruiter_summary, analysis, last_scanned_at")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("arena_challenge_attempts")
-      .select("section, correct_count, answered_count, completed_at, rating_after")
-      .eq("user_id", user.id)
-      .eq("status", "completed")
-      .order("completed_at", { ascending: true }),
-  ]);
+  const { data: connection } = await supabase
+    .from("github_connections")
+    .select("username, profile_url, code_dna_score, recruiter_summary, last_scanned_at, repositories_analyzed")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  const githubScan = connection?.analysis ? (connection.analysis as unknown as GithubScanResult) : null;
-  const programmingAttempts: ArenaProgrammingEvidence[] = (allArenaAttempts ?? [])
-    .filter((a) => a.section === "programming_fundamentals")
-    .map((a) => ({ correctCount: a.correct_count, answeredCount: a.answered_count, completedAt: a.completed_at as string }));
+  const { data: repoRows } = await supabase
+    .from("github_repositories")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("stars", { ascending: false });
 
-  const capabilityProfile = deriveCapabilityProfile(githubScan, connection?.last_scanned_at ?? null, programmingAttempts);
-  const derivedCategories = new Set(capabilityProfile.map((c) => c.category));
-  const notEnoughEvidence = CAPABILITY_CATEGORIES.filter((c) => !derivedCategories.has(c));
-
-  const trajectoryPoints: TrajectoryPoint[] = (allArenaAttempts ?? [])
-    .filter((a) => a.rating_after !== null)
-    .map((a) => ({
-      date: new Date(a.completed_at as string).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
-      rating: a.rating_after as number,
-    }));
-
-  const recentProofRepos = githubScan?.repos.slice(0, 3) ?? [];
-  const recentArenaAttempts = [...(allArenaAttempts ?? [])].reverse().slice(0, 3);
-
-  const hasAnyEvidence = capabilityProfile.length > 0 || Boolean(githubScan);
+  const repos = repoRows ?? [];
+  const repoIds = repos.map((r) => r.id);
+  const { data: similarityRows } = repoIds.length
+    ? await supabase.from("github_similarity_signals").select("*").in("repository_id", repoIds)
+    : { data: [] as SimilaritySignalRow[] };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <Link href="/dashboard/vault" className="flex items-center gap-1.5 font-lp-mono text-[11px] text-app-muted hover:text-app-charcoal">
         <ArrowLeft size={12} />
         Back to Vault
       </Link>
 
       <div className="mt-3 flex items-center gap-2">
-        <GitBranch size={20} className="text-app-charcoal" />
+        <Building2 size={20} className="text-app-charcoal" />
         <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Code DNA</h1>
       </div>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-        What your verified engineering work demonstrates you can build, test, and ship — derived from real evidence,
-        never self-reported.
+        A summary of publicly available GitHub evidence — engineering activity, technology usage, and provenance
+        signals. Not a score of who you are.
       </p>
 
-      {!hasAnyEvidence ? (
+      {!connection || repos.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
-          <Sparkles size={20} className="mx-auto text-app-blue" />
-          <p className="mt-2 font-lp-body text-[13.5px] font-medium text-app-charcoal">Your Code DNA is starting</p>
-          <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-            Complete an Arena challenge or connect your GitHub from the Vault tab to see your evidence here.
+          <p className="font-lp-body text-[13.5px] text-app-muted">
+            Connect and scan your GitHub from the Vault tab to see your evidence breakdown here.
           </p>
-          <Link
-            href="/arena"
-            className="mt-4 inline-block rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white"
-          >
-            Enter Arena
-          </Link>
         </div>
       ) : (
-        <div className="mt-6 flex flex-col gap-5">
-          {/* Capability Profile */}
-          <div className="rounded-xl border border-app-border bg-white p-5">
-            <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Capability Profile</h2>
-            {capabilityProfile.length === 0 ? (
-              <p className="mt-2 font-lp-body text-[13px] text-app-muted">Code DNA is forming — not enough evidence yet.</p>
-            ) : (
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {capabilityProfile.map((c) => (
-                  <Link
-                    key={c.category}
-                    href={`/dashboard/vault/code-dna/${categorySlug(c.category)}`}
-                    className="flex items-center justify-between rounded-lg border border-app-border p-3 hover:bg-app-background"
-                  >
-                    <div>
-                      <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{c.category}</p>
-                      <p className="mt-0.5 font-lp-mono text-[10.5px] text-app-muted">
-                        {c.evidenceCount} evidence point{c.evidenceCount === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`rounded-full px-2 py-0.5 font-lp-mono text-[10px] font-semibold ${CONFIDENCE_CLASS[c.confidence]}`}>
-                        {c.confidence}
-                      </span>
-                      <span className="font-lp-display text-[18px] font-semibold text-app-charcoal">{c.score}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-            {notEnoughEvidence.length > 0 && (
-              <p className="mt-3 font-lp-mono text-[10.5px] text-app-muted">
-                Not enough evidence yet: {notEnoughEvidence.join(", ")}
-              </p>
-            )}
-          </div>
-
-          {/* Engineering Signature — reuses the existing scan-time narrative, never generated on page load */}
-          {connection?.recruiter_summary && (
-            <div className="rounded-xl border border-app-border bg-white p-5">
-              <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Engineering Signature</h2>
-              <p className="mt-2 font-lp-body text-[13px] leading-relaxed text-app-muted">{connection.recruiter_summary}</p>
-            </div>
-          )}
-
-          {/* Recent Proof */}
-          {(recentProofRepos.length > 0 || recentArenaAttempts.length > 0) && (
-            <div className="rounded-xl border border-app-border bg-white p-5">
-              <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Recent Proof</h2>
-              <div className="mt-3 flex flex-col gap-2.5">
-                {recentArenaAttempts.map((a, i) => (
-                  <div key={`arena-${i}`} className="flex items-center gap-2.5">
-                    <Award size={14} className="shrink-0 text-app-orange" />
-                    <p className="font-lp-body text-[12.5px] text-app-charcoal">
-                      Arena · {SECTION_LABEL[a.section as keyof typeof SECTION_LABEL] ?? a.section} — {a.correct_count}/{a.answered_count} correct
-                    </p>
-                  </div>
-                ))}
-                {recentProofRepos.map((r) => (
-                  <a
-                    key={r.name}
-                    href={r.htmlUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 hover:underline"
-                  >
-                    <BadgeCheck size={14} className="shrink-0 text-app-blue" />
-                    <p className="font-lp-body text-[12.5px] text-app-charcoal">{r.name}</p>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Trajectory — only from real timestamped Arena history */}
-          <div className="rounded-xl border border-app-border bg-white p-5">
-            <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Trajectory</h2>
-            {trajectoryPoints.length >= 2 ? (
-              <div className="mt-3">
-                <CodeDnaTrajectoryChart points={trajectoryPoints} />
-              </div>
-            ) : (
-              <div className="mt-3 text-center">
-                <p className="font-lp-body text-[13px] text-app-muted">
-                  Building your DNA — complete more Arena challenges to see your trajectory.
-                </p>
-                <Link href="/arena" className="mt-2 inline-block font-lp-mono text-[11px] text-app-blue hover:underline">
-                  Enter Arena
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {githubScan && (
-            <CodeDnaGithubEvidence
-              scan={githubScan}
-              score={connection?.code_dna_score ?? null}
-              confidence={connection?.confidence_level ?? null}
-              username={connection?.username ?? ""}
-              profileUrl={connection?.profile_url ?? ""}
-            />
-          )}
-        </div>
+        <CodeDnaEvidence
+          repos={repos}
+          similarityRows={similarityRows ?? []}
+          evidenceConfidence={connection.code_dna_score}
+          recruiterSummary={connection.recruiter_summary}
+          username={connection.username}
+          profileUrl={connection.profile_url}
+          lastScannedAt={connection.last_scanned_at}
+          repositoriesAnalyzed={connection.repositories_analyzed}
+        />
       )}
     </div>
   );
 }
 
-function CodeDnaGithubEvidence({
-  scan,
-  score,
-  confidence,
+const STRENGTH_LABEL: Record<TechnologyObservation["strength"], string> = {
+  strong: "Strong",
+  moderate: "Moderate",
+  limited: "Limited",
+};
+const STRENGTH_CLASS: Record<TechnologyObservation["strength"], string> = {
+  strong: "bg-app-success-container text-app-success",
+  moderate: "bg-app-warning-container text-app-warning",
+  limited: "bg-app-attention-container text-app-attention",
+};
+const PRACTICE_ICON: Record<PracticeSignal["state"], typeof CheckCircle2> = {
+  observed: CheckCircle2,
+  not_observed: MinusCircle,
+};
+const SIMILARITY_LABEL: Record<string, string> = {
+  low: "Low — no significant similarity detected",
+  moderate: "Review recommended: moderate similarity detected with a public repository",
+  high: "Review recommended: substantial similarity detected with a public repository",
+};
+
+function CodeDnaEvidence({
+  repos,
+  similarityRows,
+  evidenceConfidence,
+  recruiterSummary,
   username,
   profileUrl,
+  lastScannedAt,
+  repositoriesAnalyzed,
 }: {
-  scan: GithubScanResult;
-  score: number | null;
-  confidence: string | null;
+  repos: RepositoryRow[];
+  similarityRows: SimilaritySignalRow[];
+  evidenceConfidence: number | null;
+  recruiterSummary: string | null;
   username: string;
   profileUrl: string;
+  lastScannedAt: string | null;
+  repositoriesAnalyzed: number | null;
 }) {
-  const profile = buildEvidenceProfile(scan);
+  const fullRepos = repos.map(toFullRepoAnalysis);
+  const okRepos = repos.filter((r) => r.scan_status === "ok");
+  const failedRepos = repos.filter((r) => r.scan_status === "failed");
+  const hasPartialCoverage = failedRepos.length > 0;
+
+  const technologies = deriveTechnologyObservations(fullRepos);
+  const practices = derivePracticeSignals(fullRepos);
+  const { authenticitySignals, reviewSignals } = deriveAuthenticityAndReview(fullRepos);
+
+  const totalCommits = okRepos.reduce((sum, r) => sum + r.candidate_commit_count, 0);
+  const totalPrsOpened = okRepos.reduce((sum, r) => sum + r.candidate_pr_count, 0);
+  const totalPrsMerged = okRepos.reduce((sum, r) => sum + r.candidate_pr_merged_count, 0);
+
+  // Development timeline: real per-year technology + repo counts, nothing invented.
+  const byYear = new Map<string, { repoCount: number; technologies: Set<string> }>();
+  for (const r of okRepos) {
+    const year = r.repo_updated_at ? new Date(r.repo_updated_at).getFullYear().toString() : null;
+    if (!year) continue;
+    const bucket = byYear.get(year) ?? { repoCount: 0, technologies: new Set<string>() };
+    bucket.repoCount += 1;
+    for (const t of r.tech_signals) bucket.technologies.add(t);
+    byYear.set(year, bucket);
+  }
+  const timeline = [...byYear.entries()].sort((a, b) => Number(b[0]) - Number(a[0]));
+
+  const staleDays = lastScannedAt ? daysSince(lastScannedAt) : null;
 
   return (
-    <>
+    <div className="mt-6 flex flex-col gap-5">
+      {/* Header + Recruiter Summary */}
       <div className="rounded-xl border border-app-border bg-white p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">
-              @{username} · <span className="font-lp-mono text-[11px] text-app-muted">{confidence} confidence</span>
-            </p>
+            <p className="font-lp-body text-[15px] font-medium text-app-charcoal">@{username}</p>
             <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="font-lp-mono text-[11px] text-app-blue hover:underline">
-              View GitHub profile
+              View GitHub Profile
             </a>
           </div>
-          {score != null && <span className="font-lp-display text-[28px] font-semibold text-app-charcoal">{score}</span>}
+          {evidenceConfidence != null && (
+            <div className="text-right">
+              <span className="font-lp-display text-[26px] font-semibold text-app-charcoal">{evidenceConfidence}</span>
+              <p className="font-lp-mono text-[10px] uppercase tracking-wide text-app-muted">GitHub Evidence Confidence</p>
+            </div>
+          )}
+        </div>
+        {recruiterSummary && <p className="mt-3 font-lp-body text-[13px] leading-relaxed text-app-charcoal">{recruiterSummary}</p>}
+      </div>
+
+      {hasPartialCoverage && (
+        <div className="flex items-center gap-2 rounded-lg border border-app-warning bg-app-warning-container px-4 py-3">
+          <AlertTriangle size={16} className="shrink-0 text-app-warning" />
+          <p className="font-lp-body text-[12.5px] text-app-charcoal">
+            {failedRepos.length} of {repos.length} repositories couldn&rsquo;t be fully analyzed in this scan. The rest of
+            this page reflects the {okRepos.length} that were.
+          </p>
+        </div>
+      )}
+
+      {/* Engineering Activity */}
+      <div className="rounded-xl border border-app-border bg-white p-5">
+        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Engineering Activity</h2>
+        <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Stat label="Repositories" value={okRepos.length} />
+          <Stat label="Commits" value={totalCommits} />
+          <Stat label="PRs opened" value={totalPrsOpened} />
+          <Stat label="PRs merged" value={totalPrsMerged} />
         </div>
       </div>
 
+      {/* Technology DNA */}
+      {technologies.length > 0 && (
+        <div className="rounded-xl border border-app-border bg-white p-5">
+          <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Technology DNA</h2>
+          <p className="mt-1 font-lp-body text-[12px] text-app-muted">Observed GitHub usage — not a claim of verified professional skill.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {technologies.map((t) => (
+              <span key={t.technology} className={`flex items-center gap-1.5 rounded-full px-3 py-1 font-lp-mono text-[11px] font-semibold ${STRENGTH_CLASS[t.strength]}`}>
+                {t.technology}
+                <span className="opacity-70">· {STRENGTH_LABEL[t.strength]}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Projects */}
       <div className="rounded-xl border border-app-border bg-white p-5">
-        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Technical footprint</h2>
-        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {(["frontend", "backend", "devops"] as const).map((bucket) => (
-            <div key={bucket}>
-              <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">{bucket}</p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {profile.technicalFootprint[bucket].length === 0 ? (
-                  <span className="font-lp-body text-[12px] text-app-muted">—</span>
-                ) : (
-                  profile.technicalFootprint[bucket].map((t) => (
-                    <span key={t} className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10.5px] text-app-charcoal">
-                      {t}
-                    </span>
-                  ))
-                )}
-              </div>
+        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Projects</h2>
+        <div className="mt-3 flex flex-col gap-4">
+          {okRepos.map((repo) => (
+            <RepoCard key={repo.id} repo={repo} similarity={similarityRows.filter((s) => s.repository_id === repo.id)} />
+          ))}
+          {failedRepos.map((repo) => (
+            <div key={repo.id} className="rounded-lg border border-dashed border-app-border p-3">
+              <p className="font-lp-body text-[13px] text-app-muted">
+                {repo.name} — could not be fully analyzed in this scan.
+              </p>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Engineering practices */}
       <div className="rounded-xl border border-app-border bg-white p-5">
-        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Engineering practice</h2>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {(["testing", "ci", "documentation"] as const).map((key) => {
-            const state = profile.engineeringPractice[key];
-            const Icon = PRACTICE_ICON[state];
+        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Engineering Practices</h2>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {practices.map((p) => {
+            const Icon = PRACTICE_ICON[p.state];
             return (
-              <div key={key} className="flex items-center gap-2">
-                <Icon size={16} className={PRACTICE_CLASS[state]} />
-                <div>
-                  <p className="font-lp-body text-[12.5px] capitalize text-app-charcoal">{key}</p>
-                  <p className="font-lp-mono text-[10.5px] text-app-muted">{PRACTICE_LABEL[state]}</p>
+              <div key={p.practice} className="rounded-lg border border-app-border p-3">
+                <div className="flex items-center gap-2">
+                  <Icon size={16} className={p.state === "observed" ? "text-app-success" : "text-app-muted"} />
+                  <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{p.practice}</p>
                 </div>
+                {p.evidence.length > 0 && (
+                  <ul className="mt-1.5 ml-6 flex flex-col gap-0.5">
+                    {p.evidence.slice(0, 3).map((e, i) => (
+                      <li key={i} className="font-lp-mono text-[10.5px] text-app-muted">
+                        <a href={e.repoUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          {e.repoName}
+                        </a>{" "}
+                        — {e.detail}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
+      {/* Authenticity + Review signals */}
       <div className="rounded-xl border border-app-border bg-white p-5">
-        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Authorship &amp; collaboration</h2>
-        <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div>
-            <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">Original repos</p>
-            <p className="mt-1 font-lp-body text-[15px] font-semibold text-app-charcoal">{profile.authorshipEvidence.originalRepoCount}</p>
-          </div>
-          <div>
-            <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">Forked repos</p>
-            <p className="mt-1 font-lp-body text-[15px] font-semibold text-app-charcoal">{profile.authorshipEvidence.forkedRepoCount}</p>
-          </div>
-          <div>
-            <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">PRs opened</p>
-            <p className="mt-1 font-lp-body text-[15px] font-semibold text-app-charcoal">{profile.collaborationEvidence.pullRequestsOpened}</p>
-          </div>
-          <div>
-            <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">PRs merged</p>
-            <p className="mt-1 font-lp-body text-[15px] font-semibold text-app-charcoal">{profile.collaborationEvidence.pullRequestsMerged}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-app-border bg-white p-5">
-        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Project evidence</h2>
-        <div className="mt-3 flex flex-col gap-3">
-          {profile.projectEvidence.map((p) => (
-            <a
-              key={p.name}
-              href={p.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col gap-1.5 rounded-lg border border-app-border p-3 hover:bg-app-background sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{p.name}</p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {!p.isOriginalWork && (
-                    <span className="rounded-full bg-app-attention-container px-2 py-0.5 font-lp-mono text-[10px] text-app-attention">Fork</span>
-                  )}
-                  {p.hasReadme && (
-                    <span className="rounded-full bg-app-success-container px-2 py-0.5 font-lp-mono text-[10px] text-app-success">README</span>
-                  )}
-                  {p.hasTests && (
-                    <span className="rounded-full bg-app-blue-container px-2 py-0.5 font-lp-mono text-[10px] text-app-blue">Tests</span>
-                  )}
-                  {p.techSignals.map((t) => (
-                    <span key={t} className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10px] text-app-muted">
-                      {t}
-                    </span>
-                  ))}
+        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Authenticity Signals</h2>
+        {authenticitySignals.length === 0 ? (
+          <p className="mt-2 font-lp-body text-[13px] text-app-muted">Insufficient coverage to raise a signal yet.</p>
+        ) : (
+          <div className="mt-3 flex flex-col gap-2">
+            {authenticitySignals.map((s) => (
+              <div key={s.signal} className="flex items-start gap-2">
+                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-app-success" />
+                <div>
+                  <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{s.signal}</p>
+                  <p className="font-lp-body text-[12px] text-app-muted">{s.detail}</p>
                 </div>
               </div>
-            </a>
-          ))}
+            ))}
+          </div>
+        )}
+      </div>
+
+      {reviewSignals.length > 0 && (
+        <div className="rounded-xl border border-app-border bg-white p-5">
+          <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Review Signals</h2>
+          <p className="mt-1 font-lp-body text-[12px] text-app-muted">
+            Worth a closer look, not a finding of wrongdoing — a fork, limited history, or a short contribution
+            window is not suspicious by itself.
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            {reviewSignals.map((s) => (
+              <div key={s.signal} className="flex items-start gap-2">
+                <Eye size={14} className="mt-0.5 shrink-0 text-app-attention" />
+                <div>
+                  <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{s.signal}</p>
+                  <p className="font-lp-body text-[12px] text-app-muted">{s.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Originality review */}
+      {similarityRows.length > 0 && (
+        <div className="rounded-xl border border-app-border bg-white p-5">
+          <div className="flex items-center gap-2">
+            <ShieldAlert size={16} className="text-app-charcoal" />
+            <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Originality Review</h2>
+          </div>
+          <div className="mt-3 flex flex-col gap-3">
+            {similarityRows.map((s) => {
+              const repo = repos.find((r) => r.id === s.repository_id);
+              return (
+                <div key={s.id} className="rounded-lg border border-app-border p-3">
+                  <p className="font-lp-body text-[13px] font-medium text-app-charcoal">
+                    {SIMILARITY_LABEL[s.similarity_level] ?? s.similarity_level}
+                  </p>
+                  <p className="mt-1 font-lp-mono text-[11px] text-app-muted">
+                    {repo?.name} ↔{" "}
+                    <a href={s.matched_repo_url} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">
+                      {s.matched_repo_full_name}
+                    </a>
+                    {s.affected_area && ` · ${s.affected_area}`}
+                  </p>
+                  {s.possible_explanations.length > 0 && (
+                    <p className="mt-1 font-lp-body text-[11.5px] text-app-muted">
+                      Possible explanations: {s.possible_explanations.join("; ")}.
+                    </p>
+                  )}
+                  <a
+                    href={s.matched_repo_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block font-lp-mono text-[11px] text-app-blue hover:underline"
+                  >
+                    Review Source
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Development timeline */}
+      {timeline.length > 0 && (
+        <div className="rounded-xl border border-app-border bg-white p-5">
+          <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Development Timeline</h2>
+          <div className="mt-3 flex flex-col gap-2">
+            {timeline.map(([year, bucket]) => (
+              <div key={year} className="flex items-center justify-between font-lp-body text-[13px]">
+                <span className="font-lp-mono text-app-charcoal">{year}</span>
+                <span className="text-app-muted">
+                  {bucket.repoCount} repo{bucket.repoCount === 1 ? "" : "s"} · {[...bucket.technologies].slice(0, 4).join(", ") || "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Analysis coverage */}
+      <div className="rounded-xl border-2 border-app-blue bg-app-blue-container/30 p-5">
+        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Analysis Coverage</h2>
+        <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Stat label="Repos analyzed" value={`${okRepos.length} / ${repositoriesAnalyzed ?? okRepos.length}`} />
+          <Stat label="Commits" value={totalCommits} />
+          <Stat label="PRs" value={totalPrsOpened} />
+          <Stat label="Visibility" value="Public only" />
+        </div>
+        <p className="mt-3 font-lp-body text-[11.5px] text-app-muted">
+          This reflects a defined, limited set of repositories — not necessarily the candidate&rsquo;s complete engineering
+          history.
+        </p>
+      </div>
+
+      {/* Freshness */}
+      <div className="flex items-center justify-between rounded-lg border border-app-border bg-white px-4 py-3">
+        <p className="flex items-center gap-1.5 font-lp-mono text-[11px] text-app-muted">
+          <Clock size={12} />
+          GitHub analysis updated {formatDate(lastScannedAt) ?? "—"}
+          {staleDays !== null && staleDays > 14 && ` (${staleDays} days ago)`}
+        </p>
+        <Link
+          href="/dashboard/vault"
+          className="flex items-center gap-1 font-lp-mono text-[11px] font-semibold text-app-blue hover:underline"
+        >
+          <RefreshCw size={11} />
+          Refresh analysis
+        </Link>
+      </div>
+
+      <AboutThisAnalysis />
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div>
+      <p className="font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">{label}</p>
+      <p className="mt-1 font-lp-display text-[18px] font-semibold text-app-charcoal">{value}</p>
+    </div>
+  );
+}
+
+function RepoCard({ repo, similarity }: { repo: RepositoryRow; similarity: SimilaritySignalRow[] }) {
+  return (
+    <div className="rounded-lg border border-app-border p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">
+            {repo.name}
+          </a>
+          {repo.description && <p className="mt-0.5 font-lp-body text-[12.5px] text-app-muted">{repo.description}</p>}
+        </div>
+        <div className="flex items-center gap-3 font-lp-mono text-[11px] text-app-muted">
+          <span className="flex items-center gap-1">
+            <Star size={11} />
+            {repo.stars}
+          </span>
+          <span className="flex items-center gap-1">
+            <GitFork size={11} />
+            {repo.forks_count}
+          </span>
+          {repo.contributors_count != null && (
+            <span className="flex items-center gap-1">
+              <Users size={11} />
+              {repo.contributors_count}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="rounded-lg border border-dashed border-app-border bg-white px-4 py-3">
-        <p className="font-lp-mono text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">Limitations</p>
-        <ul className="mt-1.5 list-inside list-disc font-lp-body text-[12px] text-app-muted">
-          {profile.limitations.map((l) => (
-            <li key={l}>{l}</li>
-          ))}
-        </ul>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {repo.is_fork && repo.fork_source_full_name && (
+          <span className="rounded-full bg-app-attention-container px-2 py-0.5 font-lp-mono text-[10px] text-app-attention">
+            Forked from {repo.fork_source_full_name}
+          </span>
+        )}
+        {repo.is_archived && <span className="rounded-full bg-app-background px-2 py-0.5 font-lp-mono text-[10px] text-app-muted">Archived</span>}
+        {repo.license && <span className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10px] text-app-muted">{repo.license}</span>}
+        {repo.tech_signals.map((t) => (
+          <span key={t} className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10px] text-app-charcoal">
+            {t}
+          </span>
+        ))}
       </div>
-    </>
+
+      {/* Contribution */}
+      <div className="mt-3 grid grid-cols-2 gap-3 border-t border-app-border pt-3 sm:grid-cols-4">
+        <Stat label="Commits" value={repo.candidate_commit_count} />
+        <Stat label="PRs" value={`${repo.candidate_pr_count} (${repo.candidate_pr_merged_count} merged)`} />
+        <Stat label="Active" value={formatDate(repo.repo_updated_at) ?? "—"} />
+        <Stat label="Created" value={formatDate(repo.repo_created_at) ?? "—"} />
+      </div>
+
+      {similarity.length > 0 && (
+        <p className="mt-2 flex items-center gap-1 font-lp-mono text-[10.5px] text-app-attention">
+          <Eye size={11} />
+          Originality review available below
+        </p>
+      )}
+
+      {(repo.has_database_signal || repo.has_auth_signal || repo.has_tests || repo.has_ci) && (
+        <p className="mt-2 font-lp-mono text-[10.5px] text-app-muted">
+          Project scale: {[repo.has_dependencies && "dependencies", repo.has_database_signal && "database", repo.has_auth_signal && "auth", repo.has_tests && "tests", repo.has_ci && "CI"].filter(Boolean).join(" · ")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AboutThisAnalysis() {
+  return (
+    <div className="rounded-xl border border-dashed border-app-border bg-white p-5">
+      <p className="font-lp-mono text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">About This Analysis</p>
+      <p className="mt-2 font-lp-body text-[12.5px] leading-relaxed text-app-charcoal">
+        Code DNA summarizes publicly available GitHub evidence to help you understand a candidate&rsquo;s engineering
+        work, contribution history, repository provenance, and originality signals.
+      </p>
+      <p className="mt-3 font-lp-mono text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">Analysis coverage</p>
+      <ul className="mt-1.5 list-inside list-disc font-lp-body text-[12px] text-app-muted">
+        <li>Public GitHub repositories available to Capabilio</li>
+        <li>Repository activity and contribution history</li>
+        <li>Commit and pull-request signals</li>
+        <li>Repository structure and technology usage</li>
+        <li>Provenance and public-source similarity signals</li>
+      </ul>
+      <p className="mt-3 font-lp-mono text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">Important limitations</p>
+      <ul className="mt-1.5 list-inside list-disc font-lp-body text-[12px] text-app-muted">
+        <li>Private repositories are not included unless explicitly authorized and supported.</li>
+        <li>Analysis covers a defined set of repositories and available GitHub history, not necessarily the candidate&rsquo;s complete engineering history.</li>
+        <li>Commit authorship and contribution signals are based on GitHub metadata and may not perfectly establish authorship.</li>
+        <li>Similarity signals indicate potential reuse or overlap; they do not by themselves establish plagiarism or intent.</li>
+        <li>Code DNA is an evidence summary, not a formal code-quality, security, or plagiarism certification.</li>
+      </ul>
+    </div>
   );
 }

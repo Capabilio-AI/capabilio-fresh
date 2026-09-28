@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ExternalLink, GitBranch, Loader2, RefreshCw, Sparkles } from "lucide-react";
-import type { CapabilityCategory, ConfidenceLevel } from "@/lib/code-dna/capability-derivation";
+import { AlertTriangle, Building2, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 
-interface CapabilityProfileEntry {
-  category: CapabilityCategory;
-  score: number;
-  confidence: ConfidenceLevel;
-  evidenceCount: number;
+interface RepositorySummary {
+  scanStatus: "ok" | "partial" | "failed";
+}
+
+interface TechnologySummary {
+  technology: string;
+  strength: "strong" | "moderate" | "limited";
 }
 
 interface CodeDnaState {
@@ -19,24 +20,17 @@ interface CodeDnaState {
   verificationState?: "pending" | "verified" | "failed";
   verificationCode?: string;
   scanStatus?: "idle" | "scanning" | "failed";
-  codeDnaScore?: number | null;
-  confidenceLevel?: "low" | "medium" | "high" | null;
+  evidenceConfidence?: number | null;
   repositoriesAnalyzed?: number | null;
   recruiterSummary?: string | null;
   lastScannedAt?: string | null;
   nextScanAt?: string | null;
   lastScanError?: string | null;
   canScanNow?: boolean;
-  capabilityProfile?: CapabilityProfileEntry[];
-  arenaAttemptCount?: number;
+  hasPartialCoverage?: boolean;
+  repositories?: RepositorySummary[];
+  technologies?: TechnologySummary[];
 }
-
-const CONFIDENCE_LABEL: Record<string, string> = { low: "Low confidence", medium: "Medium confidence", high: "High confidence" };
-const CONFIDENCE_DOT: Record<ConfidenceLevel, string> = {
-  low: "bg-lp-text-muted/40",
-  medium: "bg-lp-accent-ochre",
-  high: "bg-lp-success",
-};
 
 function relativeCooldown(nextScanAt: string | null | undefined): string | null {
   if (!nextScanAt) return null;
@@ -147,64 +141,21 @@ export function CodeDnaCard() {
     );
   }
 
-  const capabilityProfile = state.capabilityProfile ?? [];
-  const hasAnyEvidence = state.connected || capabilityProfile.length > 0;
+  const technologies = state.technologies ?? [];
+  const failedRepos = (state.repositories ?? []).filter((r) => r.scanStatus === "failed").length;
 
   return (
     <div className="mb-5 rounded-xl border border-lp-border-hairline bg-lp-surface-card p-5 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
-        <GitBranch size={17} className="text-lp-text-ink" />
+        <Building2 size={17} className="text-lp-text-ink" />
         <h3 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Code DNA</h3>
       </div>
 
-      {!hasAnyEvidence && (
-        <div className="mb-4 flex flex-col gap-2 rounded-lg bg-lp-surface-subtle p-3.5">
-          <p className="flex items-center gap-1.5 font-lp-body text-lp-body-sm font-medium text-lp-text-ink">
-            <Sparkles size={14} className="text-lp-accent-indigo" />
-            Your Code DNA is starting
-          </p>
-          <p className="font-lp-body text-lp-body-sm text-lp-text-muted">
-            It builds from real evidence — complete an Arena challenge or connect your GitHub below.
-          </p>
-          <Link
-            href="/arena"
-            className="w-fit rounded-lg bg-lp-text-ink px-3.5 py-2 font-lp-mono text-lp-label-sm font-semibold text-lp-surface-card"
-          >
-            Enter Arena
-          </Link>
-        </div>
-      )}
-
-      {capabilityProfile.length > 0 && (
-        <div className="mb-4">
-          <p className="mb-2 font-lp-mono text-lp-label-sm font-semibold uppercase tracking-wide text-lp-text-muted">
-            Capability Profile
-          </p>
-          <div className="flex flex-col gap-2">
-            {capabilityProfile.slice(0, 4).map((c) => (
-              <div key={c.category} className="flex items-center justify-between font-lp-body text-lp-body-sm">
-                <span className="flex items-center gap-1.5 text-lp-text-ink">
-                  <span className={`h-1.5 w-1.5 rounded-full ${CONFIDENCE_DOT[c.confidence]}`} title={CONFIDENCE_LABEL[c.confidence]} />
-                  {c.category}
-                </span>
-                <span className="font-lp-mono text-lp-label-sm text-lp-text-muted">{c.score}</span>
-              </div>
-            ))}
-          </div>
-          <Link
-            href="/dashboard/vault/code-dna"
-            className="mt-2 inline-block font-lp-mono text-lp-label-sm text-lp-accent-indigo hover:underline"
-          >
-            View full Code DNA
-          </Link>
-        </div>
-      )}
-
       {!state.connected && (
-        <div className="flex flex-col gap-2 border-t border-lp-border-hairline pt-4">
+        <div className="flex flex-col gap-2">
           <p className="font-lp-body text-lp-body-sm text-lp-text-muted">
-            Connect your public GitHub to turn your real repositories, commits, and pull requests into verified
-            engineering evidence.
+            Connect your public GitHub to build a recruiter-ready summary of your engineering activity — no scores
+            you didn&rsquo;t earn, no claims we can&rsquo;t back with evidence.
           </p>
           <div className="mt-1 flex flex-col gap-2 sm:flex-row">
             <input
@@ -248,7 +199,7 @@ export function CodeDnaCard() {
         </div>
       )}
 
-      {state.connected && state.verificationState === "verified" && state.codeDnaScore == null && (
+      {state.connected && state.verificationState === "verified" && state.evidenceConfidence == null && (
         <div className="flex flex-col gap-2">
           <p className="font-lp-body text-lp-body-sm text-lp-text-muted">
             <span className="font-medium text-lp-text-ink">@{state.username}</span> is verified. Run your first scan
@@ -265,20 +216,17 @@ export function CodeDnaCard() {
         </div>
       )}
 
-      {state.connected && state.codeDnaScore != null && (
+      {state.connected && state.evidenceConfidence != null && (
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="font-lp-display text-lp-display-mobile font-semibold text-lp-text-ink">
-                {state.codeDnaScore}
+                {state.evidenceConfidence}
               </span>
               <div>
-                <p className="flex items-center gap-1.5 font-lp-body text-lp-body-sm font-medium text-lp-text-ink">
-                  <CheckCircle2 size={14} className="text-lp-success" />
-                  @{state.username}
-                </p>
+                <p className="font-lp-body text-lp-body-sm font-medium text-lp-text-ink">@{state.username}</p>
                 <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">
-                  {CONFIDENCE_LABEL[state.confidenceLevel ?? "low"]} · {state.repositoriesAnalyzed ?? 0} repos analyzed
+                  GitHub Evidence Confidence · {state.repositoriesAnalyzed ?? 0} repos analyzed
                 </p>
               </div>
             </div>
@@ -305,8 +253,25 @@ export function CodeDnaCard() {
             </div>
           </div>
 
+          {technologies.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {technologies.slice(0, 5).map((t) => (
+                <span key={t.technology} className="rounded-full border border-lp-border-hairline px-2.5 py-1 font-lp-mono text-lp-label-sm text-lp-text-ink">
+                  {t.technology}
+                </span>
+              ))}
+            </div>
+          )}
+
           {state.recruiterSummary && (
             <p className="mt-3 font-lp-body text-lp-body-sm leading-relaxed text-lp-text-muted">{state.recruiterSummary}</p>
+          )}
+
+          {state.hasPartialCoverage && (
+            <p className="mt-2 flex items-center gap-1.5 font-lp-body text-lp-label-sm text-lp-text-muted">
+              <AlertTriangle size={12} />
+              {failedRepos} repositor{failedRepos === 1 ? "y" : "ies"} couldn&rsquo;t be fully analyzed this scan.
+            </p>
           )}
 
           <Link
