@@ -9,6 +9,8 @@ import { deriveTechnologyObservations } from "@/lib/code-dna/technology-derivati
 import { deriveAuthenticityAndReview } from "@/lib/code-dna/authenticity-and-review-signals";
 import { buildRecruiterSummary } from "@/lib/code-dna/recruiter-summary";
 import { classifyNameCollision, eligibleForSimilarityCheck } from "@/lib/code-dna/similarity";
+import { CODE_DNA_ANALYSIS_VERSION, deriveGithubEvidence } from "@/lib/evidence/from-github";
+import { recordEvidence } from "@/lib/evidence/record";
 
 const SCAN_COOLDOWN_MINUTES = 15;
 const MAX_SIMILARITY_LOOKUPS = 3;
@@ -142,6 +144,16 @@ export async function POST() {
     const technologies = deriveTechnologyObservations(scan.repositories);
     const { evidenceConfidence } = deriveAuthenticityAndReview(scan.repositories);
     const recruiterSummary = buildRecruiterSummary(connection.username, scan.repositories, technologies);
+
+    // Evidence-layer write: feeds Portfolio's Demonstrated Capabilities, not
+    // Code DNA's own UI (which stays GitHub-only, no capability scores).
+    // Never fails the scan itself -- evidence is a downstream projection of
+    // data already safely persisted to github_repositories above.
+    try {
+      await recordEvidence(service, auth.userId, "github_repository", CODE_DNA_ANALYSIS_VERSION, deriveGithubEvidence(scan.repositories));
+    } catch (evidenceError) {
+      console.error("[code-dna/scan] evidence write failed (scan itself succeeded):", evidenceError);
+    }
 
     await service
       .from("github_connections")

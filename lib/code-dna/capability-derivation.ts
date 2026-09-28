@@ -79,9 +79,12 @@ const RECENCY_CAP_DAYS = 180;
 // bucketed into the capability taxonomy. Deliberately conservative: only
 // signals with an unambiguous category get mapped; nothing here is
 // inferred from file contents or repo names.
-const FRONTEND_TECH = new Set(["TypeScript", "Next.js", "Angular"]);
-const BACKEND_TECH = new Set(["Node.js", "Python", "Go", "Rust", "Java", "Ruby", "PHP"]);
-const DEVOPS_TECH = new Set(["Docker", "CI/CD (GitHub Actions)", "CI/CD (GitLab)"]);
+// Exported so lib/evidence/from-github.ts can classify FullRepoAnalysis
+// repos into the same categories without re-declaring (and risking drift
+// on) which technologies count as frontend/backend/devops.
+export const FRONTEND_TECH = new Set(["TypeScript", "Next.js", "Angular"]);
+export const BACKEND_TECH = new Set(["Node.js", "Python", "Go", "Rust", "Java", "Ruby", "PHP"]);
+export const DEVOPS_TECH = new Set(["Docker", "CI/CD (GitHub Actions)", "CI/CD (GitLab)"]);
 
 /**
  * The single source of truth for "does this repo count as evidence of

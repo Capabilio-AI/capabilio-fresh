@@ -572,36 +572,57 @@ export type Database = {
       }
       evidence: {
         Row: {
+          analysis_version: string | null
           capability_delta: number | null
           confidence: Database["public"]["Enums"]["capability_confidence"]
           created_at: string
           evaluated_by: string | null
+          evidence_type: string | null
           id: string
+          metadata: Json | null
+          observed_at: string | null
           skill: string
           source_id: string | null
+          source_identifier: string | null
           source_type: Database["public"]["Enums"]["capability_evidence_source"]
+          source_url: string | null
+          strength: number | null
           user_id: string
         }
         Insert: {
+          analysis_version?: string | null
           capability_delta?: number | null
           confidence?: Database["public"]["Enums"]["capability_confidence"]
           created_at?: string
           evaluated_by?: string | null
+          evidence_type?: string | null
           id?: string
+          metadata?: Json | null
+          observed_at?: string | null
           skill: string
           source_id?: string | null
+          source_identifier?: string | null
           source_type: Database["public"]["Enums"]["capability_evidence_source"]
+          source_url?: string | null
+          strength?: number | null
           user_id: string
         }
         Update: {
+          analysis_version?: string | null
           capability_delta?: number | null
           confidence?: Database["public"]["Enums"]["capability_confidence"]
           created_at?: string
           evaluated_by?: string | null
+          evidence_type?: string | null
           id?: string
+          metadata?: Json | null
+          observed_at?: string | null
           skill?: string
           source_id?: string | null
+          source_identifier?: string | null
           source_type?: Database["public"]["Enums"]["capability_evidence_source"]
+          source_url?: string | null
+          strength?: number | null
           user_id?: string
         }
         Relationships: []
@@ -640,6 +661,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      github_analysis_runs: {
+        Row: {
+          analysis_version: string
+          commits_analyzed: number | null
+          completed_at: string | null
+          error: string | null
+          id: string
+          prs_analyzed: number | null
+          repos_analyzed: number | null
+          repos_discovered: number | null
+          repos_failed: number | null
+          started_at: string
+          status: string
+          user_id: string
+          warnings: Json
+        }
+        Insert: {
+          analysis_version: string
+          commits_analyzed?: number | null
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          prs_analyzed?: number | null
+          repos_analyzed?: number | null
+          repos_discovered?: number | null
+          repos_failed?: number | null
+          started_at?: string
+          status?: string
+          user_id: string
+          warnings?: Json
+        }
+        Update: {
+          analysis_version?: string
+          commits_analyzed?: number | null
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          prs_analyzed?: number | null
+          repos_analyzed?: number | null
+          repos_discovered?: number | null
+          repos_failed?: number | null
+          started_at?: string
+          status?: string
+          user_id?: string
+          warnings?: Json
+        }
+        Relationships: []
       }
       github_connections: {
         Row: {
@@ -1990,6 +2059,7 @@ export type Database = {
         | "learning_module"
         | "project"
         | "arena_challenge"
+        | "github_repository"
       college_type:
         | "engineering"
         | "medical"
@@ -2155,6 +2225,7 @@ export const Constants = {
         "learning_module",
         "project",
         "arena_challenge",
+        "github_repository",
       ],
       college_type: [
         "engineering",

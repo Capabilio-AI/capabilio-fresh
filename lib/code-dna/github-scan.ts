@@ -6,10 +6,18 @@
 // unauthenticated) rate limit — never required, never per-user.
 
 const GITHUB_API = "https://api.github.com";
-export const MAX_REPOS_TO_ANALYZE = 8;
+// Not a "top-N significant repos" curation cutoff — every discovered,
+// non-empty repo is analyzed. This is a rate-limit/cost safety valve only,
+// for the rare account with an implausible repo count; selectSignificantRepositories
+// still ranks so the valve (if it ever triggers) drops the least-significant
+// repos first, not an arbitrary slice. Coverage is always surfaced
+// (repositoriesConsidered vs repositories.length), never silently truncated.
+// ~7 GitHub API calls per repo; 60 repos * 7 ≈ 420 calls, well inside the
+// 5000/hr authenticated rate limit for a single scan.
+export const MAX_REPOS_TO_ANALYZE = 60;
 const COMMIT_SAMPLE_SIZE = 5;
 const COMMIT_AGGREGATE_PAGE_SIZE = 100;
-const MAX_REPO_LIST_PAGES = 5; // caps at 500 repos considered before ranking/selection
+const MAX_REPO_LIST_PAGES = 20; // caps at 2000 repos discovered before ranking/selection -- a documented safety valve, not silent truncation; repositoriesConsidered always reflects what was actually found
 const MAX_BACKOFF_ATTEMPTS = 3;
 const BASE_BACKOFF_MS = 1000;
 

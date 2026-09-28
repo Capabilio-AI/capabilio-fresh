@@ -30,7 +30,15 @@ export function scoreRepository(repo: GithubRepoListItem): number {
   return score;
 }
 
-/** Pure, deterministic selection — highest score first, ties broken by recency. Explicit cap on how many repos this app will ever fully scan in one pass. */
+/**
+ * Pure, deterministic ordering — highest score first, ties broken by
+ * recency. `limit` is a rate-limit safety valve (see MAX_REPOS_TO_ANALYZE in
+ * github-scan.ts), not a "top N significant repos" curation step: for any
+ * realistic account every repo is analyzed, so this function is a no-op
+ * slice in practice. If the valve ever triggers, the least-significant
+ * repos by this ranking are the ones dropped, and coverage is always
+ * surfaced to the caller rather than silently hidden.
+ */
 export function selectSignificantRepositories(repos: GithubRepoListItem[], limit: number): GithubRepoListItem[] {
   return [...repos]
     .sort((a, b) => scoreRepository(b) - scoreRepository(a) || new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
