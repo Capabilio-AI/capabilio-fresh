@@ -26,3 +26,9 @@
 Phase 5: Launchpad real query + honest empty state, Portfolio/interview pushes, Higher Studies check-in + Switch (active_role_key, resolveRole), Entrepreneur page, Not-sure cadence confirmation. Phases 6–7.
 
 - Phase 6 tests: consistency.test.ts (no Google, Get Started, single trigger implementation via source scan with mutation check, assessment/prompt/Launchpad agreement sweep, section guard, Launchpad empty), direction-writes/higher-studies-switch/reflection tests. Phase 7 verification recorded in audit doc.
+
+## Phase 1 findings carried over (from the fuller audit committed in 042adfd; full detail in the audit doc §§1–7)
+- Live table is still `institution_memberships`: migration 003's rename was never applied to production. Repo migration chronology isn't fully trustworthy — verified against live `information_schema`.
+- Engagement data at audit time: 0 rotation-state rows, 1 domain completion, 1 stream completion, 3 users → fallback prompt variant is the default; data-driven variant is live only for a student with ≥1 verified Arena completion.
+- `resolveRole()` had an un-ordered `.limit(1)` on `arena_rotation_state`; the explicit `active_role_key` pointer now takes precedence (pickActiveRole), so a Switch is deterministic. The un-ordered lookup remains only for students who have never explicitly chosen a role.
+- Launchpad was fabricated (`MOCK_OPPORTUNITIES`) — removed in Phase 5.
