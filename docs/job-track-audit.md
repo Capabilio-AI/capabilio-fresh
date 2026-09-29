@@ -294,3 +294,93 @@ continuation.
    Google button, so removal touches every render site, not just one.
 3. Derive-year-semester-string-from-start_year design for `JOURNEY_STAGES` backward
    compatibility (§1.3).
+
+---
+
+# Phase 2 — Design
+
+**Decision recorded:** Option 1 for the domain-role blocker — a stored, nullable `active_role_key` read first by `resolveRole`. Audit correction: the audit made 6 Supabase calls (1 `list_projects` + 5 `execute_sql`), all read-only `SELECT`s. No production writes.
+
+## Schema (migration `030_job_track_direction.sql`, additive only)
+On `public.institution_memberships` (still the live table name):
+
+| column | type | purpose |
+|---|---|---|
+| `goal_state` | `text null`, check in (`entrepreneur`,`higher_studies`,`job`,`not_sure`) | NULL = never chosen; every reader treats NULL and `not_sure` as Job-track |
+| `goal_state_updated_at` | `timestamptz null` | last change |
+| `goal_state_prompted_at` | `timestamptz null` | last time the prompt was shown/answered/dismissed (Not-sure cadence) |
+| `higher_studies_checkin_at` | `timestamptz null` | last "still on this path?" answer |
+| `year_confirmed_at` | `timestamptz null` | NULL = student has not confirmed the computed year (forces confirm UI) |
+| `year_override` | `smallint null`, check 1..8 | manual current-year override |
+| `active_role_key` | `text null` FK → `arena_domain_roles(role_key)` | explicit active domain role (resolver reads it first) |
+| `portfolio_prompt_seen_at` | `timestamptz null` | watermark for the Portfolio-completion prompt |
+
+On `public.institutions`: `academic_start_month smallint not null default 7` check 1..12 (the audit found no per-institution cycle month anywhere; July is the default and can be edited per college).
+
+`start_year`/`end_year` already exist (migration 015) — no change. The legacy `year` text column is **kept**, not dropped.
+
+Writes to `goal_state*`, `year_*`, `active_role_key`, `higher_studies_checkin_at` go through server routes only, using the session user's id; the client never sends `user_id`, `membership_id`, assessment mode, or trigger results. Existing RLS on the table stays; I will check whether it lets a student UPDATE their own row directly, and if so restrict these columns via column-level grants so the API is the only write path.
+
+### Backfill / safety (no data loss, no forced re-onboarding)
+- Students with `start_year`/`end_year` already set: leave values, set nothing else → `year_confirmed_at IS NULL` → confirm card shows on next login.
+- Students with only a legacy label (`year` = "y-s") and a B.Tech-shaped record: derive `start_year = academic_year_start(created_at) − (y−1)`, `end_year = start_year + 4`, computed from **membership creation date** (the label was true at signup, not now). Written by the migration, `year_confirmed_at` left NULL so the student confirms rather than trusting a derived guess.
+- Anything not derivable (no label, or non-B.Tech): leave NULL and flagged (NULL confirmation) → student is prompted to enter years. Nothing is guessed.
+- `handle_new_user` is added to the repo in the same migration (`CREATE OR REPLACE`, extended to write `start_year`/`end_year` from metadata with server-side validation). Live DB and repo converge because the migration is applied to production.
+
+## Shared trigger utility
+`lib/career/trigger.ts` (pure, server-called):
+```ts
+export const CAREER_DIRECTION_WINDOW_YEARS = 1;
+export function isCareerDirectionWindow(endYear: number | null, now: Date = new Date()): boolean
+//   endYear == null -> false;  else  endYear - now.getFullYear() <= 1
+```
+Companion (same folder): `computeCurrentAcademicYear({startYear, endYear, cycleStartMonth, override, now}) -> {year, source}`; `lib/career/direction.ts#getStudentDirection(supabase, userId)` is the single server read used by every consumer (live read each request, no caching).
+
+**Call sites that will use `isCareerDirectionWindow` (and nothing else):**
+1. `lib/assessment/mode.ts#getAssessmentMode` (new) → used by `app/api/assessment/start`, `progress`, `[section]` and `lib/assessment/attempts.ts` — server picks the section list.
+2. Goal-state prompt decision (`lib/career/direction.ts#shouldShowGoalPrompt`).
+3. Launchpad visibility: `app/(app)/launchpad/page.tsx`, and nav lock via `AppShell → HeaderNav` (server computes a boolean, client component receives it).
+4. AI Interview gate: `app/(app)/interview/page.tsx` (currently same 3-2 gate; keeps parity with Launchpad).
+5. `lib/nav/config.ts#lockedUntilStage` — replaced by a `requiresDirectionWindow` flag.
+
+`lib/journey/stage.ts#isStageUnlocked` and `UNLOCK_STAGE_KEY` are **deleted**. No other inline `end_year − year` math is permitted (final audit will grep for it).
+
+## Semester-label call sites — migration plan (nothing touched yet)
+Approach **U** = update call site directly to computed academic year; **D** = derive a display label for backward compatibility; **K** = keep reading stored legacy data (read-only display of old records).
+
+| file | use | approach |
+|---|---|---|
+| `lib/journey/stage.ts` | stage table + gate | **U**: stage keyed by year of study (1–4); gate removed (replaced by trigger util) |
+| `components/dashboard/JourneyTimeline.tsx` | stage highlight | **U**: takes computed year; 7 stages regroup to year-level (Y1 Discover, Y2 Develop→Build, Y3 Specialize→Experience, Y4 Prove→Launch; stage within a year not claimed, since semester granularity is dropped) |
+| `app/api/v1/students/[studentId]/state/route.ts` | `academicPhaseIndex` | **U**: from computed year; `academicContext.year` becomes `{ academicYear, startYear, endYear }` |
+| `components/shell/HeaderNav.tsx`, `AppShell.tsx`, `lib/nav/config.ts` | Launchpad/Interview lock | **U**: server-computed boolean prop |
+| `app/(app)/launchpad/page.tsx`, `app/(app)/interview/page.tsx` | gate + "you're at stage X (3-2)" copy | **U**: gate via trigger util; copy says "Available in your final two years" — no semester text |
+| `lib/dashboard/viewer.ts`, `lib/dashboard/data.ts`, `lib/dashboard/education.ts#getStudentBranchContext` | carry `year` string | **U**: add `startYear`,`endYear`,`academicYear`; keep `year` field temporarily as `null`-safe legacy passthrough until consumers below move, then remove |
+| `components/dashboard/DashboardHeader.tsx`, `app/(app)/profile/page.tsx`, `app/(app)/settings/page.tsx` | "3rd Year, Sem 2" chip | **U**: "3rd Year · 2024–2028" from computed year + start/end |
+| `components/education/EducationEntryCard.tsx` (+ profile entries list) | education history line | **K**: entries with `start_year/end_year` already render those; legacy-only rows keep their stored label (historic record, no logic) |
+| `lib/assessment/attempts.ts:115` | result `year` | **U**: computed academic year |
+| `lib/guide-path/generate.ts` | LLM prompt context "year-semester 2-1" | **D**: pass "year N of M (start–end)" derived string; no semester claims |
+| `components/login/{SignupForm,auth}.ts`, DB `year` write in `handle_new_user` | capture | **U**: replaced by start/end year; `year` column no longer written for new accounts, retained for old rows |
+| `lib/supabase/types.ts` | generated types | regenerate after migration |
+
+Nothing in the app needs a fully derived "3-2" label, so **D** is used in exactly one place (LLM prompt context).
+
+## Reflection-first prompt — which variant is live
+Both are built. Data-driven text is gated on real data: a student qualifies only with ≥1 **verified** completion for a role (`arena_skill_ratings.verified_count` summed per `role_key`). Copy uses verified attempt counts, e.g. "You've completed **N verified Data Analyst tasks** on Capabilio. Does that still feel right, or do you want to explore something else?" — never "time spent" (time isn't recorded). Today: 1 student qualifies; everyone else gets the plain fallback (four options, no engagement claim). Because only one role is enabled, the data-driven variant's "explore something else" answer routes to the goal/direction options, not a role picker.
+
+## Cadences (no existing recurring-prompt pattern in the app — only the one-time `has_seen_career_direction_intro` flag — so defaults apply)
+- **Not sure / unset:** show the goal-state prompt on the first authenticated page load after ≥14 days since `goal_state_prompted_at` (or immediately if never prompted, once the trigger is met). Any answer or dismissal stamps `goal_state_prompted_at`. Unset (NULL) is treated as `not_sure`.
+- **Higher Studies:** show "Still on this path?" once ≥90 days since `higher_studies_checkin_at` (initialized from `goal_state_updated_at`; terms aren't modeled). Continue → stamp; Switch → active-role retarget (requires ≥2 enabled roles, else honest "no other roles available yet" state and the stamp still records the answer).
+- "Login" is approximated by first server render of the app layout after the interval (no separate login event is stored).
+
+## Assessment mode
+`getAssessmentMode(userId)` → `"full" | "light"`; light iff `isCareerDirectionWindow(end_year)`. Light = `verbal_communication` + `career_interests` (the existing sections that correspond to Communication + Career Interest). Server-side in the start/progress/section routes and `SECTION_ORDER` consumers; the client never sends a mode. A light attempt completes when its own section set is complete (`submit.ts:42` currently requires all 7).
+
+## Where each UI lives
+- Onboarding: `/signup` (start/end year; Google removed from `/login`), post-login **year confirm card** (dashboard banner + settings).
+- Goal-state prompt: modal/banner rendered by `(app)/layout.tsx` when server says so.
+- Always-accessible settings: `app/(app)/settings/direction/page.tsx` (goal state, confirm/override year, active domain role), linked from Settings and the header user menu.
+- Job track: dashboard banner (Portfolio prompt after a real new verified completion since `portfolio_prompt_seen_at`; AI-interview push linking to `/interview`), Launchpad (real `opportunities` rows or empty state).
+- Higher Studies: check-in banner on dashboard; Switch flow in direction settings.
+- Entrepreneur: `app/(app)/entrepreneur/page.tsx` — static informational page, external links only, no forms.
+- Portfolio: unchanged data; Portfolio-completion prompt links to it.
