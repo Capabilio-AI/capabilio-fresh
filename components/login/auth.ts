@@ -10,7 +10,7 @@ export type AuthOutcome =
   | { status: "success"; resolvedRole: RoleId; fullName: string | null; institutions: Institution[] }
   | { status: "invalid-credentials" }
   | { status: "unverified" }
-  | { status: "pending-approval" }
+  | { status: "pending-approval"; organisationName: string | null; orgType: "institution" | "company" | null }
   | { status: "network-error" };
 
 const SELF_SERVE_ROLES: RoleId[] = ["student", "professional"];
@@ -69,9 +69,22 @@ export async function signIn(email: string, password: string): Promise<AuthOutco
   }
 
   if (!memberships || memberships.length === 0) {
-    // No active membership: don't leave a live session behind a "pending" screen.
+    // Name the organisation that is waiting (own row, readable under RLS), then don't leave a
+    // live session behind a "pending" screen.
+    const { data: pending } = await supabase
+      .from("institution_memberships")
+      .select("institutions ( name, org_type )")
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const org = pending?.[0]?.institutions as { name: string; org_type: string } | null | undefined;
     await supabase.auth.signOut();
-    return { status: "pending-approval" };
+    return {
+      status: "pending-approval",
+      organisationName: org?.name ?? null,
+      orgType: org?.org_type === "company" ? "company" : org ? "institution" : null,
+    };
   }
 
   const institutions = memberships

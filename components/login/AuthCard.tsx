@@ -17,9 +17,10 @@ import {
   signIn,
 } from "./auth";
 import { RoleId } from "./roles";
+import { PendingApprovalCard } from "./PendingApprovalCard";
 import type { AuthPath } from "@/lib/onboarding/auth-path";
 
-type ErrorStatus = Exclude<AuthOutcome["status"], "success">;
+type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval">;
 
 // Only the student flow has a real destination built (the assessment).
 // Every other role's portal doesn't exist yet — this app has never had
@@ -75,6 +76,7 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
   const [pendingName, setPendingName] = useState<string>("there");
   const [redirectPortal, setRedirectPortal] = useState<string | null>(null);
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
+  const [pendingOrg, setPendingOrg] = useState<Extract<AuthOutcome, { status: "pending-approval" }> | null>(null);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   useEffect(() => {
@@ -89,6 +91,10 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
     const outcome = await signIn(email, password);
     setLoading(false);
 
+    if (outcome.status === "pending-approval") {
+      setPendingOrg(outcome);
+      return;
+    }
     if (outcome.status !== "success") {
       setAuthError(outcome.status);
       return;
@@ -110,6 +116,19 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
     await resendVerificationEmail(email);
     setResendState("sent");
   };
+
+  if (pendingOrg) {
+    return (
+      <PendingApprovalCard
+        organisationName={pendingOrg.organisationName}
+        orgType={pendingOrg.orgType}
+        onBack={() => {
+          setPendingOrg(null);
+          setPassword("");
+        }}
+      />
+    );
+  }
 
   if (redirectPortal) {
     return (

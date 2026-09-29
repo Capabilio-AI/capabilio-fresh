@@ -3,7 +3,7 @@
 import { AlertCircle, WifiOff } from "lucide-react";
 import { AuthOutcome } from "./auth";
 
-type ErrorStatus = Exclude<AuthOutcome["status"], "success">;
+type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval">;
 
 interface AuthErrorBannerProps {
   status: ErrorStatus;
@@ -18,10 +18,6 @@ const COPY: Record<ErrorStatus, { title: string; body: string }> = {
   unverified: {
     title: "Account not verified",
     body: "Your account needs verification before you can continue.",
-  },
-  "pending-approval": {
-    title: "Approval pending",
-    body: "Your organisation account is awaiting manual approval. Nothing is wrong — you can sign in once we have approved it.",
   },
   "network-error": {
     title: "Connection problem",

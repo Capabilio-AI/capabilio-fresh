@@ -140,6 +140,9 @@ describe("manual approval (scripts/org-approvals.mjs)", () => {
     await c.auth.signInWithPassword({ email, password: "Approve-me-1234" });
     const active = () => c.from("institution_memberships").select("status").eq("status", "active");
     expect((await active()).data).toHaveLength(0); // pending: login screen's "pending-approval" branch
+    // the pending screen names the organisation using this same own-row read
+    const pending = await c.from("institution_memberships").select("institutions ( name, org_type )").eq("status", "pending").limit(1);
+    expect(pending.data?.[0]?.institutions).toEqual({ name: `${orgName} approve`, org_type: "institution" });
 
     run("approve", m!.id);
     expect((await active()).data).toHaveLength(1); // approved: the same universal login now succeeds
