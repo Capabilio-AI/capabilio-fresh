@@ -1,12 +1,13 @@
 import { ReactNode } from "react";
 import Image from "next/image";
 import { BrandPanel } from "./BrandPanel";
+import type { AuthPath } from "@/lib/onboarding/auth-path";
 
-export function AuthLayout({ children }: { children: ReactNode }) {
+export function AuthLayout({ children, path = "student" }: { children: ReactNode; path?: AuthPath }) {
   return (
     <div className="min-h-screen bg-lp-background lg:grid lg:grid-cols-2">
       <div className="hidden border-r border-lp-border-hairline lg:block">
-        <BrandPanel />
+        <BrandPanel path={path} />
       </div>
 
       <div className="lp-bg-grid relative flex min-h-screen flex-col items-center justify-center bg-lp-surface-subtle px-5 py-12 sm:px-8">

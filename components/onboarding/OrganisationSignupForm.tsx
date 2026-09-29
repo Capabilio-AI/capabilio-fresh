@@ -83,7 +83,7 @@ export function OrganisationSignupForm() {
           <h1 className="mt-4 font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">{copy.title}</h1>
           <p className="mt-2 font-lp-body text-lp-body-sm leading-relaxed text-lp-text-muted">{copy.body}</p>
           <a
-            href="/login"
+            href="/login?path=organisation"
             className="mt-6 inline-flex w-full items-center justify-center rounded bg-lp-text-ink py-3 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card hover:bg-lp-inverse-surface"
           >
             Go to sign in
@@ -159,7 +159,7 @@ export function OrganisationSignupForm() {
       </form>
 
       <p className="mt-6 text-center font-lp-body text-lp-body-sm text-lp-text-muted">
-        Already registered? <a href="/login" className="font-medium text-lp-accent-indigo hover:underline">Sign in</a>
+        Already registered? <a href="/login?path=organisation" className="font-medium text-lp-accent-indigo hover:underline">Sign in</a>
       </p>
     </CardChrome>
   );

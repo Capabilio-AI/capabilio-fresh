@@ -17,6 +17,7 @@ import {
   signIn,
 } from "./auth";
 import { RoleId } from "./roles";
+import type { AuthPath } from "@/lib/onboarding/auth-path";
 
 type ErrorStatus = Exclude<AuthOutcome["status"], "success">;
 
@@ -59,7 +60,8 @@ function AuthModals({
   );
 }
 
-export function AuthCard() {
+export function AuthCard({ path = "student" }: { path?: AuthPath }) {
+  const isOrg = path === "organisation";
   const router = useRouter();
   const [role, setRole] = useState<RoleId>("student");
   const [email, setEmail] = useState("");
@@ -133,16 +135,18 @@ export function AuthCard() {
 
   return (
     <>
-      <CardChrome>
+      <CardChrome label={isOrg ? "capabilio / organisation-sign-in" : undefined}>
         <h1 className="font-lp-display text-lp-headline-md font-semibold tracking-tight text-lp-text-ink">
-          Welcome back
+          {isOrg ? "Organisation sign in" : "Welcome back"}
         </h1>
         <p className="mt-1.5 font-lp-body text-lp-body-sm text-lp-text-muted">
-          Sign in to continue your Capabilio journey.
+          {isOrg
+            ? "Sign in with your work email. Accounts still awaiting approval will see their status."
+            : "Sign in to continue your Capabilio journey."}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5" noValidate>
-          <RoleSelector value={role} onChange={setRole} />
+          {!isOrg && <RoleSelector value={role} onChange={setRole} />}
 
           {authError && (
             <AuthErrorBanner
@@ -169,7 +173,7 @@ export function AuthCard() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder={isOrg ? "you@organisation.com" : "Enter your email"}
               autoComplete="email"
               className="w-full rounded border border-lp-border-hairline bg-lp-surface-card px-4 py-3 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted transition-colors focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"
             />
@@ -215,6 +219,8 @@ export function AuthCard() {
           </button>
         </form>
 
+        {!isOrg && (
+          <>
         <div className="my-6 flex items-center gap-3">
           <span className="h-px flex-1 bg-lp-border-hairline" />
           <span className="font-lp-mono text-lp-label-sm tracking-wide text-lp-text-muted">OR</span>
@@ -233,18 +239,22 @@ export function AuthCard() {
           </button>
         </div>
 
+          </>
+        )}
+
         <p className="mt-6 text-center font-lp-body text-lp-body-sm text-lp-text-muted">
-          Don&apos;t have a Capabilio account?{" "}
-          <a href="/signup" className="font-medium text-lp-accent-indigo hover:underline">
-            Create an account
+          {isOrg ? "Not registered yet? " : "Don\u2019t have a Capabilio account? "}
+          <a href={isOrg ? "/get-started/organisation" : "/get-started"} className="font-medium text-lp-accent-indigo hover:underline">
+            {isOrg ? "Register your organisation" : "Create an account"}
           </a>
         </p>
 
         <div className="mt-7 border-t border-lp-border-hairline pt-5">
           <p className="flex items-start gap-2 font-lp-mono text-lp-label-sm leading-relaxed text-lp-text-muted">
             <ShieldCheck size={14} className="mt-0.5 shrink-0 text-lp-text-muted" aria-hidden="true" />
-            Your career journey, skills, projects, and verified work — securely connected in one
-            place.
+            {isOrg
+              ? "Understand your cohort with evidence-backed capability data — securely, in one place."
+              : "Your career journey, skills, projects, and verified work — securely connected in one place."}
           </p>
         </div>
       </CardChrome>
