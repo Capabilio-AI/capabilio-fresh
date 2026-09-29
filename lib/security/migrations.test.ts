@@ -30,3 +30,11 @@ describe("migration 033: every roadmap table is private to the service role", ()
     expect((sql.match(/references public\.arena_skill_areas\(role_key, area_key\)/g) ?? []).length).toBe(3);
   });
 });
+
+describe("migration 034: membership-based read policies require an active membership", () => {
+  const sql = migration("034_membership_policies_require_active.sql");
+  it.each(["programs", "departments", "cohorts"])("%s policy checks status = 'active'", (t) => {
+    const block = sql.split(/drop policy/i).find((b) => b.includes(`on public.${t} for select`)) ?? "";
+    expect(block).toMatch(/status = 'active'/);
+  });
+});

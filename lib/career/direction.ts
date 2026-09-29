@@ -118,7 +118,8 @@ export async function getStudentDirection(
     .eq("role", "student")
     .order("created_at", { ascending: false });
   const rows = data ?? [];
-  const best = rows.find((r) => r.status === "active" && r.branch) ?? rows.find((r) => r.branch) ?? null;
+  // Active only: a pending or revoked membership must not unlock track features.
+  const best = rows.find((r) => r.status === "active" && r.branch) ?? null;
   if (!best) return null;
   const institution = best.institutions as { academic_start_month: number } | null;
   return buildDirection(best, institution?.academic_start_month ?? DEFAULT_ACADEMIC_START_MONTH, now);

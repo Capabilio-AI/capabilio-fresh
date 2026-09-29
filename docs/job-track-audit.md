@@ -429,3 +429,34 @@ Tested directly on production with a disposable authenticated user (public key +
 - Evidence it was unsafe: both affected rows carry the label "1-2" yet were created in September, when a first-semester student would be "1-1"; the derivation also ignored the semester digit entirely. The label is demonstrably unreliable, so a pre-filled year looks authoritative while possibly being a year off.
 - Migration `032_revert_label_year_inference.sql` (applied) nulls `start_year/end_year` on exactly those rows (student, `degree` null, label-shaped `year`, unconfirmed). Rows whose years the student entered themselves (e.g. the Mechanical row, `degree='B.Tech'`) are untouched. Confirmation stays required with no pre-fill (`YearConfirmCard` opens empty when years are missing).
 - Migration 030's header now notes its backfill was superseded. This document no longer contradicts itself (Phase 2 "Backfill / safety" updated above).
+
+---
+
+# Post-review follow-up (five review questions)
+
+## R1. Every authorization check that reads role/membership — does it require `status = 'active'`?
+Inventory (code grep for `role`, `primary_role`, `institution_memberships`; every DB function and RLS policy that references memberships/roles):
+
+| where | what it does | requires active? |
+|---|---|---|
+| `lib/auth/authorize.ts#can` | role → permissions | **yes** (`.eq("status","active")`) |
+| `lib/roadmap/admin-gate.ts#getOrgAdmin` | admin gate | **yes**, then `can()` again |
+| `components/login/auth.ts#signIn` | portal routing for non-self-serve roles | **yes** (`.eq("status","active")`); `primary_role` there only chooses a redirect, it grants nothing |
+| `app/api/v1/students/[studentId]/state#canAccessStudent` | reads the *target's* institution, then `can()` for the viewer | viewer side yes (via `can`). Note: memberships are RLS select-own, so a staff viewer can never read the target's row — the staff path fails closed (always denied). Not a hole; a dead feature to redesign with an org-scoped policy later |
+| RLS `programs_/departments_/cohorts_read_own_institution` | institution structure readable by any member | **no — fixed** by migration `034` (pending and revoked memberships could read them). Same names, plus `status = 'active'`; static test added |
+| `lib/career/direction.ts#getStudentDirection` | picks the student's current program (feeds track/roadmap gating) | preferred active but **fell back to any row with a branch, including revoked — fixed**: active only |
+| `get_or_start_section` (SECURITY DEFINER) | reads a membership only to choose question tiers | not authorization; separate latent issue: `limit 1` with no order can pick an education-history row without a branch |
+| `app/api/education/institution` | copies `profiles.primary_role` into a new membership | not a check; `set_membership_status` forces privileged roles to `pending`, and `primary_role` is no longer client-writable (migration 031) |
+| all other `institution_memberships` reads | display/data selection (viewer summary, education list, leaderboards) | not authorization |
+There are no other functions or policies (public or storage schemas) that reference memberships or roles.
+
+## R2. Did a real student's data ever reference the `test-` role? — confirmed from data and logs, not timing
+- Data (production, queried directly): 0 rows with `role_key like 'test-%'` in `arena_rotation_state`, `arena_skill_ratings`, `arena_domain_assignments`, `arena_attempt_completions`; 0 memberships with `active_role_key` set; 0 evidence rows mentioning it; totals equal their pre-test baselines (assignments 1, ratings 1, completions 1, rotation 0, roles 1).
+- Logs (Supabase `edge_logs`, 10:20–10:40 UTC, a window around the 10:27–10:28 UTC run): **every** `/rest/v1/*` request came from one client IP and the `node` user agent — the test process. No other client, server or student touched the database in that window, so no real student could have been served the role.
+
+## R5. Rating-scale mismatch — NOT isolated to the roadmap; it affects live Arena
+- `complete_workstation_attempt` scores against a fixed 1200 opponent (K = 32): from a 400 start a verified task is +32, shrinking toward +16 at 1200. `difficultyForRating` bands are easy < 1250 ≤ medium < 1400 ≤ hard, and `attempts.ts` falls back to 1200 when no rating row exists.
+- Effect on every new student (rows now start at 400, or 400–700 seeded from the assessment): tasks are served **easy** until the rating passes 1250. Simulating the RPC's own formula: from 400 that takes **34** verified tasks *in that area* for medium and 48 for hard (24 / 38 from a 700 seed). With a 24-hour cooldown across the whole role and five areas rotating, that is on the order of months, so in practice new students never see medium or hard.
+- The one legacy row (1216, from the old default) is 3 tasks from medium — behaviour differs between old and new rows.
+- Separate but related: the UI shows `+8/+12/+15` from `ELO_BY_DIFFICULTY` (stored as `points`) while the rating actually moves by the formula above; Stream (`lib/arena/elo.ts`) uses a 1200 baseline while Domain uses 400. Not changed — this is a product decision (rescale the difficulty bands to the 400 baseline, or change the RPC's reference rating), and each option changes what real students are served.
+- Roadmap: unaffected, because readiness uses `verified_count`, not rating.
