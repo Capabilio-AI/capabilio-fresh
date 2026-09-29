@@ -12,4 +12,6 @@ export const YearBodySchema = z
 
 export const GoalStateBodySchema = z.object({ goalState: z.enum(GOAL_STATES) }).strict();
 
-export const DismissBodySchema = z.object({ prompt: z.enum(["goal", "checkin"]) }).strict();
+export const DismissBodySchema = z.object({ prompt: z.enum(["goal", "checkin", "portfolio"]) }).strict();
+
+export const ActiveRoleBodySchema = z.object({ roleKey: z.string().min(1).max(64) }).strict();

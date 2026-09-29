@@ -69,7 +69,34 @@ export function saveGoalState(service: SupabaseClient<Database>, userId: string,
 }
 
 /** "Decide later" / "Continue": restarts the resurfacing clock without changing the goal. */
-export function recordPromptSeen(service: SupabaseClient<Database>, userId: string, prompt: "goal" | "checkin", now: Date = new Date()) {
+export function recordPromptSeen(service: SupabaseClient<Database>, userId: string, prompt: "goal" | "checkin" | "portfolio", now: Date = new Date()) {
   const stamp = now.toISOString();
-  return updateOwn(service, userId, prompt === "goal" ? { goal_state_prompted_at: stamp } : { higher_studies_checkin_at: stamp }, now);
+  const patch = {
+    goal: { goal_state_prompted_at: stamp },
+    checkin: { higher_studies_checkin_at: stamp },
+    portfolio: { portfolio_prompt_seen_at: stamp },
+  }[prompt];
+  return updateOwn(service, userId, patch, now);
+}
+
+/**
+ * Higher Studies "Switch": retargets the active Arena domain role by changing
+ * ONE field on the membership (active_role_key), read by the existing
+ * config-driven resolver. No Arena, rating, rotation or evidence row is
+ * touched — prior data stays exactly as it was; only new activity accrues
+ * under the new role. Server checks the student is on the Higher Studies
+ * path and that the target is an enabled role from config.
+ */
+export async function switchActiveRole(
+  service: SupabaseClient<Database>,
+  userId: string,
+  roleKey: string,
+  enabledRoleKeys: string[],
+  now: Date = new Date()
+): Promise<WriteResult> {
+  const direction = await getStudentDirection(service, userId, now);
+  if (!direction) return { ok: false, status: 404, message: "No student program found for your account." };
+  if (direction.goalState !== "higher_studies") return { ok: false, status: 403, message: "Switching domain role is part of the Higher Studies path." };
+  if (!enabledRoleKeys.includes(roleKey)) return { ok: false, status: 400, message: "That domain role isn't available." };
+  return updateOwn(service, userId, { active_role_key: roleKey, higher_studies_checkin_at: now.toISOString() }, now);
 }

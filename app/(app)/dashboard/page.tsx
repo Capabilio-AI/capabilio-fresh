@@ -21,6 +21,7 @@ import {
   SkillGapsPreviewCard,
 } from "@/components/dashboard/SecondaryCards";
 import { JourneyTimeline } from "@/components/dashboard/JourneyTimeline";
+import { TrackPanel } from "@/components/direction/TrackPanel";
 
 export const metadata: Metadata = {
   title: "Dashboard — Capabilio AI",
@@ -73,6 +74,9 @@ export default async function DashboardPage() {
         />
       )}
       <DashboardHeader data={data} />
+      <div className="empty:hidden pb-2">
+        <TrackPanel supabase={supabase} userId={user.id} />
+      </div>
       <DashboardSubNav />
 
       <div className="flex flex-col gap-5 pt-6">

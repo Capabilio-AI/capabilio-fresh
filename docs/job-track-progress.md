@@ -1,6 +1,6 @@
 # Job-Track Progress
 
-**Current phase:** 5 (path-specific experiences) — next.
+**Current phase:** 7 (verify) after Phase 6 tests — Phase 5 done.
 
 ## Decisions
 - Blocker resolved: Option 1 (`active_role_key` on membership, read first by `resolveRole`). Switch UI only offers targets when ≥2 roles are enabled.
@@ -19,5 +19,8 @@
 - Phase 4: semester-label call sites migrated (approach U; `year` no longer read anywhere except legacy DB column; education rows show start–end years; guide-path prompt derives year context). `isStageUnlocked`/`UNLOCK_STAGE_KEY` deleted; Launchpad, AI Interview, nav lock all use `viewer.direction.inDirectionWindow` (from `isCareerDirectionWindow`). `lib/assessment/mode.ts` picks light/full server-side; section routes 403 out-of-mode sections; light attempts never seed Arena ELO; dashboard lists only sections taken. Goal-state: `PUT /api/direction/goal-state`, `POST /api/direction/dismiss` (strict zod), prompt modal (reflection variant only with real verified counts), `/settings/direction`. 55 career tests + rest pass.
 - Deviation from Phase 2 table: EducationEntryCard/profile education line shows start–end years, not the legacy label (backfill gave B.Tech rows years).
 
-## Remaining
+- Phase 5: Launchpad now queries real `opportunities` (open = no/future deadline) with honest empty state; `lib/mock/launchpad.ts` deleted. TrackPanel on dashboard: Job (portfolio prompt only on real new `arena_attempt_completions` since `portfolio_prompt_seen_at`; interview push links to real infra, real session count), Higher Studies (90-day check-in; Switch = `PUT /api/direction/active-role` → sets only `active_role_key` + check-in stamp; resolver `pickActiveRole` reads it first; Switch only offered when another enabled role exists — today none, so honest 'nothing to switch to'), Entrepreneur (static `/entrepreneur`, external links only, no forms). Unset/not_sure => job everywhere via `trackFor`.
+- Known gaps: no on-demand domain-role switch outside the 90-day check-in; other `lib/mock/*` (skillstudio, arena, pulse) remain and are out of this task's scope.
+
+## Remaining (old list, done)
 Phase 5: Launchpad real query + honest empty state, Portfolio/interview pushes, Higher Studies check-in + Switch (active_role_key, resolveRole), Entrepreneur page, Not-sure cadence confirmation. Phases 6–7.
