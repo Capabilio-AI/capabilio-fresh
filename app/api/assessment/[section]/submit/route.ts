@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { submitSection, SectionIncompleteError } from "@/lib/assessment/submit";
 import { computeCapabilitiesForAttempt } from "@/lib/capability/compute";
+import { seedArenaRatingFromAssessment } from "@/lib/capability/seed-arena-rating";
+import { getStatedCareerInterest } from "@/lib/career/interest-statement";
 import { SECTION_ORDER, type AssessmentSection } from "@/lib/assessment/sections";
 
 function parseSection(raw: string): AssessmentSection | null {
@@ -42,7 +44,10 @@ export async function POST(
       // All 6 sections done — this is the hand-off point to Phase 3
       // (capability scoring, then career matching / Guide Path). Capability
       // writes need the service-role client (no client insert/update policy).
-      await computeCapabilitiesForAttempt(createServiceClient(), attempt.id, auth.userId);
+      const service = createServiceClient();
+      await computeCapabilitiesForAttempt(service, attempt.id, auth.userId);
+      const statedRole = await getStatedCareerInterest(service, auth.userId);
+      await seedArenaRatingFromAssessment(service, auth.userId, statedRole);
     }
     return NextResponse.json(result);
   } catch (error) {

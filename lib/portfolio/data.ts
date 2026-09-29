@@ -22,6 +22,20 @@ export interface GithubEvidence {
   lastScannedAt: string | null;
 }
 
+export interface InterviewSummary {
+  id: string;
+  mode: string;
+  roleTarget: string | null;
+  domain: string | null;
+  questionCount: number;
+  overallScore: number;
+  skillScores: Record<string, number>;
+  strengths: string[];
+  improvements: string[];
+  completedAt: string;
+  durationSeconds: number;
+}
+
 export interface PortfolioData {
   viewer: ViewerSummary;
   statedRole: string | null;
@@ -32,6 +46,7 @@ export interface PortfolioData {
   keyEvidence: string[];
   mostRecent: string | null;
   elo: PortfolioElo;
+  interviews: InterviewSummary[];
 }
 
 /**
@@ -41,7 +56,7 @@ export interface PortfolioData {
  * caller and the client differ.
  */
 export async function getPortfolioData(supabase: SupabaseClient<Database>, userId: string): Promise<PortfolioData> {
-  const [viewer, statedRole, items, evidenceResult, { data: github }, { data: completions }, elo] = await Promise.all([
+  const [viewer, statedRole, items, evidenceResult, { data: github }, { data: completions }, elo, { data: interviewRows }] = await Promise.all([
     getViewerSummary(supabase, userId),
     getStatedCareerInterest(supabase, userId),
     getVaultItems(supabase, userId),
@@ -49,6 +64,13 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     supabase.from("github_connections").select("username, profile_url, verification_state, repositories_analyzed, last_scanned_at").eq("user_id", userId).maybeSingle(),
     supabase.from("arena_attempt_completions").select("attempt_id, skill_area_key, role_key, completed_at, challenge_id").eq("user_id", userId).order("completed_at", { ascending: false }).limit(30),
     getPortfolioElo(supabase, userId),
+    supabase
+      .from("ai_interview_sessions")
+      .select("id, mode, role_target, domain, questions, overall_score, skill_scores, strengths, improvements, started_at, completed_at")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(10),
   ]);
 
   const evidence: PortfolioEvidence[] = (evidenceResult.data ?? []).map((r) => ({
@@ -81,9 +103,26 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     };
   });
 
-  const mostRecent = evidence.map((e) => e.observedAt ?? e.createdAt).sort().at(-1) ?? null;
+  const interviews: InterviewSummary[] = (interviewRows ?? [])
+    .filter((r): r is typeof r & { completed_at: string; overall_score: number } => Boolean(r.completed_at) && r.overall_score !== null)
+    .map((r) => ({
+      id: r.id,
+      mode: r.mode,
+      roleTarget: r.role_target,
+      domain: r.domain,
+      questionCount: Array.isArray(r.questions) ? r.questions.length : 0,
+      overallScore: r.overall_score,
+      skillScores: (r.skill_scores as Record<string, number> | null) ?? {},
+      strengths: (r.strengths as string[] | null) ?? [],
+      improvements: (r.improvements as string[] | null) ?? [],
+      completedAt: r.completed_at,
+      durationSeconds: Math.round((Date.parse(r.completed_at) - Date.parse(r.started_at)) / 1000),
+    }));
+
+  const mostRecent = [...evidence.map((e) => e.observedAt ?? e.createdAt), ...interviews.map((i) => i.completedAt)].sort().at(-1) ?? null;
   const keyEvidence = [
     arenaTasks.length ? `${arenaTasks.length} verified Arena task${arenaTasks.length === 1 ? "" : "s"}` : null,
+    interviews.length ? `${interviews.length} AI interview${interviews.length === 1 ? "" : "s"}` : null,
     github?.repositories_analyzed ? `${github.repositories_analyzed} GitHub repositories analysed` : null,
     items.length ? `${items.length} Vault item${items.length === 1 ? "" : "s"}` : null,
   ].filter((v): v is string => Boolean(v));
@@ -106,5 +145,6 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     keyEvidence,
     mostRecent,
     elo,
+    interviews,
   };
 }

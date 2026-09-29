@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ClipboardList, History, MessageSquareText, Star, Target, Users } from "lucide-react";
 import clsx from "clsx";
+import { InterviewSession } from "@/components/interview/InterviewSession";
 
 const TABS = ["Practice", "Technical", "Behavioral", "HR", "History", "Feedback"] as const;
 type Tab = (typeof TABS)[number];
@@ -70,6 +71,13 @@ export function InterviewTabs() {
 
 function SessionEntry({ tab }: { tab: keyof typeof SESSION_TABS }) {
   const { icon: Icon, description } = SESSION_TABS[tab];
+  const [sessionKey, setSessionKey] = useState(0);
+  const [active, setActive] = useState(false);
+
+  if (active) {
+    return <InterviewSession key={sessionKey} mode={tab.toLowerCase() as "practice" | "technical" | "behavioral" | "hr"} onClose={() => setActive(false)} />;
+  }
+
   return (
     <div className="flex flex-col items-start gap-3 rounded-xl border border-app-border bg-white p-6">
       <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-app-orange-container text-app-orange">
@@ -81,13 +89,14 @@ function SessionEntry({ tab }: { tab: keyof typeof SESSION_TABS }) {
       </div>
       <button
         type="button"
-        disabled
-        title="Live sessions aren't wired up yet"
-        className="mt-1 cursor-not-allowed rounded-lg bg-app-charcoal/40 px-4 py-2.5 font-lp-body text-[13px] font-semibold text-white"
+        onClick={() => {
+          setSessionKey((k) => k + 1);
+          setActive(true);
+        }}
+        className="mt-1 rounded-lg bg-app-orange px-4 py-2.5 font-lp-body text-[13px] font-semibold text-white"
       >
         Start practice session
       </button>
-      <p className="font-lp-mono text-[10.5px] text-app-muted">Live sessions are in development.</p>
     </div>
   );
 }

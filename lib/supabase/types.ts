@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_interview_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          domain: string | null
+          id: string
+          improvements: Json | null
+          mode: Database["public"]["Enums"]["interview_mode"]
+          overall_score: number | null
+          questions: Json
+          role_target: string | null
+          skill_scores: Json | null
+          started_at: string
+          status: Database["public"]["Enums"]["interview_status"]
+          strengths: Json | null
+          transcript: Json
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          improvements?: Json | null
+          mode: Database["public"]["Enums"]["interview_mode"]
+          overall_score?: number | null
+          questions: Json
+          role_target?: string | null
+          skill_scores?: Json | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          strengths?: Json | null
+          transcript?: Json
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          improvements?: Json | null
+          mode?: Database["public"]["Enums"]["interview_mode"]
+          overall_score?: number | null
+          questions?: Json
+          role_target?: string | null
+          skill_scores?: Json | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          strengths?: Json | null
+          transcript?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           applied_at: string
@@ -2556,6 +2610,8 @@ export type Database = {
         | "pharmacy"
         | "law"
         | "other"
+      interview_mode: "practice" | "technical" | "behavioral" | "hr"
+      interview_status: "in_progress" | "completed" | "abandoned"
       journey_axis: "capability" | "career"
       membership_status: "pending" | "active" | "revoked"
       section_progress_status: "not_started" | "in_progress" | "completed"

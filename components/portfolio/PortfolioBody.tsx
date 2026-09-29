@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Award, ExternalLink, FileText, GitBranch, Link2, ShieldCheck, Sparkles, BadgeCheck, type LucideIcon } from "lucide-react";
+import { Award, ChevronDown, ExternalLink, FileText, GitBranch, Link2, ShieldCheck, Sparkles, BadgeCheck, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { initialsOf } from "@/lib/dashboard/viewer";
@@ -9,12 +9,75 @@ import type { VaultItem } from "@/lib/vault/data";
 import type { CapabilityGroup } from "@/lib/portfolio/view";
 import { evidenceLine } from "@/lib/portfolio/view";
 import { sourceLabel } from "@/lib/evidence/aggregate-capabilities";
-import type { ArenaTask, GithubEvidence } from "@/lib/portfolio/data";
+import type { ArenaTask, GithubEvidence, InterviewSummary } from "@/lib/portfolio/data";
+import { INTERVIEW_MODE_LABEL } from "@/lib/interview/session";
 import type { PortfolioElo } from "@/lib/portfolio/elo";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
 
 const TYPE_ICON: Record<string, LucideIcon> = { certificate: Award, project: Sparkles, resume: FileText, link: Link2, other: FileText };
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "");
+const fmtDuration = (seconds: number) => (seconds < 60 ? `${seconds}s` : `${Math.round(seconds / 60)} min`);
+
+function InterviewCard({ interview }: { interview: InterviewSummary }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-2xl border border-app-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">{INTERVIEW_MODE_LABEL[interview.mode] ?? interview.mode} round</p>
+          <p className="font-lp-mono text-[11px] text-app-muted">
+            {[interview.roleTarget, interview.domain, `${interview.questionCount} questions`, fmtDuration(interview.durationSeconds), fmtDate(interview.completedAt)].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-app-success-container px-2.5 py-1 font-lp-mono text-[11.5px] font-semibold text-app-success">{interview.overallScore}/100</span>
+          <button type="button" onClick={() => setExpanded((e) => !e)} aria-label="Toggle detail" className="rounded-full p-1 text-app-muted hover:bg-app-background">
+            <ChevronDown size={16} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} />
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="mt-3 flex flex-col gap-3 border-t border-app-border pt-3">
+          {Object.keys(interview.skillScores).length > 0 && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {Object.entries(interview.skillScores).map(([skill, score]) => (
+                <div key={skill} className="rounded-lg bg-app-background px-3 py-2">
+                  <p className="font-lp-mono text-[10.5px] text-app-muted">{skill}</p>
+                  <p className="font-lp-body text-[13px] font-semibold text-app-charcoal">{score}/100</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {interview.strengths.length > 0 && (
+            <div>
+              <p className="font-lp-body text-[12px] font-semibold text-app-charcoal">Strengths</p>
+              <ul className="mt-1 flex flex-col gap-0.5">
+                {interview.strengths.map((s, i) => (
+                  <li key={i} className="font-lp-body text-[12.5px] text-app-charcoal">
+                    · {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {interview.improvements.length > 0 && (
+            <div>
+              <p className="font-lp-body text-[12px] font-semibold text-app-charcoal">To improve</p>
+              <ul className="mt-1 flex flex-col gap-0.5">
+                {interview.improvements.map((s, i) => (
+                  <li key={i} className="font-lp-body text-[12.5px] text-app-charcoal">
+                    · {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -34,6 +97,7 @@ export interface PortfolioBodyProps {
   statedRole: string | null;
   groups: CapabilityGroup[];
   arenaTasks: ArenaTask[];
+  interviews: InterviewSummary[];
   github: GithubEvidence | null;
   items: VaultItem[];
   keyEvidence: string[];
@@ -49,7 +113,7 @@ export interface PortfolioBodyProps {
  * public share page. "View evidence" opens a popup instead of navigating away
  * so a recruiter can review proof without losing their place.
  */
-export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, items, keyEvidence, mostRecent, elo, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, interviews, github, items, keyEvidence, mostRecent, elo, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   const demonstrated = groups.flatMap((g) => g.capabilities);
   const githubVerified = github?.verified ?? false;
@@ -176,6 +240,18 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, 
         </Card>
       )}
 
+      {/* AI Interviews */}
+      {interviews.length > 0 && (
+        <Card>
+          <SectionTitle title="AI interview sessions" sub="Completed interview rounds, scored automatically from the transcript." />
+          <div className="flex flex-col gap-3">
+            {interviews.map((interview) => (
+              <InterviewCard key={interview.id} interview={interview} />
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* GitHub */}
       {github && (
         <Card>
@@ -226,7 +302,7 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, 
         </Card>
       )}
 
-      {groups.length === 0 && arenaTasks.length === 0 && items.length === 0 && !github && (
+      {groups.length === 0 && arenaTasks.length === 0 && interviews.length === 0 && items.length === 0 && !github && (
         <div className="rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center font-lp-body text-[13.5px] text-app-muted">
           {isOwner ? "Nothing verified yet. Complete an Arena task or connect GitHub in your Vault — your portfolio builds itself from that evidence." : "Nothing verified yet."}
         </div>
