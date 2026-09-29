@@ -384,3 +384,14 @@ Both are built. Data-driven text is gated on real data: a student qualifies only
 - Higher Studies: check-in banner on dashboard; Switch flow in direction settings.
 - Entrepreneur: `app/(app)/entrepreneur/page.tsx` — static informational page, external links only, no forms.
 - Portfolio: unchanged data; Portfolio-completion prompt links to it.
+
+
+---
+
+# Phase 7 — Verification record
+
+- `tsc --noEmit` clean; `vitest run` 46 files / 297 tests pass; `eslint app components lib proxy.ts` 0 errors (4 pre-existing `<a href="/">` warnings). `eslint .` reports 370 errors, all under `.claude/` (plugin tooling, untracked) — none in project source.
+- `next build` succeeds; `/settings/direction`, `/entrepreneur`, `/launchpad` are dynamic routes.
+- Built app smoke test: `/login`, `/signup`, `/` render 200 with no Google button (only the Google Fonts link in the layout); `/signup` has `start-year` and `end-year` inputs and no semester select; all three Get Started CTAs link to `/signup`; protected pages redirect to `/login`; `PUT /api/direction/goal-state` unauthenticated → 401.
+- Production DB after migration 030 (read-only checks): 5 memberships (unchanged), 3 legacy labels kept, 0 goal_states set, completions/skill_ratings unchanged, `handle_new_user` contains the start/end-year logic (repo and prod converged).
+- **Not done:** an authenticated click-through of new account → trigger → four goal states → Higher Studies Switch. No test account was created and no real student rows were mutated. Behavior is covered by unit/consistency tests with fakes instead, and Switch cannot be exercised live because only one Arena domain role exists.

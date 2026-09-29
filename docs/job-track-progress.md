@@ -1,6 +1,6 @@
 # Job-Track Progress
 
-**Current phase:** 7 (verify) after Phase 6 tests — Phase 5 done.
+**Current phase:** COMPLETE (Phases 1–7). See audit doc 'Phase 7 — Verification record'.
 
 ## Decisions
 - Blocker resolved: Option 1 (`active_role_key` on membership, read first by `resolveRole`). Switch UI only offers targets when ≥2 roles are enabled.
@@ -24,3 +24,5 @@
 
 ## Remaining (old list, done)
 Phase 5: Launchpad real query + honest empty state, Portfolio/interview pushes, Higher Studies check-in + Switch (active_role_key, resolveRole), Entrepreneur page, Not-sure cadence confirmation. Phases 6–7.
+
+- Phase 6 tests: consistency.test.ts (no Google, Get Started, single trigger implementation via source scan with mutation check, assessment/prompt/Launchpad agreement sweep, section guard, Launchpad empty), direction-writes/higher-studies-switch/reflection tests. Phase 7 verification recorded in audit doc.
