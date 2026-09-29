@@ -72,7 +72,7 @@ export default function Navbar() {
           <a href="/login" className="font-lp-body text-lp-body-sm text-lp-on-surface-variant hover:text-lp-text-ink">
             Log in
           </a>
-          <PrimaryButton href="/signup" className="rounded-full px-4 py-1.5 text-lp-body-sm">
+          <PrimaryButton href="/get-started" className="rounded-full px-4 py-1.5 text-lp-body-sm">
             Get Started
           </PrimaryButton>
         </div>
@@ -103,7 +103,7 @@ export default function Navbar() {
               <a href="/login" className="font-lp-body text-lp-body-sm text-lp-on-surface-variant">
                 Log in
               </a>
-              <PrimaryButton href="/signup" className="flex-1 rounded-full px-4 py-2 text-lp-body-sm">
+              <PrimaryButton href="/get-started" className="flex-1 rounded-full px-4 py-2 text-lp-body-sm">
                 Get Started
               </PrimaryButton>
             </div>

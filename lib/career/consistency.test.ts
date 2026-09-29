@@ -27,11 +27,11 @@ describe("onboarding surface", () => {
     const offenders = SOURCES.filter((f) => /signInWithGoogle|GoogleIcon|provider:\s*["']google["']|Continue with Google/.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });
-  it("every Get Started CTA goes to /signup, not '#'", () => {
+  it("every Get Started CTA goes to the /get-started path selector, not '#'", () => {
     for (const f of ["components/Navbar.tsx", "components/Hero.tsx", "components/FinalCTA.tsx"]) {
       const src = read(f);
       const around = [...src.matchAll(/([^\n]*\n){0,3}[^\n]*Get Started[^\n]*/g)].map((m) => m[0]).join("\n");
-      expect(around, f).toContain("/signup");
+      expect(around, f).toContain("/get-started");
       expect(around, f).not.toMatch(/href="#"/);
     }
   });
