@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Briefcase, Clock, Loader2, Trophy } from "lucide-react";
+import { Briefcase, Clock, Database, GraduationCap, Loader2, Trophy } from "lucide-react";
 import { TrackWorkspaceView, type TrackState } from "./TrackWorkspaceView";
+import { DomainWorkspace } from "./domain/DomainWorkspace";
 import { ChallengeLeaderboard } from "./ChallengeLeaderboard";
 import { ChallengeHistory } from "./ChallengeHistory";
 
@@ -12,6 +13,7 @@ type Tab = "workspace" | "leaderboard" | "history";
 
 export function ArenaChallengesBoard() {
   const [tab, setTab] = useState<Tab>("workspace");
+  const [track, setTrack] = useState<"stream" | "domain">("stream");
   const [data, setData] = useState<TrackState | null>(null);
 
   useEffect(() => {
@@ -34,19 +36,43 @@ export function ArenaChallengesBoard() {
       </div>
 
       <div className="pt-6">
-        {tab === "workspace" &&
-          (!data ? (
-            <div className="flex justify-center py-16">
-              <Loader2 size={22} className="animate-spin text-app-muted" />
+        {tab === "workspace" && (
+          <>
+            <div className="mx-auto mb-6 flex w-fit gap-1 rounded-lg border border-app-border bg-white p-1" role="tablist" aria-label="Challenge track">
+              <TrackButton active={track === "stream"} onClick={() => setTrack("stream")} icon={GraduationCap} label="Stream Challenges" />
+              <TrackButton active={track === "domain"} onClick={() => setTrack("domain")} icon={Database} label="Domain Challenges" />
             </div>
-          ) : (
-            <TrackWorkspaceView state={data} emptyHint="Add your branch in Education to unlock Stream challenges." onRefresh={load} />
-          ))}
+            {track === "domain" ? (
+              <DomainWorkspace />
+            ) : !data ? (
+              <div className="flex justify-center py-16">
+                <Loader2 size={22} className="animate-spin text-app-muted" />
+              </div>
+            ) : (
+              <TrackWorkspaceView state={data} emptyHint="Add your branch in Education to unlock Stream challenges." onRefresh={load} />
+            )}
+          </>
+        )}
 
         {tab === "leaderboard" && <ChallengeLeaderboard />}
         {tab === "history" && <ChallengeHistory />}
       </div>
     </div>
+  );
+}
+
+function TrackButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof Briefcase; label: string }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`flex items-center gap-1.5 rounded-md px-4 py-1.5 font-lp-body text-[12.5px] font-semibold ${active ? "bg-app-charcoal text-white" : "text-app-muted hover:text-app-charcoal"}`}
+    >
+      <Icon size={13} />
+      {label}
+    </button>
   );
 }
 

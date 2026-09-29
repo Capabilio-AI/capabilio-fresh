@@ -182,12 +182,15 @@ export type Database = {
           difficulty: string
           elo_gain: number
           expected_output: string
+          ground_truth_query: string | null
           id: string
           kind: string
           language: string
           objective: string
+          requester: string | null
           scenario: string
           scope_key: string
+          sequence: number | null
           skill_tags: string[]
           starter_code: string | null
           stdin: string | null
@@ -203,12 +206,15 @@ export type Database = {
           difficulty: string
           elo_gain?: number
           expected_output: string
+          ground_truth_query?: string | null
           id?: string
           kind?: string
           language: string
           objective: string
+          requester?: string | null
           scenario: string
           scope_key: string
+          sequence?: number | null
           skill_tags?: string[]
           starter_code?: string | null
           stdin?: string | null
@@ -224,12 +230,15 @@ export type Database = {
           difficulty?: string
           elo_gain?: number
           expected_output?: string
+          ground_truth_query?: string | null
           id?: string
           kind?: string
           language?: string
           objective?: string
+          requester?: string | null
           scenario?: string
           scope_key?: string
+          sequence?: number | null
           skill_tags?: string[]
           starter_code?: string | null
           stdin?: string | null
@@ -238,6 +247,44 @@ export type Database = {
           track?: string
         }
         Relationships: []
+      }
+      arena_domain_assignments: {
+        Row: {
+          assigned_at: string
+          challenge_id: string
+          completed_at: string | null
+          id: string
+          next_available_at: string | null
+          role_key: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          challenge_id: string
+          completed_at?: string | null
+          id?: string
+          next_available_at?: string | null
+          role_key: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          challenge_id?: string
+          completed_at?: string | null
+          id?: string
+          next_available_at?: string | null
+          role_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_domain_assignments_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       arena_ratings: {
         Row: {

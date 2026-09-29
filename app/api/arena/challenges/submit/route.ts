@@ -7,8 +7,7 @@ import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 import { isNumericAnswerCorrect } from "@/lib/arena-challenges/numeric-answer";
-import { advanceStreak } from "@/lib/arena-challenges/streak";
-import { currentWeekStart } from "@/lib/arena-challenges/week";
+import { addChallengePoints } from "@/lib/arena-challenges/award";
 import { deriveArenaChallengeEvidence, ARENA_CHALLENGES_ANALYSIS_VERSION } from "@/lib/evidence/from-arena-challenges";
 import { recordEvidence } from "@/lib/evidence/record";
 
@@ -101,24 +100,7 @@ export async function POST(request: Request) {
   }
 
   if (isCorrect && !alreadyAwarded) {
-    const { data: stats } = await service.from("arena_challenge_stats").select("points, tasks_completed, current_streak, longest_streak, last_completed_week").eq("user_id", auth.userId).maybeSingle();
-    const nextStreak = advanceStreak(
-      {
-        currentStreak: stats?.current_streak ?? 0,
-        longestStreak: stats?.longest_streak ?? 0,
-        lastCompletedWeek: stats?.last_completed_week ?? null,
-      },
-      currentWeekStart()
-    );
-    await service.from("arena_challenge_stats").upsert({
-      user_id: auth.userId,
-      points: (stats?.points ?? 0) + pointsEarned,
-      tasks_completed: (stats?.tasks_completed ?? 0) + 1,
-      current_streak: nextStreak.currentStreak,
-      longest_streak: nextStreak.longestStreak,
-      last_completed_week: nextStreak.lastCompletedWeek,
-      updated_at: nowIso,
-    });
+    await addChallengePoints(service, auth.userId, pointsEarned, nowIso);
   }
 
   try {

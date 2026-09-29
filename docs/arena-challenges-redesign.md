@@ -259,3 +259,44 @@ editor: every challenge was a coding task. Now:
 - Grid matched to the reference screenshot: centered heading, two columns, larger cards, a
   per-workspace description line, difficulty sorted easy → medium → hard. The "Continue"
   shortcut card (and `recommend-next.ts`) was removed — the reference has no such card.
+
+## v6 — Domain Challenges return as a professional Data Analyst workstation
+
+Domain is back, now as a job simulation rather than a puzzle grid: the student joins UrbanKart's
+analytics team (a fictional Indian D2C e-commerce company) and gets work tickets like a fresher
+analyst would — the stand-up sales number, a data-quality check before a dashboard refresh, top
+customers for a campaign, cancellation rate by channel, month-over-month trend, return rate,
+repeat-purchase rate, a July sign-up cohort. Reference: Capabilio-new's `SqlWorkstationV2`
+(seeded SQLite + chart toggle) and `groundTruthCompare` grader, and `useDomainChallengeSlots`'
+24h cooldown.
+
+- **Workstation** (`components/arena/domain/`): full-screen; ticket from a named requester +
+  deliverable, schema explorer with one-click preview, SQL editor (line numbers, Ctrl/⌘+Enter),
+  result table with bar/line chart toggle, note to the requester. Drafts persist per ticket in
+  localStorage.
+- **Dataset** (`lib/domain-workstations/urbankart.ts`): generated deterministically (fixed PRNG
+  seed) — 203 customers (15 missing emails, 3 duplicate sign-ups, messy city casing), 18
+  products, 420 orders Jun–Aug 2026.
+- **Execution**: server-side SQLite via Python's stdlib `sqlite3` on the existing Wandbox runner
+  — no new dependency. Seed + queries are passed as JSON on stdin (never interpolated), each query
+  gets a fresh in-memory db, 3-second limit, 500-row cap.
+- **Grading** (`grade.ts`): the hidden ground-truth query and the student's query run against the
+  same data; pass = same row count and every expected value present (numbers within rounding
+  tolerance, text case/space-insensitive; column names/order free). Expected values are never
+  returned. Verified live: correct query with different column names passes, wrong filter fails,
+  `SELECT *` dump fails, SQL errors are shown.
+- **Daily cadence** (`daily.ts`, `state.ts`, table `arena_domain_assignments`): one open ticket at
+  a time, open until solved; the next unlocks 24h after completion, with a live countdown. A
+  partial unique index guarantees one open ticket even with two tabs.
+- **Who gets it**: students whose stated career matches analyst keywords get it automatically;
+  everyone else sees their role and can opt in ("Start as a Data Analyst").
+- Tickets live in `arena_challenges` (`track='domain'`, `kind='sql'`, new `ground_truth_query`,
+  `requester`, `sequence` columns) so completions, history, leaderboard, points and evidence are
+  shared with Stream. 12 curated tickets (migration 024), ground truths checked against the
+  dataset before shipping.
+- **Security fix (pre-existing)**: `arena_challenges` was readable in full by any browser via the
+  anon key, including Stream's `expected_output` answer keys. Column privileges now expose only
+  non-secret columns to `authenticated` and nothing to `anon`.
+
+Ceiling: 12 tickets ≈ 12+ days of content per student; next step is AI-generated tickets over the
+same dataset, kept only when an independently written query agrees with the ground truth.
