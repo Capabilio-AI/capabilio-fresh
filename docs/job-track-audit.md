@@ -323,7 +323,7 @@ Writes to `goal_state*`, `year_*`, `active_role_key`, `higher_studies_checkin_at
 
 ### Backfill / safety (no data loss, no forced re-onboarding)
 - Students with `start_year`/`end_year` already set: leave values, set nothing else → `year_confirmed_at IS NULL` → confirm card shows on next login.
-- Students with only a legacy label (`year` = "y-s") and a B.Tech-shaped record: derive `start_year = academic_year_start(created_at) − (y−1)`, `end_year = start_year + 4`, computed from **membership creation date** (the label was true at signup, not now). Written by the migration, `year_confirmed_at` left NULL so the student confirms rather than trusting a derived guess.
+- ~~Students with only a legacy label: derive `start_year` from `created_at`.~~ **Reverted (Part A item 3, below):** the original audit was right that this is guessing. Legacy-label-only rows are left with NULL years and NULL confirmation, so the student is asked to enter them with no pre-fill.
 - Anything not derivable (no label, or non-B.Tech): leave NULL and flagged (NULL confirmation) → student is prompted to enter years. Nothing is guessed.
 - `handle_new_user` is added to the repo in the same migration (`CREATE OR REPLACE`, extended to write `start_year`/`end_year` from metadata with server-side validation). Live DB and repo converge because the migration is applied to production.
 
@@ -395,3 +395,37 @@ Both are built. Data-driven text is gated on real data: a student qualifies only
 - Built app smoke test: `/login`, `/signup`, `/` render 200 with no Google button (only the Google Fonts link in the layout); `/signup` has `start-year` and `end-year` inputs and no semester select; all three Get Started CTAs link to `/signup`; protected pages redirect to `/login`; `PUT /api/direction/goal-state` unauthenticated → 401.
 - Production DB after migration 030 (read-only checks): 5 memberships (unchanged), 3 legacy labels kept, 0 goal_states set, completions/skill_ratings unchanged, `handle_new_user` contains the start/end-year logic (repo and prod converged).
 - **Not done:** an authenticated click-through of new account → trigger → four goal states → Higher Studies Switch. No test account was created and no real student rows were mutated. Behavior is covered by unit/consistency tests with fakes instead, and Switch cannot be exercised live because only one Arena domain role exists.
+
+
+---
+
+# Part A — Close-out of the three open review items
+
+## A1. RLS on `institution_memberships` (and `profiles`) — WAS exploitable; fixed
+Tested directly on production with a disposable authenticated user (public key + own JWT, no API):
+- **Before:** `INSERT` into `institution_memberships` with `role='principal', goal_state='job', active_role_key='data-analyst', year_confirmed_at=…` **succeeded** (the `insert_own` policy only checked `user_id`; a trigger happened to force `status='pending'`, which limited but did not remove the risk).
+- **Worse, found while probing:** `profiles.primary_role` was client-updatable (`student → principal` succeeded). `app/api/education/institution` copies `profiles.primary_role` into an *active* membership role, and `can()` (`lib/auth/authorize.ts`) grants permissions from membership roles — a real self-promotion chain.
+- **Fix — migration `031_lock_membership_and_profile_writes.sql` (applied):** dropped `institution_memberships_insert_own`; revoked INSERT/UPDATE on `institution_memberships` from `anon, authenticated` (all legitimate writers use the service role or the SECURITY DEFINER signup trigger); revoked UPDATE on `profiles` and re-granted only `full_name, avatar_url, has_seen_career_direction_intro, portfolio_slug, portfolio_public` (the columns the app edits).
+- **After:** same attacks → `permission denied`. Legitimate profile edits still work; own membership still readable.
+- Real data checked: 3 profiles all `student`, 5 memberships all `student/active`, none with goal_state/active_role_key — no evidence of prior abuse.
+- **Permanent tests:** `lib/security/direct-write-blocked.live.test.ts` (`npm run test:live`; real signed-in client attempts insert/update/primary_role) and `lib/security/migrations.test.ts` (runs in the normal suite).
+- Still client-writable by design (out of scope, unchanged): `assessment_*`, `career_interest_*`, `vault_items`, `posts*`, `*_self` context tables — each is own-row only; none holds role/permission data. `institution_memberships_delete_own` remains.
+
+## A2. End-to-end walkthrough — done, on production with self-cleaning fixtures
+- Staging: **not available.** `create_branch` returned "Branching is supported only on the Pro plan or above"; no Docker/psql locally. So: production with a clearly non-production fixture.
+- Safeguards: the second role uses the key prefix `test-` (`test-walkthrough`) and `lib/arena-workstations/taxonomy.ts` now hides `test-` roles everywhere (`listEnabledRoles`, `loadRoleTaxonomy`) unless the process sets `ALLOW_TEST_ROLES=1` — only the local test run does. The role/areas/user/institution are created and deleted inside one test (`lib/career/higher-studies-switch.live.test.ts`, with `afterAll` cleanup). Residual: the role row existed in the DB for ~90 s; production code deployed before the guard would have served it only to a student with no engagement and no keyword match. The role's deletion succeeding proves no other user's rotation/rating rows referenced it (FK).
+- Sequence run (real DB, real Groq-generated task, real grader, real code paths — not through the browser/HTTP layer):
+  1. trigger window: `end_year − year == 2` → out, assessment `full`; `== 1` → in, assessment `light`, goal prompt due.
+  2. all four goal states persisted and read back live; `not_sure` → job track; `not_sure` prompt reappears at +14 days, Higher Studies check-in at +90 days.
+  3. real prior evidence under `data-analyst` (one graded SQL task → rating, completion, assignment, rotation rows); snapshot taken.
+  4. second role created as config rows; `switchActiveRole` → `getWorkstationState().role.key === 'test-walkthrough'`.
+  5. **All `arena_rotation_state`, `arena_skill_ratings`, `arena_attempt_completions`, `arena_domain_assignments` and `evidence` rows for the old role identical (JSON-compared) after Switch**, and again after a new graded task under the new role, which created rows only for the new role.
+  6. without `ALLOW_TEST_ROLES` the role is invisible.
+- Cleanup verified by query: 0 `ZZ` institutions, 0 test users, 0 `test-` roles/areas; memberships 5, profiles 3, completions 1, ratings 1, evidence 0 — identical to before.
+- Not exercised: browser click-through of the UI (no headless-browser session was run); the HTTP routes are covered by strict-schema and unit tests.
+
+## A3. Backfill reversal — reverted to no inference
+- The Phase 2 design derived `start_year` from `created_at` + the legacy label, contradicting Phase 1's "that's guessing". Decision: **revert**, not justify.
+- Evidence it was unsafe: both affected rows carry the label "1-2" yet were created in September, when a first-semester student would be "1-1"; the derivation also ignored the semester digit entirely. The label is demonstrably unreliable, so a pre-filled year looks authoritative while possibly being a year off.
+- Migration `032_revert_label_year_inference.sql` (applied) nulls `start_year/end_year` on exactly those rows (student, `degree` null, label-shaped `year`, unconfirmed). Rows whose years the student entered themselves (e.g. the Mechanical row, `degree='B.Tech'`) are untouched. Confirmation stays required with no pre-fill (`YearConfirmCard` opens empty when years are missing).
+- Migration 030's header now notes its backfill was superseded. This document no longer contradicts itself (Phase 2 "Backfill / safety" updated above).

@@ -21,6 +21,8 @@ alter table public.institution_memberships
   add column if not exists active_role_key text references public.arena_domain_roles(role_key),
   add column if not exists portfolio_prompt_seen_at timestamptz;
 
+-- NOTE: the backfill below was REVERTED by 032_revert_label_year_inference.sql (inference judged
+-- unreliable). It is kept here as applied history.
 -- Backfill: legacy "<year>-<semester>" label -> start/end year, only for
 -- B.Tech-shaped student rows with no years yet. Computed from the membership's
 -- creation date (the label was true at signup, not today). year_confirmed_at is

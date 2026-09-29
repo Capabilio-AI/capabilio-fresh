@@ -32,3 +32,9 @@ Phase 5: Launchpad real query + honest empty state, Portfolio/interview pushes, 
 - Engagement data at audit time: 0 rotation-state rows, 1 domain completion, 1 stream completion, 3 users → fallback prompt variant is the default; data-driven variant is live only for a student with ≥1 verified Arena completion.
 - `resolveRole()` had an un-ordered `.limit(1)` on `arena_rotation_state`; the explicit `active_role_key` pointer now takes precedence (pickActiveRole), so a Switch is deterministic. The un-ordered lookup remains only for students who have never explicitly chosen a role.
 - Launchpad was fabricated (`MOCK_OPPORTUNITIES`) — removed in Phase 5.
+
+## Part A close-out (checkpoint)
+- A1 fixed (mig 031): direct client insert of role/goal_state/active_role_key had SUCCEEDED; `profiles.primary_role` self-promotion also fixed. Permanent tests added.
+- A2 done on production with `test-` role + disposable user (no staging: branching needs Pro); evidence for old role byte-identical after Switch; all fixtures deleted and verified.
+- A3 reverted (mig 032): no year inference from created_at/label.
+- See audit doc "Part A" for detail.
