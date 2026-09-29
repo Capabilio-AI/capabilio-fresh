@@ -85,3 +85,25 @@ export const ProfileSchema = z.object({ bio: optionalText(3000), coverImageUrl: 
 export const MemberDecisionSchema = z.object({ membershipId: uuid, decision: z.enum(["approve", "reject"]) }).strict();
 export const FollowSchema = z.object({ following: z.boolean() }).strict();
 export const LikeSchema = z.object({ postId: uuid, liked: z.boolean() }).strict();
+
+// ---- placement pipeline (docs/org-path-reference-study.md) ----
+export const ApplySchema = z.object({ opportunityId: uuid }).strict();
+export const APPLICATION_STATUSES = ["submitted", "shortlisted", "rejected", "accepted"] as const;
+export const ApplicationStatusSchema = z.object({ applicationId: uuid, status: z.enum(APPLICATION_STATUSES) }).strict();
+// A placement is confirmed either from a selected ('accepted') application, or directly for an off-campus offer.
+export const ConfirmPlacementSchema = z
+  .object({
+    applicationId: uuid.optional(),
+    studentUserId: uuid.optional(),
+    company: optionalText(200),
+    roleTitle: optionalText(200),
+    ctcLpa: z.coerce.number().min(0).max(1000).optional().or(z.literal("").transform(() => undefined)),
+    offerDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("").transform(() => undefined)),
+  })
+  .strict()
+  .superRefine((v, ctx) => {
+    if (!v.applicationId && !v.studentUserId) ctx.addIssue({ code: "custom", path: ["applicationId"], message: "Choose an application or a student." });
+    if (!v.applicationId && (!v.company || !v.roleTitle)) ctx.addIssue({ code: "custom", path: ["company"], message: "Company and role are required." });
+  });
+export const PlacementConsentSchema = z.object({ placementId: uuid, show: z.boolean() }).strict();
+export const RsvpSchema = z.object({ postId: uuid, going: z.boolean() }).strict();

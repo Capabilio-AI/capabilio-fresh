@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   }
 
   let query = supabase
-    .from("arena_challenge_stats")
+    .from("arena_stream_stats")
     .select("user_id, points, tasks_completed, current_streak")
     .order("points", { ascending: false })
     .limit(LEADERBOARD_LIMIT);

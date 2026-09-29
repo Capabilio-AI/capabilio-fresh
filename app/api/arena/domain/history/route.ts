@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/api/require-user";
+
+/** Domain-only completion history — verified workstation attempts, richer than Stream's (rating before/after). Stream's own history: /api/arena/challenges/history. */
+export async function GET() {
+  const supabase = await createClient();
+  const auth = await requireUser(supabase);
+  if ("error" in auth) return auth.error;
+
+  const { data: completions } = await supabase
+    .from("arena_attempt_completions")
+    .select("attempt_id, challenge_id, skill_area_key, rating_before, rating_delta, rating_after, completed_at")
+    .eq("user_id", auth.userId)
+    .order("completed_at", { ascending: false })
+    .limit(50);
+
+  if (!completions || completions.length === 0) return NextResponse.json({ completions: [] });
+
+  const [{ data: challenges }, { data: areas }] = await Promise.all([
+    supabase.from("arena_challenges").select("id, title, content").in("id", completions.map((c) => c.challenge_id)),
+    supabase.from("arena_skill_areas").select("area_key, display_name").in("area_key", completions.map((c) => c.skill_area_key)),
+  ]);
+  const challengeById = new Map((challenges ?? []).map((c) => [c.id, c]));
+  const areaNameByKey = new Map((areas ?? []).map((a) => [a.area_key, a.display_name]));
+
+  return NextResponse.json({
+    completions: completions.map((c) => ({
+      id: c.attempt_id,
+      ratingDelta: c.rating_delta,
+      ratingAfter: c.rating_after,
+      completedAt: c.completed_at,
+      areaName: areaNameByKey.get(c.skill_area_key) ?? c.skill_area_key,
+      challenge: challengeById.get(c.challenge_id)
+        ? { title: challengeById.get(c.challenge_id)!.title, company: (challengeById.get(c.challenge_id)!.content as { company?: string } | null)?.company ?? null }
+        : null,
+    })),
+  });
+}

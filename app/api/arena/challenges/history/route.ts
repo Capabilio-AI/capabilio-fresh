@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
 
-/** Per-challenge completion history — no more per-week batches (see 022_arena_challenges_full_grid.sql). */
+/** Stream-only completion history (see docs/arena-challenges-redesign.md). Domain has its own: /api/arena/domain/history. */
 export async function GET() {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
@@ -12,6 +12,7 @@ export async function GET() {
     .from("arena_challenge_completions")
     .select("id, track, challenge_id, is_correct, elo_delta, completed_at")
     .eq("user_id", auth.userId)
+    .eq("track", "stream")
     .order("completed_at", { ascending: false })
     .limit(50);
 

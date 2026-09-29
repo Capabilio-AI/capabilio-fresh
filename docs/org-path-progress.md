@@ -1,23 +1,29 @@
 # Org Path Progress
 
-**Phase:** build complete; verification in progress (live tests, lint, build, browser walkthrough).
+**Status:** built and verified against production (unit 389, live 36, lint 0 errors, build OK). No browser click-through yet.
 
-## Done
-- Audit + design: docs/org-path-audit.md.
-- Migrations applied to prod: 038 `org_classroom` (Module B tables + atomic functions + faculty signup), 039 `org_placements_rls` (private drives), 040 `org_presence` (Module A).
-- Module B: materials, projects (open call, groups of 4, cross-department permitted), groups (create/join/leave with DB-enforced rules), weekly reports (process data only), in-app + physical submissions, group-level grade → one staff-verified evidence row per member (`class_grade_group`, atomic + idempotent).
-- Module C: placement drives reuse `opportunities` (institution-scoped via RLS), Launchpad "Campus drive" badge; insights (aggregate only, cohorts < 5 suppressed, no fabricated engagement metric).
-- Module A: org profile (opt-in public), events + announcements, follow/like/share-link, public `/o/[slug]` and permalink pages. No comments.
-- Org workspace `/org/*` (role-based nav), student `/classroom`, login routing (`landingFor`), `tpo`/`company_admin` role labels (fixes "Student Portal" shown for TPO), faculty may apply via org signup and are approved in-app by an org admin.
+## Built
+- **Classroom (Module B):** materials (links), projects (open call, groups of 4, cross-department), DB-enforced group rules, weekly reports (process data only), in-app + physical submissions, one staff grade per group → one staff-verified "Project Work" evidence row per member (atomic, idempotent).
+- **Placements (Module C):** campus drives (`opportunities`, private to the college via RLS) → students **apply** in Launchpad → TPO/admin **shortlist / select / reject** → TPO/admin **confirm placement** (or record an off-campus offer). No self-report path.
+- **Outcomes:** confirmed placements, funnel, by-branch counts and CTC stats hidden below 5 records, CSV export scoped to the caller's college.
+- **Placement Wall:** the *student* consents (own row only); shows name, company, role — never pay.
+- **Insights:** aggregate career intent + project signal, cohorts < 5 suppressed; no invented engagement metric.
+- **Home:** "what needs attention now?" (alerts only for things that exist, KPIs, grading queue, coming up).
+- **Students** roster for staff/admin: real counts (project groups, staff-graded projects, Arena completions in 30 days). No ratings.
+- **Presence (Module A):** opt-in public page `/o/<slug>` with derived "Verified" badge, placement wall, events + RSVP, announcements (members-only unless public), follow / like / share-link. No comments.
+- **Workspace:** grouped sidebar (Visibility / Operations / Intelligence), role-filtered. Login routes org roles to `/org`.
 
-## Decisions (spec defaults)
-Team size fixed 4 · cross-department permitted · group-level grade + optional per-member notes (private) · grade = free text ≤10 chars · staff may publish own posts · public page opt-in.
+## Reference study
+docs/org-path-reference-study.md — what was adopted from capabilio-web's Institution OS, what was deliberately not (ELO, recruiter portal/NDAs, chat layer, DNS/document verification), and why.
 
-## Known limits (deliberate)
-- No file uploads: materials, submissions, attachments and cover images are links.
-- Evidence skill is "Project Work" (no skill-area mapping yet); subject is stored in metadata.
-- One role per person per institution (existing UNIQUE(user_id, institution_id)); admins are approved by the operator script only.
-- `lib/supabase/types.ts` not regenerated (pre-existing uncommitted edits there); new tables/roles use `lib/org/db.ts` types.
+## Migrations (prod)
+038 org_classroom · 039 org_placements_rls · 040 org_presence · 041 org_placement_pipeline · 042 org_removal_safety. 029 untouched.
 
-## Remaining
-Run: `npm run test:live -- lib/org`, lint, tsc, build, browser walkthrough; final report.
+## Bugs found and fixed on the way
+- `applications` was client-writable (a student could set their own status to `accepted`) → client writes revoked (041).
+- `opportunities.read_all` exposed private drives → institution-scoped policy (039).
+- Removing a staff member / institution failed: physical-submission check vs `ON DELETE SET NULL` (042); `org_placements` confirmer FK would have blocked deleting a TPO (042). Regression test added.
+- Login showed "Student Portal" for TPO (missing role entries).
+
+## Limits (deliberate)
+No file uploads (links only) · evidence skill is "Project Work" · one role per person per institution · principal/vice principal approved by the operator script only · `lib/supabase/types.ts` not regenerated (new tables via `lib/org/db.ts`) · verification is the operator's manual approval (no DNS/document ladder) · no recruiter accounts, chat, cohorts, or Professional-transition flow.

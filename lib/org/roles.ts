@@ -29,6 +29,11 @@ export const PERMISSIONS = {
   postPlacement: ["tpo", "admin"],
   viewInsights: ["tpo", "admin"],
   joinGroup: ["student"],
+  // students act on their own rows only (apply to a campus drive, consent to the Placement Wall, RSVP)
+  applyToDrive: ["student"],
+  // the roster shows a college's own students to the staff who teach them and to admins — not to the TPO
+  // (who works from aggregates and the placement pipeline), matching the classroom privacy tiers
+  viewRoster: ["staff", "admin"],
 } as const satisfies Record<string, readonly OrgKind[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

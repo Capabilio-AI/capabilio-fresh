@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getOrgContext } from "@/lib/org/context";
-import { orgNavFor, ROLE_LABEL } from "@/lib/org/nav";
+import { orgNavGroupsFor, ROLE_LABEL } from "@/lib/org/nav";
 import { OrgShell } from "@/components/org/OrgShell";
 
 /** Every /org page: signed in AND an ACTIVE staff/admin/TPO membership. Pending or revoked accounts never render this. */
@@ -12,7 +12,7 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   if (!ctx) redirect("/login?path=organisation");
   if (ctx.kind === "student") redirect("/dashboard");
   return (
-    <OrgShell institutionName={ctx.institutionName} roleLabel={ROLE_LABEL[ctx.role] ?? ctx.role} nav={orgNavFor(ctx.kind)}>
+    <OrgShell institutionName={ctx.institutionName} roleLabel={ROLE_LABEL[ctx.role] ?? ctx.role} groups={orgNavGroupsFor(ctx.kind)}>
       {children}
     </OrgShell>
   );

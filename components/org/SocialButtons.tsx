@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, Link2, UserPlus, UserCheck } from "lucide-react";
+import { CalendarCheck, Heart, Link2, UserPlus, UserCheck } from "lucide-react";
 
 const BTN = "inline-flex items-center gap-1.5 rounded-full border border-app-border bg-white px-3 py-1.5 font-lp-body text-[12.5px] font-medium text-app-charcoal hover:bg-black/5 disabled:opacity-60";
 
@@ -43,6 +43,24 @@ export function LikeButton({ postId, liked, count }: { postId: string; liked: bo
     <button type="button" onClick={toggle} disabled={busy} className={BTN} aria-pressed={liked}>
       <Heart size={14} className={liked ? "fill-app-orange text-app-orange" : ""} />
       {count}
+    </button>
+  );
+}
+
+export function RsvpButton({ postId, going, count }: { postId: string; going: boolean; count: number }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  async function toggle() {
+    setBusy(true);
+    const r = await post("/api/orgs/rsvp", { postId, going: !going });
+    setBusy(false);
+    if (r.unauthenticated) return void (window.location.href = "/login");
+    if (r.ok) router.refresh();
+  }
+  return (
+    <button type="button" onClick={toggle} disabled={busy} className={BTN} aria-pressed={going}>
+      <CalendarCheck size={14} className={going ? "text-app-orange" : ""} />
+      {going ? "You're going" : "I'll attend"} · {count}
     </button>
   );
 }

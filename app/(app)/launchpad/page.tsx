@@ -5,6 +5,7 @@ import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { listOpenOpportunities, type OpportunityType } from "@/lib/launchpad/opportunities";
+import { ActionButton } from "@/components/org/ActionButton";
 
 export const metadata: Metadata = { title: "Launchpad — Capabilio AI" };
 
@@ -47,6 +48,10 @@ export default async function LaunchpadPage() {
   }
 
   const opportunities = await listOpenOpportunities(supabase);
+  // own rows only (RLS); status is written by the college, never by the student
+  const { data: myApps } = await supabase.from("applications").select("opportunity_id, status").eq("user_id", user.id);
+  const appliedStatus = new Map((myApps ?? []).map((a) => [a.opportunity_id, a.status]));
+  const APPLIED_LABEL: Record<string, string> = { submitted: "Applied", shortlisted: "Shortlisted", accepted: "Selected", rejected: "Not selected" };
   const gapSkills = new Set((careerMatches[0]?.skillGaps ?? []).map((g) => g.skill));
 
   return (
@@ -114,6 +119,16 @@ export default async function LaunchpadPage() {
                 )}
 
                 {opp.eligibility && <p className="font-lp-body text-[12px] text-app-muted">{opp.eligibility}</p>}
+
+                {opp.campus && (
+                  <div>
+                    {appliedStatus.has(opp.id) ? (
+                      <span className="rounded-full border border-app-border px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">{APPLIED_LABEL[appliedStatus.get(opp.id)!] ?? "Applied"}</span>
+                    ) : (
+                      <ActionButton action="/api/launchpad/apply" body={{ opportunityId: opp.id }} label="Apply" />
+                    )}
+                  </div>
+                )}
 
                 <div className="mt-auto flex items-center justify-between border-t border-app-border pt-3">
                   <span className="font-lp-mono text-[10.5px] text-app-charcoal">

@@ -79,7 +79,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await service.from("opportunities").delete().eq("institution_id", instA);
-  await service.from("institutions").delete().in("id", [instA, instB].filter(Boolean)); // cascades class_*/org_* rows
+  const { error } = await service.from("institutions").delete().in("id", [instA, instB].filter(Boolean)); // cascades class_*/org_* rows
+  if (error) throw new Error(`cleanup failed, test rows left in prod: ${error.message}`);
   for (const id of userIds) await deleteThrowawayUser(service, id);
 }, 240_000);
 
@@ -195,6 +196,19 @@ describe("physical submissions", () => {
     expect((await rpc("class_grade_group", { p_membership_id: people.admin.membershipId, p_group_id: gid, p_grade: "A", p_feedback: null, p_notes: {} })).error).toBeNull();
     const ev = await service.from("evidence").select("source_url, metadata").eq("user_id", people.s1.userId).eq("evidence_type", "staff_graded_project");
     expect(ev.data?.some((e) => e.source_url === null && (e.metadata as { submission: string }).submission === "physical — verified by staff")).toBe(true);
+  }, 90_000);
+});
+
+describe("removing staff is never blocked by the records they created (migration 042)", () => {
+  it("a staff member who confirmed a physical submission can be removed; the submission stays", async () => {
+    const pid = await project({ submission_type: "physical" });
+    const gid = (await rpc("class_create_group", { p_user_id: people.s1.userId, p_project_id: pid, p_name: "Removal" })).data as string;
+    for (const k of ["s2", "s3", "s4"]) await rpc("class_join_group", { p_user_id: people[k].userId, p_group_id: gid });
+    expect((await rpc("class_mark_physical_received", { p_membership_id: people.admin.membershipId, p_group_id: gid })).error).toBeNull();
+    const removed = await service.from("institution_memberships").delete().eq("id", people.admin.membershipId);
+    expect(removed.error).toBeNull();
+    const kept = await (service as SupabaseClient).from("class_submissions").select("submission_type, physical_confirmed_by_membership_id").eq("group_id", gid).single();
+    expect(kept.data).toEqual({ submission_type: "physical", physical_confirmed_by_membership_id: null });
   }, 90_000);
 });
 

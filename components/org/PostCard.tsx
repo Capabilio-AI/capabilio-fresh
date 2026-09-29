@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, MapPin } from "lucide-react";
 import type { PublicPost } from "@/lib/org/public-org";
-import { LikeButton, ShareButton } from "./SocialButtons";
+import { LikeButton, RsvpButton, ShareButton } from "./SocialButtons";
 import { Pill, formatDateTime } from "./ui";
 
 export function PostCard({ post, slug, permalink = true }: { post: PublicPost; slug: string; permalink?: boolean }) {
@@ -42,6 +42,7 @@ export function PostCard({ post, slug, permalink = true }: { post: PublicPost; s
         </a>
       )}
       <div className="mt-4 flex items-center gap-2">
+        {post.type === "event" && <RsvpButton postId={post.id} going={post.rsvpedByViewer} count={post.rsvpCount} />}
         <LikeButton postId={post.id} liked={post.likedByViewer} count={post.likeCount} />
         <ShareButton path={path} />
       </div>
