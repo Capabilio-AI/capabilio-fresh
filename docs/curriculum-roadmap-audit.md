@@ -42,3 +42,42 @@ Arena has `difficultyForRating` (easy < 1250 ≤ medium < 1400 ≤ hard) and ELO
 - Track resolution: `getStudentDirection(...).track` / `trackFor()` (Job-Track work) — reused, not reimplemented.
 - Current/upcoming academic year: `computeCurrentAcademicYear` (+ the year-confirmation state). A student whose years are unset or unconfirmed gets the honest "needs more information" state rather than a roadmap built on a guess.
 - The sole existing AI provider abstraction is `lib/ai/groq.ts#completeJson`; an assistive mapping suggestion (if included) would use it and only return a proposal.
+
+---
+
+# Phase 2 — Design
+
+## Data model (migration `033_curriculum_roadmap.sql`, additive)
+All five tables: RLS enabled, **no policies, all privileges revoked from `anon` and `authenticated`** — private to the service role, written and read only through server code that has already authorised the caller. (Part A1's lesson: never leave a client-writable path, not even "own row" ones.)
+
+| table | columns | notes |
+|---|---|---|
+| `curriculum_subjects` | `id`, `institution_id` → institutions (cascade), `branch text`, `year smallint 1..6`, `semester smallint null 1..2`, `name`, `code null`, `created_by`, `created_at` | unique `(institution_id, lower(branch), year, lower(name))`. Scope is **year** of study (the student side no longer knows a semester); `semester` is stored because the admin's syllabus is semester-shaped, but matching uses year only. |
+| `curriculum_subject_skill_map` | `subject_id` → subjects (cascade), `role_key`, `area_key`, `source ('admin'\|'ai_suggestion_confirmed')`, `confirmed_by`, `confirmed_at` | PK `(subject_id, role_key, area_key)`; **composite FK to `arena_skill_areas(role_key, area_key)`** so a mapping can only name real skill areas. Only *confirmed* rows exist — AI proposals are never persisted. |
+| `role_target_profiles` | `role_key`, `area_key`, `min_verified_count int ≥ 1` | PK `(role_key, area_key)`, FK to skill areas. "Ready" for an area = at least N verified Arena attempts (audit §5: rating is not comparable across students). Seeded for Data Analyst's five enabled areas with N = 3 — a **product default, not student data**, marked for product-team review. Python (disabled, no executor) is not seeded: an unassessable area cannot be a gap. |
+| `skill_area_resources` | `id`, `role_key`, `area_key`, `kind ('project'\|'certification'\|'practice')`, `title`, `url null`, `description null`, `active` | the curated list. Product-team maintained via SQL/migration; no UI in this task. Seeded with two well-known public certifications only (Microsoft PL-300 → dashboard, Google Data Analytics certificate → spreadsheet), flagged for link review; nothing is generated per render. |
+| (branch matching) | — | `curriculum_subjects.branch` is compared to `institution_memberships.branch` case-insensitively after trimming. The admin form reuses the same branch autocomplete, so values come from the same catalog the student picked from. |
+
+## Gap-analysis algorithm (`lib/roadmap/build.ts`, pure)
+Inputs: role + its skill areas; target profile (`area → min`); verified counts (`getWorkstationState().progress`); curriculum subjects for the student's institution + branch with their confirmed mappings; curated resources; the student's confirmed academic year (`computeCurrentAcademicYear`).
+
+1. **Preconditions → `needs_info`, never a fake roadmap.** Reasons, all reported: `no_role`, `no_target_profile`, `year_unknown` (years unset/unconfirmed), `no_curriculum` (institution has no subjects for this branch), `no_curriculum_for_year` (subjects exist but none for this or next year), `no_confirmed_mapping` (subjects exist but none is mapped to any skill area, so coverage is unknown). "Zero verified evidence" is **not** a precondition failure — with a curriculum and target it yields a legitimate, fully populated roadmap.
+2. **Coverage:** an area is *covered* by every subject mapped to it in years ≤ current+1, each tagged `past | this_year | next_year`.
+3. **Demonstrated:** `verifiedCount ≥ min_verified_count`.
+4. **Buckets** (over target areas that are enabled):
+   - **Affirm** — covered ∧ demonstrated ("your curriculum covers X and you've proved it"); also demonstrated ∧ not covered, tagged `beyond_curriculum`.
+   - **Engage** — covered ∧ ¬demonstrated: "Your curriculum covers X in *Subject (Year N)* — engage with it, then prove it: n of min verified {area} tasks."
+   - **External gap** — ¬covered ∧ ¬demonstrated: a deterministic Arena focus ("complete `min − n` more verified {area} tasks") plus the curated resources for that area, if any. If none are stored, only the Arena focus is shown.
+5. Each item carries only stored facts (subject names, counts, curated titles). No LLM is involved in any of this.
+
+## Recompute policy
+**On demand, per page render, from live reads — nothing is stored.** A stored roadmap would need invalidation on three independent events (curriculum edit, mapping confirmation, new verified Arena evidence, plus year re-confirmation); computing a small pure function over four indexed reads is cheaper than getting invalidation right, and can never be stale.
+
+## Admin flow (`/admin/curriculum`)
+- Gate: server-side `can(supabase, userId, "organisation", "admin", { organisationId })` on **every** page load and API call (existing RBAC; principal / vice_principal / ceo with an *active* membership). The institution is derived from the caller's own admin membership — the request never carries an institution id.
+- Entry: structured form (branch via the existing autocomplete, year, subject rows) **and** CSV/template import (`branch,year,semester,subject_name,subject_code`), parsed in the browser, previewed, then posted; server re-validates everything (zod, size caps).
+- Mapping: per subject, choose skill areas. **"Suggest"** calls the AI provider (`completeJson`) which returns only area keys filtered to real ones; the UI shows them unsaved and pre-checked *for review*; only the admin's explicit "Confirm mapping" writes, with `source='ai_suggestion_confirmed'` if it started from a suggestion. The suggest endpoint has no database write path.
+- Operator: `scripts/grant-org-admin.mjs` (service role) activates an existing membership as an org admin — the only way an admin exists, since there is no approval flow and clients cannot write memberships.
+
+## Student surface
+`/dashboard/roadmap` as a new dashboard tab. Visible only when `getStudentDirection().track === "job"` (unset and "not sure" included); other tracks get no tab and the route returns 404. Tab visibility uses a small context filled by the (app) layout from the same `direction` already loaded — track logic is not reimplemented. States: roadmap; `needs_info` with plain reasons and what to do about each (confirm years, "your college hasn't added its curriculum yet"); never an empty-looking "no gaps".
