@@ -36,14 +36,13 @@ function Card({ children }: { children: React.ReactNode }) {
 export default async function PortfolioPage() {
   const { supabase, user } = await requireAuthedUser();
 
-  const [viewer, statedRole, items, evidenceResult, { data: github }, { data: completions }, { data: assessed }] = await Promise.all([
+  const [viewer, statedRole, items, evidenceResult, { data: github }, { data: completions }] = await Promise.all([
     getViewerSummary(supabase, user.id),
     getStatedCareerInterest(supabase, user.id),
     getVaultItems(supabase, user.id),
     supabase.from("evidence").select("skill, source_type, evidence_type, source_url, observed_at, confidence, created_at, metadata").eq("user_id", user.id),
     supabase.from("github_connections").select("username, profile_url, verification_state, repositories_analyzed, last_scanned_at").eq("user_id", user.id).maybeSingle(),
     supabase.from("arena_attempt_completions").select("attempt_id, skill_area_key, role_key, completed_at, challenge_id").eq("user_id", user.id).order("completed_at", { ascending: false }).limit(30),
-    supabase.from("capabilities").select("skill").eq("user_id", user.id),
   ]);
 
   const evidence: PortfolioEvidence[] = (evidenceResult.data ?? []).map((r) => ({
@@ -58,7 +57,6 @@ export default async function PortfolioPage() {
   }));
   const groups = buildCapabilityGroups(evidence);
   const demonstrated = groups.flatMap((g) => g.capabilities);
-  const demonstratedNames = new Set(demonstrated.map((c) => c.skill));
 
   const challengeIds = (completions ?? []).map((c) => c.challenge_id);
   const [{ data: challenges }, { data: areas }] = await Promise.all([
@@ -78,7 +76,6 @@ export default async function PortfolioPage() {
 
   const githubVerified = github?.verification_state === "verified";
   const mostRecent = evidence.map((e) => e.observedAt ?? e.createdAt).sort().at(-1) ?? null;
-  const assessedOnly = (assessed ?? []).filter((s) => !demonstratedNames.has(s.skill));
   const keyEvidence = [
     arenaTasks.length && `${arenaTasks.length} verified Arena task${arenaTasks.length === 1 ? "" : "s"}`,
     github?.repositories_analyzed && `${github.repositories_analyzed} GitHub repositories analysed`,
@@ -247,20 +244,6 @@ export default async function PortfolioPage() {
                   </div>
                 );
               })}
-            </div>
-          </Card>
-        )}
-
-        {/* Assessment-only skills */}
-        {assessedOnly.length > 0 && (
-          <Card>
-            <SectionTitle title="From the onboarding assessment" sub="Measured in the initial assessment, not yet backed by project, Arena or GitHub evidence." />
-            <div className="flex flex-wrap gap-1.5">
-              {assessedOnly.map((s) => (
-                <span key={s.skill} className="rounded-full bg-app-background px-2.5 py-1 font-lp-mono text-[11px] text-app-muted">
-                  {s.skill}
-                </span>
-              ))}
             </div>
           </Card>
         )}
