@@ -4,6 +4,7 @@ import { getVaultItems, type VaultItem } from "@/lib/vault/data";
 import { getViewerSummary, type ViewerSummary } from "@/lib/dashboard/viewer";
 import { getStatedCareerInterest } from "@/lib/career/interest-statement";
 import { buildCapabilityGroups, type CapabilityGroup, type PortfolioEvidence } from "@/lib/portfolio/view";
+import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
 
 export interface ArenaTask {
   attemptId: string;
@@ -30,6 +31,7 @@ export interface PortfolioData {
   github: GithubEvidence | null;
   keyEvidence: string[];
   mostRecent: string | null;
+  elo: PortfolioElo;
 }
 
 /**
@@ -39,13 +41,14 @@ export interface PortfolioData {
  * caller and the client differ.
  */
 export async function getPortfolioData(supabase: SupabaseClient<Database>, userId: string): Promise<PortfolioData> {
-  const [viewer, statedRole, items, evidenceResult, { data: github }, { data: completions }] = await Promise.all([
+  const [viewer, statedRole, items, evidenceResult, { data: github }, { data: completions }, elo] = await Promise.all([
     getViewerSummary(supabase, userId),
     getStatedCareerInterest(supabase, userId),
     getVaultItems(supabase, userId),
     supabase.from("evidence").select("skill, source_type, evidence_type, source_url, observed_at, confidence, created_at, metadata").eq("user_id", userId),
     supabase.from("github_connections").select("username, profile_url, verification_state, repositories_analyzed, last_scanned_at").eq("user_id", userId).maybeSingle(),
     supabase.from("arena_attempt_completions").select("attempt_id, skill_area_key, role_key, completed_at, challenge_id").eq("user_id", userId).order("completed_at", { ascending: false }).limit(30),
+    getPortfolioElo(supabase, userId),
   ]);
 
   const evidence: PortfolioEvidence[] = (evidenceResult.data ?? []).map((r) => ({
@@ -102,5 +105,6 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
       : null,
     keyEvidence,
     mostRecent,
+    elo,
   };
 }

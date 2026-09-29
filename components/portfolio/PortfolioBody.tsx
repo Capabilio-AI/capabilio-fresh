@@ -10,6 +10,7 @@ import type { CapabilityGroup } from "@/lib/portfolio/view";
 import { evidenceLine } from "@/lib/portfolio/view";
 import { sourceLabel } from "@/lib/evidence/aggregate-capabilities";
 import type { ArenaTask, GithubEvidence } from "@/lib/portfolio/data";
+import type { PortfolioElo } from "@/lib/portfolio/elo";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
 
 const TYPE_ICON: Record<string, LucideIcon> = { certificate: Award, project: Sparkles, resume: FileText, link: Link2, other: FileText };
@@ -37,6 +38,7 @@ export interface PortfolioBodyProps {
   items: VaultItem[];
   keyEvidence: string[];
   mostRecent: string | null;
+  elo: PortfolioElo;
   isOwner: boolean;
   /** Base path for the evidence-popup fetch — attemptId is appended as the last segment. */
   evidenceBaseUrl: string;
@@ -47,7 +49,7 @@ export interface PortfolioBodyProps {
  * public share page. "View evidence" opens a popup instead of navigating away
  * so a recruiter can review proof without losing their place.
  */
-export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, items, keyEvidence, mostRecent, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, items, keyEvidence, mostRecent, elo, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   const demonstrated = groups.flatMap((g) => g.capabilities);
   const githubVerified = github?.verified ?? false;
@@ -73,6 +75,14 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, 
             {githubVerified ? <ShieldCheck size={14} /> : null}
             {githubVerified ? "GitHub ownership verified" : "Identity self-reported"}
           </span>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-lp-mono text-[12.5px] font-bold text-white" style={{ backgroundColor: elo.tier.color }}>
+              {elo.tier.label} · ELO {elo.rating}
+            </span>
+            <div className="h-1 w-28 overflow-hidden rounded-full bg-app-background">
+              <div className="h-full rounded-full" style={{ width: `${elo.progressToNextTier}%`, backgroundColor: elo.tier.color }} />
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -82,6 +92,7 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, 
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             ["Direction", statedRole ?? "Not stated yet"],
+            ["Arena Rating", `${elo.rating} · ${elo.tier.label}`],
             ["Strongest demonstrated", demonstrated.slice(0, 3).map((c) => c.skill).join(", ") || "Building up evidence"],
             ["Key evidence", keyEvidence.join(" · ") || "No evidence yet"],
             ["Most recent evidence", mostRecent ? fmtDate(mostRecent) : "—"],

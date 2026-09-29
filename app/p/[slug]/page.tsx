@@ -44,6 +44,7 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
             items={data.items}
             keyEvidence={data.keyEvidence}
             mostRecent={data.mostRecent}
+            elo={data.elo}
             isOwner={false}
             evidenceBaseUrl={`/api/portfolio/${slug}/attempts`}
           />

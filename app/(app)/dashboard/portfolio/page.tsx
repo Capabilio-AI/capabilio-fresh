@@ -10,9 +10,10 @@ export const metadata: Metadata = { title: "Portfolio — Capabilio AI" };
 
 /**
  * Evidence-first portfolio, following capabilio-web's order (hero → recruiter
- * snapshot → capabilities & evidence → Arena → GitHub → projects/certificates)
- * but showing only sections backed by real data. No bare ratings, levels or
- * scores — every capability line is a count of real evidence.
+ * snapshot → capabilities & evidence → Arena → GitHub → projects/certificates).
+ * Per-skill capability lines stay evidence-only (a count of real work, never
+ * a bare score) — the one deliberate exception is the aggregate Arena Rating
+ * badge, which mirrors capabilio-web's own ELO display.
  */
 export default async function PortfolioPage() {
   const { supabase, user } = await requireAuthedUser();
@@ -42,6 +43,7 @@ export default async function PortfolioPage() {
           items={data.items}
           keyEvidence={data.keyEvidence}
           mostRecent={data.mostRecent}
+          elo={data.elo}
           isOwner
           evidenceBaseUrl="/api/arena/attempts"
         />
