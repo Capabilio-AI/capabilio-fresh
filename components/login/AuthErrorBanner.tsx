@@ -21,7 +21,7 @@ const COPY: Record<ErrorStatus, { title: string; body: string }> = {
   },
   "pending-approval": {
     title: "Approval pending",
-    body: "Your institution access is pending approval.",
+    body: "Your organisation account is awaiting manual approval. Nothing is wrong — you can sign in once we have approved it.",
   },
   "network-error": {
     title: "Connection problem",

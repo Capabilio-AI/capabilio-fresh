@@ -42,3 +42,13 @@
 **Approval tool: operator script** (extends existing `scripts/grant-org-admin.mjs` pattern): `scripts/org-approvals.mjs list` / `approve <membership-id>`. Chosen over an admin page because there is no platform-admin auth surface and volume is ~0; a page would need a new gate. Approve refuses unless email confirmed, and only flips `status`.
 
 **Migration 036:** enum values, `institutions.org_type`, allow-list `role_requires_verification`, `handle_new_user` (student-only role), `get_or_create_organisation(name, org_type)` SECURITY DEFINER, execute revoked from anon/authenticated/public.
+
+## Implementation notes (Phases 3–6)
+- Applied to prod (project `gudsoflidkkmtnxvzicw`): `org_onboarding` (= repo 036) and `org_signup_name_conflict` (= repo 037, follow-up: `institutions.name` is UNIQUE, so a company can't reuse an institution's exact name; the function raises `name_taken_other_type` → HTTP 409 instead of linking across types).
+- Deviation from design: `POST /api/org/signup` does signUp→RPC; live tests create auth users with the admin API because Supabase's built-in mailer rate-limits signUp emails ("email rate limit exceeded" after a handful). The route's ordering is unit-tested with mocked clients.
+- `signIn` now signs the session out when the account is pending (no live session behind a pending screen).
+- `lib/supabase/types.ts` was not regenerated (unrelated uncommitted edits in that file); org code uses untyped clients for the new RPC. Regenerate when that file's other changes land.
+- Not built (per scope): TPO/company dashboards, RBAC rows for `tpo`, rate limiting on `/api/org/signup` (Supabase Auth's own limits apply), Module A/B/C.
+
+## Verification record
+See docs/org-onboarding-progress.md.

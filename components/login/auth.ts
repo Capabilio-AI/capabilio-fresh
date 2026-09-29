@@ -69,6 +69,8 @@ export async function signIn(email: string, password: string): Promise<AuthOutco
   }
 
   if (!memberships || memberships.length === 0) {
+    // No active membership: don't leave a live session behind a "pending" screen.
+    await supabase.auth.signOut();
     return { status: "pending-approval" };
   }
 
