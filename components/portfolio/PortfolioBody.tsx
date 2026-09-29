@@ -38,7 +38,8 @@ export interface PortfolioBodyProps {
   keyEvidence: string[];
   mostRecent: string | null;
   isOwner: boolean;
-  evidenceUrl: (attemptId: string) => string;
+  /** Base path for the evidence-popup fetch — attemptId is appended as the last segment. */
+  evidenceBaseUrl: string;
 }
 
 /**
@@ -46,7 +47,7 @@ export interface PortfolioBodyProps {
  * public share page. "View evidence" opens a popup instead of navigating away
  * so a recruiter can review proof without losing their place.
  */
-export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, items, keyEvidence, mostRecent, isOwner, evidenceUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, items, keyEvidence, mostRecent, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   const demonstrated = groups.flatMap((g) => g.capabilities);
   const githubVerified = github?.verified ?? false;
@@ -220,7 +221,7 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, 
         </div>
       )}
 
-      {openAttemptId && <EvidenceModal fetchUrl={evidenceUrl(openAttemptId)} onClose={() => setOpenAttemptId(null)} />}
+      {openAttemptId && <EvidenceModal fetchUrl={`${evidenceBaseUrl}/${openAttemptId}`} onClose={() => setOpenAttemptId(null)} />}
     </div>
   );
 }

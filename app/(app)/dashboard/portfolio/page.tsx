@@ -43,7 +43,7 @@ export default async function PortfolioPage() {
           keyEvidence={data.keyEvidence}
           mostRecent={data.mostRecent}
           isOwner
-          evidenceUrl={(attemptId) => `/api/arena/attempts/${attemptId}`}
+          evidenceBaseUrl="/api/arena/attempts"
         />
       </div>
     </div>

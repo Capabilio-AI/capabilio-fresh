@@ -45,7 +45,7 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
             keyEvidence={data.keyEvidence}
             mostRecent={data.mostRecent}
             isOwner={false}
-            evidenceUrl={(attemptId) => `/api/portfolio/${slug}/attempts/${attemptId}`}
+            evidenceBaseUrl={`/api/portfolio/${slug}/attempts`}
           />
         </div>
       </div>
