@@ -23,7 +23,7 @@ export default async function ClassroomProjectPage({ params }: { params: Promise
   const project = (await loadStudentProjects(service, ctx)).find((p) => p.id === id);
   if (!project) notFound();
   const mine = project.myGroup;
-  const open = project.status === "open" && new Date(project.deadline_at).getTime() > Date.now();
+  const open = project.acceptingWork;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">

@@ -97,6 +97,8 @@ export async function loadProjectGroups(service: Service, projectId: string): Pr
 // ---------------- student side ----------------
 
 export interface StudentProject extends ProjectRow {
+  /** open and before its deadline, evaluated server-side at load time */
+  acceptingWork: boolean;
   myGroup: GroupDetail | null;
   openGroups: { group: GroupRow; memberCount: number; memberBranches: string[] }[];
 }
@@ -127,8 +129,10 @@ export async function loadStudentProjects(service: Service, ctx: OrgContext): Pr
       if (detail) myDetails.set(project.id, detail);
     }
   }
+  const now = Date.now();
   return projects.map((project) => ({
     ...project,
+    acceptingWork: project.status === "open" && new Date(project.deadline_at).getTime() > now,
     myGroup: myDetails.get(project.id) ?? null,
     openGroups: groups
       .filter((g) => g.project_id === project.id && g.status === "forming" && !mine.has(g.id))
