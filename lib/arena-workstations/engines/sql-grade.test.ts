@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gradeSqlResult } from "./grade";
+import { gradeSqlResult } from "./sql-grade";
 
 const expected = { columns: ["category", "revenue"], rows: [["Electronics", 1234.56], ["Beauty", 99.5]], truncated: false };
 

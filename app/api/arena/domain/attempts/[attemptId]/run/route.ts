@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
-import { DATA_ANALYST } from "@/lib/domain-workstations/roles";
-import { runSqlQueries } from "@/lib/domain-workstations/sql-runner";
+import { loadOwnedSqlContent } from "@/lib/arena-workstations/attempts";
+import { runExploratoryQuery } from "@/lib/arena-workstations/tools/sql";
+import { attemptErrorResponse } from "@/lib/arena-workstations/http";
 
 const BodySchema = z.object({ query: z.string().trim().min(1).max(5000) });
 
-/** Exploration only — runs the student's query against the role's dataset; never touches grading. */
-export async function POST(request: Request) {
+/** Exploration only: runs the candidate's SQL on their own task's data. Never graded. */
+export async function POST(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
@@ -20,11 +22,11 @@ export async function POST(request: Request) {
   const parsed = BodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Write a query first." }, { status: 400 });
 
+  const { attemptId } = await params;
   try {
-    const [result] = await runSqlQueries(DATA_ANALYST.seedSql, [parsed.data.query]);
-    return NextResponse.json(result);
+    const content = await loadOwnedSqlContent(createServiceClient(), auth.userId, attemptId);
+    return NextResponse.json(await runExploratoryQuery(content, parsed.data.query));
   } catch (error) {
-    console.error("[arena/domain/run] SQL runner failed:", error);
-    return NextResponse.json({ error: "The query engine is unavailable — try again in a moment." }, { status: 502 });
+    return attemptErrorResponse(error, "arena/domain/run");
   }
 }
