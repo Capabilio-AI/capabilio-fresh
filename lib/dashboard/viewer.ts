@@ -15,14 +15,18 @@ export async function getViewerSummary(
   supabase: SupabaseClient<Database>,
   userId: string
 ): Promise<ViewerSummary> {
-  const [{ data: profile }, { data: membership }] = await Promise.all([
+  const [{ data: profile }, { data: memberships }] = await Promise.all([
     supabase.from("profiles").select("full_name, email, avatar_url").eq("id", userId).single(),
+    // A student can have several membership rows; .maybeSingle() returned
+    // nothing in that case. Same best-row rule as getStudentBranchContext.
     supabase
       .from("institution_memberships")
-      .select("branch, year, institutions ( name )")
+      .select("branch, year, status, institutions ( name )")
       .eq("user_id", userId)
-      .maybeSingle(),
+      .order("created_at", { ascending: false }),
   ]);
+  const rows = memberships ?? [];
+  const membership = rows.find((r) => r.status === "active" && r.branch) ?? rows.find((r) => r.branch) ?? rows[0] ?? null;
   const institution = membership?.institutions as { name: string } | null;
   return {
     fullName: profile?.full_name ?? null,
