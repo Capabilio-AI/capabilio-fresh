@@ -12,6 +12,6 @@ export async function loadManagedProject(service: SupabaseClient<Database>, ctx:
   const project = data as ProjectRow | null;
   if (!project) return null;
   if (ctx.kind === "admin") return project;
-  if (ctx.kind === "staff" && project.created_by_membership_id === ctx.membershipId) return project;
+  if (project.created_by_membership_id === ctx.membershipId) return project;
   return null;
 }

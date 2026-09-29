@@ -11,6 +11,7 @@ export type AuthOutcome =
   | { status: "invalid-credentials" }
   | { status: "unverified" }
   | { status: "pending-approval"; organisationName: string | null; orgType: "institution" | "company" | null }
+  | { status: "access-removed"; organisationName: string | null }
   | { status: "network-error" };
 
 const SELF_SERVE_ROLES: RoleId[] = ["student", "professional"];
@@ -69,6 +70,19 @@ export async function signIn(email: string, password: string): Promise<AuthOutco
   }
 
   if (!memberships || memberships.length === 0) {
+    // Someone whose access was removed must not be told they are "waiting for approval".
+    const { data: removed } = await supabase
+      .from("institution_memberships")
+      .select("institutions ( name )")
+      .eq("user_id", user.id)
+      .eq("status", "revoked")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (removed && removed.length > 0) {
+      const removedFrom = (removed[0].institutions as { name: string } | null)?.name ?? null;
+      await supabase.auth.signOut();
+      return { status: "access-removed", organisationName: removedFrom };
+    }
     // Name the organisation that is waiting (own row, readable under RLS), then don't leave a
     // live session behind a "pending" screen.
     const { data: pending } = await supabase
@@ -108,6 +122,8 @@ export interface SignUpInput {
   endYear: number;
   email: string;
   password: string;
+  /** set when the student arrived through their college's join link (attribution only — the college is fixed by the link) */
+  joinCode?: string;
 }
 
 export type SignUpOutcome = { status: "success" } | { status: "error"; message: string };
@@ -127,6 +143,7 @@ export async function signUp(input: SignUpInput): Promise<SignUpOutcome> {
         start_year: String(input.startYear),
         end_year: String(input.endYear),
         role: "student",
+        ...(input.joinCode ? { join_code: input.joinCode } : {}),
       },
       emailRedirectTo: `${window.location.origin}/auth/confirm?next=/verified`,
     },

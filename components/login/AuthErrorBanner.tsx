@@ -19,6 +19,10 @@ const COPY: Record<ErrorStatus, { title: string; body: string }> = {
     title: "Account not verified",
     body: "Your account needs verification before you can continue.",
   },
+  "access-removed": {
+    title: "Your access was removed",
+    body: "Your college's admin removed your access to its workspace. Contact them if you think this is a mistake.",
+  },
   "network-error": {
     title: "Connection problem",
     body: "Something went wrong. Please check your connection and try again.",

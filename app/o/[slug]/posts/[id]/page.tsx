@@ -30,7 +30,7 @@ export default async function OrgPostPage({ params }: { params: Promise<{ slug: 
           <ArrowLeft size={14} aria-hidden="true" /> {org.name}
         </Link>
         <div className="mt-5">
-          <PostCard post={post} slug={org.slug} permalink={false} />
+          <PostCard post={post} slug={org.slug} orgName={org.name} logoUrl={org.profile?.logo_url ?? null} permalink={false} />
         </div>
       </main>
     </OrgTheme>

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { kindOf, type OrgKind } from "./roles";
+import { untyped } from "./db";
+import { effectivePermissions, kindOf, type OrgKind, type OrgPermissionKey } from "./roles";
 
 export interface OrgContext {
   userId: string;
@@ -11,6 +12,8 @@ export interface OrgContext {
   role: string;
   kind: OrgKind;
   branch: string | null;
+  /** What this member may do: the role default, or the custom set an admin granted (admins: everything). */
+  permissions: ReadonlySet<OrgPermissionKey>;
 }
 
 /**
@@ -18,15 +21,17 @@ export interface OrgContext {
  * never from a request field. A pending or rejected member has no context at all.
  */
 export async function getOrgContext(supabase: SupabaseClient<Database>, userId: string): Promise<OrgContext | null> {
-  const { data } = await supabase
+  // untyped: `permissions` postdates the generated types
+  const { data } = await untyped(supabase)
     .from("institution_memberships")
-    .select("id, institution_id, role, branch, institutions ( name, slug )")
+    .select("id, institution_id, role, branch, permissions, institutions ( name, slug )")
     .eq("user_id", userId)
     .eq("status", "active")
     .order("created_at", { ascending: false });
-  for (const m of data ?? []) {
+  type Row = { id: string; institution_id: string; role: string; branch: string | null; permissions: string[] | null; institutions: { name: string; slug: string } | null };
+  for (const m of (data ?? []) as unknown as Row[]) {
     const kind = kindOf(m.role);
-    const inst = m.institutions as { name: string; slug: string } | null;
+    const inst = m.institutions;
     if (kind && inst) {
       return {
         userId,
@@ -37,6 +42,7 @@ export async function getOrgContext(supabase: SupabaseClient<Database>, userId: 
         role: m.role,
         kind,
         branch: m.branch,
+        permissions: effectivePermissions(m.role, m.permissions),
       };
     }
   }

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { Database } from "@/lib/supabase/types";
 import { getOrgContext, type OrgContext } from "@/lib/org/context";
-import { allowed, type Permission } from "@/lib/org/roles";
+import { can, type Permission } from "@/lib/org/roles";
 
 // Coded errors raised by the class_* SQL functions -> HTTP.
 const DB_ERRORS: Record<string, [number, string]> = {
@@ -59,7 +59,7 @@ export async function orgRoute<S extends z.ZodTypeAny>(
   const { data } = await supabase.auth.getUser();
   if (!data.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const ctx = await getOrgContext(supabase, data.user.id);
-  if (!ctx || !allowed(ctx.kind, permission)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!ctx || !can(ctx, permission)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
     const out = await handler({ ctx, supabase, service: createServiceClient() }, parsed.data);
@@ -67,4 +67,14 @@ export async function orgRoute<S extends z.ZodTypeAny>(
   } catch (e) {
     return dbErrorResponse(e instanceof Error ? e.message : (e as { message?: string })?.message);
   }
+}
+
+/** For non-JSON handlers (multipart uploads, downloads): the same auth + permission gate as orgRoute. */
+export async function authorizeOrg(permission: Permission): Promise<RouteEnv | NextResponse> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const ctx = await getOrgContext(supabase, data.user.id);
+  if (!ctx || !can(ctx, permission)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  return { ctx, supabase, service: createServiceClient() };
 }

@@ -9,7 +9,7 @@ import { Collapsible, EmptyState, PageHeader, Panel, Pill, Stat } from "@/compon
 export const metadata: Metadata = { title: "Outcomes — Capabilio AI" };
 
 export default async function OutcomesPage() {
-  const { ctx, service } = await orgPageContext("viewInsights");
+  const { ctx, service } = await orgPageContext("viewOutcomes");
   const { placements, stats, funnel, driveCount } = await loadOutcomes(service, ctx.institutionId);
   const { data: students } = await service
     .from("institution_memberships")
@@ -23,7 +23,7 @@ export default async function OutcomesPage() {
   const options = (profiles ?? []).map((p) => ({ value: p.id, label: p.full_name ?? p.email })).sort((a, b) => a.label.localeCompare(b.label));
 
   const stages = [
-    { label: "Applied to drives", value: funnel.applied },
+    { label: "Registered for visits", value: funnel.applied },
     { label: "Shortlisted", value: funnel.shortlisted },
     { label: "Selected", value: funnel.selected },
     { label: "Placements confirmed", value: funnel.placed },
@@ -48,10 +48,10 @@ export default async function OutcomesPage() {
         <Stat label="Students placed" value={stats.placed} />
         <Stat label="Companies" value={stats.companies} />
         <Stat label="Average CTC" value={stats.ctc ? `${stats.ctc.average} LPA` : "—"} hint={stats.ctc ? `median ${stats.ctc.median} · highest ${stats.ctc.highest}` : `shown at ${MIN_COHORT}+ offers with a CTC`} />
-        <Stat label="Drives posted" value={driveCount} />
+        <Stat label="Company visits" value={driveCount} />
       </div>
 
-      <Panel title="Placement funnel (campus drives)">
+      <Panel title="Placement funnel (company visits)">
         <ul className="flex flex-col gap-2">
           {stages.map((s) => (
             <li key={s.label} className="flex items-center gap-3">
@@ -92,6 +92,8 @@ export default async function OutcomesPage() {
                   <th className="py-2 pr-3">Company</th>
                   <th className="py-2 pr-3">Role</th>
                   <th className="py-2 pr-3">CTC (LPA)</th>
+                  <th className="py-2 pr-3">Student&apos;s answer</th>
+                  <th className="py-2 pr-3">Letter</th>
                   <th className="py-2">Public wall</th>
                 </tr>
               </thead>
@@ -103,6 +105,18 @@ export default async function OutcomesPage() {
                     <td className="py-2 pr-3">{p.company}</td>
                     <td className="py-2 pr-3">{p.roleTitle}</td>
                     <td className="py-2 pr-3">{p.ctcLpa ?? "—"}</td>
+                    <td className="py-2 pr-3">
+                      <Pill tone={p.studentResponse === "accepted" ? "ok" : p.studentResponse === "declined" ? "neutral" : "warn"}>{p.studentResponse === "accepted" ? "Accepted" : p.studentResponse === "declined" ? "Declined" : "Waiting"}</Pill>
+                    </td>
+                    <td className="py-2 pr-3">
+                      {p.hasLetter ? (
+                        <a href={`/api/offer-letter/${p.id}`} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">
+                          Open
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="py-2">{p.showOnWall ? <Pill tone="ok">Student agreed</Pill> : <Pill>Not shown</Pill>}</td>
                   </tr>
                 ))}

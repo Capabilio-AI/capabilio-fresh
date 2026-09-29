@@ -14,8 +14,11 @@ export interface PlacementRecord {
   offerDate: string | null;
   confirmedAt: string;
   showOnWall: boolean;
-  /** set when the placement came from one of the institution's own drives */
+  /** set when the placement came from one of the institution's own company visits */
   opportunityId: string | null;
+  /** the student's answer to the offer */
+  studentResponse?: "pending" | "accepted" | "declined";
+  hasLetter?: boolean;
 }
 
 export interface PlacementStats {
@@ -77,6 +80,8 @@ export async function loadPlacements(service: SupabaseClient<Database>, institut
     confirmed_at: string;
     show_on_wall: boolean;
     opportunity_id: string | null;
+    offer_letter_path: string | null;
+    student_response: "pending" | "accepted" | "declined";
   }[];
   if (rows.length === 0) return [];
   const ids = [...new Set(rows.map((r) => r.student_user_id))];
@@ -98,6 +103,8 @@ export async function loadPlacements(service: SupabaseClient<Database>, institut
     confirmedAt: r.confirmed_at,
     showOnWall: r.show_on_wall,
     opportunityId: r.opportunity_id,
+    studentResponse: r.student_response,
+    hasLetter: Boolean(r.offer_letter_path),
   }));
 }
 

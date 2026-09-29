@@ -24,10 +24,16 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
       expect(src.indexOf("requireOrgAdmin("), f).toBeLessThan(src.indexOf("createServiceClient()"));
     }
   });
-  it("the admin page 404s for non-admins and derives the institution from the caller", () => {
+  it("the curriculum page needs the Curriculum permission (404 otherwise) and derives the institution from the caller", () => {
+    const src = read("app/org/curriculum/page.tsx");
+    expect(src).toContain('orgPageContext("manageCurriculum")');
+    expect(src).toContain("ctx.institutionId");
+    expect(read("lib/org/page.ts")).toContain("notFound()");
+  });
+  it("the old student-shell URL only redirects into the organisation workspace", () => {
     const src = read("app/(app)/admin/curriculum/page.tsx");
-    expect(src).toContain("getOrgAdmin(");
-    expect(src).toMatch(/if \(!admin\) notFound\(\)/);
+    expect(src).toContain('redirect("/org/curriculum")');
+    expect(src).not.toContain("createServiceClient");
   });
   it("no request body schema can carry an institution or user id", () => {
     expect(read("lib/roadmap/schemas.ts")).not.toMatch(/institution_?id|user_?id/i);

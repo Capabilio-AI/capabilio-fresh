@@ -30,8 +30,8 @@ export default async function OrgHomePage() {
     service.from("profiles").select("full_name").eq("id", ctx.userId).maybeSingle(),
   ]);
   const { kpis, alerts, queue, upcoming } = home;
-  const canManage = ctx.kind === "admin" || ctx.kind === "staff";
-  const runsPlacements = ctx.kind === "admin" || ctx.kind === "tpo";
+  const canManage = ctx.permissions.has("classroom");
+  const runsPlacements = ctx.permissions.has("placements");
   const profile = (profileRes.data as { is_public: boolean; bio: string | null; website_url: string | null } | null) ?? null;
   const firstName = nameRes.data?.full_name?.trim().split(/\s+/)[0];
 
@@ -46,12 +46,12 @@ export default async function OrgHomePage() {
     students: kpis.students,
   });
   const doneCount = steps.filter((s) => s.done).length;
-  const showSetup = ctx.kind === "admin" && doneCount < steps.length;
+  const showSetup = ctx.permissions.has("members") && doneCount < steps.length;
 
   const kpiCards = [
-    { label: "Active students", value: kpis.students, sub: "Signed up under your college", href: ctx.kind === "tpo" ? "/org/insights" : "/org/students", tone: "text-app-charcoal" },
+    { label: "Active students", value: kpis.students, sub: "Signed up under your college", href: ctx.permissions.has("students") ? "/org/students" : ctx.permissions.has("insights") ? "/org/insights" : "/org", tone: "text-app-charcoal" },
     canManage && { label: "Open projects", value: kpis.openProjects, sub: `${home.counts.awaitingGrading} awaiting a grade`, href: "/org/projects", tone: "text-app-orange" },
-    runsPlacements && { label: "Open drives", value: kpis.openDrives, sub: `${kpis.applicants} applications`, href: "/org/placements", tone: "text-app-blue" },
+    runsPlacements && { label: "Company visits", value: kpis.openDrives, sub: `${kpis.applicants} applications`, href: "/org/placements", tone: "text-app-blue" },
     runsPlacements && { label: "Placed", value: kpis.placed, sub: "Confirmed by your team", href: "/org/outcomes", tone: "text-app-success" },
   ].filter(Boolean) as { label: string; value: number; sub: string; href: string; tone: string }[];
 

@@ -40,7 +40,7 @@ export async function listSubjects(service: Service, institutionId: string): Pro
 /** Staff see the materials they authored; admins see everything at their institution. */
 export async function listMaterialsForStaff(service: Service, ctx: OrgContext): Promise<MaterialRow[]> {
   let q = untyped(service).from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(100);
-  if (ctx.kind === "staff") q = q.eq("author_membership_id", ctx.membershipId);
+  if (ctx.kind !== "admin") q = q.eq("author_membership_id", ctx.membershipId);
   return ((await q).data ?? []) as MaterialRow[];
 }
 
@@ -53,7 +53,7 @@ export interface ProjectSummary extends ProjectRow {
 export async function listProjectsForStaff(service: Service, ctx: OrgContext): Promise<ProjectSummary[]> {
   const db = untyped(service);
   let q = db.from("class_projects").select("*").eq("institution_id", ctx.institutionId).order("created_at", { ascending: false });
-  if (ctx.kind === "staff") q = q.eq("created_by_membership_id", ctx.membershipId);
+  if (ctx.kind !== "admin") q = q.eq("created_by_membership_id", ctx.membershipId);
   const projects = ((await q).data ?? []) as ProjectRow[];
   if (projects.length === 0) return [];
   const { data: groups } = await db.from("class_project_groups").select("project_id, status").in("project_id", projects.map((p) => p.id));

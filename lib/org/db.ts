@@ -102,4 +102,7 @@ export interface OrgProfileRow {
   cover_image_url: string | null;
   website_url: string | null;
   is_public: boolean;
+  tagline: string | null;
+  logo_url: string | null;
+  founded_year: number | null;
 }

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (!student) return NextResponse.json({ error: "That person isn't an active student of your institution." }, { status: 404 });
 
-    const { error } = await untyped(service).from("org_placements").upsert(
+    const { data: saved, error } = await untyped(service).from("org_placements").upsert(
       {
         institution_id: ctx.institutionId,
         student_user_id: studentUserId,
@@ -47,8 +47,8 @@ export async function POST(request: Request) {
         confirmed_by_membership_id: ctx.membershipId,
       },
       { onConflict: "institution_id,student_user_id,company,role_title" }
-    );
+    ).select("id").single();
     if (error) throw error;
-    return {};
+    return { placementId: (saved as { id: string }).id };
   });
 }

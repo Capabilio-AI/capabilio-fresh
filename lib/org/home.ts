@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import type { OrgContext } from "./context";
-import { IN_APP_APPROVABLE_ROLES, type OrgKind } from "./roles";
+import { IN_APP_APPROVABLE_ROLES, type OrgPermissionKey } from "./roles";
 import { untyped, type GroupRow, type OrgPostRow, type ProjectRow } from "./db";
 
 export interface Alert {
@@ -20,18 +20,18 @@ export interface HomeCounts {
 }
 
 /** Pure. The "what needs attention now?" list — only items that exist, most urgent first, never more than 5. */
-export function buildAlerts(kind: OrgKind, c: HomeCounts): Alert[] {
+export function buildAlerts(perms: ReadonlySet<OrgPermissionKey>, c: HomeCounts): Alert[] {
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const all: (Alert | false)[] = [
-    (kind === "admin" || kind === "staff") &&
+    perms.has("classroom") &&
       c.awaitingGrading > 0 && { tone: "red", label: `${plural(c.awaitingGrading, "group is", "groups are")} waiting for a grade`, sub: "Submitted work is ready for review", href: "/org/projects" },
-    (kind === "admin" || kind === "tpo") &&
-      c.applicantsToReview > 0 && { tone: "amber", label: `${plural(c.applicantsToReview, "applicant needs", "applicants need")} a decision`, sub: "Shortlist or reject on the drive page", href: "/org/placements" },
-    (kind === "admin" || kind === "tpo") &&
+    perms.has("placements") &&
+      c.applicantsToReview > 0 && { tone: "amber", label: `${plural(c.applicantsToReview, "applicant needs", "applicants need")} a decision`, sub: "Shortlist or reject on the company visit page", href: "/org/placements" },
+    perms.has("placements") &&
       c.drivesClosingSoon > 0 && { tone: "amber", label: `${plural(c.drivesClosingSoon, "drive closes", "drives close")} within 3 days`, sub: "Remind eligible students", href: "/org/placements" },
-    (kind === "admin" || kind === "staff") &&
+    perms.has("classroom") &&
       c.projectsClosingWithOpenGroups > 0 && { tone: "amber", label: `${plural(c.projectsClosingWithOpenGroups, "project has", "projects have")} groups still forming near the deadline`, sub: "Some students may not be able to submit", href: "/org/projects" },
-    kind === "admin" && c.pendingMembers > 0 && { tone: "blue", label: `${plural(c.pendingMembers, "staff member is", "staff members are")} waiting for approval`, sub: "Approve or reject applications", href: "/org/members" },
+    perms.has("members") && c.pendingMembers > 0 && { tone: "blue", label: `${plural(c.pendingMembers, "staff member is", "staff members are")} waiting for approval`, sub: "Approve or reject applications", href: "/org/team" },
   ];
   return all.filter((a): a is Alert => Boolean(a)).slice(0, 5);
 }
@@ -55,12 +55,12 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
   const today = nowIso.slice(0, 10);
   const soonDate = soonIso.slice(0, 10);
   const horizonDate = horizonIso.slice(0, 10);
-  const manages = ctx.kind === "admin" || ctx.kind === "staff";
-  const runsPlacements = ctx.kind === "admin" || ctx.kind === "tpo";
+  const manages = ctx.permissions.has("classroom");
+  const runsPlacements = ctx.permissions.has("placements");
 
   // projects this person manages (admin: all; staff: own)
   let pq = db.from("class_projects").select("*").eq("institution_id", ctx.institutionId);
-  if (ctx.kind === "staff") pq = pq.eq("created_by_membership_id", ctx.membershipId);
+  if (ctx.kind !== "admin") pq = pq.eq("created_by_membership_id", ctx.membershipId);
   const projects = manages ? (((await pq).data ?? []) as ProjectRow[]) : [];
   const projectIds = projects.map((p) => p.id);
   const groups = projectIds.length ? (((await db.from("class_project_groups").select("id, project_id, name, status, created_at").in("project_id", projectIds)).data ?? []) as GroupRow[]) : [];
@@ -74,7 +74,7 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
   const [drivesRes, studentsRes, pendingRes, placedRes, eventsRes] = await Promise.all([
     runsPlacements ? service.from("opportunities").select("id, role, company, deadline").eq("institution_id", ctx.institutionId) : Promise.resolve({ data: [] }),
     service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active"),
-    ctx.kind === "admin"
+    ctx.permissions.has("members")
       ? service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("status", "pending").in("role", [...IN_APP_APPROVABLE_ROLES] as never[])
       : Promise.resolve({ count: 0 }),
     runsPlacements ? db.from("org_placements").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId) : Promise.resolve({ count: 0 }),
@@ -104,14 +104,14 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
       .map((p): UpcomingItem => ({ kind: "project", title: p.title, at: p.deadline_at, detail: "Project deadline", href: `/org/projects/${p.id}` })),
     ...openDrives
       .filter((d) => d.deadline && d.deadline <= horizonDate)
-      .map((d): UpcomingItem => ({ kind: "drive", title: `${d.role} · ${d.company}`, at: `${d.deadline}T23:59:00Z`, detail: "Apply-by date", href: `/org/placements/${d.id}` })),
+      .map((d): UpcomingItem => ({ kind: "drive", title: `${d.role} · ${d.company}`, at: `${d.deadline}T23:59:00Z`, detail: "Registration closes", href: `/org/placements/${d.id}` })),
   ]
     .sort((a, b) => a.at.localeCompare(b.at))
     .slice(0, 6);
 
   return {
     counts,
-    alerts: buildAlerts(ctx.kind, counts),
+    alerts: buildAlerts(ctx.permissions, counts),
     queue,
     upcoming,
     kpis: {

@@ -15,14 +15,22 @@ const FIELD_LABEL = "mb-2 block font-lp-body text-lp-body-sm font-medium text-lp
 const FIELD_INPUT =
   "w-full rounded border border-lp-border-hairline bg-lp-surface-card px-4 py-3 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted transition-colors focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25";
 
-export function SignupForm() {
+/** Arrived through a college's join link: the college is fixed (and shown, not editable). */
+export interface JoinLinkInfo {
+  code: string;
+  collegeName: string;
+  branch: string | null;
+  endYear: number | null;
+}
+
+export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [collegeName, setCollegeName] = useState("");
+  const [collegeName, setCollegeName] = useState(join?.collegeName ?? "");
   const [, setSelectedCollege] = useState<CollegeMatch | null>(null);
-  const [branch, setBranch] = useState("");
+  const [branch, setBranch] = useState(join?.branch ?? "");
   const [startYear, setStartYear] = useState("");
-  const [endYear, setEndYear] = useState("");
+  const [endYear, setEndYear] = useState(join?.endYear ? String(join.endYear) : "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -63,6 +71,7 @@ export function SignupForm() {
       endYear: years.endYear,
       email,
       password,
+      joinCode: join?.code,
     });
     setSubmitting(false);
 
@@ -146,12 +155,21 @@ export function SignupForm() {
           <label htmlFor="college-name" className={FIELD_LABEL}>
             College name
           </label>
-          <CollegeAutocomplete
-            id="college-name"
-            value={collegeName}
-            onChange={setCollegeName}
-            onSelect={setSelectedCollege}
-          />
+          {join ? (
+            <div className="flex items-center justify-between gap-3 rounded border border-lp-border-hairline bg-lp-surface-subtle px-4 py-3 font-lp-body text-lp-body-sm text-lp-text-ink">
+              <span id="college-name" className="font-medium">{join.collegeName}</span>
+              <a href="/signup" className="shrink-0 text-lp-label-sm text-lp-accent-indigo hover:underline">
+                Not your college?
+              </a>
+            </div>
+          ) : (
+            <CollegeAutocomplete
+              id="college-name"
+              value={collegeName}
+              onChange={setCollegeName}
+              onSelect={setSelectedCollege}
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

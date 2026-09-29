@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { IN_APP_APPROVABLE_ROLES, PERMISSIONS, allowed, kindOf, landingFor } from "./roles";
+import { ALL_PERMISSION_KEYS, IN_APP_APPROVABLE_ROLES, INVITABLE_ROLES, ROLE_DEFAULTS, can, effectivePermissions, kindOf, landingFor } from "./roles";
 import { orgNavFor } from "./nav";
+import { ORG_PERMISSIONS } from "./roles";
 import { postVisibleTo } from "./presence";
 import { MIN_COHORT, summarizeCohorts, summarizeProjects } from "./insights";
 import { buildAlerts } from "./home";
@@ -12,7 +13,8 @@ import { GradeSchema, MaterialSchema, PlacementSchema, PostSchema, ProjectSchema
 
 const uuid = "11111111-1111-4111-8111-111111111111";
 
-describe("role mapping and the permissions matrix", () => {
+describe("role mapping and permission sets", () => {
+  const subject = (role: string, custom: string[] | null = null) => ({ kind: kindOf(role), permissions: effectivePermissions(role, custom) });
   it("maps app roles to spec kinds and nothing else", () => {
     expect(kindOf("faculty")).toBe("staff");
     expect(kindOf("hod")).toBe("staff");
@@ -22,24 +24,50 @@ describe("role mapping and the permissions matrix", () => {
     expect(kindOf("student")).toBe("student");
     for (const r of ["ceo", "mentor", "professional", "company_admin", "nonsense"]) expect(kindOf(r)).toBeNull();
   });
-  it("matches spec §6", () => {
-    expect(allowed("student", "joinGroup")).toBe(true);
-    expect(allowed("staff", "joinGroup")).toBe(false);
-    expect(allowed("tpo", "gradeProject")).toBe(false);
-    expect(allowed("tpo", "createProject")).toBe(false);
-    expect(allowed("staff", "postPlacement")).toBe(false);
-    expect(allowed("tpo", "postPlacement")).toBe(true);
-    expect(allowed("admin", "postPlacement")).toBe(true);
-    expect(allowed("tpo", "viewInsights")).toBe(true);
-    expect(allowed("staff", "viewInsights")).toBe(false);
-    expect(allowed("staff", "manageProfile")).toBe(false);
-    expect(allowed("admin", "approveMembers")).toBe(true);
-    expect(allowed(null, "viewInsights")).toBe(false);
-    expect(Object.keys(PERMISSIONS).length).toBeGreaterThan(5);
+  it("role defaults match spec §6", () => {
+    expect(can(subject("student"), "joinGroup")).toBe(true);
+    expect(can(subject("faculty"), "joinGroup")).toBe(false);
+    expect(can(subject("tpo"), "gradeProject")).toBe(false);
+    expect(can(subject("tpo"), "createProject")).toBe(false);
+    expect(can(subject("faculty"), "postPlacement")).toBe(false);
+    expect(can(subject("tpo"), "postPlacement")).toBe(true);
+    expect(can(subject("principal"), "postPlacement")).toBe(true);
+    expect(can(subject("tpo"), "viewInsights")).toBe(true);
+    expect(can(subject("faculty"), "viewInsights")).toBe(false);
+    expect(can(subject("faculty"), "manageProfile")).toBe(false);
+    expect(can(subject("principal"), "approveMembers")).toBe(true);
+    expect(can(subject("faculty"), "approveMembers")).toBe(false);
+    expect(can(null, "viewInsights")).toBe(false);
   });
-  it("admins can never approve other admins in-app", () => {
+  it("admin roles always hold everything, whatever is stored on the membership", () => {
+    for (const role of ["principal", "vice_principal"]) {
+      expect([...effectivePermissions(role, ["chat"])].sort()).toEqual([...ALL_PERMISSION_KEYS].sort());
+      expect([...effectivePermissions(role, [])].sort()).toEqual([...ALL_PERMISSION_KEYS].sort());
+    }
+  });
+  it("a custom set replaces the role default exactly, and unknown keys are ignored", () => {
+    expect([...effectivePermissions("faculty", ["placements", "chat"])].sort()).toEqual(["chat", "placements"]);
+    expect(can(subject("faculty", ["placements"]), "postPlacement")).toBe(true);
+    expect(can(subject("faculty", ["placements"]), "createProject")).toBe(false); // default classroom access is gone
+    expect([...effectivePermissions("tpo", ["students", "made-up"])]).toEqual(["students"]);
+    expect([...effectivePermissions("faculty", [])]).toEqual([]);
+  });
+  it("students never gain staff powers, and staff never gain student actions", () => {
+    expect(can(subject("student", ["members"]), "approveMembers")).toBe(false);
+    expect(can(subject("faculty", ["members"]), "applyToDrive")).toBe(false);
+  });
+  it("SQL org_effective_permissions defaults stay identical to the TypeScript defaults", () => {
+    const sql = readFileSync("supabase/migrations/043_org_access_invites_media.sql", "utf8");
+    const list = (kind: "staff" | "tpo") => `array[${ROLE_DEFAULTS[kind].map((k) => `'${k}'`).join(",")}]`;
+    expect(sql).toContain(`when p_role in ('faculty', 'hod') then ${list("staff")}`);
+    expect(sql).toContain(`when p_role = 'tpo' then ${list("tpo")}`);
+    expect(sql).toContain(`array[${ALL_PERMISSION_KEYS.map((k) => `'${k}'`).join(",")}]`);
+    expect(new Set(ORG_PERMISSIONS.map((p) => p.key)).size).toBe(ORG_PERMISSIONS.length);
+  });
+  it("admins can never approve other admins in-app; principal is never invitable", () => {
     expect(IN_APP_APPROVABLE_ROLES).not.toContain("principal");
     expect(IN_APP_APPROVABLE_ROLES).not.toContain("vice_principal");
+    expect(INVITABLE_ROLES.map((r) => r.role)).not.toContain("principal");
   });
   it("routes org roles to /org, students to the assessment, roles without a workspace to nothing", () => {
     expect(landingFor("tpo")).toBe("/org");
@@ -47,13 +75,15 @@ describe("role mapping and the permissions matrix", () => {
     expect(landingFor("student")).toBe("/assessment");
     expect(landingFor("company_admin")).toBeNull();
   });
-  it("nav only offers pages the role can use", () => {
-    expect(orgNavFor("tpo").map((n) => n.label)).toEqual(["Home", "Placements", "Insights", "Outcomes"]);
-    expect(orgNavFor("tpo").map((n) => n.label)).not.toContain("Students"); // TPO works from aggregates + the pipeline
-    expect(orgNavFor("staff").map((n) => n.label)).toContain("Students");
-    expect(orgNavFor("staff").map((n) => n.label)).not.toContain("Members");
-    expect(orgNavFor("admin").map((n) => n.label)).toContain("Members");
-    expect(orgNavFor("student")).toEqual([]);
+  it("nav only offers pages the member's permissions allow", () => {
+    const labels = (role: string, custom: string[] | null = null) => orgNavFor(effectivePermissions(role, custom)).map((n) => n.label);
+    expect(labels("tpo")).toEqual(["Home", "College page", "Company visits", "Insights", "Outcomes", "Team chat"]);
+    expect(labels("faculty")).toEqual(["Home", "College page", "Posts", "Students", "Materials", "Projects", "Team chat"]);
+    expect(labels("principal")).toContain("Team & access");
+    expect(labels("principal")).toContain("Curriculum");
+    expect(labels("faculty")).not.toContain("Team & access");
+    expect(labels("faculty", ["curriculum"])).toEqual(["Home", "College page", "Curriculum"]);
+    expect(orgNavFor(new Set())).toEqual([{ label: "Home", href: "/org" }, { label: "College page", href: "/org/college" }]);
   });
 });
 
@@ -152,41 +182,44 @@ describe("migrations 038-040 keep every table private and the writes atomic", ()
 });
 
 describe("reference-aligned workspace: grouped nav", () => {
-  it("groups follow Visibility / Operations / Intelligence and every route exists as a page", () => {
-    for (const kind of ["admin", "staff", "tpo"] as const) {
-      const groups = orgNavGroupsFor(kind);
-      expect(groups.every((g) => ["Visibility", "Operations", "Intelligence"].includes(g.label))).toBe(true);
+  it("groups follow the reference and every route exists as a page", () => {
+    for (const role of ["principal", "faculty", "tpo"]) {
+      const groups = orgNavGroupsFor(effectivePermissions(role, null));
+      expect(groups.every((g) => ["Visibility", "Operations", "Intelligence", "Collaboration"].includes(g.label))).toBe(true);
       for (const item of groups.flatMap((g) => g.items)) {
-        const file = item.href === "/org" ? "app/org/page.tsx" : item.href.startsWith("/admin") ? `app/(app)${item.href}/page.tsx` : `app${item.href}/page.tsx`;
-        expect(existsSync(file), `${kind}: ${item.href}`).toBe(true);
+        const file = item.href === "/org" ? "app/org/page.tsx" : `app${item.href}/page.tsx`;
+        expect(existsSync(file), `${role}: ${item.href}`).toBe(true);
       }
     }
   });
-  it("the roster is for staff and admins, not the TPO", () => {
-    expect(allowed("staff", "viewRoster")).toBe(true);
-    expect(allowed("admin", "viewRoster")).toBe(true);
-    expect(allowed("tpo", "viewRoster")).toBe(false);
-    expect(allowed("student", "viewRoster")).toBe(false);
-    expect(allowed("student", "applyToDrive")).toBe(true);
-    expect(allowed("tpo", "applyToDrive")).toBe(false);
+  it("the roster is for staff and admins by default, not the TPO; students act only on their own rows", () => {
+    const sub = (role: string) => ({ kind: kindOf(role), permissions: effectivePermissions(role, null) });
+    expect(can(sub("faculty"), "viewRoster")).toBe(true);
+    expect(can(sub("principal"), "viewRoster")).toBe(true);
+    expect(can(sub("tpo"), "viewRoster")).toBe(false);
+    expect(can(sub("student"), "viewRoster")).toBe(false);
+    expect(can(sub("student"), "applyToDrive")).toBe(true);
+    expect(can(sub("tpo"), "applyToDrive")).toBe(false);
   });
 });
 
 describe("home: what needs attention", () => {
   const none = { pendingMembers: 0, awaitingGrading: 0, applicantsToReview: 0, drivesClosingSoon: 0, projectsClosingWithOpenGroups: 0 };
+  const perms = (role: string, custom: string[] | null = null) => effectivePermissions(role, custom);
   it("shows nothing when nothing is waiting — no invented alerts", () => {
-    for (const kind of ["admin", "staff", "tpo"] as const) expect(buildAlerts(kind, none)).toEqual([]);
+    for (const role of ["principal", "faculty", "tpo"]) expect(buildAlerts(perms(role), none)).toEqual([]);
   });
-  it("only surfaces items the role can act on", () => {
+  it("only surfaces items the member can act on", () => {
     const busy = { pendingMembers: 2, awaitingGrading: 3, applicantsToReview: 4, drivesClosingSoon: 1, projectsClosingWithOpenGroups: 1 };
-    expect(buildAlerts("tpo", busy).map((a) => a.href)).toEqual(["/org/placements", "/org/placements"]);
-    expect(buildAlerts("staff", busy).map((a) => a.href)).toEqual(["/org/projects", "/org/projects"]);
-    expect(buildAlerts("admin", busy)).toHaveLength(5);
-    expect(buildAlerts("staff", busy).some((a) => a.href === "/org/members")).toBe(false);
+    expect(buildAlerts(perms("tpo"), busy).map((a) => a.href)).toEqual(["/org/placements", "/org/placements"]);
+    expect(buildAlerts(perms("faculty"), busy).map((a) => a.href)).toEqual(["/org/projects", "/org/projects"]);
+    expect(buildAlerts(perms("principal"), busy)).toHaveLength(5);
+    expect(buildAlerts(perms("faculty"), busy).some((a) => a.href === "/org/team")).toBe(false);
+    expect(buildAlerts(perms("faculty", ["members"]), busy).map((a) => a.href)).toEqual(["/org/team"]);
   });
   it("uses correct singular/plural copy", () => {
-    expect(buildAlerts("staff", { ...none, awaitingGrading: 1 })[0].label).toBe("1 group is waiting for a grade");
-    expect(buildAlerts("staff", { ...none, awaitingGrading: 2 })[0].label).toBe("2 groups are waiting for a grade");
+    expect(buildAlerts(perms("faculty"), { ...none, awaitingGrading: 1 })[0].label).toBe("1 group is waiting for a grade");
+    expect(buildAlerts(perms("faculty"), { ...none, awaitingGrading: 2 })[0].label).toBe("2 groups are waiting for a grade");
   });
 });
 

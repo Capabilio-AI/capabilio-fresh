@@ -6,6 +6,7 @@ import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { listOpenOpportunities, type OpportunityType } from "@/lib/launchpad/opportunities";
 import { ActionButton } from "@/components/org/ActionButton";
+import { REGISTRATION_LABEL } from "@/lib/org/visits";
 
 export const metadata: Metadata = { title: "Launchpad — Capabilio AI" };
 
@@ -51,7 +52,7 @@ export default async function LaunchpadPage() {
   // own rows only (RLS); status is written by the college, never by the student
   const { data: myApps } = await supabase.from("applications").select("opportunity_id, status").eq("user_id", user.id);
   const appliedStatus = new Map((myApps ?? []).map((a) => [a.opportunity_id, a.status]));
-  const APPLIED_LABEL: Record<string, string> = { submitted: "Applied", shortlisted: "Shortlisted", accepted: "Selected", rejected: "Not selected" };
+  const APPLIED_LABEL = REGISTRATION_LABEL;
   const gapSkills = new Set((careerMatches[0]?.skillGaps ?? []).map((g) => g.skill));
 
   return (
@@ -92,7 +93,7 @@ export default async function LaunchpadPage() {
                   </div>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     <span className={`rounded-full px-2 py-0.5 font-lp-mono text-[10.5px] font-semibold ${TYPE_COLOR[opp.type]}`}>{TYPE_LABEL[opp.type]}</span>
-                    {opp.campus && <span className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10.5px] font-semibold text-app-charcoal">Campus drive</span>}
+                    {opp.campus && <span className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10.5px] font-semibold text-app-charcoal">Visiting your campus</span>}
                   </span>
                 </div>
 
@@ -118,14 +119,39 @@ export default async function LaunchpadPage() {
                   </div>
                 )}
 
+                {opp.campus && (opp.driveDate || opp.ctcOffered || opp.eligibleBranches.length > 0) && (
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 font-lp-body text-[12px]">
+                    {opp.driveDate && (
+                      <>
+                        <dt className="text-app-muted">Visit date</dt>
+                        <dd className="text-right text-app-charcoal">{new Date(opp.driveDate).toLocaleDateString("en-IN", { dateStyle: "medium" })}</dd>
+                      </>
+                    )}
+                    {opp.ctcOffered && (
+                      <>
+                        <dt className="text-app-muted">Package</dt>
+                        <dd className="text-right text-app-charcoal">{opp.ctcOffered}</dd>
+                      </>
+                    )}
+                    {opp.eligibleBranches.length > 0 && (
+                      <>
+                        <dt className="text-app-muted">Open to</dt>
+                        <dd className="text-right text-app-charcoal">{opp.eligibleBranches.join(", ")}</dd>
+                      </>
+                    )}
+                  </dl>
+                )}
+
                 {opp.eligibility && <p className="font-lp-body text-[12px] text-app-muted">{opp.eligibility}</p>}
 
                 {opp.campus && (
                   <div>
                     {appliedStatus.has(opp.id) ? (
-                      <span className="rounded-full border border-app-border px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">{APPLIED_LABEL[appliedStatus.get(opp.id)!] ?? "Applied"}</span>
+                      <span className="rounded-full border border-app-border px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">{APPLIED_LABEL[appliedStatus.get(opp.id)!] ?? "Registered"}</span>
+                    ) : opp.driveStatus === "planned" ? (
+                      <span className="font-lp-body text-[12px] text-app-muted">Registration opens soon</span>
                     ) : (
-                      <ActionButton action="/api/launchpad/apply" body={{ opportunityId: opp.id }} label="Apply" />
+                      <ActionButton action="/api/launchpad/apply" body={{ opportunityId: opp.id }} label="Register" />
                     )}
                   </div>
                 )}

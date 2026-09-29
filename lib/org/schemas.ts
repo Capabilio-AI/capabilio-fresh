@@ -54,22 +54,31 @@ export const GradeSchema = z
   .strict();
 export const FeedbackSchema = z.object({ reportId: uuid, feedback: z.string().trim().min(1).max(3000) }).strict();
 
+const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("").transform(() => undefined));
+
+/** A company visit: a company the college has confirmed will come to campus to hire. */
 export const PlacementSchema = z
   .object({
-    role: z.string().trim().min(1).max(200),
     company: z.string().trim().min(1).max(200),
+    // the role(s) being hired for, e.g. "Systems Engineer, Analyst"
+    role: z.string().trim().min(1).max(200),
     location: optionalText(200),
     opportunityType: z.enum(["job", "internship"]),
+    ctcOffered: optionalText(100),
+    driveDate: dateOnly,
+    deadline: dateOnly, // registration closes
+    eligibleBranches: z.array(z.string().trim().min(1).max(200)).max(30).optional(),
     skills: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
     eligibility: optionalText(1000),
-    deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("").transform(() => undefined)),
+    status: z.enum(["planned", "registration_open"]).default("registration_open"),
   })
   .strict();
 
 export const PostSchema = z
   .object({
     type: z.enum(["event", "announcement"]),
-    title: z.string().trim().min(1).max(200),
+    // a LinkedIn-style post has no title: the server derives one from the text when none is given
+    title: optionalText(200),
     body: z.string().trim().min(1).max(5000),
     coverImageUrl: optionalUrl,
     eventStartsAt: z.string().min(1).optional().or(z.literal("").transform(() => undefined)),
@@ -81,7 +90,19 @@ export const PostSchema = z
   .strict()
   .refine((v) => v.type !== "event" || Boolean(v.eventStartsAt), { path: ["eventStartsAt"], message: "Events need a start date and time." });
 export const PostActionSchema = z.object({ postId: uuid, action: z.enum(["publish", "unpublish", "delete"]) }).strict();
-export const ProfileSchema = z.object({ bio: optionalText(3000), coverImageUrl: optionalUrl, websiteUrl: optionalUrl, isPublic: z.boolean() }).strict();
+// logo and cover are set only by the upload route (never by a client-supplied URL)
+export const ProfileSchema = z
+  .object({
+    tagline: optionalText(160),
+    bio: optionalText(3000),
+    websiteUrl: optionalUrl,
+    foundedYear: z.coerce.number().int().min(1800).max(2100).optional().or(z.literal("").transform(() => undefined)),
+    city: optionalText(100),
+    state: optionalText(100),
+    isPublic: z.boolean(),
+  })
+  .strict();
+export const PostEditSchema = z.object({ postId: uuid, body: z.string().trim().min(1).max(5000) }).strict();
 export const MemberDecisionSchema = z.object({ membershipId: uuid, decision: z.enum(["approve", "reject"]) }).strict();
 export const FollowSchema = z.object({ following: z.boolean() }).strict();
 export const LikeSchema = z.object({ postId: uuid, liked: z.boolean() }).strict();
@@ -106,4 +127,31 @@ export const ConfirmPlacementSchema = z
     if (!v.applicationId && (!v.company || !v.roleTitle)) ctx.addIssue({ code: "custom", path: ["company"], message: "Company and role are required." });
   });
 export const PlacementConsentSchema = z.object({ placementId: uuid, show: z.boolean() }).strict();
+export const PlacementResponseSchema = z.object({ placementId: uuid, response: z.enum(["accepted", "declined"]) }).strict();
+export const DRIVE_STATUSES = ["planned", "registration_open", "completed", "cancelled"] as const;
+export const VisitStatusSchema = z.object({ opportunityId: uuid, status: z.enum(DRIVE_STATUSES) }).strict();
 export const RsvpSchema = z.object({ postId: uuid, going: z.boolean() }).strict();
+
+// ---- team & access ----
+import { ALL_PERMISSION_KEYS, type OrgPermissionKey } from "./roles";
+const permissionKey = z.enum(ALL_PERMISSION_KEYS as unknown as [OrgPermissionKey, ...OrgPermissionKey[]]);
+export const InviteSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email().max(254),
+    role: z.enum(["faculty", "hod", "tpo", "vice_principal"]),
+    // null / omitted = the role's default set
+    permissions: z.array(permissionKey).max(ALL_PERMISSION_KEYS.length).nullable().optional(),
+  })
+  .strict();
+export const InviteIdSchema = z.object({ invitationId: uuid }).strict();
+export const AcceptInviteSchema = z.object({ token: z.string().min(20).max(120), fullName: z.string().trim().min(2).max(120), password: z.string().min(8).max(200) }).strict();
+export const MemberPermissionsSchema = z.object({ membershipId: uuid, permissions: z.array(permissionKey).max(ALL_PERMISSION_KEYS.length).nullable() }).strict();
+export const MemberIdSchema = z.object({ membershipId: uuid }).strict();
+export const JoinLinkSchema = z
+  .object({
+    label: optionalText(80),
+    branch: optionalText(200),
+    endYear: z.coerce.number().int().min(1980).max(2100).optional().or(z.literal("").transform(() => undefined)),
+  })
+  .strict();
+export const JoinLinkToggleSchema = z.object({ linkId: uuid, active: z.boolean() }).strict();

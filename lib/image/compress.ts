@@ -6,9 +6,9 @@ const JPEG_QUALITY = 0.85;
  * re-encodes as JPEG so a student's phone-camera photo (often several MB)
  * uploads as a small file without ever showing them a size-limit error.
  */
-export async function compressImage(file: File): Promise<Blob> {
+export async function compressImage(file: File, maxDimension: number = MAX_DIMENSION): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);
   const height = Math.round(bitmap.height * scale);
 
