@@ -3,23 +3,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { useDirectionFlags } from "@/components/direction/DirectionContext";
 
-const TABS = [
+const TABS: { label: string; href: string; jobTrackOnly?: boolean }[] = [
   { label: "Overview", href: "/dashboard" },
   { label: "Career Path", href: "/dashboard/career-path" },
   { label: "Educational History", href: "/dashboard/education" },
   { label: "Portfolio", href: "/dashboard/portfolio" },
   { label: "Skills", href: "/dashboard/skills" },
   { label: "Skill Gap", href: "/dashboard/skill-gap" },
+  { label: "Roadmap", href: "/dashboard/roadmap", jobTrackOnly: true },
   { label: "Vault", href: "/dashboard/vault" },
 ];
 
 export function DashboardSubNav() {
   const pathname = usePathname();
+  const { isJobTrack } = useDirectionFlags();
+  const tabs = TABS.filter((t) => !t.jobTrackOnly || isJobTrack);
   return (
     <div className="-mx-4 overflow-x-auto border-b border-app-border px-4 sm:mx-0 sm:px-0">
       <div className="flex gap-1 whitespace-nowrap">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const active = tab.href === "/dashboard" ? pathname === "/dashboard" : pathname === tab.href;
           return (
             <Link

@@ -81,3 +81,30 @@ Inputs: role + its skill areas; target profile (`area → min`); verified counts
 
 ## Student surface
 `/dashboard/roadmap` as a new dashboard tab. Visible only when `getStudentDirection().track === "job"` (unset and "not sure" included); other tracks get no tab and the route returns 404. Tab visibility uses a small context filled by the (app) layout from the same `direction` already loaded — track logic is not reimplemented. States: roadmap; `needs_info` with plain reasons and what to do about each (confirm years, "your college hasn't added its curriculum yet"); never an empty-looking "no gaps".
+
+---
+
+# Phases 5–7 — Build and verification record
+
+## Student UI (Phase 5)
+- `/dashboard/roadmap` (new dashboard tab, "Roadmap"): three sections — *You're on track*, *Engage with your curriculum, then prove it*, *Not in your curriculum — build these yourself* — each card shows verified/target progress, the covering subjects with year and timing, a deterministic Arena action ("Complete N more verified … tasks"), and (external gaps only) the stored curated resources.
+- Honest state: `needs_info` shows every unmet precondition in plain language with the fix where one exists ("Confirm your years" → `/settings/direction`; "your college hasn't added its curriculum yet"). It explicitly says that nothing shown does not mean no gaps.
+- Visibility: the tab appears only when the layout-provided `isJobTrack` (from `direction.track === "job"`, the existing resolution) is true; the route itself calls `notFound()` for anyone else. Verified live: job / not_sure / unset → applicable; higher_studies / entrepreneur → not applicable, switching live.
+
+## Verification (Phase 7)
+- `tsc` clean; `vitest run` 51 files / 333 tests pass; `eslint app components lib proxy.ts scripts` 0 errors (4 pre-existing `<a href="/">` warnings); `next build` succeeds and lists `/admin/curriculum`, `/api/admin/curriculum/*`, `/dashboard/roadmap`.
+- Live tests (`npm run test:live`, disposable fixtures, all cleaned up — verified 0 leftover users/institutions/subjects): `lib/roadmap/admin.live.test.ts` (5), `lib/roadmap/roadmap.live.test.ts` (4), plus the Part A live tests.
+- **Real institution / real students (read-only, run against production):** Amrita Sai Institute Of Science And Technology, 3 students (Mechanical, AI/ML, ECE), all goal-state unset (⇒ Job track): each gets `needs_info [year_unknown, no_curriculum]`. That is the correct, honest output today — nobody has confirmed their years (two were blanked by the A3 revert; the third is unconfirmed) and no curriculum has been uploaded. No curriculum was invented to make the page look full. A full ready-state roadmap has been exercised only on disposable fixtures (live test above).
+- To see a real roadmap at Amrita: the operator activates one admin (`scripts/grant-org-admin.mjs`), the admin enters subjects at `/admin/curriculum` and confirms mappings, and students confirm their years.
+
+## Authority verification for the new tables
+- Static (`lib/security/migrations.test.ts`): each of the 4 tables has RLS enabled, no policies, and privileges revoked from `anon, authenticated`; mappings and targets carry a composite FK to `arena_skill_areas`.
+- Live (`admin.live.test.ts`): a signed-in **admin** and a signed-in student both fail to read, insert, update or delete any of the 4 tables directly. An anon probe of production confirmed the same.
+- Guards (`lib/roadmap/guards.test.ts`): every `/api/admin` route calls `requireOrgAdmin` before any service-role use; the admin page 404s for non-admins; no request schema can carry an institution or user id; only `lib/roadmap/suggest.ts` imports the AI provider anywhere in the feature; `build.ts` has zero imports.
+
+## Limitations / deferred
+- No admin exists yet (needs the operator script); no approval/invitation flow (architecture doc §8.1, later).
+- Curated resources: two certifications seeded for review; no project/practice entries and no UI to maintain the list — SQL/migration for now.
+- Target profile value (3 verified tasks per area) is a product default awaiting review; rating-based readiness is deferred until the baseline (400) vs difficulty-band (~1200) inconsistency is reconciled.
+- Matching is by year of study (semester ignored on the student side) and by case-insensitive branch text; a branch spelled differently from the student's will not match (the admin form reuses the same autocomplete to prevent this).
+- Only Data Analyst; Job track only. Deferred per architecture doc §10: PDF/AI curriculum extraction, aggregate TPO dashboard, additional roles, Higher Studies / Entrepreneur roadmap variants.

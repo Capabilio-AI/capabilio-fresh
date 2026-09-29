@@ -1,6 +1,6 @@
 # Curriculum Roadmap Engine — Progress
 
-**Current phase:** 5 (student UI) — Phases 1–4 done.
+**Current phase:** COMPLETE (Phases 1–7). See audit doc 'Phases 5–7 — Build and verification record'.
 
 ## Decisions
 - Admin gate = existing `can("organisation","admin",{organisationId})`; operator script activates one admin; no new role system.
@@ -16,5 +16,7 @@
 
 - Phase 4: pure engine `lib/roadmap/build.ts` (14 unit tests: buckets, timing, beyond-curriculum, deterministic arena focus, resources only from stored list, zero-evidence, Python never a gap, every needs_info reason) + loader `lib/roadmap/load.ts` (job track only, confirmed year only, reuses getStudentDirection + getWorkstationState) + live test on disposable fixtures (needs_info states, buckets, case-insensitive branch, no cross-college leak, live track gating).
 
+- Phase 5: `/dashboard/roadmap` + job-track-only tab (context) + honest needs_info UI. Phase 6: guards test (admin gating, visibility, AI isolation) + static migration test. Phase 7: lint/tsc/tests(333)/build green; real-student read-only check = needs_info [year_unknown, no_curriculum] for all 3.
+
 ## Remaining
-Phases 5–7.
+Nothing in scope. Deferred items listed in the audit doc.
