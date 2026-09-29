@@ -27,3 +27,19 @@ docs/org-path-reference-study.md — what was adopted from capabilio-web's Insti
 
 ## Limits (deliberate)
 No file uploads (links only) · evidence skill is "Project Work" · one role per person per institution · principal/vice principal approved by the operator script only · `lib/supabase/types.ts` not regenerated (new tables via `lib/org/db.ts`) · verification is the operator's manual approval (no DNS/document ladder) · no recruiter accounts, chat, cohorts, or Professional-transition flow.
+
+## Browser QA pass (real Chrome, every role)
+
+Driven through headless Chrome against a seeded disposable college (principal, TPO, default faculty, custom-permission staff, students, visitor); fixture and all created data removed afterwards (prod back to 16,284 institutions, 0 test users, 0 stray storage objects).
+
+Covered: every org page per role (permission-gated pages 404 for roles without the permission), composer (text / photo / event), post menu (edit, unpublish, publish, delete), college page (logo + cover upload, edit details, tabs, view as visitor), staff invitation → accept → account creation → limited access → single-use link, permission editor, student join link landing, team chat (send, new channel), company visit → student registers → shortlist → select → offer letter (private PDF) → student sees it and answers → outcomes + CSV, curriculum inside the org shell, legacy `/admin/curriculum` forward, mobile widths (no horizontal overflow), sign-out.
+
+Defects found and fixed:
+- Student join link missing on first open of Team & access (re-select after insert served a stale cached fetch) — now uses the inserted row.
+- Edit-access / new-channel / edit-post dialogs were see-through (theme `.o-card` overrode their background).
+- Event posts repeated the title and body.
+- Visitor view of the college page had no way back — added "Back to workspace" for staff (not shown to students).
+- New channel didn't navigate/refresh (push + refresh raced) — push only.
+- A failed offer-letter upload left "No letter attached" with no way to retry — added Attach / Replace letter.
+
+Known, outside the org path: `/api/assessment/start` returns 500 for a brand-new student with no profile (student path, untouched by this work).

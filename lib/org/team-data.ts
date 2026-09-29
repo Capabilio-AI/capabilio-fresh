@@ -87,8 +87,10 @@ export async function loadJoinLinks(service: SupabaseClient<Database>, ctx: OrgC
   const db = untyped(service);
   let { data } = await db.from("org_join_links").select("*").eq("institution_id", ctx.institutionId).order("created_at");
   if (!data || data.length === 0) {
-    await db.from("org_join_links").insert({ institution_id: ctx.institutionId, code: newJoinCode(), label: "All students", created_by_membership_id: ctx.membershipId });
-    ({ data } = await db.from("org_join_links").select("*").eq("institution_id", ctx.institutionId).order("created_at"));
+    // Use the inserted row rather than re-selecting: an identical repeat GET can be served from Next's fetch cache.
+    const created = await db.from("org_join_links").insert({ institution_id: ctx.institutionId, code: newJoinCode(), label: "All students", created_by_membership_id: ctx.membershipId }).select("*");
+    if (created.error) throw new Error(`Could not create the student join link: ${created.error.message}`);
+    data = created.data;
   }
   const links = (data ?? []) as { id: string; code: string; label: string | null; branch: string | null; end_year: number | null; active: boolean }[];
   const { data: uses } = links.length ? await db.from("org_join_link_uses").select("join_link_id").in("join_link_id", links.map((l) => l.id)) : { data: [] };

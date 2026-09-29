@@ -54,7 +54,7 @@ export function PostCard({
         {manage && <PostMenu postId={post.id} status={post.status} body={post.body} />}
       </header>
 
-      {isEvent && (
+      {isEvent && post.title !== post.body.split("\n")[0].slice(0, 200) && (
         <h3 className="o-serif mt-4 text-[26px] leading-tight text-app-charcoal">{post.title}</h3>
       )}
       <p className={`whitespace-pre-wrap text-[14px] leading-relaxed text-app-charcoal ${isEvent ? "mt-2" : "mt-4"}`}>{post.body}</p>

@@ -53,7 +53,7 @@ export function PostMenu({ postId, status, body }: { postId: string; status: Sta
       )}
       {editing && (
         <div className="fixed inset-0 z-30 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Edit post">
-          <div className="o-card w-full max-w-lg bg-[#14110c] p-5">
+          <div className="o-card w-full max-w-lg !bg-[#14110c] p-5">
             <h3 className="text-[14px] font-extrabold text-app-charcoal">Edit post</h3>
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} maxLength={5000} className="o-input mt-3" />
             {error && (

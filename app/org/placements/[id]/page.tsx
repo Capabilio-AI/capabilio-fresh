@@ -6,6 +6,7 @@ import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { REGISTRATION_LABEL, VISIT_STATUS } from "@/lib/org/visits";
 import { ActionButton } from "@/components/org/ActionButton";
+import { LetterUpload } from "@/components/org/LetterUpload";
 import { OfferForm } from "@/components/org/OfferForm";
 import { EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
 
@@ -125,11 +126,17 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
                     <p className="mt-2.5 flex flex-wrap items-center gap-2">
                       <Pill tone={RESPONSE[placement.student_response]?.tone ?? "neutral"}>{RESPONSE[placement.student_response]?.label ?? placement.student_response}</Pill>
                       {placement.offer_letter_path ? (
-                        <a href={`/api/offer-letter/${placement.id}`} target="_blank" rel="noopener noreferrer" className="o-btn-ghost !py-1.5">
-                          <FileText size={13} aria-hidden="true" /> Offer letter
-                        </a>
+                        <>
+                          <a href={`/api/offer-letter/${placement.id}`} target="_blank" rel="noopener noreferrer" className="o-btn-ghost !py-1.5">
+                            <FileText size={13} aria-hidden="true" /> Offer letter
+                          </a>
+                          <LetterUpload placementId={placement.id} replace />
+                        </>
                       ) : (
-                        <span className="text-[11.5px] text-app-muted">No letter attached</span>
+                        <>
+                          <span className="text-[11.5px] text-app-muted">No letter attached</span>
+                          <LetterUpload placementId={placement.id} />
+                        </>
                       )}
                     </p>
                   )}
