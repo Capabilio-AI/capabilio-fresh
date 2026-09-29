@@ -1481,63 +1481,6 @@ export type Database = {
           },
         ]
       }
-      institution_memberships: {
-        Row: {
-          branch: string | null
-          cohort_id: string | null
-          created_at: string
-          degree: string | null
-          end_year: number | null
-          field_of_study: string | null
-          id: string
-          institution_id: string
-          role: Database["public"]["Enums"]["app_role"]
-          start_year: number | null
-          status: Database["public"]["Enums"]["membership_status"]
-          updated_at: string
-          user_id: string
-          year: string | null
-        }
-        Insert: {
-          branch?: string | null
-          cohort_id?: string | null
-          created_at?: string
-          degree?: string | null
-          end_year?: number | null
-          field_of_study?: string | null
-          id?: string
-          institution_id: string
-          role: Database["public"]["Enums"]["app_role"]
-          start_year?: number | null
-          status?: Database["public"]["Enums"]["membership_status"]
-          updated_at?: string
-          user_id: string
-          year?: string | null
-        }
-        Update: {
-          branch?: string | null
-          cohort_id?: string | null
-          created_at?: string
-          degree?: string | null
-          end_year?: number | null
-          field_of_study?: string | null
-          id?: string
-          institution_id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          start_year?: number | null
-          status?: Database["public"]["Enums"]["membership_status"]
-          updated_at?: string
-          user_id?: string
-          year?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "institution_memberships_cohort_id_fkey"
-            columns: ["cohort_id"]
-            isOneToOne: false
-            referencedRelation: "cohorts"
-            referencedColumns: ["id"]
-          },
       curriculum_subjects: {
         Row: {
           branch: string
@@ -1655,8 +1598,8 @@ export type Database = {
         }
         Relationships: []
       }
-          {
-            foreignKeyName: "institution_memberships_institution_id_fkey"
+      institution_memberships: {
+        Row: {
           active_role_key: string | null
           goal_state: string | null
           goal_state_prompted_at: string | null
@@ -1665,6 +1608,79 @@ export type Database = {
           portfolio_prompt_seen_at: string | null
           year_confirmed_at: string | null
           year_override: number | null
+          branch: string | null
+          cohort_id: string | null
+          created_at: string
+          degree: string | null
+          end_year: number | null
+          field_of_study: string | null
+          id: string
+          institution_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          start_year: number | null
+          status: Database["public"]["Enums"]["membership_status"]
+          updated_at: string
+          user_id: string
+          year: string | null
+        }
+        Insert: {
+          active_role_key?: string | null
+          goal_state?: string | null
+          goal_state_prompted_at?: string | null
+          goal_state_updated_at?: string | null
+          higher_studies_checkin_at?: string | null
+          portfolio_prompt_seen_at?: string | null
+          year_confirmed_at?: string | null
+          year_override?: number | null
+          branch?: string | null
+          cohort_id?: string | null
+          created_at?: string
+          degree?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          id?: string
+          institution_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          start_year?: number | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          updated_at?: string
+          user_id: string
+          year?: string | null
+        }
+        Update: {
+          active_role_key?: string | null
+          goal_state?: string | null
+          goal_state_prompted_at?: string | null
+          goal_state_updated_at?: string | null
+          higher_studies_checkin_at?: string | null
+          portfolio_prompt_seen_at?: string | null
+          year_confirmed_at?: string | null
+          year_override?: number | null
+          branch?: string | null
+          cohort_id?: string | null
+          created_at?: string
+          degree?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          id?: string
+          institution_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          start_year?: number | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          updated_at?: string
+          user_id?: string
+          year?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_memberships_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institution_memberships_institution_id_fkey"
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
@@ -1681,14 +1697,7 @@ export type Database = {
       }
       institutions: {
         Row: {
-          active_role_key?: string | null
-          goal_state?: string | null
-          goal_state_prompted_at?: string | null
-          goal_state_updated_at?: string | null
-          higher_studies_checkin_at?: string | null
-          portfolio_prompt_seen_at?: string | null
-          year_confirmed_at?: string | null
-          year_override?: number | null
+          academic_start_month: number
           city: string | null
           college_type: Database["public"]["Enums"]["college_type"]
           created_at: string
@@ -1699,24 +1708,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          academic_start_month?: number
           city?: string | null
           college_type?: Database["public"]["Enums"]["college_type"]
           created_at?: string
           id?: string
           name: string
           slug: string
-          active_role_key?: string | null
-          goal_state?: string | null
-          goal_state_prompted_at?: string | null
-          goal_state_updated_at?: string | null
-          higher_studies_checkin_at?: string | null
-          portfolio_prompt_seen_at?: string | null
-          year_confirmed_at?: string | null
-          year_override?: number | null
           state?: string | null
           updated_at?: string
         }
         Update: {
+          academic_start_month?: number
           city?: string | null
           college_type?: Database["public"]["Enums"]["college_type"]
           created_at?: string
@@ -1754,7 +1757,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          academic_start_month: number
           },
         ]
       }
@@ -1765,7 +1767,6 @@ export type Database = {
           id: string
           key: string
           label: string
-          academic_start_month?: number
           sequence: number
           template_id: string
         }
@@ -1776,7 +1777,6 @@ export type Database = {
           key: string
           label: string
           sequence: number
-          academic_start_month?: number
           template_id: string
         }
         Update: {
