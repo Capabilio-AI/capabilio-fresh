@@ -454,9 +454,22 @@ There are no other functions or policies (public or storage schemas) that refere
 - Data (production, queried directly): 0 rows with `role_key like 'test-%'` in `arena_rotation_state`, `arena_skill_ratings`, `arena_domain_assignments`, `arena_attempt_completions`; 0 memberships with `active_role_key` set; 0 evidence rows mentioning it; totals equal their pre-test baselines (assignments 1, ratings 1, completions 1, rotation 0, roles 1).
 - Logs (Supabase `edge_logs`, 10:20–10:40 UTC, a window around the 10:27–10:28 UTC run): **every** `/rest/v1/*` request came from one client IP and the `node` user agent — the test process. No other client, server or student touched the database in that window, so no real student could have been served the role.
 
-## R5. Rating-scale mismatch — NOT isolated to the roadmap; it affects live Arena
-- `complete_workstation_attempt` scores against a fixed 1200 opponent (K = 32): from a 400 start a verified task is +32, shrinking toward +16 at 1200. `difficultyForRating` bands are easy < 1250 ≤ medium < 1400 ≤ hard, and `attempts.ts` falls back to 1200 when no rating row exists.
-- Effect on every new student (rows now start at 400, or 400–700 seeded from the assessment): tasks are served **easy** until the rating passes 1250. Simulating the RPC's own formula: from 400 that takes **34** verified tasks *in that area* for medium and 48 for hard (24 / 38 from a 700 seed). With a 24-hour cooldown across the whole role and five areas rotating, that is on the order of months, so in practice new students never see medium or hard.
-- The one legacy row (1216, from the old default) is 3 tasks from medium — behaviour differs between old and new rows.
-- Separate but related: the UI shows `+8/+12/+15` from `ELO_BY_DIFFICULTY` (stored as `points`) while the rating actually moves by the formula above; Stream (`lib/arena/elo.ts`) uses a 1200 baseline while Domain uses 400. Not changed — this is a product decision (rescale the difficulty bands to the 400 baseline, or change the RPC's reference rating), and each option changes what real students are served.
-- Roadmap: unaffected, because readiness uses `verified_count`, not rating.
+## R5. Rating-scale mismatch — moved
+Confirmed **not** isolated to the roadmap (it affects live Arena difficulty progression). Out of scope by decision; the full write-up, numbers, the pending-029 interaction and the options now live in their own document: **`docs/arena-rating-scale-mismatch.md`**.
+
+## R6. Deterministic row selection sweep ("pick the first row" bugs)
+Searched: every `.limit(1)`, every `.maybeSingle()` / `.single()` (65 sites), every `roles[0]` / `.find()` over unordered rows, and every SQL function with `limit 1`. Checked each `maybeSingle` filter against the table's actual unique indexes.
+
+| site | problem | resolution |
+|---|---|---|
+| `attempts.ts#resolveRole` `arena_rotation_state … limit(1)` | arbitrary role when a student has several | **fixed**: `getEngagedRoleKey` (most recently advanced, tie → `role_key`) |
+| `TrackPanel` (my copy of the same query) | same | **fixed**: uses the shared helper |
+| `listEnabledRoles` (feeds `roles[0]` fallback, first-keyword-match, seed-arena-rating) | unordered | **fixed**: ordered by `created_at, role_key` |
+| SQL `get_or_start_section` membership pick | could choose an education-history row with no branch | **fixed** (migration 035): prefer branch, then active, then newest |
+| SQL `get_or_create_institution` `limit 1` | unique index on `name` is case-sensitive while lookup is case-insensitive | **fixed** (035): unique index on `lower(name)` (0 duplicate groups existed; checked first) + deterministic order |
+| all other `maybeSingle()` sites | filter on a PK/unique key (`profiles.id`, `assessment_attempts.user_id`, `github_connections.user_id`, `interests.user_id`, `(user_id, skill)`, `(attempt_id, section)`, `(user_id, challenge_id)`, `(post_id, user_id)`, …) | verified safe |
+| `career_interest_target … eq("user_id")` (`lib/career/interest-statement.ts`, `match.ts`) | its PK is `attempt_id`; it is one row per user only because `assessment_attempts.user_id` is unique | **listed, not changed** (latent; safe today; would silently return null if a user ever had two attempts) |
+| `state/route.ts#canAccessStudent` `institution_memberships … eq("user_id", studentId).maybeSingle()` | errors on 2+ rows (returns null → deny) **and** memberships are RLS select-own, so a staff viewer can never read the target row anyway — the whole staff-reads-student path fails closed | **listed as its own task**: needs an org-scoped read design (service-side lookup of the target's active institutions + `can()` per institution, and a staff-safe `getViewerSummary`), not a one-line ordering fix |
+| `arena_domain_stats` / `arena_stream_stats` / `arena_stream_weeks` `maybeSingle` (working tree) | tables belong to unapplied migration 029 (PK `user_id` there) | not assessable until 029 is applied; noted in the rating doc |
+
+Regression guards: `lib/security/deterministic-selection.test.ts` fails if any app-code `.limit(1)` lacks an `.order()` in its chain (mutation-checked) and checks migration 035's SQL; `lib/arena-workstations/deterministic-selection.test.ts` asserts the ordering of the engaged-role and role-list queries.

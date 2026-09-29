@@ -5,7 +5,7 @@ import type { Database } from "@/lib/supabase/types";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection, shouldShowHigherStudiesCheckin } from "@/lib/career/direction";
 import { getJobTrackSignals } from "@/lib/career/track-signals";
-import { listEnabledRoles, pickActiveRole } from "@/lib/arena-workstations/taxonomy";
+import { getEngagedRoleKey, listEnabledRoles, pickActiveRole } from "@/lib/arena-workstations/taxonomy";
 import { getStatedCareerInterest } from "@/lib/career/interest-statement";
 import { JobTrackCard } from "./JobTrackCard";
 import { HigherStudiesCheckin } from "./HigherStudiesCheckin";
@@ -19,13 +19,10 @@ export async function TrackPanel({ supabase, userId }: { supabase: SupabaseClien
   if (direction.track === "higher_studies") {
     if (!shouldShowHigherStudiesCheckin(direction)) return null;
     const roles = await listEnabledRoles(service);
-    const [{ data: engaged }, statedRole] = await Promise.all([
-      service.from("arena_rotation_state").select("role_key").eq("user_id", userId).limit(1),
-      getStatedCareerInterest(service, userId),
-    ]);
+    const [engagedRoleKey, statedRole] = await Promise.all([getEngagedRoleKey(service, userId), getStatedCareerInterest(service, userId)]);
     const current = pickActiveRole(roles, {
       activeRoleKey: direction.activeRoleKey,
-      engagedRoleKey: engaged?.[0]?.role_key ?? null,
+      engagedRoleKey,
       statedRole,
     });
     const otherRoles = roles.filter((r) => r.role_key !== current?.role_key);

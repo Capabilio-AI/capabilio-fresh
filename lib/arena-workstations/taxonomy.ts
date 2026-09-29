@@ -25,7 +25,8 @@ export async function loadRoleTaxonomy(service: SupabaseClient<Database>, roleKe
 }
 
 export async function listEnabledRoles(service: SupabaseClient<Database>): Promise<DomainRoleRow[]> {
-  const { data, error } = await service.from("arena_domain_roles").select("*").eq("enabled", true);
+  // Ordered: callers use "first match" / roles[0] fallbacks, which must not depend on physical row order.
+  const { data, error } = await service.from("arena_domain_roles").select("*").eq("enabled", true).order("created_at").order("role_key");
   if (error) throw error;
   return (data ?? []).filter((r) => isServable(r.role_key));
 }
@@ -49,4 +50,20 @@ export function pickActiveRole(
 ): DomainRoleRow | null {
   const byKey = (key: string | null) => (key ? roles.find((r) => r.role_key === key) : undefined);
   return byKey(opts.activeRoleKey) ?? byKey(opts.engagedRoleKey) ?? matchRoleForStatedCareer(roles, opts.statedRole) ?? roles[0] ?? null;
+}
+
+/**
+ * The role a student is currently engaged in: the one whose rotation was advanced most recently.
+ * Deterministic on purpose — a student can have rotation rows for several roles, and an unordered
+ * "first row" would pick one arbitrarily.
+ */
+export async function getEngagedRoleKey(service: SupabaseClient<Database>, userId: string): Promise<string | null> {
+  const { data } = await service
+    .from("arena_rotation_state")
+    .select("role_key")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .order("role_key")
+    .limit(1);
+  return data?.[0]?.role_key ?? null;
 }

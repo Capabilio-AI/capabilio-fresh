@@ -8,7 +8,7 @@ import { COOLDOWN_MS, resolveDailyState, type AssignmentRow } from "./daily";
 import { isRegisteredTool, toolFor } from "./registry";
 import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
 import { getStudentDirection } from "@/lib/career/direction";
-import { listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, pickActiveRole, type SkillAreaRow } from "./taxonomy";
+import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, pickActiveRole, type SkillAreaRow } from "./taxonomy";
 import { logArenaEvent } from "./log";
 import { GenerationRejected, difficultyForRating, type GeneratedChallenge, type GradeResult } from "./types";
 
@@ -39,17 +39,14 @@ export interface AreaProgress {
 async function resolveRole(service: Service, userId: string, statedRole: string | null) {
   const roles = await listEnabledRoles(service);
   if (roles.length === 0) throw new AttemptError("No domain roles are configured.", 503);
-  const [{ data: engaged }, direction] = await Promise.all([
-    service.from("arena_rotation_state").select("role_key").eq("user_id", userId).limit(1),
-    getStudentDirection(service, userId),
-  ]);
+  const [engagedRoleKey, direction] = await Promise.all([getEngagedRoleKey(service, userId), getStudentDirection(service, userId)]);
   const matched = matchRoleForStatedCareer(roles, statedRole);
   const role = pickActiveRole(roles, {
     activeRoleKey: direction?.activeRoleKey ?? null,
-    engagedRoleKey: engaged?.[0]?.role_key ?? null,
+    engagedRoleKey,
     statedRole,
   })!;
-  return { role, matched: matched?.role_key === role.role_key, engaged: Boolean(engaged?.length) };
+  return { role, matched: matched?.role_key === role.role_key, engaged: engagedRoleKey !== null };
 }
 
 async function publicAttempt(service: Service, attempt: AssignmentRow & { status: string; skill_area_key: string | null; submission_count: number; grade: Json | null }, areas: SkillAreaRow[]) {
