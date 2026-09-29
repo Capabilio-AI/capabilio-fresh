@@ -46,6 +46,73 @@ export type Database = {
           },
         ]
       }
+      arena_attempt_completions: {
+        Row: {
+          attempt_id: string
+          challenge_id: string
+          completed_at: string
+          evidence_id: string | null
+          grading_version: string
+          points: number
+          rating_after: number
+          rating_before: number
+          rating_delta: number
+          role_key: string
+          skill_area_key: string
+          user_id: string
+        }
+        Insert: {
+          attempt_id: string
+          challenge_id: string
+          completed_at?: string
+          evidence_id?: string | null
+          grading_version: string
+          points: number
+          rating_after: number
+          rating_before: number
+          rating_delta: number
+          role_key: string
+          skill_area_key: string
+          user_id: string
+        }
+        Update: {
+          attempt_id?: string
+          challenge_id?: string
+          completed_at?: string
+          evidence_id?: string | null
+          grading_version?: string
+          points?: number
+          rating_after?: number
+          rating_before?: number
+          rating_delta?: number
+          role_key?: string
+          skill_area_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_attempt_completions_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: true
+            referencedRelation: "arena_domain_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_attempt_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_attempt_completions_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "evidence"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arena_challenge_attempts: {
         Row: {
           answered_count: number
@@ -176,12 +243,19 @@ export type Database = {
       arena_challenges: {
         Row: {
           active: boolean
+          answer_key: Json | null
           answer_unit: string | null
           category: string
+          content: Json | null
           created_at: string
           difficulty: string
           elo_gain: number
           expected_output: string
+          generated_at: string | null
+          generation_model: string | null
+          generation_provider: string | null
+          generation_version: string | null
+          grading_version: string | null
           ground_truth_query: string | null
           id: string
           kind: string
@@ -191,21 +265,31 @@ export type Database = {
           scenario: string
           scope_key: string
           sequence: number | null
+          skill_area_key: string | null
           skill_tags: string[]
           starter_code: string | null
           stdin: string | null
           time_limit_minutes: number
           title: string
+          tool_type: string | null
           track: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean
+          answer_key?: Json | null
           answer_unit?: string | null
           category: string
+          content?: Json | null
           created_at?: string
           difficulty: string
           elo_gain?: number
           expected_output: string
+          generated_at?: string | null
+          generation_model?: string | null
+          generation_provider?: string | null
+          generation_version?: string | null
+          grading_version?: string | null
           ground_truth_query?: string | null
           id?: string
           kind?: string
@@ -215,21 +299,31 @@ export type Database = {
           scenario: string
           scope_key: string
           sequence?: number | null
+          skill_area_key?: string | null
           skill_tags?: string[]
           starter_code?: string | null
           stdin?: string | null
           time_limit_minutes?: number
           title: string
+          tool_type?: string | null
           track: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean
+          answer_key?: Json | null
           answer_unit?: string | null
           category?: string
+          content?: Json | null
           created_at?: string
           difficulty?: string
           elo_gain?: number
           expected_output?: string
+          generated_at?: string | null
+          generation_model?: string | null
+          generation_provider?: string | null
+          generation_version?: string | null
+          grading_version?: string | null
           ground_truth_query?: string | null
           id?: string
           kind?: string
@@ -239,12 +333,15 @@ export type Database = {
           scenario?: string
           scope_key?: string
           sequence?: number | null
+          skill_area_key?: string | null
           skill_tags?: string[]
           starter_code?: string | null
           stdin?: string | null
           time_limit_minutes?: number
           title?: string
+          tool_type?: string | null
           track?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -253,27 +350,48 @@ export type Database = {
           assigned_at: string
           challenge_id: string
           completed_at: string | null
+          cycle_number: number | null
+          grade: Json | null
           id: string
           next_available_at: string | null
           role_key: string
+          skill_area_key: string | null
+          status: string
+          submission: Json | null
+          submission_count: number
+          submitted_at: string | null
           user_id: string
         }
         Insert: {
           assigned_at?: string
           challenge_id: string
           completed_at?: string | null
+          cycle_number?: number | null
+          grade?: Json | null
           id?: string
           next_available_at?: string | null
           role_key: string
+          skill_area_key?: string | null
+          status?: string
+          submission?: Json | null
+          submission_count?: number
+          submitted_at?: string | null
           user_id: string
         }
         Update: {
           assigned_at?: string
           challenge_id?: string
           completed_at?: string | null
+          cycle_number?: number | null
+          grade?: Json | null
           id?: string
           next_available_at?: string | null
           role_key?: string
+          skill_area_key?: string | null
+          status?: string
+          submission?: Json | null
+          submission_count?: number
+          submitted_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -285,6 +403,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      arena_domain_roles: {
+        Row: {
+          created_at: string
+          display_name: string
+          enabled: boolean
+          match_keywords: string[]
+          parent_skill_name: string
+          role_key: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          enabled?: boolean
+          match_keywords?: string[]
+          parent_skill_name: string
+          role_key: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          enabled?: boolean
+          match_keywords?: string[]
+          parent_skill_name?: string
+          role_key?: string
+        }
+        Relationships: []
       }
       arena_ratings: {
         Row: {
@@ -309,6 +454,135 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_rotation_state: {
+        Row: {
+          cycle_number: number
+          last_served: string | null
+          remaining: string[]
+          role_key: string
+          served: string[]
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          cycle_number?: number
+          last_served?: string | null
+          remaining?: string[]
+          role_key: string
+          served?: string[]
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          cycle_number?: number
+          last_served?: string | null
+          remaining?: string[]
+          role_key?: string
+          served?: string[]
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_rotation_state_role_key_fkey"
+            columns: ["role_key"]
+            isOneToOne: false
+            referencedRelation: "arena_domain_roles"
+            referencedColumns: ["role_key"]
+          },
+        ]
+      }
+      arena_skill_areas: {
+        Row: {
+          area_key: string
+          created_at: string
+          disabled_reason: string | null
+          display_name: string
+          enabled: boolean
+          generation_version: string
+          grading_version: string
+          role_key: string
+          skill_node_key: string
+          sort_order: number
+          tool_type: string
+        }
+        Insert: {
+          area_key: string
+          created_at?: string
+          disabled_reason?: string | null
+          display_name: string
+          enabled?: boolean
+          generation_version: string
+          grading_version: string
+          role_key: string
+          skill_node_key: string
+          sort_order?: number
+          tool_type: string
+        }
+        Update: {
+          area_key?: string
+          created_at?: string
+          disabled_reason?: string | null
+          display_name?: string
+          enabled?: boolean
+          generation_version?: string
+          grading_version?: string
+          role_key?: string
+          skill_node_key?: string
+          sort_order?: number
+          tool_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_skill_areas_role_key_fkey"
+            columns: ["role_key"]
+            isOneToOne: false
+            referencedRelation: "arena_domain_roles"
+            referencedColumns: ["role_key"]
+          },
+        ]
+      }
+      arena_skill_ratings: {
+        Row: {
+          area_key: string
+          last_verified_at: string | null
+          rating: number
+          role_key: string
+          updated_at: string
+          user_id: string
+          verified_count: number
+        }
+        Insert: {
+          area_key: string
+          last_verified_at?: string | null
+          rating?: number
+          role_key: string
+          updated_at?: string
+          user_id: string
+          verified_count?: number
+        }
+        Update: {
+          area_key?: string
+          last_verified_at?: string | null
+          rating?: number
+          role_key?: string
+          updated_at?: string
+          user_id?: string
+          verified_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_skill_ratings_role_key_area_key_fkey"
+            columns: ["role_key", "area_key"]
+            isOneToOne: false
+            referencedRelation: "arena_skill_areas"
+            referencedColumns: ["role_key", "area_key"]
           },
         ]
       }
@@ -2155,6 +2429,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      commit_rotation_attempt: {
+        Args: {
+          p_area_key: string
+          p_challenge: Json
+          p_expected_version: number
+          p_role_key: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      complete_workstation_attempt: {
+        Args: {
+          p_attempt_id: string
+          p_cooldown_hours: number
+          p_grade: Json
+          p_points: number
+          p_streak: Json
+          p_submission: Json
+        }
+        Returns: Json
+      }
       finish_arena_challenge: { Args: { p_attempt_id: string }; Returns: Json }
       get_coding_question_for_grading: {
         Args: {
