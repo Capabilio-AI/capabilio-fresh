@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { SqlResult } from "@/lib/domain-workstations/sql-runner";
+import type { SqlResult } from "@/lib/arena-workstations/engines/sql-runner";
 
 type Mode = "table" | "bar" | "line";
 

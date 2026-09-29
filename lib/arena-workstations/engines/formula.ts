@@ -449,6 +449,22 @@ export function evaluateSheet(sheet: Sheet): Record<string, CellValue> {
   return out;
 }
 
+/**
+ * Pure. Excel fill-down: shifts relative row numbers in a formula by `delta`
+ * rows; `$`-anchored rows and anything inside string literals are untouched.
+ */
+export function shiftFormulaRows(raw: string, delta: number): string {
+  if (!raw.startsWith("=")) return raw;
+  return raw
+    .split(/("(?:[^"]|"")*")/)
+    .map((part, i) =>
+      i % 2 === 1
+        ? part
+        : part.replace(/(\$?)([A-Za-z]{1,3})(\$?)(\d{1,5})(?![A-Za-z0-9_(])/g, (m, colAbs, col, rowAbs, row) => (rowAbs ? m : `${colAbs}${col}${Math.max(1, Number(row) + delta)}`))
+    )
+    .join("");
+}
+
 /** Pure. True when a formula's tree references at least one cell (i.e. it is not a hardcoded constant). */
 export function formulaReferencesCells(raw: string): boolean {
   if (!raw.startsWith("=")) return false;

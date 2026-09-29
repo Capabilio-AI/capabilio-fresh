@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { address, columnIndex, columnLetters, evaluateSheet, formulaReferencesCells, parseFormula } from "./formula";
+import { address, columnIndex, columnLetters, evaluateSheet, formulaReferencesCells, parseFormula, shiftFormulaRows } from "./formula";
 
 const ev = (sheet: Record<string, string>, cell: string) => evaluateSheet(sheet)[cell];
 
@@ -65,6 +65,14 @@ describe("formula engine", () => {
     expect(() => parseFormula("constructor.constructor('x')()")).toThrow();
     expect(ev({ A1: "=__proto__(1)" }, "A1")).toEqual({ error: "#NAME?" });
     expect(ev({ A1: "=constructor" }, "A1")).toEqual({ error: "#ERROR!" });
+  });
+
+  it("shifts relative rows for fill-down, leaving anchors and strings alone", () => {
+    expect(shiftFormulaRows("=C2*D2", 3)).toBe("=C5*D5");
+    expect(shiftFormulaRows("=VLOOKUP(B2,$H$2:$I$4,2,FALSE)", 1)).toBe("=VLOOKUP(B3,$H$2:$I$4,2,FALSE)");
+    expect(shiftFormulaRows('=IF(A2="B2","x",A$2)', 2)).toBe('=IF(A4="B2","x",A$2)');
+    expect(shiftFormulaRows("=ROUND(C2/D2,2)", 1)).toBe("=ROUND(C3/D3,2)");
+    expect(shiftFormulaRows("120", 5)).toBe("120");
   });
 
   it("detects hardcoded values vs formulas that reference cells", () => {
