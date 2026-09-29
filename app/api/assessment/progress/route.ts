@@ -22,6 +22,6 @@ export async function GET() {
     return NextResponse.json({ error: "Assessment not started" }, { status: 404 });
   }
 
-  const progress = await getAttemptProgress(supabase, attempt.id);
+  const progress = await getAttemptProgress(supabase, attempt.id, auth.userId);
   return NextResponse.json(progress);
 }

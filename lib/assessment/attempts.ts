@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Enums } from "@/lib/supabase/types";
-import { SECTION_ORDER, type AssessmentSection } from "./sections";
+import { type AssessmentSection } from "./sections";
+import { getAssessmentMode, sectionsForMode, type AssessmentMode } from "./mode";
 
 export interface BranchContext {
   collegeType: Enums<"college_type"> | null;
@@ -13,6 +14,7 @@ export interface SectionStatus {
 }
 
 export interface AttemptProgress {
+  mode: AssessmentMode;
   attemptId: string;
   attemptStatus: "in_progress" | "completed";
   sections: SectionStatus[];
@@ -42,46 +44,47 @@ export async function startOrResumeAttempt(supabase: SupabaseClient<Database>, u
 
 export async function getAttemptProgress(
   supabase: SupabaseClient<Database>,
-  attemptId: string
+  attemptId: string,
+  userId: string
 ): Promise<AttemptProgress> {
   // Independent of each other — both only need attemptId — so fire
   // together instead of paying two sequential round trips.
   const [
     { data: attempt, error: attemptError },
     { data: progressRows, error: progressError },
+    mode,
   ] = await Promise.all([
     supabase.from("assessment_attempts").select("id, status").eq("id", attemptId).single(),
     supabase.from("assessment_section_progress").select("section, status").eq("attempt_id", attemptId),
+    getAssessmentMode(supabase, userId),
   ]);
   if (attemptError) throw attemptError;
   if (progressError) throw progressError;
 
   const bySection = new Map(progressRows?.map((row) => [row.section, row.status]) ?? []);
-  const sections: SectionStatus[] = SECTION_ORDER.map((section) => ({
+  const sections: SectionStatus[] = sectionsForMode(mode).map((section) => ({
     section,
     status: bySection.get(section) ?? "not_started",
   }));
 
-  return buildProgress(attempt, sections);
+  return buildProgress(attempt, sections, mode);
 }
 
 function buildProgress(
   attempt: { id: string; status: "in_progress" | "completed" },
-  sections: SectionStatus[]
+  sections: SectionStatus[],
+  mode: AssessmentMode
 ): AttemptProgress {
   const currentSection = sections.find((s) => s.status !== "completed")?.section ?? null;
   const completedCount = sections.filter((s) => s.status === "completed").length;
   return {
+    mode,
     attemptId: attempt.id,
     attemptStatus: attempt.status,
     sections,
     currentSection,
     completedCount,
   };
-}
-
-export interface AcademicContext extends BranchContext {
-  year: string | null;
 }
 
 /**
@@ -97,10 +100,10 @@ export interface AcademicContext extends BranchContext {
 export async function getStudentBranchContext(
   supabase: SupabaseClient<Database>,
   userId: string
-): Promise<AcademicContext> {
+): Promise<BranchContext> {
   const { data } = await supabase
     .from("institution_memberships")
-    .select("branch, year, status, institutions ( college_type )")
+    .select("branch, status, institutions ( college_type )")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -112,6 +115,5 @@ export async function getStudentBranchContext(
   return {
     collegeType: institution?.college_type ?? null,
     branch: best?.branch ?? null,
-    year: best?.year ?? null,
   };
 }

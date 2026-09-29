@@ -8,14 +8,13 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { UNLOCK_STAGE_KEY } from "@/lib/journey/stage";
 
 export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** When set, the item renders locked until the student reaches this journey stage. */
-  lockedUntilStage?: string;
+  /** Locked until the student is in the career-direction window (lib/career/trigger.ts). */
+  requiresDirectionWindow?: boolean;
   lockedMessage?: string;
 }
 
@@ -28,15 +27,15 @@ export const PRIMARY_NAV: NavItem[] = [
     label: "Launchpad",
     href: "/launchpad",
     icon: Rocket,
-    lockedUntilStage: UNLOCK_STAGE_KEY,
-    lockedMessage: "Complete your 3-2 career development stage to unlock jobs and internships.",
+    requiresDirectionWindow: true,
+    lockedMessage: "Available in your final two years, once your career direction window opens.",
   },
   {
     label: "AI Interview",
     href: "/interview",
     icon: MessagesSquare,
-    lockedUntilStage: UNLOCK_STAGE_KEY,
-    lockedMessage: "Complete your 3-2 development stage to unlock AI-powered interview preparation.",
+    requiresDirectionWindow: true,
+    lockedMessage: "Available in your final two years, once your career direction window opens.",
   },
   { label: "AI Mentor", href: "/mentor", icon: Sparkles },
 ];

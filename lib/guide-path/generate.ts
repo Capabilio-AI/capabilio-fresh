@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { completeJson } from "@/lib/ai/groq";
 import { getStudentBranchContext } from "@/lib/assessment/attempts";
+import { getStudentDirection } from "@/lib/career/direction";
 import { buildCareerMatch, type SkillGap } from "@/lib/career/skill-gap";
 
 const PhaseNarrativeSchema = z.object({
@@ -48,12 +49,11 @@ Respond with JSON only:
 function buildUserPrompt(
   targetCareer: string,
   branch: string | null,
-  year: string | null,
+  yearContext: string | null,
   gaps: SkillGap[]
 ): string {
-  // year is "<year>-<semester>", e.g. "2-1" = 2nd year, 1st semester.
-  const context = `Target career: ${targetCareer}\nStudent: ${branch ?? "unspecified branch"}, currently in year-semester ${
-    year ?? "unspecified"
+  const context = `Target career: ${targetCareer}\nStudent: ${branch ?? "unspecified branch"}, ${
+    yearContext ?? "year of study unspecified"
   }`;
   const gapLines = gaps
     .map(
@@ -79,10 +79,11 @@ export async function generateGuidePathForCareer(
   targetCareer: string,
   isPrimary: boolean
 ): Promise<{ phases: GuidePathPhase[]; version: number }> {
-  const [{ data: requirementRow }, { data: capabilityRows }, branchContext] = await Promise.all([
+  const [{ data: requirementRow }, { data: capabilityRows }, branchContext, direction] = await Promise.all([
     supabase.from("career_requirements").select("requirements").eq("career_role", targetCareer).single(),
     supabase.from("capabilities").select("skill, capability_score, confidence").eq("user_id", userId),
     getStudentBranchContext(supabase, userId),
+    getStudentDirection(supabase, userId),
   ]);
 
   if (!requirementRow) {
@@ -103,7 +104,14 @@ export async function generateGuidePathForCareer(
   const gaps = match.skillGaps.filter((g) => g.gap > 0);
 
   const narrative = await completeJson(
-    buildUserPrompt(targetCareer, branchContext.branch, branchContext.year, gaps),
+    buildUserPrompt(
+      targetCareer,
+      branchContext.branch,
+      direction?.academicYear
+        ? `currently in year ${direction.academicYear.year}${direction.startYear && direction.endYear ? ` of a ${direction.startYear}–${direction.endYear} program` : ""}`
+        : null,
+      gaps
+    ),
     buildSystemPrompt(),
     GuidePathNarrativeSchema
   );

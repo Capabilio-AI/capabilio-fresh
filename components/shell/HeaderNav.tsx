@@ -5,9 +5,8 @@ import { usePathname } from "next/navigation";
 import { Lock } from "lucide-react";
 import clsx from "clsx";
 import { PRIMARY_NAV, isNavItemActive } from "@/lib/nav/config";
-import { isStageUnlocked } from "@/lib/journey/stage";
 
-export function HeaderNav({ year }: { year: string | null }) {
+export function HeaderNav({ inDirectionWindow }: { inDirectionWindow: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -15,7 +14,7 @@ export function HeaderNav({ year }: { year: string | null }) {
       <div className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
         {PRIMARY_NAV.map((item) => {
           const active = isNavItemActive(pathname, item.href);
-          const locked = item.lockedUntilStage ? !isStageUnlocked(year, item.lockedUntilStage) : false;
+          const locked = item.requiresDirectionWindow ? !inDirectionWindow : false;
           const Icon = item.icon;
           return (
             <Link

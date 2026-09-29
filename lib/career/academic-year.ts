@@ -28,3 +28,12 @@ export function computeCurrentAcademicYear(input: AcademicYearInput): AcademicYe
   const start = academicYearStart(input.now ?? new Date(), input.cycleStartMonth ?? DEFAULT_ACADEMIC_START_MONTH);
   return { year: Math.max(1, start - input.startYear + 1), source: "computed" };
 }
+
+const ORDINALS: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
+
+/** "3rd Year · 2024–2028" — no semester claim (semester granularity was dropped). */
+export function formatAcademicYear(year: number | null, startYear: number | null, endYear: number | null): string | null {
+  if (year == null) return null;
+  const label = `${ORDINALS[year] ?? `${year}th`} Year`;
+  return startYear != null && endYear != null ? `${label} · ${startYear}–${endYear}` : label;
+}

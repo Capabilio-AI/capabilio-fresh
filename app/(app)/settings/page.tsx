@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GraduationCap, Lock, LogOut, Mail, School, ShieldCheck, User } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
+import { formatAcademicYear } from "@/lib/career/academic-year";
 import { EditableNameForm } from "@/components/settings/EditableNameForm";
 import { SettingsRow, SettingsSection } from "@/components/settings/SettingsRow";
 import { ChangePasswordButton } from "@/components/settings/ChangePasswordButton";
@@ -43,10 +44,26 @@ export default async function SettingsPage() {
           <SettingsRow
             icon={GraduationCap}
             title="Branch & year"
-            description={[viewer.branch, viewer.year].filter(Boolean).join(" · ") || "Not set"}
+            description={
+              [
+                viewer.branch,
+                formatAcademicYear(
+                  viewer.direction?.academicYear?.year ?? null,
+                  viewer.direction?.startYear ?? null,
+                  viewer.direction?.endYear ?? null
+                ),
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Not set"
+            }
           >
             <Link href="/dashboard/education" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
               Manage →
+            </Link>
+          </SettingsRow>
+          <SettingsRow icon={GraduationCap} title="Career direction" description="Job, higher studies, entrepreneurship, or not sure yet — change it any time.">
+            <Link href="/settings/direction" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
+              Open →
             </Link>
           </SettingsRow>
         </SettingsSection>

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { getStudentDirection, type StudentDirection } from "@/lib/career/direction";
 
 /** Light profile summary for the app shell (topbar, sidebar) — no assessment requirement, unlike getDashboardData. */
 export interface ViewerSummary {
@@ -8,22 +9,24 @@ export interface ViewerSummary {
   avatarUrl: string | null;
   collegeName: string | null;
   branch: string | null;
-  year: string | null;
+  /** Live program years, goal state and trigger flag — the single source for anything year-dependent. */
+  direction: StudentDirection | null;
 }
 
 export async function getViewerSummary(
   supabase: SupabaseClient<Database>,
   userId: string
 ): Promise<ViewerSummary> {
-  const [{ data: profile }, { data: memberships }] = await Promise.all([
+  const [{ data: profile }, { data: memberships }, direction] = await Promise.all([
     supabase.from("profiles").select("full_name, email, avatar_url").eq("id", userId).single(),
     // A student can have several membership rows; .maybeSingle() returned
     // nothing in that case. Same best-row rule as getStudentBranchContext.
     supabase
       .from("institution_memberships")
-      .select("branch, year, status, institutions ( name )")
+      .select("branch, status, institutions ( name )")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
+    getStudentDirection(supabase, userId),
   ]);
   const rows = memberships ?? [];
   const membership = rows.find((r) => r.status === "active" && r.branch) ?? rows.find((r) => r.branch) ?? rows[0] ?? null;
@@ -34,7 +37,7 @@ export async function getViewerSummary(
     avatarUrl: profile?.avatar_url ?? null,
     collegeName: institution?.name ?? null,
     branch: membership?.branch ?? null,
-    year: membership?.year ?? null,
+    direction,
   };
 }
 

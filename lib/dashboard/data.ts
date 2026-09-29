@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { getStudentDirection } from "@/lib/career/direction";
+import { formatAcademicYear } from "@/lib/career/academic-year";
 import { SECTION_LABEL, SECTION_ORDER, type AssessmentSection } from "@/lib/assessment/sections";
 
 export class DashboardNotReadyError extends Error {}
@@ -17,7 +19,8 @@ export interface DashboardData {
   email: string;
   collegeName: string | null;
   branch: string | null;
-  year: string | null;
+  academicYear: number | null;
+  yearLabel: string | null;
   completedAt: string | null;
   sectionScores: SectionScore[];
   overall: { correct: number; total: number; percentage: number };
@@ -34,14 +37,15 @@ export async function getDashboardData(
   supabase: SupabaseClient<Database>,
   userId: string
 ): Promise<DashboardData> {
-  const [{ data: profile, error: profileError }, { data: membership }, { data: attempt, error: attemptError }] =
+  const [{ data: profile, error: profileError }, { data: memberships }, direction, { data: attempt, error: attemptError }] =
     await Promise.all([
       supabase.from("profiles").select("full_name, email").eq("id", userId).single(),
       supabase
         .from("institution_memberships")
-        .select("branch, year, institutions ( name )")
+        .select("branch, status, institutions ( name )")
         .eq("user_id", userId)
-        .maybeSingle(),
+        .order("created_at", { ascending: false }),
+      getStudentDirection(supabase, userId),
       supabase.from("assessment_attempts").select("id, status, completed_at").eq("user_id", userId).maybeSingle(),
     ]);
   if (profileError) throw profileError;
@@ -66,7 +70,8 @@ export async function getDashboardData(
     if (r.is_correct) bucket.correct += 1;
   }
 
-  const sectionScores: SectionScore[] = SECTION_ORDER.map((section) => {
+  // Only sections that were actually taken: a light (final-years) attempt covers just two.
+  const sectionScores: SectionScore[] = SECTION_ORDER.filter((s) => (bySection.get(s)?.total ?? 0) > 0).map((section) => {
     const bucket = bySection.get(section)!;
     return {
       section,
@@ -80,6 +85,9 @@ export async function getDashboardData(
   const overallCorrect = sectionScores.reduce((sum, s) => sum + s.correct, 0);
   const overallTotal = sectionScores.reduce((sum, s) => sum + s.total, 0);
 
+  // Same best-row rule as getViewerSummary: several membership rows are normal (education history).
+  const rows = memberships ?? [];
+  const membership = rows.find((r) => r.status === "active" && r.branch) ?? rows.find((r) => r.branch) ?? rows[0] ?? null;
   const institution = membership?.institutions as { name: string } | null;
 
   return {
@@ -87,7 +95,8 @@ export async function getDashboardData(
     email: profile?.email ?? "",
     collegeName: institution?.name ?? null,
     branch: membership?.branch ?? null,
-    year: membership?.year ?? null,
+    academicYear: direction?.academicYear?.year ?? null,
+    yearLabel: formatAcademicYear(direction?.academicYear?.year ?? null, direction?.startYear ?? null, direction?.endYear ?? null),
     completedAt: attempt.completed_at,
     sectionScores,
     overall: {

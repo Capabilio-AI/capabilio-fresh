@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Lock, MessagesSquare } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
-import { JOURNEY_STAGES, currentStageIndex, isStageUnlocked, UNLOCK_STAGE_KEY } from "@/lib/journey/stage";
 import { InterviewTabs } from "@/components/interview/InterviewTabs";
 
 export const metadata: Metadata = { title: "AI Interview — Capabilio AI" };
@@ -11,8 +10,7 @@ export default async function InterviewPage() {
   const { supabase, user } = await requireAuthedUser();
 
   const viewer = await getViewerSummary(supabase, user.id);
-  const unlocked = isStageUnlocked(viewer.year, UNLOCK_STAGE_KEY);
-  const stageLabel = JOURNEY_STAGES[currentStageIndex(viewer.year)].label;
+  const unlocked = viewer.direction?.inDirectionWindow ?? false;
 
   return (
     <div>
@@ -30,18 +28,15 @@ export default async function InterviewPage() {
               <Lock size={18} />
             </span>
             <h2 className="font-lp-display text-[17px] font-semibold text-app-charcoal">
-              Complete your 3-2 development stage to unlock AI-powered interview preparation.
+              AI interview practice opens in your final two years.
             </h2>
-            <p className="font-lp-body text-[13px] text-app-muted">
-              You&apos;re currently at the <span className="font-medium text-app-charcoal">{stageLabel}</span> stage.
-            </p>
             <button
               type="button"
               disabled
               className="mt-2 flex cursor-not-allowed items-center gap-2 rounded-lg bg-app-charcoal/40 px-4 py-2.5 font-lp-body text-[13px] font-semibold text-white"
             >
               <MessagesSquare size={15} />
-              Unlocks at Experience stage
+              Opens in your final two years
             </button>
           </div>
         )}

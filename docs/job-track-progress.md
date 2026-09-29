@@ -1,6 +1,6 @@
 # Job-Track Progress
 
-**Current phase:** 4 (goal_state, trigger, assessment gating) — next.
+**Current phase:** 5 (path-specific experiences) — next.
 
 ## Decisions
 - Blocker resolved: Option 1 (`active_role_key` on membership, read first by `resolveRole`). Switch UI only offers targets when ≥2 roles are enabled.
@@ -16,6 +16,8 @@
 - Phase 3 onboarding: migration 030 applied to prod (goal_state*, year_*, active_role_key, portfolio_prompt_seen_at, institutions.academic_start_month; handle_new_user now in repo; label→years backfill hit 2 rows, unconfirmed). Signup uses start/end year (validated client + trigger). Google removed from login. Get Started → /signup (Navbar, Hero, FinalCTA; root cause was href="#"). Year confirm card + `POST /api/direction/year` (strict zod). Verified: tsc clean, 268 tests pass, eslint clean.
 - Note: institution_memberships has no UPDATE RLS policy -> service-role writes only via API routes. Known residual: `institution_memberships_insert_own` lets a client insert its own row with arbitrary column values (pre-existing); the app never reads goal_state from client input.
 
+- Phase 4: semester-label call sites migrated (approach U; `year` no longer read anywhere except legacy DB column; education rows show start–end years; guide-path prompt derives year context). `isStageUnlocked`/`UNLOCK_STAGE_KEY` deleted; Launchpad, AI Interview, nav lock all use `viewer.direction.inDirectionWindow` (from `isCareerDirectionWindow`). `lib/assessment/mode.ts` picks light/full server-side; section routes 403 out-of-mode sections; light attempts never seed Arena ELO; dashboard lists only sections taken. Goal-state: `PUT /api/direction/goal-state`, `POST /api/direction/dismiss` (strict zod), prompt modal (reflection variant only with real verified counts), `/settings/direction`. 55 career tests + rest pass.
+- Deviation from Phase 2 table: EducationEntryCard/profile education line shows start–end years, not the legacy label (backfill gave B.Tech rows years).
+
 ## Remaining
-Phase 3 leftovers folded into Phase 4: semester-label call sites per audit table, delete `isStageUnlocked`.
-Phases 4–7.
+Phase 5: Launchpad real query + honest empty state, Portfolio/interview pushes, Higher Studies check-in + Switch (active_role_key, resolveRole), Entrepreneur page, Not-sure cadence confirmation. Phases 6–7.

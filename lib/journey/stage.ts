@@ -1,44 +1,36 @@
-// The student journey, as year-semester ("<year>-<semester>", e.g. "3-2")
-// strings the way institution_memberships.year already stores them. No
-// stage table exists yet — stage is a pure function of year-semester so
-// there is nothing to keep in sync.
+// The student journey, keyed by year of study (computed from start/end year —
+// see lib/career/academic-year.ts). Semester granularity was dropped, so a stage
+// is never claimed within a year: every stage that belongs to the current year
+// is shown as current. Availability of Launchpad / AI Interview is NOT decided
+// here — that is lib/career/trigger.ts#isCareerDirectionWindow.
 export interface JourneyStage {
   key: string;
   label: string;
-  yearSemester: string;
+  year: number;
 }
 
 export const JOURNEY_STAGES: JourneyStage[] = [
-  { key: "discover", label: "Discover", yearSemester: "1-2" },
-  { key: "develop", label: "Develop", yearSemester: "2-1" },
-  { key: "build", label: "Build", yearSemester: "2-2" },
-  { key: "specialize", label: "Specialize", yearSemester: "3-1" },
-  { key: "experience", label: "Experience", yearSemester: "3-2" },
-  { key: "prove", label: "Prove", yearSemester: "4-1" },
-  { key: "launch", label: "Launch", yearSemester: "4-2" },
+  { key: "discover", label: "Discover", year: 1 },
+  { key: "develop", label: "Develop", year: 2 },
+  { key: "build", label: "Build", year: 2 },
+  { key: "specialize", label: "Specialize", year: 3 },
+  { key: "experience", label: "Experience", year: 3 },
+  { key: "prove", label: "Prove", year: 4 },
+  { key: "launch", label: "Launch", year: 4 },
 ];
 
-// The stage that gates Launchpad + AI Interview.
-export const UNLOCK_STAGE_KEY = "experience";
-
-function yearSemesterRank(yearSemester: string): number {
-  const [year, sem] = yearSemester.split("-").map(Number);
-  if (Number.isNaN(year) || Number.isNaN(sem)) return 0;
-  return year * 10 + sem;
+/** Index of the first stage belonging to the student's year of study; 0 when the year is unknown. */
+export function currentStageIndex(academicYear: number | null): number {
+  if (academicYear == null) return 0;
+  const clamped = Math.min(academicYear, 4);
+  const index = JOURNEY_STAGES.findIndex((s) => s.year === clamped);
+  return index === -1 ? 0 : index;
 }
 
-/** Current stage from the student's year-semester; defaults to the first stage when unknown. */
-export function currentStageIndex(year: string | null): number {
-  if (!year) return 0;
-  const rank = yearSemesterRank(year);
-  let index = 0;
-  for (let i = 0; i < JOURNEY_STAGES.length; i++) {
-    if (rank >= yearSemesterRank(JOURNEY_STAGES[i].yearSemester)) index = i;
-  }
-  return index;
-}
+export type StageState = "done" | "active" | "upcoming";
 
-export function isStageUnlocked(year: string | null, stageKey: string = UNLOCK_STAGE_KEY): boolean {
-  const targetIndex = JOURNEY_STAGES.findIndex((s) => s.key === stageKey);
-  return currentStageIndex(year) >= targetIndex;
+export function stageState(stage: JourneyStage, academicYear: number | null): StageState {
+  const year = academicYear == null ? 1 : Math.min(academicYear, 4);
+  if (stage.year < year) return "done";
+  return stage.year === year ? "active" : "upcoming";
 }

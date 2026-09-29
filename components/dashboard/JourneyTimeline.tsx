@@ -1,17 +1,16 @@
 import { Check } from "lucide-react";
 import clsx from "clsx";
-import { JOURNEY_STAGES, currentStageIndex } from "@/lib/journey/stage";
+import { JOURNEY_STAGES, stageState } from "@/lib/journey/stage";
 
-export function JourneyTimeline({ year }: { year: string | null }) {
-  const activeIndex = currentStageIndex(year);
-
+export function JourneyTimeline({ year }: { year: number | null }) {
   return (
     <div className="rounded-xl border border-app-border bg-white p-5">
       <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Your journey</h2>
       <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-4 lg:grid-cols-7">
         {JOURNEY_STAGES.map((stage, i) => {
-          const done = i < activeIndex;
-          const active = i === activeIndex;
+          const state = stageState(stage, year);
+          const done = state === "done";
+          const active = state === "active";
           return (
             <div key={stage.key} className="flex flex-col items-center gap-2 text-center">
               <span

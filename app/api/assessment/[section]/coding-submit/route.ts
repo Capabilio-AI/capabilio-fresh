@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { rejectSectionOutsideMode } from "@/lib/assessment/guard";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
@@ -40,6 +41,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
   if (!section) {
     return NextResponse.json({ error: "Unknown section" }, { status: 404 });
   }
+
+  const outsideMode = await rejectSectionOutsideMode(supabase, auth.userId, section);
+  if (outsideMode) return outsideMode;
 
   const parsed = BodySchema.safeParse(await request.json());
   if (!parsed.success) {

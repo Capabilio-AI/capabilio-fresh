@@ -92,7 +92,7 @@ export default async function DashboardPage() {
           <ProofPortfolioPreview items={vaultItems} />
         </div>
 
-        <JourneyTimeline year={data.year} />
+        <JourneyTimeline year={data.academicYear} />
       </div>
     </div>
   );

@@ -2,15 +2,8 @@ import { GraduationCap, Layers, School } from "lucide-react";
 import type { DashboardData } from "@/lib/dashboard/data";
 import { scoreTier, TIER_CONTAINER, TIER_LABEL } from "@/components/dashboard/tier";
 
-function formatYearSemester(year: string | null): string | null {
-  if (!year) return null;
-  const [y, s] = year.split("-");
-  const ordinal: Record<string, string> = { "1": "1st", "2": "2nd", "3": "3rd", "4": "4th" };
-  return `${ordinal[y] ?? y} Year, Sem ${s}`;
-}
-
 export function DashboardHeader({ data }: { data: DashboardData }) {
-  const yearLabel = formatYearSemester(data.year);
+  const yearLabel = data.yearLabel;
   const tier = scoreTier(data.overall.percentage);
 
   return (

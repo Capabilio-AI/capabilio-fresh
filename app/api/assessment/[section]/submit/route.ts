@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rejectSectionOutsideMode } from "@/lib/assessment/guard";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { submitSection, SectionIncompleteError } from "@/lib/assessment/submit";
@@ -29,6 +30,9 @@ export async function POST(
     return NextResponse.json({ error: "Unknown section" }, { status: 404 });
   }
 
+  const outsideMode = await rejectSectionOutsideMode(supabase, auth.userId, section);
+  if (outsideMode) return outsideMode;
+
   const { data: attempt } = await supabase
     .from("assessment_attempts")
     .select("id")
@@ -47,7 +51,8 @@ export async function POST(
       const service = createServiceClient();
       await computeCapabilitiesForAttempt(service, attempt.id, auth.userId);
       const statedRole = await getStatedCareerInterest(service, auth.userId);
-      await seedArenaRatingFromAssessment(service, auth.userId, statedRole);
+      // A light (Communication + Career Interest) attempt says nothing about aptitude, so it never seeds a starting Arena rating.
+      if (result.mode === "full") await seedArenaRatingFromAssessment(service, auth.userId, statedRole);
     }
     return NextResponse.json(result);
   } catch (error) {

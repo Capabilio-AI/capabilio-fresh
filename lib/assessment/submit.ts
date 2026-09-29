@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { QUESTIONS_PER_SECTION, SECTION_ORDER, type AssessmentSection } from "./sections";
+import { QUESTIONS_PER_SECTION, type AssessmentSection } from "./sections";
+import { getAssessmentMode, sectionsForMode } from "./mode";
 
 export class SectionIncompleteError extends Error {}
 
@@ -10,7 +11,7 @@ export async function submitSection(
   attemptId: string,
   userId: string,
   section: AssessmentSection
-): Promise<{ attemptCompleted: boolean }> {
+): Promise<{ attemptCompleted: boolean; mode: "full" | "light" }> {
   const { count, error: countError } = await supabase
     .from("assessment_responses")
     .select("id", { count: "exact", head: true })
@@ -39,7 +40,8 @@ export async function submitSection(
   const completedSections = new Set(
     (allSections ?? []).filter((s) => s.status === "completed").map((s) => s.section)
   );
-  const attemptCompleted = SECTION_ORDER.every((s) => completedSections.has(s));
+  const mode = await getAssessmentMode(supabase, userId);
+  const attemptCompleted = sectionsForMode(mode).every((s) => completedSections.has(s));
 
   if (attemptCompleted) {
     const { error: attemptError } = await supabase
@@ -50,5 +52,5 @@ export async function submitSection(
     if (attemptError) throw attemptError;
   }
 
-  return { attemptCompleted };
+  return { attemptCompleted, mode };
 }

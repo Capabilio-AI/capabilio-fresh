@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Play, Timer, X, XCircle } from "lucide-react";
-import { CODING_SECONDS_PER_QUESTION, SECONDS_PER_QUESTION, SECTION_LABEL, SECTION_ORDER } from "@/lib/assessment/sections";
+import { CODING_SECONDS_PER_QUESTION, SECONDS_PER_QUESTION, SECTION_LABEL } from "@/lib/assessment/sections";
 import type { AssessmentSection } from "@/lib/assessment/sections";
 import { BrandBackdrop } from "@/components/BrandBackdrop";
 import { SECTION_ICON } from "@/components/section-icons";
@@ -275,7 +275,7 @@ export function AssessmentRunner() {
       <div className={CARD}>
         <h1 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Your assessment</h1>
         <p className="mt-1.5 font-lp-body text-lp-body-sm text-lp-text-muted">
-          {progress.completedCount} of {SECTION_ORDER.length} sections complete.
+          {progress.completedCount} of {progress.sections.length} sections complete.
         </p>
         <div className="mt-6 flex flex-col gap-2.5">
           {progress.sections.map((s) => {

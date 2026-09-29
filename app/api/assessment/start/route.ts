@@ -13,7 +13,7 @@ export async function POST() {
   if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
 
   const attempt = await startOrResumeAttempt(supabase, auth.userId);
-  const progress = await getAttemptProgress(supabase, attempt.id);
+  const progress = await getAttemptProgress(supabase, attempt.id, auth.userId);
 
   return NextResponse.json(progress);
 }

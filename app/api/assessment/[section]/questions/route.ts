@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rejectSectionOutsideMode } from "@/lib/assessment/guard";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { getSectionQuestions } from "@/lib/assessment/questions";
@@ -24,6 +25,9 @@ export async function GET(
   if (!section) {
     return NextResponse.json({ error: "Unknown section" }, { status: 404 });
   }
+
+  const outsideMode = await rejectSectionOutsideMode(supabase, auth.userId, section);
+  if (outsideMode) return outsideMode;
 
   if (section === "career_interests") {
     // This path still queries by attempt_id directly (not the RPC used

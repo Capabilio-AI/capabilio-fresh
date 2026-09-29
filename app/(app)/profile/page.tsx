@@ -6,18 +6,12 @@ import { getViewerSummary, initialsOf } from "@/lib/dashboard/viewer";
 import { getSkills } from "@/lib/dashboard/data";
 import { getVaultItems } from "@/lib/vault/data";
 import { getEducationEntries } from "@/lib/dashboard/education";
+import { formatAcademicYear } from "@/lib/career/academic-year";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { CapabilityCard, overallCapabilityScore } from "@/components/dashboard/CapabilityCard";
 import { AvatarUpload } from "@/components/profile/AvatarUpload";
 
 export const metadata: Metadata = { title: "Profile — Capabilio AI" };
-
-function formatYearSemester(year: string | null): string | null {
-  if (!year) return null;
-  const [y, s] = year.split("-");
-  const ordinal: Record<string, string> = { "1": "1st", "2": "2nd", "3": "3rd", "4": "4th" };
-  return `${ordinal[y] ?? y} Year, Sem ${s}`;
-}
 
 export default async function ProfilePage() {
   const { supabase, user } = await requireAuthedUser();
@@ -29,7 +23,7 @@ export default async function ProfilePage() {
     matchCareersForStudent(supabase, user.id),
     getEducationEntries(supabase, user.id),
   ]);
-  const yearLabel = formatYearSemester(viewer.year);
+  const yearLabel = formatAcademicYear(viewer.direction?.academicYear?.year ?? null, viewer.direction?.startYear ?? null, viewer.direction?.endYear ?? null);
   const topMatch = careerMatches[0] ?? null;
   const initials = initialsOf(viewer.fullName, viewer.email);
   const capabilityScore = overallCapabilityScore(skills);
@@ -106,7 +100,7 @@ export default async function ProfilePage() {
                   <p className="font-lp-body text-[13px] font-medium text-app-charcoal">{entry.institutionName}</p>
                   <p className="mt-0.5 font-lp-mono text-[11px] text-app-muted">
                     {[entry.degree, entry.fieldOfStudy].filter(Boolean).join(", ") ||
-                      [entry.branch, formatYearSemester(entry.year)].filter(Boolean).join(" · ") ||
+                      [entry.branch, entry.startYear != null && entry.endYear != null ? `${entry.startYear}–${entry.endYear}` : null].filter(Boolean).join(" · ") ||
                       "—"}
                   </p>
                 </li>

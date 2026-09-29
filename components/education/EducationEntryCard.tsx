@@ -5,13 +5,6 @@ import { AddEducationHistoryForm } from "./AddEducationHistoryForm";
 import { CertificateUpload } from "./CertificateUpload";
 import type { EducationEntry } from "@/lib/dashboard/education";
 
-function formatYearSemester(year: string | null): string | null {
-  if (!year) return null;
-  const [y, s] = year.split("-");
-  const ordinal: Record<string, string> = { "1": "1st", "2": "2nd", "3": "3rd", "4": "4th" };
-  return `${ordinal[y] ?? y} Year, Semester ${s}`;
-}
-
 function formatEnrolledSince(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 }
@@ -20,7 +13,7 @@ function subtitleLine(entry: EducationEntry): string {
   if (entry.degree || entry.fieldOfStudy) {
     return [entry.degree, entry.fieldOfStudy].filter(Boolean).join(", ");
   }
-  return [entry.branch, formatYearSemester(entry.year)].filter(Boolean).join(" · ") || "Details not set";
+  return [entry.branch, entry.startYear != null && entry.endYear != null ? `${entry.startYear}–${entry.endYear}` : null].filter(Boolean).join(" · ") || "Details not set";
 }
 
 function dateRangeLine(entry: EducationEntry): string | null {

@@ -9,6 +9,8 @@ interface Props {
   endYear: number | null;
   computedYear: number | null;
   overrideYear: number | null;
+  /** Settings page: open straight in edit mode. */
+  startEditing?: boolean;
 }
 
 const INPUT =
@@ -16,10 +18,10 @@ const INPUT =
 const ordinal = (n: number) => ({ 1: "1st", 2: "2nd", 3: "3rd" })[n as 1 | 2 | 3] ?? `${n}th`;
 
 /** Asks the student to confirm the computed year — never applied silently (backlogs, gap years, repeated years). */
-export function YearConfirmCard({ startYear, endYear, computedYear, overrideYear }: Props) {
+export function YearConfirmCard({ startYear, endYear, computedYear, overrideYear, startEditing = false }: Props) {
   const router = useRouter();
   const missing = startYear == null || endYear == null;
-  const [editing, setEditing] = useState(missing);
+  const [editing, setEditing] = useState(missing || startEditing);
   const [start, setStart] = useState(startYear?.toString() ?? "");
   const [end, setEnd] = useState(endYear?.toString() ?? "");
   const [override, setOverride] = useState(overrideYear?.toString() ?? "");

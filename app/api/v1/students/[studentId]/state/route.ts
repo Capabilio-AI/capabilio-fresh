@@ -86,14 +86,16 @@ export async function GET(
   const topMatch = careerMatches[0] ?? null;
   const nextAction = computeNextAction(topMatch);
   const { overall, dimensions } = aggregateCapabilityDimensions(skills);
-  const academicPhaseIndex = currentStageIndex(viewer.year);
+  const academicPhaseIndex = currentStageIndex(viewer.direction?.academicYear?.year ?? null);
 
   return NextResponse.json({
     studentId,
     academicContext: {
       institutionName: viewer.collegeName,
       branch: viewer.branch,
-      year: viewer.year,
+      academicYear: viewer.direction?.academicYear?.year ?? null,
+      startYear: viewer.direction?.startYear ?? null,
+      endYear: viewer.direction?.endYear ?? null,
     },
     capabilityState: {
       overall,

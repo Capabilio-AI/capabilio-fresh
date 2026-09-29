@@ -3,7 +3,6 @@ import { Briefcase, Calendar, Lock, MapPin, Rocket } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { matchCareersForStudent } from "@/lib/career/match";
-import { currentStageIndex, isStageUnlocked, JOURNEY_STAGES, UNLOCK_STAGE_KEY } from "@/lib/journey/stage";
 import { MOCK_OPPORTUNITIES, type OpportunityType } from "@/lib/mock/launchpad";
 
 export const metadata: Metadata = { title: "Launchpad — Capabilio AI" };
@@ -23,11 +22,9 @@ export default async function LaunchpadPage() {
     matchCareersForStudent(supabase, user.id),
   ]);
 
-  const unlocked = isStageUnlocked(viewer.year, UNLOCK_STAGE_KEY);
+  const unlocked = viewer.direction?.inDirectionWindow ?? false;
 
   if (!unlocked) {
-    const stage = JOURNEY_STAGES[currentStageIndex(viewer.year)];
-    const targetStage = JOURNEY_STAGES.find((s) => s.key === UNLOCK_STAGE_KEY)!;
     return (
       <div>
         <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Launchpad</h1>
@@ -39,11 +36,7 @@ export default async function LaunchpadPage() {
           </span>
           <h2 className="font-lp-display text-[18px] font-semibold text-app-charcoal">Not unlocked yet</h2>
           <p className="max-w-md font-lp-body text-[13.5px] text-app-muted">
-            Complete your {targetStage.label} ({targetStage.yearSemester}) career development stage to unlock jobs
-            and internships.
-          </p>
-          <p className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">
-            You&apos;re currently at: {stage.label} ({stage.yearSemester})
+            Jobs and internships open in your final two years, based on your program end year.
           </p>
           <button
             type="button"
