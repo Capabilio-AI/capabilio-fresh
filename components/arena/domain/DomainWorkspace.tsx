@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, Clock, Database, Loader2, PartyPopper } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, BookOpen, Clock, Code2, Loader2, PartyPopper, Trophy } from "lucide-react";
 import type { SchemaTable } from "@/lib/domain-workstations/urbankart";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 import { Countdown } from "./Countdown";
@@ -107,27 +108,51 @@ export function DomainWorkspace() {
       )}
 
       {data.state === "active" && (
-        <article className="overflow-hidden rounded-2xl border border-app-border bg-white">
-          <div className="flex flex-wrap items-center gap-3 border-b border-app-border bg-app-blue-container px-5 py-3">
-            <Database size={15} className="text-app-blue" />
-            <span className="font-lp-mono text-[12px] font-semibold text-app-blue">{ticketCode(data.ticket.sequence)}</span>
-            <span className="font-lp-mono text-[11.5px] text-app-charcoal/70">Today&apos;s ticket · open until you close it</span>
-            <span className="ml-auto font-lp-mono text-[12px] font-semibold text-app-charcoal">+{pointsForDifficulty(data.ticket.difficulty)} pts</span>
+        <article className="flex min-h-[350px] flex-col gap-6 rounded-3xl border border-[#E0E0E0] bg-white p-6 sm:p-10">
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 font-lp-body text-[15px] font-medium text-[#5F6368]">
+              <Code2 size={20} strokeWidth={1.5} />
+              Today&apos;s Mission
+            </span>
+            <span className="flex items-center gap-1.5 rounded-full bg-[#F1F3F4] px-3.5 py-1.5 font-lp-body text-[15px] font-semibold text-[#202124]">
+              <Trophy size={16} strokeWidth={2.5} className="text-app-orange" />+{pointsForDifficulty(data.ticket.difficulty)} pts
+            </span>
           </div>
-          <div className="p-6">
-            <p className="font-lp-body text-[12.5px] text-app-muted">
-              From {data.ticket.requester} · {data.ticket.category} · est. {data.ticket.time_limit_minutes} min
+
+          <div>
+            <h3 className="font-lp-body text-[26px] font-normal leading-tight tracking-[-0.02em] text-[#202124] sm:text-[32px]">{data.ticket.title}</h3>
+            <div className="mt-3 flex flex-wrap items-center gap-3 font-lp-body text-[15px] font-medium text-[#5F6368]">
+              <span className="rounded-full bg-[#F1F3F4] px-3 py-1 text-[14px] font-semibold text-[#202124]">{data.role.company}</span>
+              <span className="text-[#DADCE0]">•</span>
+              <span>{data.ticket.category}</span>
+              <span className="text-[#DADCE0]">•</span>
+              <span>{ticketCode(data.ticket.sequence)}</span>
+            </div>
+          </div>
+
+          <div className="flex max-w-[90%] flex-col gap-3 font-lp-body text-[16px] leading-[1.6] text-[#3C4043]">
+            <p>
+              <span className="font-semibold text-[#202124]">{data.ticket.requester?.split("·")[0].trim()}:</span> {data.ticket.scenario}
             </p>
-            <h3 className="mt-1.5 font-lp-display text-[20px] font-bold leading-snug text-app-charcoal">{data.ticket.title}</h3>
-            <p className="mt-2 line-clamp-2 font-lp-body text-[13.5px] leading-relaxed text-app-charcoal/75">{data.ticket.scenario}</p>
+            <p>{data.ticket.objective}</p>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-4">
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="mt-5 flex items-center gap-1.5 rounded-lg bg-app-charcoal px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white"
+              className="inline-flex items-center gap-2 rounded-full bg-app-orange px-6 py-3 font-lp-body text-[15px] font-semibold text-white transition-colors hover:bg-[#e64e00]"
             >
-              Open workstation
-              <ArrowRight size={15} />
+              Solve in Workspace
+              <ArrowRight size={18} strokeWidth={2} />
             </button>
+            <Link
+              href="/skillstudio"
+              className="inline-flex items-center gap-2 rounded-full border border-[#DADCE0] px-6 py-3 font-lp-body text-[15px] font-semibold text-[#3C4043] transition-colors hover:bg-[#F1F3F4]"
+            >
+              <BookOpen size={18} strokeWidth={1.5} />
+              Learn First
+            </Link>
           </div>
         </article>
       )}
