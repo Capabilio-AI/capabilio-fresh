@@ -17,8 +17,7 @@ export interface FormField {
   defaultValue?: string | boolean;
 }
 
-const INPUT =
-  "w-full rounded-lg border border-app-border bg-white px-3 py-2 font-lp-body text-[13px] text-app-charcoal placeholder:text-app-muted focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20";
+const INPUT = "o-input";
 
 /**
  * One generic POST-JSON form. The server route is the authority: this only collects fields, and `extra`
@@ -86,20 +85,20 @@ export function JsonForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2" noValidate>
       {fields.map((f) => {
         const id = `${action}-${f.name}`;
         const type = f.type ?? "text";
         return (
-          <div key={f.name}>
+          <div key={f.name} className={type === "textarea" || type === "checkbox" ? "md:col-span-2" : undefined}>
             {type === "checkbox" ? (
               <label className="flex items-center gap-2 font-lp-body text-[13px] text-app-charcoal">
-                <input type="checkbox" name={f.name} defaultChecked={Boolean(f.defaultValue)} className="h-4 w-4 accent-[var(--app-orange,#f97316)]" />
+                <input type="checkbox" name={f.name} defaultChecked={Boolean(f.defaultValue)} className="h-4 w-4 accent-[var(--app-orange)]" />
                 {f.label}
               </label>
             ) : (
               <>
-                <label htmlFor={id} className="mb-1 block font-lp-body text-[12px] font-medium text-app-muted">
+                <label htmlFor={id} className="mb-1.5 block font-lp-body text-[11.5px] font-bold text-app-muted">
                   {f.label}
                   {f.required && <span className="text-app-orange"> *</span>}
                 </label>
@@ -131,17 +130,17 @@ export function JsonForm({
           </div>
         );
       })}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 md:col-span-2">
         <button
           type="submit"
           disabled={busy}
-          className="inline-flex items-center gap-2 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+          className="o-btn"
         >
           {busy && <Loader2 size={14} className="animate-spin" />}
           {submitLabel}
         </button>
         {message && (
-          <p role={message.ok ? "status" : "alert"} className={`font-lp-body text-[12.5px] ${message.ok ? "text-app-success" : "text-red-600"}`}>
+          <p role={message.ok ? "status" : "alert"} className={`font-lp-body text-[12.5px] ${message.ok ? "text-app-success" : "text-app-rose"}`}>
             {message.text}
           </p>
         )}

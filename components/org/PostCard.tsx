@@ -7,12 +7,12 @@ import { Pill, formatDateTime } from "./ui";
 export function PostCard({ post, slug, permalink = true }: { post: PublicPost; slug: string; permalink?: boolean }) {
   const path = `/o/${slug}/posts/${post.id}`;
   return (
-    <article className="rounded-xl border border-app-border bg-white p-5">
+    <article className="o-card p-5">
       <div className="flex items-center gap-2">
         <Pill tone={post.type === "event" ? "warn" : "neutral"}>{post.type}</Pill>
         {post.type === "announcement" && !post.is_public && <Pill>Members only</Pill>}
       </div>
-      <h3 className="mt-2 font-lp-display text-[18px] font-semibold text-app-charcoal">
+      <h3 className="mt-2 o-serif text-[26px] leading-tight text-app-charcoal">
         {permalink ? (
           <Link href={path} className="hover:underline">
             {post.title}

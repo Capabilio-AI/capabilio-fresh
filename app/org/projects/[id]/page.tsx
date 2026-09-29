@@ -80,7 +80,7 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                           </a>
                         )}
                         {r.staff_feedback ? (
-                          <p className="mt-2 rounded bg-app-background px-2 py-1 font-lp-body text-[12.5px] text-app-charcoal">Your feedback: {r.staff_feedback}</p>
+                          <p className="mt-2 rounded bg-white/[0.04] px-2 py-1 font-lp-body text-[12.5px] text-app-charcoal">Your feedback: {r.staff_feedback}</p>
                         ) : (
                           <div className="mt-2">
                             <JsonForm action="/api/org/report-feedback" extra={{ reportId: r.id }} submitLabel="Send feedback" fields={[{ name: "feedback", label: "Feedback", required: true }]} />

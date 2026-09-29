@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { orgPageContext } from "@/lib/org/page";
 import { JsonForm } from "@/components/org/JsonForm";
-import { EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Placements — Capabilio AI" };
 
@@ -26,7 +26,7 @@ export default async function PlacementsPage() {
         title="Placements"
         subtitle="Post a campus drive, review who applied, shortlist and select, then confirm placements. A drive is private to your institution's active students."
       />
-      <Panel title="Post a drive">
+      <Collapsible title="Post a drive">
         <JsonForm
           action="/api/org/placements"
           submitLabel="Post drive"
@@ -41,7 +41,7 @@ export default async function PlacementsPage() {
             { name: "deadline", label: "Apply by", type: "date" },
           ]}
         />
-      </Panel>
+      </Collapsible>
       <Panel title="Your drives">
         {drives.length === 0 ? (
           <EmptyState title="No drives yet" body="Drives you post appear here with their applicants. Students see them in Launchpad, which opens in their final two years." />
@@ -51,7 +51,7 @@ export default async function PlacementsPage() {
               const c = countFor(d.id);
               return (
                 <li key={d.id}>
-                  <Link href={`/org/placements/${d.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:bg-black/[0.02]">
+                  <Link href={`/org/placements/${d.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:bg-white/[0.03]">
                     <div>
                       <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">
                         {d.role} · {d.company}

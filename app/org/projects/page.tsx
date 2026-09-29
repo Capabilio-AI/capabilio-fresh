@@ -3,7 +3,7 @@ import Link from "next/link";
 import { orgPageContext } from "@/lib/org/page";
 import { listProjectsForStaff, listSubjects } from "@/lib/org/loaders";
 import { JsonForm } from "@/components/org/JsonForm";
-import { EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Projects — Capabilio AI" };
 
@@ -17,7 +17,7 @@ export default async function OrgProjectsPage() {
         title="Projects"
         subtitle="Post a project brief. Students form groups of four themselves, across departments unless you restrict it. Only your final grade becomes evidence on each member's Portfolio."
       />
-      <Panel title="New project">
+      <Collapsible title="New project">
         <JsonForm
           action="/api/org/projects"
           submitLabel="Post project"
@@ -32,7 +32,7 @@ export default async function OrgProjectsPage() {
             { name: "weeklyReportRequired", label: "Groups file weekly reports", type: "checkbox", defaultValue: true },
           ]}
         />
-      </Panel>
+      </Collapsible>
       <Panel title="Your projects">
         {projects.length === 0 ? (
           <EmptyState title="No projects yet" body="Projects you post appear here with their groups and submissions." />
@@ -40,7 +40,7 @@ export default async function OrgProjectsPage() {
           <ul className="divide-y divide-app-border">
             {projects.map((p) => (
               <li key={p.id}>
-                <Link href={`/org/projects/${p.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:bg-black/[0.02]">
+                <Link href={`/org/projects/${p.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:bg-white/[0.03]">
                   <div>
                     <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">{p.title}</p>
                     <p className="font-lp-mono text-[11px] text-app-muted">

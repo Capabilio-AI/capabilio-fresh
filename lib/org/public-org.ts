@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped, type OrgPostRow, type OrgProfileRow } from "./db";
 import { postVisibleTo } from "./presence";
+import { MIN_COHORT } from "./insights";
 
 export interface PublicOrg {
   institutionId: string;
@@ -96,4 +97,46 @@ export async function loadVisiblePosts(service: SupabaseClient<Database>, org: P
     rsvpCount: going.filter((r) => r.post_id === p.id).length,
     rsvpedByViewer: viewerId ? going.some((r) => r.post_id === p.id && r.user_id === viewerId) : false,
   }));
+}
+
+export interface OrgFacts {
+  /** departments with at least MIN_COHORT students — smaller ones are folded into `otherStudents` */
+  departments: { branch: string; students: number }[];
+  otherStudents: number;
+  /** null below MIN_COHORT confirmed placements, so a handful of offers can't be traced to people */
+  placedCount: number | null;
+  companies: number | null;
+  upcomingEvents: number;
+  publishedPosts: number;
+}
+
+/** Public-safe aggregates for the college page. Counts only; never a name, never pay. */
+export async function loadOrgFacts(service: SupabaseClient<Database>, institutionId: string): Promise<OrgFacts> {
+  const db = untyped(service);
+  const nowIso = new Date().toISOString();
+  const [studentsRes, placementsRes, eventsRes, postsRes] = await Promise.all([
+    service.from("institution_memberships").select("branch").eq("institution_id", institutionId).eq("role", "student").eq("status", "active").limit(5000),
+    db.from("org_placements").select("student_user_id, company").eq("institution_id", institutionId),
+    db.from("org_posts").select("id", { count: "exact", head: true }).eq("institution_id", institutionId).eq("status", "published").eq("type", "event").gte("event_starts_at", nowIso),
+    db.from("org_posts").select("id", { count: "exact", head: true }).eq("institution_id", institutionId).eq("status", "published"),
+  ]);
+  const byBranch = new Map<string, number>();
+  for (const s of studentsRes.data ?? []) {
+    const b = (s.branch ?? "").trim();
+    if (b) byBranch.set(b, (byBranch.get(b) ?? 0) + 1);
+  }
+  const shown = [...byBranch.entries()].filter(([, n]) => n >= MIN_COHORT).sort((a, b) => b[1] - a[1]);
+  const shownTotal = shown.reduce((a, [, n]) => a + n, 0);
+  const totalWithBranch = [...byBranch.values()].reduce((a, n) => a + n, 0);
+
+  const placements = (placementsRes.data ?? []) as { student_user_id: string; company: string }[];
+  const placed = new Set(placements.map((p) => p.student_user_id)).size;
+  return {
+    departments: shown.map(([branch, students]) => ({ branch, students })),
+    otherStudents: totalWithBranch - shownTotal,
+    placedCount: placed >= MIN_COHORT ? placed : null,
+    companies: placed >= MIN_COHORT ? new Set(placements.map((p) => p.company.trim().toLowerCase())).size : null,
+    upcomingEvents: eventsRes.count ?? 0,
+    publishedPosts: postsRes.count ?? 0,
+  };
 }

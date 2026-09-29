@@ -67,7 +67,7 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                     </div>
                   </div>
                   {a.status === "accepted" && !isPlaced && (
-                    <div className="mt-3 rounded-lg border border-app-border bg-app-background p-3">
+                    <div className="mt-3 rounded-lg border border-app-border bg-white/[0.03] p-3">
                       <p className="mb-2 font-lp-body text-[12.5px] text-app-muted">
                         Confirm the placement once the offer is real. Only confirmed placements count in Outcomes; the student then chooses whether it appears on your public page.
                       </p>

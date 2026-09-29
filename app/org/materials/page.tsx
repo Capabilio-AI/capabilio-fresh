@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { orgPageContext } from "@/lib/org/page";
 import { listMaterialsForStaff, listSubjects } from "@/lib/org/loaders";
 import { JsonForm } from "@/components/org/JsonForm";
-import { EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Course materials — Capabilio AI" };
 
@@ -16,7 +16,7 @@ export default async function MaterialsPage() {
         title="Course materials"
         subtitle="Share notes or links with students of a branch and year. Students see only their own branch and year. Files are shared as links for now (no upload storage yet)."
       />
-      <Panel title="Add material">
+      <Collapsible title="Add material">
         <JsonForm
           action="/api/org/materials"
           submitLabel="Publish material"
@@ -32,7 +32,7 @@ export default async function MaterialsPage() {
             { name: "year", label: "Year (if no subject)", type: "number" },
           ]}
         />
-      </Panel>
+      </Collapsible>
       <Panel title="Published">
         {materials.length === 0 ? (
           <EmptyState title="Nothing shared yet" body="Materials you publish appear here and in your students' Classroom." />

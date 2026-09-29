@@ -42,11 +42,7 @@ export function ActionButton({
     }
   }
 
-  const styles = {
-    primary: "bg-app-charcoal text-white hover:opacity-90",
-    ghost: "border border-app-border bg-white text-app-charcoal hover:bg-black/5",
-    danger: "border border-red-200 bg-white text-red-600 hover:bg-red-50",
-  }[variant];
+  const styles = { primary: "o-btn", ghost: "o-btn-ghost", danger: "o-btn-danger" }[variant];
 
   return (
     <span className="inline-flex flex-col items-start gap-1">
@@ -54,13 +50,13 @@ export function ActionButton({
         type="button"
         onClick={run}
         disabled={busy}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-lp-body text-[12.5px] font-semibold transition-colors disabled:opacity-60 ${styles}`}
+        className={styles}
       >
         {busy && <Loader2 size={12} className="animate-spin" />}
         {label}
       </button>
       {error && (
-        <span role="alert" className="font-lp-body text-[11.5px] text-red-600">
+        <span role="alert" className="font-lp-body text-[11.5px] text-app-rose">
           {error}
         </span>
       )}

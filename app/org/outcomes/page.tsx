@@ -4,7 +4,7 @@ import { orgPageContext } from "@/lib/org/page";
 import { loadOutcomes } from "@/lib/org/outcomes";
 import { MIN_COHORT } from "@/lib/org/insights";
 import { JsonForm } from "@/components/org/JsonForm";
-import { EmptyState, PageHeader, Panel, Pill, Stat } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Panel, Pill, Stat } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Outcomes — Capabilio AI" };
 
@@ -37,7 +37,7 @@ export default async function OutcomesPage() {
         subtitle="Only placements confirmed by your team are counted — there is no self-reporting. Averages and per-branch counts are hidden until there are at least 5 records, so no single student's offer can be inferred."
         action={
           placements.length > 0 && (
-            <a href="/api/org/outcomes/export" className="inline-flex items-center gap-1.5 rounded-lg border border-app-border bg-white px-3 py-2 font-lp-body text-[13px] font-medium text-app-charcoal hover:bg-black/5">
+            <a href="/api/org/outcomes/export" className="inline-flex items-center gap-1.5 rounded-lg border border-app-border bg-white px-3 py-2 font-lp-body text-[13px] font-medium text-app-charcoal hover:bg-white/5">
               <Download size={14} /> Export CSV
             </a>
           )
@@ -56,7 +56,7 @@ export default async function OutcomesPage() {
           {stages.map((s) => (
             <li key={s.label} className="flex items-center gap-3">
               <span className="w-44 shrink-0 font-lp-body text-[13px] text-app-charcoal">{s.label}</span>
-              <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-app-background">
+              <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/[0.04]">
                 <span className="block h-full rounded-full bg-app-orange" style={{ width: `${(s.value / top) * 100}%` }} />
               </span>
               <span className="w-10 text-right font-lp-mono text-[12px] text-app-charcoal">{s.value}</span>
@@ -112,7 +112,7 @@ export default async function OutcomesPage() {
         )}
       </Panel>
 
-      <Panel title="Record an off-campus offer">
+      <Collapsible title="Record an off-campus offer">
         <p className="mb-3 font-lp-body text-[12.5px] text-app-muted">For a placement that didn&apos;t come through one of your drives. It counts only because you confirm it here.</p>
         <JsonForm
           action="/api/org/placements/confirm"
@@ -126,7 +126,7 @@ export default async function OutcomesPage() {
             { name: "offerDate", label: "Offer date", type: "date" },
           ]}
         />
-      </Panel>
+      </Collapsible>
     </div>
   );
 }

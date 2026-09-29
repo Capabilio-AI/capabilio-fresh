@@ -1,0 +1,195 @@
+/*
+ * Organisation path visual language — taken from capabilio-web's Institution OS and public profile:
+ * warm-black canvas, glass surfaces, ivory text, an amber→gold gradient for the one primary action,
+ * DM Sans for UI and Instrument Serif italic for names and titles.
+ *
+ * Scoped to `.org-theme`. The remapped --app-* tokens make every existing `text-app-*` / `border-app-*`
+ * utility resolve to the dark palette, so shared components need no per-page overrides.
+ */
+.org-theme {
+  --app-background: #0b0a08;
+  --app-card: rgba(255, 255, 255, 0.048);
+  --app-charcoal: #f7f2ea;
+  --app-muted: rgba(247, 242, 234, 0.56);
+  --app-border: rgba(255, 255, 255, 0.1);
+  --app-orange: #f6c453;
+  --app-orange-container: rgba(246, 196, 83, 0.12);
+  --app-blue: #74a8ff;
+  --app-blue-container: rgba(116, 168, 255, 0.13);
+  --app-success: #4fd4a3;
+  --app-success-container: rgba(79, 212, 163, 0.13);
+  --app-warning: #f6c453;
+  --app-warning-container: rgba(246, 196, 83, 0.13);
+  --app-rose: #ff8177;
+  --app-rose-container: rgba(255, 129, 119, 0.13);
+  --color-white: rgba(255, 255, 255, 0.05);
+  --font-lp-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-lp-display: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-lp-mono: "DM Mono", ui-monospace, monospace;
+
+  --o-gold: #f6c453;
+  --o-amber: #dc8b18;
+  --o-gradient: linear-gradient(135deg, #dc8b18, #f6c453);
+  --o-ink-on-gold: #23170a;
+  --o-line-strong: rgba(255, 255, 255, 0.16);
+
+  min-height: 100vh;
+  background: #0b0a08;
+  color: #f7f2ea;
+  font-family: var(--font-lp-body);
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+.org-theme * {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* serif italic is reserved for names and page titles */
+.org-theme .o-serif {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.org-theme .o-eyebrow {
+  font-family: var(--font-lp-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+}
+
+.org-theme .o-card {
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.026));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+}
+.org-theme a.o-card,
+.org-theme .o-lift {
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.org-theme a.o-card:hover,
+.org-theme .o-lift:hover {
+  border-color: rgba(246, 196, 83, 0.32);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.48);
+}
+
+/* buttons: exactly one gold primary per view; everything else is glass */
+.org-theme .o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 12px;
+  padding: 9px 16px;
+  background: var(--o-gradient);
+  color: var(--o-ink-on-gold);
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(220, 139, 24, 0.18);
+  transition: filter 0.15s, transform 0.15s;
+}
+.org-theme .o-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.org-theme .o-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.org-theme .o-btn-ghost,
+.org-theme .o-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--o-line-strong);
+  color: #f7f2ea;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.org-theme .o-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+}
+.org-theme .o-btn-danger {
+  color: #ff8177;
+  border-color: rgba(255, 129, 119, 0.3);
+}
+.org-theme .o-btn-danger:hover:not(:disabled) {
+  background: rgba(255, 129, 119, 0.1);
+}
+.org-theme .o-btn-ghost:disabled,
+.org-theme .o-btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.org-theme .o-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--app-border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #f7f2ea;
+  font-family: var(--font-lp-body);
+}
+.org-theme .o-input::placeholder {
+  color: rgba(247, 242, 234, 0.35);
+}
+.org-theme .o-input:focus {
+  outline: none;
+  border-color: rgba(246, 196, 83, 0.55);
+  box-shadow: 0 0 0 3px rgba(246, 196, 83, 0.14);
+}
+.org-theme select.o-input option {
+  background: #16130e;
+  color: #f7f2ea;
+}
+
+.org-theme a:focus-visible,
+.org-theme button:focus-visible {
+  outline: 2px solid var(--o-gold);
+  outline-offset: 2px;
+}
+
+/* cover: fine grid + a warm glow, the reference's hero atmosphere without the particle canvas */
+.org-theme .o-cover {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(55% 140% at 92% -10%, rgba(246, 196, 83, 0.42), transparent 62%),
+    radial-gradient(45% 120% at 8% 110%, rgba(116, 168, 255, 0.2), transparent 62%),
+    linear-gradient(180deg, #17120b, #0f0c08);
+}
+.org-theme .o-cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, black 30%, transparent 95%);
+}
+.org-theme .o-logo-tile {
+  display: grid;
+  place-items: center;
+  background: var(--o-gradient);
+  color: var(--o-ink-on-gold);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  box-shadow: 0 0 0 4px #0b0a08, 0 12px 32px rgba(220, 139, 24, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .org-theme * {
+    transition: none !important;
+  }
+}

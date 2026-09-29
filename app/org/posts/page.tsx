@@ -4,7 +4,7 @@ import { orgPageContext } from "@/lib/org/page";
 import { untyped, type OrgPostRow, type OrgProfileRow } from "@/lib/org/db";
 import { ActionButton } from "@/components/org/ActionButton";
 import { JsonForm } from "@/components/org/JsonForm";
-import { EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Posts & page — Capabilio AI" };
 
@@ -21,7 +21,7 @@ export default async function OrgPostsPage() {
       <PageHeader title="Posts & public page" subtitle="Events and announcements only — no comments, no open feed. Students can follow, like and share a link." />
 
       {ctx.kind === "admin" && (
-        <Panel title="Public page">
+        <Collapsible title="Public page" defaultOpen>
           <p className="mb-3 font-lp-body text-[12.5px] text-app-muted">
             Your page stays private until you switch it on. When public, anyone can see the page and its published events; announcements stay members-only unless you mark them public.
             {profile?.is_public && (
@@ -44,10 +44,10 @@ export default async function OrgPostsPage() {
               { name: "isPublic", label: "Make the page public", type: "checkbox", defaultValue: profile?.is_public ?? false },
             ]}
           />
-        </Panel>
+        </Collapsible>
       )}
 
-      <Panel title="New post">
+      <Collapsible title="New post">
         <JsonForm
           action="/api/org/posts"
           submitLabel="Save post"
@@ -64,7 +64,7 @@ export default async function OrgPostsPage() {
             { name: "publish", label: "Publish now (otherwise saved as a draft)", type: "checkbox", defaultValue: true },
           ]}
         />
-      </Panel>
+      </Collapsible>
 
       <Panel title={ctx.kind === "staff" ? "Your posts" : "All posts"}>
         {posts.length === 0 ? (

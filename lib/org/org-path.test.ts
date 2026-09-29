@@ -259,3 +259,23 @@ describe("migration 042: removal safety", () => {
     expect(sql).not.toMatch(/on delete (restrict|no action)/);
   });
 });
+
+describe("setup checklist and event split are real-data only", async () => {
+  const { buildSetupChecklist } = await import("./setup");
+  const { splitEvents } = await import("./events");
+  const empty = { profilePublic: false, hasBio: false, hasWebsite: false, publishedPosts: 0, materials: 0, projects: 0, drives: 0, students: 0 };
+  it("a brand-new college has nothing checked; each step flips only on its own fact", () => {
+    expect(buildSetupChecklist(empty).every((s) => !s.done)).toBe(true);
+    expect(buildSetupChecklist({ ...empty, hasBio: true }).filter((s) => s.done).map((s) => s.label)).toEqual(["Write your college's About"]);
+    expect(buildSetupChecklist({ ...empty, materials: 1 }).find((s) => s.label.startsWith("Share a course"))?.done).toBe(true);
+    expect(buildSetupChecklist({ ...empty, projects: 1 }).find((s) => s.label.startsWith("Share a course"))?.done).toBe(true);
+    expect(buildSetupChecklist({ hasBio: true, hasWebsite: true, profilePublic: true, publishedPosts: 1, materials: 1, projects: 0, drives: 1, students: 3 }).every((s) => s.done)).toBe(true);
+  });
+  it("splits events into upcoming (soonest first) and past (latest first), ignoring announcements", () => {
+    const now = new Date("2026-10-01T00:00:00Z");
+    const ev = (t: string, at: string | null) => ({ type: t as "event" | "announcement", event_starts_at: at });
+    const { upcoming, past } = splitEvents([ev("event", "2026-10-09T00:00:00Z"), ev("event", "2026-10-03T00:00:00Z"), ev("event", "2026-09-01T00:00:00Z"), ev("event", "2026-08-01T00:00:00Z"), ev("announcement", null)], now);
+    expect(upcoming.map((e) => e.event_starts_at)).toEqual(["2026-10-03T00:00:00Z", "2026-10-09T00:00:00Z"]);
+    expect(past.map((e) => e.event_starts_at)).toEqual(["2026-09-01T00:00:00Z", "2026-08-01T00:00:00Z"]);
+  });
+});

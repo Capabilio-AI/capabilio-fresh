@@ -6,7 +6,7 @@ import { EmptyState, PageHeader, Panel } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Students — Capabilio AI" };
 
-const SELECT = "rounded-lg border border-app-border bg-white px-3 py-2 font-lp-body text-[13px] text-app-charcoal";
+const SELECT = "o-input";
 
 export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ branch?: string; year?: string }> }) {
   const { ctx, service } = await orgPageContext("viewRoster");
@@ -43,7 +43,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
             ))}
           </select>
         </label>
-        <button type="submit" className="rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white hover:opacity-90">
+        <button type="submit" className="o-btn">
           Apply
         </button>
         {(sp.branch || sp.year) && (

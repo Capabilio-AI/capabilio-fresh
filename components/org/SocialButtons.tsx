@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, Heart, Link2, UserPlus, UserCheck } from "lucide-react";
 
-const BTN = "inline-flex items-center gap-1.5 rounded-full border border-app-border bg-white px-3 py-1.5 font-lp-body text-[12.5px] font-medium text-app-charcoal hover:bg-black/5 disabled:opacity-60";
+const BTN = "o-btn-ghost";
+const BTN_PRIMARY = "o-btn";
 
 async function post(url: string, body: unknown): Promise<{ ok: boolean; unauthenticated: boolean }> {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -22,7 +23,7 @@ export function FollowButton({ slug, following, followerCount }: { slug: string;
     if (r.ok) router.refresh();
   }
   return (
-    <button type="button" onClick={toggle} disabled={busy} className={BTN} aria-pressed={following}>
+    <button type="button" onClick={toggle} disabled={busy} className={following ? BTN : BTN_PRIMARY} aria-pressed={following}>
       {following ? <UserCheck size={14} /> : <UserPlus size={14} />}
       {following ? "Following" : "Follow"} · {followerCount}
     </button>
