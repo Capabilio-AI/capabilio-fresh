@@ -1925,6 +1925,8 @@ export type Database = {
           full_name: string | null
           has_seen_career_direction_intro: boolean
           id: string
+          portfolio_public: boolean
+          portfolio_slug: string | null
           primary_role: Database["public"]["Enums"]["app_role"]
           updated_at: string
         }
@@ -1935,6 +1937,8 @@ export type Database = {
           full_name?: string | null
           has_seen_career_direction_intro?: boolean
           id: string
+          portfolio_public?: boolean
+          portfolio_slug?: string | null
           primary_role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
@@ -1945,6 +1949,8 @@ export type Database = {
           full_name?: string | null
           has_seen_career_direction_intro?: boolean
           id?: string
+          portfolio_public?: boolean
+          portfolio_slug?: string | null
           primary_role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
