@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:live": "LIVE_DB=1 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
