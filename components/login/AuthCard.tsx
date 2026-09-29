@@ -18,6 +18,7 @@ import {
 } from "./auth";
 import { RoleId } from "./roles";
 import { PendingApprovalCard } from "./PendingApprovalCard";
+import { landingFor } from "@/lib/org/roles";
 import type { AuthPath } from "@/lib/onboarding/auth-path";
 
 type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval">;
@@ -27,7 +28,7 @@ type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval"
 // staff/institution pages, so route() returning null means "not built
 // yet", not a bug to silently paper over with a fake redirect.
 function routeFor(role: RoleId): string | null {
-  return role === "student" ? "/assessment" : null;
+  return landingFor(role);
 }
 
 function AuthModals({

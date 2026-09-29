@@ -24,6 +24,8 @@ export const LOW_STRENGTH_THRESHOLD = 25;
 const DIRECTNESS_BY_EVIDENCE_TYPE: Record<string, number> = {
   commit_activity: 40,
   arena_result: 35,
+  // Organisation project graded by a named staff member (class_grade_group) — human-verified, so as direct as commits.
+  staff_graded_project: 40,
   technology_usage: 25,
 };
 

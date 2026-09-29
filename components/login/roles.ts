@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 import type { Enums } from "@/lib/supabase/types";
 
-export type RoleId = Enums<"app_role">;
+// `tpo` and `company_admin` were added to app_role in migration 036; lib/supabase/types.ts predates it,
+// so they are unioned here until the generated types are refreshed.
+export type RoleId = Enums<"app_role"> | "tpo" | "company_admin";
 
 export interface RoleConfig {
   id: RoleId;
@@ -33,6 +35,8 @@ export const ROLES: RoleConfig[] = [
   { id: "ceo", label: "CEO", portal: "Executive Dashboard", icon: Briefcase },
   { id: "mentor", label: "Mentor", portal: "Mentor Workspace", icon: Compass },
   { id: "professional", label: "Professional", portal: "Professional Profile", icon: User },
+  { id: "tpo", label: "TPO", portal: "Organisation Workspace", icon: Landmark },
+  { id: "company_admin", label: "Company admin", portal: "Company Account", icon: Building2 },
 ];
 
 export function getRole(id: RoleId): RoleConfig {

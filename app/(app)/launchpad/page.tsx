@@ -85,8 +85,9 @@ export default async function LaunchpadPage() {
                       {opp.company}
                     </p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 font-lp-mono text-[10.5px] font-semibold ${TYPE_COLOR[opp.type]}`}>
-                    {TYPE_LABEL[opp.type]}
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={`rounded-full px-2 py-0.5 font-lp-mono text-[10.5px] font-semibold ${TYPE_COLOR[opp.type]}`}>{TYPE_LABEL[opp.type]}</span>
+                    {opp.campus && <span className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10.5px] font-semibold text-app-charcoal">Campus drive</span>}
                   </span>
                 </div>
 

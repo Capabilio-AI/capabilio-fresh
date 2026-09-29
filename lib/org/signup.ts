@@ -5,7 +5,7 @@ export const ORG_TYPES = ["institution", "company"] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
 
 // What the applicant may *say* they are. The server maps this to a role; the client never sends a role.
-export const INSTITUTION_DESIGNATIONS = ["principal", "vice_principal", "hod", "tpo"] as const;
+export const INSTITUTION_DESIGNATIONS = ["principal", "vice_principal", "hod", "tpo", "faculty"] as const;
 export type InstitutionDesignation = (typeof INSTITUTION_DESIGNATIONS)[number];
 
 export const MIN_PASSWORD_LENGTH = 8;

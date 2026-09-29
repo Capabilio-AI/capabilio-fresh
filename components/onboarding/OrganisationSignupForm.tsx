@@ -15,6 +15,7 @@ const DESIGNATIONS: { value: InstitutionDesignation; label: string }[] = [
   { value: "principal", label: "Principal" },
   { value: "vice_principal", label: "Vice Principal" },
   { value: "hod", label: "Head of Department" },
+  { value: "faculty", label: "Faculty" },
 ];
 
 const CONFIRMATION: Record<OrgType, { title: string; body: string }> = {

@@ -13,6 +13,8 @@ export interface Opportunity {
   skills: string[];
   eligibility: string | null;
   deadline: string | null;
+  /** A placement drive posted by the student's own college (RLS only returns it to that college's active members). */
+  campus: boolean;
 }
 
 const TYPES: OpportunityType[] = ["job", "internship", "competition", "referral"];
@@ -28,7 +30,7 @@ export async function listOpenOpportunities(supabase: SupabaseClient<Database>, 
   const today = now.toISOString().slice(0, 10);
   const { data } = await supabase
     .from("opportunities")
-    .select("id, role, company, location, opportunity_type, skills, eligibility, deadline")
+    .select("id, role, company, location, opportunity_type, skills, eligibility, deadline, institution_id")
     .order("deadline", { ascending: true, nullsFirst: false });
   return (data ?? [])
     .filter((r) => isOpen(r.deadline, today) && (TYPES as string[]).includes(r.opportunity_type))
@@ -41,5 +43,6 @@ export async function listOpenOpportunities(supabase: SupabaseClient<Database>, 
       skills: SkillsSchema.safeParse(r.skills).data ?? [],
       eligibility: r.eligibility,
       deadline: r.deadline,
+      campus: r.institution_id !== null,
     }));
 }

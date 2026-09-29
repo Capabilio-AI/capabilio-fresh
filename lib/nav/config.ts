@@ -6,6 +6,7 @@ import {
   Rocket,
   MessagesSquare,
   Sparkles,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "SkillStudio", href: "/skillstudio", icon: GraduationCap },
   { label: "Arena", href: "/arena", icon: Swords },
+  { label: "Classroom", href: "/classroom", icon: BookOpen },
   { label: "Pulse", href: "/pulse", icon: Activity },
   {
     label: "Launchpad",
