@@ -16,6 +16,7 @@ export default defineConfig({
     // node_modules (e.g. zod's bundled test suite) got scanned too.
     exclude: ["**/node_modules/**", "**/.next/**", "**/.claude/**", ...(live ? [] : ["**/*.live.test.ts"])],
     testTimeout: live ? 300_000 : 5_000,
+    hookTimeout: live ? 300_000 : 10_000,
   },
   resolve: {
     alias: {

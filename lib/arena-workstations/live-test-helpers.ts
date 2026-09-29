@@ -11,13 +11,26 @@ export function liveServiceClient(): SupabaseClient<Database> {
 
 /** A throwaway auth user; deleting it cascades every row the test created. */
 export async function createThrowawayUser(service: SupabaseClient<Database>, label: string): Promise<string> {
-  const { data, error } = await service.auth.admin.createUser({
-    email: `arena-${label}-${Date.now()}@test.capabilio.invalid`,
-    password: crypto.randomUUID(),
-    email_confirm: true,
-  });
+  return (await createThrowawayUserWithLogin(service, label)).userId;
+}
+
+export async function createThrowawayUserWithLogin(service: SupabaseClient<Database>, label: string): Promise<{ userId: string; email: string; password: string }> {
+  const email = `arena-${label}-${Date.now()}@test.capabilio.invalid`;
+  const password = crypto.randomUUID();
+  const { data, error } = await service.auth.admin.createUser({ email, password, email_confirm: true });
   if (error || !data.user) throw error ?? new Error("createUser failed");
-  return data.user.id;
+  return { userId: data.user.id, email, password };
+}
+
+/** A browser-equivalent client: public key + the candidate's own session, so RLS and column grants apply. */
+export async function signedInClient(email: string, password: string): Promise<SupabaseClient<Database>> {
+  const client = createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { persistSession: false },
+    realtime: { transport: class {} as never },
+  });
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return client;
 }
 
 export async function deleteThrowawayUser(service: SupabaseClient<Database>, userId: string): Promise<void> {
