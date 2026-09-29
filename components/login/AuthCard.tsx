@@ -9,14 +9,12 @@ import { PasswordField } from "./PasswordField";
 import { AuthErrorBanner } from "./AuthErrorBanner";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { InstitutionPicker } from "./InstitutionPicker";
-import { GoogleIcon } from "./GoogleIcon";
 import {
   AuthOutcome,
   Institution,
   portalFor,
   resendVerificationEmail,
   signIn,
-  signInWithGoogle,
 } from "./auth";
 import { RoleId } from "./roles";
 
@@ -224,14 +222,6 @@ export function AuthCard() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => signInWithGoogle()}
-            className="flex w-full items-center justify-center gap-2.5 rounded border border-lp-border-hairline bg-lp-surface-card py-3 font-lp-body text-lp-body-sm font-medium text-lp-text-ink transition-colors hover:bg-lp-surface-subtle"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
           <button
             type="button"
             disabled

@@ -89,7 +89,8 @@ export interface SignUpInput {
   lastName: string;
   collegeName: string;
   branch: string;
-  year: string;
+  startYear: number;
+  endYear: number;
   email: string;
   password: string;
 }
@@ -108,7 +109,8 @@ export async function signUp(input: SignUpInput): Promise<SignUpOutcome> {
         full_name: fullName,
         college_name: input.collegeName.trim(),
         branch: input.branch.trim(),
-        year: input.year,
+        start_year: String(input.startYear),
+        end_year: String(input.endYear),
         role: "student",
       },
       emailRedirectTo: `${window.location.origin}/auth/confirm?next=/verified`,
@@ -142,14 +144,6 @@ export async function resendVerificationEmail(email: string): Promise<void> {
     type: "signup",
     email,
     options: { emailRedirectTo: `${window.location.origin}/auth/confirm?next=/verified` },
-  });
-}
-
-export async function signInWithGoogle(): Promise<void> {
-  const supabase = createClient();
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${window.location.origin}/auth/confirm` },
   });
 }
 

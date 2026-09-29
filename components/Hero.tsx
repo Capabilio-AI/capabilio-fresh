@@ -312,7 +312,7 @@ export default function Hero() {
             className="flex flex-col gap-space-xs md:items-end"
           >
             <div className="flex flex-wrap items-center gap-space-sm">
-              <PrimaryButton href="#ecosystem">
+              <PrimaryButton href="/signup">
                 Get Started Free <ArrowRight size={16} />
               </PrimaryButton>
               <SecondaryButton href="#pipeline">

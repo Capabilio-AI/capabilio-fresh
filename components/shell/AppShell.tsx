@@ -3,12 +3,15 @@ import { Topbar } from "@/components/shell/Topbar";
 import { HeaderNav } from "@/components/shell/HeaderNav";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
 
-export function AppShell({ viewer, children }: { viewer: ViewerSummary; children: ReactNode }) {
+export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; banner?: ReactNode; children: ReactNode }) {
   return (
     <div className="min-h-screen bg-app-background">
       <Topbar viewer={viewer} />
       <HeaderNav year={viewer.year} />
-      <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+        {banner}
+        {children}
+      </main>
     </div>
   );
 }

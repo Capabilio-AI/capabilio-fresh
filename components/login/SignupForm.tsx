@@ -7,19 +7,9 @@ import { CollegeAutocomplete, CollegeMatch } from "./CollegeAutocomplete";
 import { BranchAutocomplete } from "./BranchAutocomplete";
 import { PasswordField } from "./PasswordField";
 import { signUp } from "./auth";
+import { validateProgramYears } from "@/lib/career/years";
 
 const MIN_PASSWORD_LENGTH = 8;
-
-const YEAR_OPTIONS = [
-  { value: "1-1", label: "1-1" },
-  { value: "1-2", label: "1-2" },
-  { value: "2-1", label: "2-1" },
-  { value: "2-2", label: "2-2" },
-  { value: "3-1", label: "3-1" },
-  { value: "3-2", label: "3-2" },
-  { value: "4-1", label: "4-1" },
-  { value: "4-2", label: "4-2" },
-];
 
 const FIELD_LABEL = "mb-2 block font-lp-body text-lp-body-sm font-medium text-lp-on-surface-variant";
 const FIELD_INPUT =
@@ -31,7 +21,8 @@ export function SignupForm() {
   const [collegeName, setCollegeName] = useState("");
   const [, setSelectedCollege] = useState<CollegeMatch | null>(null);
   const [branch, setBranch] = useState("");
-  const [year, setYear] = useState("");
+  const [startYear, setStartYear] = useState("");
+  const [endYear, setEndYear] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -44,6 +35,11 @@ export function SignupForm() {
     e.preventDefault();
     setError(undefined);
 
+    const years = validateProgramYears(startYear, endYear);
+    if (!years.ok) {
+      setError(years.message);
+      return;
+    }
     if (password.length < MIN_PASSWORD_LENGTH) {
       setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
@@ -63,7 +59,8 @@ export function SignupForm() {
       lastName,
       collegeName,
       branch,
-      year,
+      startYear: years.startYear,
+      endYear: years.endYear,
       email,
       password,
     });
@@ -164,26 +161,41 @@ export function SignupForm() {
             </label>
             <BranchAutocomplete id="branch-name" value={branch} onChange={setBranch} />
           </div>
-          <div>
-            <label htmlFor="year" className={FIELD_LABEL}>
-              Year
-            </label>
-            <select
-              id="year"
-              required
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className={FIELD_INPUT}
-            >
-              <option value="" disabled>
-                Select your year
-              </option>
-              {YEAR_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="start-year" className={FIELD_LABEL}>
+                Start year
+              </label>
+              <input
+                id="start-year"
+                type="number"
+                inputMode="numeric"
+                required
+                min={2000}
+                max={2100}
+                value={startYear}
+                onChange={(e) => setStartYear(e.target.value)}
+                placeholder="2024"
+                className={FIELD_INPUT}
+              />
+            </div>
+            <div>
+              <label htmlFor="end-year" className={FIELD_LABEL}>
+                End year
+              </label>
+              <input
+                id="end-year"
+                type="number"
+                inputMode="numeric"
+                required
+                min={2000}
+                max={2100}
+                value={endYear}
+                onChange={(e) => setEndYear(e.target.value)}
+                placeholder="2028"
+                className={FIELD_INPUT}
+              />
+            </div>
           </div>
         </div>
 

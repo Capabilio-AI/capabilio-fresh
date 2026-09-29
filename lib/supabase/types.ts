@@ -1540,6 +1540,14 @@ export type Database = {
           },
           {
             foreignKeyName: "institution_memberships_institution_id_fkey"
+          active_role_key: string | null
+          goal_state: string | null
+          goal_state_prompted_at: string | null
+          goal_state_updated_at: string | null
+          higher_studies_checkin_at: string | null
+          portfolio_prompt_seen_at: string | null
+          year_confirmed_at: string | null
+          year_override: number | null
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
@@ -1556,6 +1564,14 @@ export type Database = {
       }
       institutions: {
         Row: {
+          active_role_key?: string | null
+          goal_state?: string | null
+          goal_state_prompted_at?: string | null
+          goal_state_updated_at?: string | null
+          higher_studies_checkin_at?: string | null
+          portfolio_prompt_seen_at?: string | null
+          year_confirmed_at?: string | null
+          year_override?: number | null
           city: string | null
           college_type: Database["public"]["Enums"]["college_type"]
           created_at: string
@@ -1572,6 +1588,14 @@ export type Database = {
           id?: string
           name: string
           slug: string
+          active_role_key?: string | null
+          goal_state?: string | null
+          goal_state_prompted_at?: string | null
+          goal_state_updated_at?: string | null
+          higher_studies_checkin_at?: string | null
+          portfolio_prompt_seen_at?: string | null
+          year_confirmed_at?: string | null
+          year_override?: number | null
           state?: string | null
           updated_at?: string
         }
@@ -1613,6 +1637,7 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          academic_start_month: number
           },
         ]
       }
@@ -1623,6 +1648,7 @@ export type Database = {
           id: string
           key: string
           label: string
+          academic_start_month?: number
           sequence: number
           template_id: string
         }
@@ -1633,6 +1659,7 @@ export type Database = {
           key: string
           label: string
           sequence: number
+          academic_start_month?: number
           template_id: string
         }
         Update: {

@@ -35,13 +35,13 @@ export default function FinalCTA() {
 
           <div className="z-10 flex w-full flex-col gap-space-sm md:w-auto">
             <a
-              href="#"
+              href="/signup"
               className="inline-flex items-center justify-center gap-2 rounded bg-lp-surface-card px-8 py-4 font-lp-body text-lp-body-sm font-semibold text-lp-text-ink transition-colors hover:bg-lp-surface-subtle"
             >
               Get Started Free <ArrowRight size={18} />
             </a>
             <a
-              href="#"
+              href="/signup"
               className="inline-flex items-center justify-center gap-2 rounded border border-lp-border-strong px-8 py-3.5 font-lp-body text-lp-body-sm font-medium text-lp-surface-card transition-colors hover:bg-white/10"
             >
               Schedule Campus Demo
