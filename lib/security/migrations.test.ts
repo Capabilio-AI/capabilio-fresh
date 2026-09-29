@@ -17,3 +17,16 @@ describe("migration 031 keeps client writes to memberships and profile roles clo
     expect(grant).toMatch(/full_name/);
   });
 });
+
+describe("migration 033: every roadmap table is private to the service role", () => {
+  const sql = migration("033_curriculum_roadmap.sql");
+  const tables = ["curriculum_subjects", "curriculum_subject_skill_map", "role_target_profiles", "skill_area_resources"];
+  it.each(tables)("%s has RLS enabled, no policies, and no client privileges", (t) => {
+    expect(sql).toMatch(new RegExp(`alter table public\\.${t} enable row level security`, "i"));
+    expect(sql).not.toMatch(/create policy/i);
+    expect(sql).toMatch(new RegExp(`revoke all on[^;]*public\\.${t}[^;]*from anon, authenticated`, "is"));
+  });
+  it("mappings and targets can only name real skill areas (composite FK)", () => {
+    expect((sql.match(/references public\.arena_skill_areas\(role_key, area_key\)/g) ?? []).length).toBe(3);
+  });
+});

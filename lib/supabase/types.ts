@@ -1538,6 +1538,123 @@ export type Database = {
             referencedRelation: "cohorts"
             referencedColumns: ["id"]
           },
+      curriculum_subjects: {
+        Row: {
+          branch: string
+          code: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          institution_id: string
+          name: string
+          semester: number | null
+          year: number
+        }
+        Insert: {
+          branch: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id: string
+          name: string
+          semester?: number | null
+          year: number
+        }
+        Update: {
+          branch?: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id?: string
+          name?: string
+          semester?: number | null
+          year?: number
+        }
+        Relationships: []
+      }
+      curriculum_subject_skill_map: {
+        Row: {
+          area_key: string
+          confirmed_at: string
+          confirmed_by: string | null
+          role_key: string
+          source: string
+          subject_id: string
+        }
+        Insert: {
+          area_key: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          role_key: string
+          source: string
+          subject_id: string
+        }
+        Update: {
+          area_key?: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          role_key?: string
+          source?: string
+          subject_id?: string
+        }
+        Relationships: []
+      }
+      role_target_profiles: {
+        Row: {
+          area_key: string
+          min_verified_count: number
+          role_key: string
+        }
+        Insert: {
+          area_key: string
+          min_verified_count: number
+          role_key: string
+        }
+        Update: {
+          area_key?: string
+          min_verified_count?: number
+          role_key?: string
+        }
+        Relationships: []
+      }
+      skill_area_resources: {
+        Row: {
+          active: boolean
+          area_key: string
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          role_key: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          active?: boolean
+          area_key: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: string
+          role_key: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          active?: boolean
+          area_key?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          role_key?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
           {
             foreignKeyName: "institution_memberships_institution_id_fkey"
           active_role_key: string | null

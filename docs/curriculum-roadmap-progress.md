@@ -1,6 +1,6 @@
 # Curriculum Roadmap Engine — Progress
 
-**Current phase:** 2 (Design) — Part A complete (see job-track docs), Phase 1 audit written.
+**Current phase:** 4 (gap-analysis engine) — Phases 1–3 done.
 
 ## Decisions
 - Admin gate = existing `can("organisation","admin",{organisationId})`; operator script activates one admin; no new role system.
@@ -11,5 +11,8 @@
 ## Done
 - Phase 1 audit (`docs/curriculum-roadmap-audit.md`).
 
+- Phase 2 design (audit doc appended).
+- Phase 3: migration 033 applied (4 private tables; seeds: Data Analyst target profile min 3 per enabled area, 2 curated certifications, flagged for product review). Admin backend: `getOrgAdmin` (existing `can(organisation, admin)`), `/api/admin/curriculum/*`, CSV import + preview, propose-only AI suggest, admin page `/admin/curriculum` (404 for non-admins), `scripts/grant-org-admin.mjs`. Live test (`lib/roadmap/admin.live.test.ts`) verifies gating (student, pending principal, cross-institution), no direct client access to any of the 4 tables (even as an admin), duplicates skipped, invalid areas rejected, replace-not-append mapping, cross-institution mapping/delete refused. Fixtures self-deleted (verified).
+
 ## Remaining
-Phases 2–7.
+Phases 4–7.
