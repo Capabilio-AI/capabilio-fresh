@@ -1,18 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Award, ChevronDown, ExternalLink, FileText, GitBranch, Link2, ShieldCheck, Sparkles, BadgeCheck, type LucideIcon } from "lucide-react";
+import { Award, ChevronDown, Download, ExternalLink, FileText, GitBranch, Link2, ShieldCheck, Sparkles, BadgeCheck, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { initialsOf } from "@/lib/dashboard/viewer";
 import type { VaultItem } from "@/lib/vault/data";
 import type { CapabilityGroup } from "@/lib/portfolio/view";
-import { evidenceLine } from "@/lib/portfolio/view";
+import { evidenceLine, toRadarData } from "@/lib/portfolio/view";
+import { derivePersona } from "@/lib/portfolio/persona";
 import { sourceLabel } from "@/lib/evidence/aggregate-capabilities";
 import type { ArenaTask, GithubEvidence, InterviewSummary } from "@/lib/portfolio/data";
 import { INTERVIEW_MODE_LABEL } from "@/lib/interview/session";
 import type { PortfolioElo } from "@/lib/portfolio/elo";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
+import { SkillRadarChart } from "@/components/dashboard/SkillRadarChart";
 
 const TYPE_ICON: Record<string, LucideIcon> = { certificate: Award, project: Sparkles, resume: FileText, link: Link2, other: FileText };
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "");
@@ -117,11 +119,23 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, intervie
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   const demonstrated = groups.flatMap((g) => g.capabilities);
   const githubVerified = github?.verified ?? false;
+  const persona = derivePersona(groups);
+  const radarData = toRadarData(demonstrated);
 
   return (
     <div className="flex flex-col gap-5">
       {/* Hero */}
       <Card>
+        <div className="mb-4 flex justify-end print:hidden">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 font-lp-mono text-[11.5px] font-semibold text-app-charcoal hover:bg-app-background"
+          >
+            <Download size={13} />
+            Download PDF
+          </button>
+        </div>
         <div className="flex flex-wrap items-center gap-5">
           <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-app-orange-container font-lp-display text-[22px] font-bold text-app-orange">
             {viewer.avatarUrl ? (
@@ -169,10 +183,24 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, intervie
         </dl>
       </Card>
 
+      {/* AI-assigned identity — derived from verified evidence only */}
+      {persona && (
+        <Card>
+          <SectionTitle title={persona.title} sub={persona.description} />
+          <p className="font-lp-body text-[12.5px] text-app-muted">Assigned from this candidate&apos;s strongest verified capability group — not a self-assessment.</p>
+        </Card>
+      )}
+
       {/* Demonstrated capabilities */}
       {groups.length > 0 && (
         <Card>
           <SectionTitle title="Demonstrated capabilities" sub="Each capability is backed by verified Arena work or observed GitHub activity — never self-reported." />
+          {radarData.length > 0 && (
+            <div className="mb-6 rounded-2xl border border-app-border p-4">
+              <p className="mb-1 font-lp-mono text-[10.5px] text-app-muted">EVIDENCE DENSITY — not a skill level, a count of verified proof per skill</p>
+              <SkillRadarChart data={radarData} series={[{ key: "value", label: "Evidence density", color: "#ff5701" }]} height={260} />
+            </div>
+          )}
           <div className="flex flex-col gap-6">
             {groups.map((group) => (
               <div key={group.name}>

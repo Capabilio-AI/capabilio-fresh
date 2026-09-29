@@ -28,12 +28,14 @@ export default async function PortfolioPage() {
     <div>
       <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Portfolio</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">What you&apos;ve demonstrated, not what you&apos;ve claimed. Built automatically from verified work.</p>
-      <div className="mt-4">
+      <div className="mt-4 print:hidden">
         <DashboardSubNav />
       </div>
 
       <div className="flex flex-col gap-5 pt-6">
-        <ShareLinkCard initialUrl={shareUrl} initialIsPublic={shareRow?.portfolio_public ?? false} />
+        <div className="print:hidden">
+          <ShareLinkCard initialUrl={shareUrl} initialIsPublic={shareRow?.portfolio_public ?? false} />
+        </div>
         <PortfolioBody
           viewer={data.viewer}
           statedRole={data.statedRole}

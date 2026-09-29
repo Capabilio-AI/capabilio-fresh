@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCapabilityGroups, evidenceLine, type PortfolioEvidence } from "./view";
+import { buildCapabilityGroups, evidenceLine, toRadarData, type PortfolioEvidence } from "./view";
 
 const row = (over: Partial<PortfolioEvidence>): PortfolioEvidence => ({
   skill: "SQL",
@@ -41,5 +41,23 @@ describe("portfolio capability groups", () => {
   it("orders evidence most recent first", () => {
     const groups = buildCapabilityGroups([row({ observedAt: "2026-09-01T00:00:00Z", sourceUrl: "/old" }), row({ observedAt: "2026-09-25T00:00:00Z", sourceUrl: "/new" })]);
     expect(groups[0].capabilities[0].evidence[0].sourceUrl).toBe("/new");
+  });
+});
+
+describe("toRadarData", () => {
+  it("caps evidence density at 100 rather than showing a self-assessed level", () => {
+    const groups = buildCapabilityGroups([
+      row({ sourceUrl: "/a1" }),
+      row({ sourceUrl: "/a2" }),
+      row({ sourceUrl: "/a3" }),
+      row({ sourceUrl: "/a4" }),
+      row({ sourceUrl: "/a5" }),
+    ]);
+    const [point] = toRadarData(groups[0].capabilities);
+    expect(point).toEqual({ subject: "SQL", value: 100 });
+  });
+
+  it("returns nothing when there is no evidence", () => {
+    expect(toRadarData([])).toEqual([]);
   });
 });

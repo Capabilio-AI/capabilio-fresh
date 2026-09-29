@@ -45,6 +45,26 @@ export function buildCapabilityGroups(rows: PortfolioEvidence[]): CapabilityGrou
     .sort((a, b) => (a.name === GITHUB_GROUP ? 1 : b.name === GITHUB_GROUP ? -1 : b.capabilities.length - a.capabilities.length));
 }
 
+export interface RadarPoint {
+  subject: string;
+  value: number;
+  [key: string]: string | number;
+}
+
+/**
+ * Pure. Feeds the portfolio's skill radar. The value is evidence DENSITY
+ * (how many verified items back this skill, capped at 100), never a
+ * self-assessed skill level — 4+ pieces of evidence maxes the axis out.
+ * Returns [] when there's nothing demonstrated yet; the radar simply
+ * doesn't render rather than showing an empty/self-reported shape.
+ */
+export function toRadarData(capabilities: PortfolioCapability[], max = 8): RadarPoint[] {
+  return [...capabilities]
+    .sort((a, b) => b.evidenceCount - a.evidenceCount)
+    .slice(0, max)
+    .map((c) => ({ subject: c.skill, value: Math.min(100, c.evidenceCount * 25) }));
+}
+
 /** Pure. "3 verified Arena tasks · GitHub activity" — never a level, rank or score. */
 export function evidenceLine(cap: PortfolioCapability): string {
   const parts: string[] = [];
