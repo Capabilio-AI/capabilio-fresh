@@ -1,4 +1,5 @@
 import { aggregateDemonstratedCapabilities, type DemonstratedCapability, type EvidenceRecord } from "@/lib/evidence/aggregate-capabilities";
+import type { PortfolioElo } from "@/lib/portfolio/elo";
 
 export interface PortfolioEvidence extends EvidenceRecord {
   metadata: { parentSkill?: string; title?: string; company?: string; skillArea?: string; attemptId?: string } | null;
@@ -63,6 +64,36 @@ export function toRadarData(capabilities: PortfolioCapability[], max = 8): Radar
     .sort((a, b) => b.evidenceCount - a.evidenceCount)
     .slice(0, max)
     .map((c) => ({ subject: c.skill, value: Math.min(100, c.evidenceCount * 25) }));
+}
+
+/**
+ * Pure. One short paragraph built entirely from verified counts already on
+ * the page — never invented text, consistent with "demonstrated, not claimed".
+ */
+export function buildProfessionalSummary({
+  statedRole,
+  groups,
+  elo,
+  keyEvidence,
+}: {
+  statedRole: string | null;
+  groups: CapabilityGroup[];
+  elo: PortfolioElo;
+  keyEvidence: string[];
+}): string {
+  const topSkills = groups
+    .flatMap((g) => g.capabilities)
+    .slice(0, 3)
+    .map((c) => c.skill);
+  const direction = statedRole ? `Aspiring ${statedRole}` : "Early-career candidate";
+
+  return [
+    topSkills.length ? `${direction} with demonstrated strength in ${topSkills.join(", ")}.` : `${direction}, still building a demonstrated track record.`,
+    `Rated ${elo.tier.label} (ELO ${elo.rating}) on Capabilio Arena.`,
+    keyEvidence.length ? `Backed by ${keyEvidence.join(", ")}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 /** Pure. "3 verified Arena tasks · GitHub activity" — never a level, rank or score. */

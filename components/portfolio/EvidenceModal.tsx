@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, CheckCircle2, CircleX } from "lucide-react";
-import type { AttemptEvidence } from "@/lib/arena/attempt-evidence";
+import { sqlOutputDetail, type AttemptEvidence } from "@/lib/arena/attempt-evidence";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 
@@ -88,6 +88,44 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
                 <pre className="mt-2 max-h-[280px] overflow-auto whitespace-pre-wrap rounded-lg bg-app-background p-3 font-lp-mono text-[12px] text-app-charcoal">{state.data.submissionText}</pre>
               </section>
             )}
+
+            {(() => {
+              const output = sqlOutputDetail(state.data.grade?.detail);
+              if (!output) return null;
+              return (
+                <section className="mt-3 rounded-xl border border-app-border p-4">
+                  <h3 className="font-lp-body text-[13px] font-semibold text-app-charcoal">Output</h3>
+                  {"error" in output ? (
+                    <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-app-rose-container p-3 font-lp-mono text-[12px] text-app-rose">{output.error}</pre>
+                  ) : (
+                    <div className="mt-2 max-h-[240px] overflow-auto rounded-lg border border-app-border">
+                      <table className="w-full border-collapse font-lp-mono text-[12px]">
+                        <thead className="sticky top-0 bg-app-background">
+                          <tr>
+                            {output.columns.map((c) => (
+                              <th key={c} className="border-b border-app-border px-2.5 py-1.5 text-left font-semibold text-app-charcoal">
+                                {c}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {output.rows.map((row, i) => (
+                            <tr key={i} className="border-b border-app-border last:border-0 even:bg-app-background/60">
+                              {row.map((cell, ci) => (
+                                <td key={ci} className={`whitespace-nowrap px-2.5 py-1 ${cell === null ? "text-app-rose" : "text-app-charcoal"}`}>
+                                  {cell === null ? "NULL" : String(cell)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
 
             <section className="mt-3 rounded-xl border border-app-border p-4">
               <h3 className="font-lp-body text-[13px] font-semibold text-app-charcoal">Audit trail</h3>

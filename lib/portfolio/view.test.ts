@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildCapabilityGroups, evidenceLine, toRadarData, type PortfolioEvidence } from "./view";
+import { getTier } from "./elo";
+import { buildCapabilityGroups, buildProfessionalSummary, evidenceLine, toRadarData, type PortfolioEvidence } from "./view";
 
 const row = (over: Partial<PortfolioEvidence>): PortfolioEvidence => ({
   skill: "SQL",
@@ -59,5 +60,24 @@ describe("toRadarData", () => {
 
   it("returns nothing when there is no evidence", () => {
     expect(toRadarData([])).toEqual([]);
+  });
+});
+
+describe("buildProfessionalSummary", () => {
+  it("composes direction, top skills, rating and evidence counts from verified data only", () => {
+    const groups = buildCapabilityGroups([row({}), row({ skill: "Statistics", sourceUrl: "/a2" })]);
+    const elo = { rating: 1450, tier: getTier(1450), progressToNextTier: 83 };
+
+    const summary = buildProfessionalSummary({ statedRole: "Data Analyst", groups, elo, keyEvidence: ["2 verified Arena tasks"] });
+
+    expect(summary).toBe("Aspiring Data Analyst with demonstrated strength in SQL, Statistics. Rated Master (ELO 1450) on Capabilio Arena. Backed by 2 verified Arena tasks.");
+  });
+
+  it("falls back to a plain statement when there's no evidence yet (no fabricated skills)", () => {
+    const elo = { rating: 400, tier: getTier(400), progressToNextTier: 66 };
+
+    const summary = buildProfessionalSummary({ statedRole: null, groups: [], elo, keyEvidence: [] });
+
+    expect(summary).toBe("Early-career candidate, still building a demonstrated track record. Rated Rookie (ELO 400) on Capabilio Arena.");
   });
 });

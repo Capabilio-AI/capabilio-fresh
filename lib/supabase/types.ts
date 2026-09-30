@@ -264,7 +264,7 @@ export type Database = {
           },
         ]
       }
-      arena_challenge_stats: {
+      arena_stream_stats: {
         Row: {
           current_streak: number
           last_completed_week: string | null
@@ -291,6 +291,63 @@ export type Database = {
           tasks_completed?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      arena_domain_stats: {
+        Row: {
+          current_streak: number
+          last_completed_week: string | null
+          longest_streak: number
+          points: number
+          tasks_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      arena_stream_weeks: {
+        Row: {
+          challenge_ids: string[]
+          created_at: string
+          id: string
+          scope_key: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          challenge_ids?: string[]
+          created_at?: string
+          id?: string
+          scope_key: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          challenge_ids?: string[]
+          created_at?: string
+          id?: string
+          scope_key?: string
+          user_id?: string
+          week_start?: string
         }
         Relationships: []
       }

@@ -7,7 +7,7 @@ import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { initialsOf } from "@/lib/dashboard/viewer";
 import type { VaultItem } from "@/lib/vault/data";
 import type { CapabilityGroup } from "@/lib/portfolio/view";
-import { evidenceLine, toRadarData } from "@/lib/portfolio/view";
+import { buildProfessionalSummary, evidenceLine, toRadarData } from "@/lib/portfolio/view";
 import { derivePersona } from "@/lib/portfolio/persona";
 import { sourceLabel } from "@/lib/evidence/aggregate-capabilities";
 import type { ArenaTask, GithubEvidence, InterviewSummary } from "@/lib/portfolio/data";
@@ -121,6 +121,7 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, intervie
   const githubVerified = github?.verified ?? false;
   const persona = derivePersona(groups);
   const radarData = toRadarData(demonstrated);
+  const summary = buildProfessionalSummary({ statedRole, groups, elo, keyEvidence });
 
   return (
     <div className="flex flex-col gap-5">
@@ -162,6 +163,12 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, intervie
             </div>
           </div>
         </div>
+      </Card>
+
+      {/* Professional summary — composed entirely from verified counts, never invented */}
+      <Card>
+        <SectionTitle title="Professional summary" />
+        <p className="font-lp-body text-[14px] leading-relaxed text-app-charcoal">{summary}</p>
       </Card>
 
       {/* Recruiter snapshot */}
