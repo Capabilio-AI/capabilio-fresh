@@ -9,7 +9,7 @@ export interface AttemptEvidence {
   requester: string | null;
   scenario: string;
   objectiveLines: string[];
-  grade: { passed: boolean; message: string; checks: { label: string; passed: boolean }[] } | null;
+  grade: { passed: boolean; message: string; checks: { label: string; passed: boolean }[]; detail?: unknown } | null;
   submissionText: string | null;
   completedAt: string | null;
   assignedAt: string;
@@ -20,6 +20,15 @@ export interface AttemptEvidence {
   generationModel: string | null;
   generationVersion: string | null;
   gradingVersion: string | null;
+}
+
+export type SqlOutputDetail = { columns: string[]; rows: (string | number | boolean | null)[][]; truncated: boolean } | { error: string };
+
+/** Grading `detail` is tool-specific and only the SQL workspace populates it today (its own query result). */
+export function sqlOutputDetail(detail: unknown): SqlOutputDetail | null {
+  if (typeof detail !== "object" || detail === null) return null;
+  if ("error" in detail || "columns" in detail) return detail as SqlOutputDetail;
+  return null;
 }
 
 const TOOL_LABEL: Record<string, string> = {

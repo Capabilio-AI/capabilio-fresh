@@ -7,8 +7,7 @@ import { ThinkingOrb } from "thinking-orbs";
 interface Entry {
   userId: string;
   name: string | null;
-  branch: string | null;
-  points: number;
+  rating: number;
   tasksCompleted: number;
   streak: number;
   rank: number;
@@ -21,52 +20,23 @@ function initialsOf(name: string | null): string {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
 }
 
-export function ChallengeLeaderboard() {
-  const [scope, setScope] = useState<"global" | "branch">("global");
+/** Domain's own ELO-rank leaderboard — global only, no branch scope (career choice isn't a branch). */
+export function DomainLeaderboard() {
   const [entries, setEntries] = useState<Entry[] | null>(null);
-  const [viewerBranch, setViewerBranch] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/arena/challenges/leaderboard?scope=${scope}`)
+    fetch("/api/arena/domain/leaderboard")
       .then((res) => res.json())
-      .then((data) => {
-        setEntries(data.entries ?? []);
-        setViewerBranch(data.viewerBranch ?? null);
-      })
+      .then((data) => setEntries(data.entries ?? []))
       .catch(() => setEntries([]));
-  }, [scope]);
-
-  function selectScope(next: "global" | "branch") {
-    // Reset happens here (an event handler), not at the top of the effect
-    // above -- a synchronous setState as the first line of an effect body
-    // triggers react-hooks/set-state-in-effect's cascading-render warning.
-    setEntries(null);
-    setScope(next);
-  }
+  }, []);
 
   return (
     <div>
       <div className="text-center">
         <Trophy size={28} className="mx-auto text-app-orange" />
-        <h2 className="mt-2 font-lp-display text-[22px] font-bold text-app-charcoal">Challenge Leaderboard</h2>
-        <p className="mt-1 font-lp-body text-[13px] text-app-muted">Complete weekly challenges to climb the ranks.</p>
-      </div>
-
-      <div className="mx-auto mt-5 flex w-fit gap-1 rounded-lg border border-app-border bg-white p-1">
-        <button
-          type="button"
-          onClick={() => selectScope("global")}
-          className={`rounded-md px-4 py-1.5 font-lp-body text-[12.5px] font-semibold ${scope === "global" ? "bg-app-charcoal text-white" : "text-app-muted"}`}
-        >
-          Global Rank
-        </button>
-        <button
-          type="button"
-          onClick={() => selectScope("branch")}
-          className={`rounded-md px-4 py-1.5 font-lp-body text-[12.5px] font-semibold ${scope === "branch" ? "bg-app-charcoal text-white" : "text-app-muted"}`}
-        >
-          My Branch{viewerBranch ? ` (${viewerBranch})` : ""}
-        </button>
+        <h2 className="mt-2 font-lp-display text-[22px] font-bold text-app-charcoal">Domain Leaderboard</h2>
+        <p className="mt-1 font-lp-body text-[13px] text-app-muted">Ranked by verified ELO rating across your career-role work tickets.</p>
       </div>
 
       {!entries ? (
@@ -74,7 +44,7 @@ export function ChallengeLeaderboard() {
           <ThinkingOrb state="searching" size={64} theme="light" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="mt-10 text-center font-lp-body text-[13px] text-app-muted">No rankings yet — be the first to complete a challenge.</p>
+        <p className="mt-10 text-center font-lp-body text-[13px] text-app-muted">No rankings yet — be the first to complete a Domain ticket.</p>
       ) : (
         <div className="mt-8">
           <div className="flex items-end justify-center gap-6">
@@ -89,17 +59,14 @@ export function ChallengeLeaderboard() {
                   <span className="w-8 font-lp-mono text-[12px] text-app-muted">#{e.rank}</span>
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-app-background font-lp-mono text-[11px] font-semibold text-app-charcoal">{initialsOf(e.name)}</span>
                   <div>
-                    <span className="font-lp-body text-[13px] font-medium text-app-charcoal">
-                      {e.isViewer ? "You" : (e.name ?? "Student")}
-                    </span>
-                    {e.branch && <span className="ml-1.5 rounded-full bg-app-background px-1.5 py-0.5 font-lp-mono text-[9.5px] text-app-muted">{e.branch}</span>}
+                    <span className="font-lp-body text-[13px] font-medium text-app-charcoal">{e.isViewer ? "You" : (e.name ?? "Student")}</span>
                     <p className="flex items-center gap-2 font-lp-mono text-[10.5px] text-app-muted">
-                      <span className="flex items-center gap-0.5"><Target size={10} />{e.tasksCompleted} Tasks</span>
+                      <span className="flex items-center gap-0.5"><Target size={10} />{e.tasksCompleted} Tickets</span>
                       {e.streak > 0 && <span className="flex items-center gap-0.5"><Flame size={10} />{e.streak} Streak</span>}
                     </p>
                   </div>
                 </div>
-                <span className="font-lp-display text-[16px] font-bold text-app-orange">{e.points} pts</span>
+                <span className="font-lp-display text-[16px] font-bold text-app-orange">{e.rating} ELO</span>
               </div>
             ))}
           </div>
@@ -121,8 +88,7 @@ function PodiumEntry({ entry }: { entry: Entry }) {
         {initialsOf(entry.name)}
       </span>
       <p className="font-lp-body text-[13px] font-semibold text-app-charcoal">{entry.isViewer ? "You" : (entry.name ?? "Student")}</p>
-      {entry.branch && <span className="rounded-full bg-app-background px-2 py-0.5 font-lp-mono text-[9.5px] text-app-muted">{entry.branch}</span>}
-      <span className="font-lp-display text-[18px] font-bold text-app-orange">{entry.points} pts</span>
+      <span className="font-lp-display text-[18px] font-bold text-app-orange">{entry.rating} ELO</span>
     </div>
   );
 }

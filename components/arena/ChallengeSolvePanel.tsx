@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { Countdown } from "./workstations/Countdown";
 
 export interface ChallengeDetail {
   id: string;
@@ -36,6 +37,7 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<{ stdout: string; stderr: string } | null>(null);
   const [result, setResult] = useState<{ isCorrect: boolean; pointsEarned: number } | null>(null);
+  const [expiresAt] = useState(() => new Date(Date.now() + challenge.time_limit_minutes * 60_000).toISOString());
 
   async function handleRun() {
     setRunning(true);
@@ -98,6 +100,9 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
       <div className="flex items-center gap-2">
         <span className={`w-fit rounded-full px-2 py-0.5 font-lp-mono text-[10px] font-semibold ${DIFFICULTY_CLASS[challenge.difficulty]}`}>{challenge.difficulty}</span>
         <span className="font-lp-mono text-[10.5px] text-app-muted">{challenge.category}</span>
+        <span className="ml-auto flex items-center gap-1 font-lp-mono text-[11.5px] font-semibold text-app-charcoal">
+          <Countdown target={expiresAt} onDone={onDone} />
+        </span>
       </div>
       <h2 className="mt-2 font-lp-display text-[18px] font-semibold text-app-charcoal">{challenge.title}</h2>
       <p className="mt-2 font-lp-body text-[13px] leading-relaxed text-app-muted">{challenge.scenario}</p>

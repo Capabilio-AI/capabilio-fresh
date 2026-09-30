@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Json } from "@/lib/supabase/types";
+import { TIME_LIMIT_MINUTES } from "@/lib/arena-challenges/timer";
 
 export type Difficulty = "easy" | "medium" | "hard";
 
@@ -12,7 +13,14 @@ export function difficultyForRating(rating: number): Difficulty {
   return "hard";
 }
 
-export const TIME_LIMIT_MINUTES: Record<Difficulty, number> = { easy: 20, medium: 30, hard: 40 };
+// Shared with Stream (lib/arena-challenges/timer.ts) — both tracks run the same clock.
+export { TIME_LIMIT_MINUTES };
+
+// Fixed ELO step by difficulty — mirrors the same lookup in the
+// complete_workstation_attempt RPC (supabase/migrations/029_arena_track_separation.sql),
+// which is the actual source of truth; this copy is only for the pre-submit
+// badge shown in WorkstationShell and must stay in sync with it.
+export const ELO_BY_DIFFICULTY: Record<Difficulty, number> = { easy: 8, medium: 12, hard: 15 };
 
 export interface GenerationContext {
   roleName: string;

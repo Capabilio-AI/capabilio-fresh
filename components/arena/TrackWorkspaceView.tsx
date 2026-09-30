@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Clock, Lock } from "lucide-react";
 import { ChallengeSolvePanel, type ChallengeDetail } from "./ChallengeSolvePanel";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 
@@ -68,22 +68,37 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
                 type="button"
                 onClick={() => setOpenChallenge(c)}
                 disabled={c.solved}
-                className={`flex min-h-[220px] flex-col rounded-3xl p-7 text-left transition-transform ${palette.bg} ${c.solved ? "opacity-60" : "hover:-translate-y-0.5"}`}
+                className={`group relative flex min-h-[220px] flex-col rounded-3xl p-7 text-left transition-all duration-200 ${palette.bg} ${
+                  c.solved ? "cursor-default" : "hover:-translate-y-1 hover:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.3)]"
+                }`}
               >
-                <div className="flex items-center justify-between">
+                {c.solved && (
+                  <span className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-app-success text-white shadow-sm">
+                    <Check size={16} strokeWidth={3} />
+                  </span>
+                )}
+                <div className="flex items-center justify-between gap-2">
                   <span className={`font-lp-mono text-[12px] font-bold uppercase tracking-wide ${palette.accent}`}>{`>_ ${c.difficulty}`}</span>
-                  <span className={`rounded-full bg-white px-3 py-1 font-lp-body text-[12px] font-bold ${palette.accent}`}>+{pointsForDifficulty(c.difficulty)} Pts</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal/70">
+                      <Clock size={11} />
+                      {c.time_limit_minutes}m
+                    </span>
+                    <span className={`rounded-full bg-white px-3 py-1 font-lp-body text-[12px] font-bold ${palette.accent}`}>+{pointsForDifficulty(c.difficulty)} Pts</span>
+                  </div>
                 </div>
                 <p className="mt-6 font-lp-display text-[20px] font-bold leading-snug text-app-charcoal">{c.title}</p>
                 <p className="mt-2 font-lp-body text-[13.5px] leading-relaxed text-app-charcoal/65">{WORKSPACE_HINT[c.kind] ?? WORKSPACE_HINT.code}</p>
-                <span className={`mt-auto flex items-center gap-1 pt-6 font-lp-body text-[14px] font-bold ${palette.accent}`}>
+                <span className={`mt-auto flex items-center gap-1.5 pt-6 font-lp-body text-[14px] font-bold ${c.solved ? "text-app-success" : palette.accent}`}>
                   {c.solved ? (
                     <>
-                      Solved <Check size={15} />
+                      <Lock size={13} />
+                      Completed — locked
                     </>
                   ) : (
                     <>
-                      Solve Task <ArrowRight size={15} />
+                      Solve Task
+                      <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                     </>
                   )}
                 </span>

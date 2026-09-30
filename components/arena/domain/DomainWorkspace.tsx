@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, CheckCircle2, Clock, Code2, Loader2, Lock, Trophy } from "lucide-react";
-import { pointsForDifficulty } from "@/lib/arena-challenges/points";
+import { ThinkingOrb } from "thinking-orbs";
+import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { Countdown } from "../workstations/Countdown";
 import { WorkstationShell, type PublicAttempt } from "../workstations/WorkstationShell";
 
@@ -70,7 +71,7 @@ export function DomainWorkspace() {
   if (!data && !error) {
     return (
       <div className="flex justify-center py-16">
-        <Loader2 size={22} className="animate-spin text-app-muted" />
+        <ThinkingOrb state="connecting" size={64} theme="light" />
       </div>
     );
   }
@@ -132,7 +133,7 @@ export function DomainWorkspace() {
 
       {!error && (data?.state === "ready" || starting) && data?.state !== "active" && (
         <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-3xl border border-[#E0E0E0] bg-white p-10 text-center">
-          <Loader2 size={26} className="animate-spin text-app-orange" />
+          <ThinkingOrb state="composing" size={64} theme="light" aria-label="Generating today's task" />
           <p className="font-lp-body text-[15px] font-medium text-[#202124]">Preparing today&apos;s task…</p>
           <p className="max-w-sm font-lp-body text-[13px] text-app-muted">Generating a fresh scenario and dataset, then checking it can be graded correctly. This usually takes 10–30 seconds.</p>
         </div>
@@ -146,7 +147,7 @@ export function DomainWorkspace() {
               Today&apos;s Mission
             </span>
             <span className="flex items-center gap-1.5 rounded-full bg-[#F1F3F4] px-3.5 py-1.5 font-lp-body text-[15px] font-semibold text-[#202124]">
-              <Trophy size={16} strokeWidth={2.5} className="text-app-orange" />+{pointsForDifficulty(data.attempt.challenge.difficulty)} pts
+              <Trophy size={16} strokeWidth={2.5} className="text-app-orange" />+{ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO
             </span>
           </div>
           <div>

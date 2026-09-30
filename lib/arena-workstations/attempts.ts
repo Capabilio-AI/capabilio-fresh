@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/lib/supabase/types";
 import { GROQ_MODEL } from "@/lib/ai/groq";
-import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 import { advanceStreak } from "@/lib/arena-challenges/streak";
 import { currentWeekStart } from "@/lib/arena-challenges/week";
 import { COOLDOWN_MS, resolveDailyState, type AssignmentRow } from "./daily";
@@ -10,7 +9,7 @@ import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, pickActiveRole, type SkillAreaRow } from "./taxonomy";
 import { logArenaEvent } from "./log";
-import { GenerationRejected, difficultyForRating, type GeneratedChallenge, type GradeResult } from "./types";
+import { GenerationRejected, difficultyForRating, ELO_BY_DIFFICULTY, type GeneratedChallenge, type GradeResult } from "./types";
 
 type Service = SupabaseClient<Database>;
 
@@ -207,7 +206,7 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
     throw new AttemptError("Grading is temporarily unavailable — your task is still open, try again.", 502);
   }
 
-  const gradeJson = { passed: grade.passed, message: grade.message, checks: grade.checks, grading_version: tool.gradingVersion } as unknown as Json;
+  const gradeJson = { passed: grade.passed, message: grade.message, checks: grade.checks, detail: grade.detail ?? null, grading_version: tool.gradingVersion } as unknown as Json;
   const submissionJson = parsed.data as unknown as Json;
   const nowIso = new Date().toISOString();
 
@@ -220,8 +219,8 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   }
 
   try {
-    const points = pointsForDifficulty(challenge.difficulty);
-    const { data: stats } = await service.from("arena_challenge_stats").select("current_streak, longest_streak, last_completed_week").eq("user_id", userId).maybeSingle();
+    const points = ELO_BY_DIFFICULTY[challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy;
+    const { data: stats } = await service.from("arena_domain_stats").select("current_streak, longest_streak, last_completed_week").eq("user_id", userId).maybeSingle();
     const streak = advanceStreak({ currentStreak: stats?.current_streak ?? 0, longestStreak: stats?.longest_streak ?? 0, lastCompletedWeek: stats?.last_completed_week ?? null }, currentWeekStart());
     const { data: completion, error } = await service.rpc("complete_workstation_attempt", {
       p_attempt_id: attemptId,

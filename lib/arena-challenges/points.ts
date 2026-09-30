@@ -3,9 +3,9 @@
 // that difficulty here, at submit time, not trusted from the model's own
 // output.
 export const POINTS_BY_DIFFICULTY: Record<"easy" | "medium" | "hard", number> = {
-  easy: 50,
-  medium: 70,
-  hard: 100,
+  easy: 15,
+  medium: 20,
+  hard: 25,
 };
 
 export function pointsForDifficulty(difficulty: string): number {

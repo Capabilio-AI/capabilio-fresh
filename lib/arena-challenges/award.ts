@@ -3,9 +3,9 @@ import type { Database } from "@/lib/supabase/types";
 import { advanceStreak } from "./streak";
 import { currentWeekStart } from "./week";
 
-/** Adds a first-time correct completion to the student's running points/streak (shared by Stream and Domain challenges). */
+/** Adds a first-time correct Stream completion to the student's running points/streak — Stream-only, see arena_domain_stats for Domain's own. */
 export async function addChallengePoints(service: SupabaseClient<Database>, userId: string, points: number, nowIso: string): Promise<void> {
-  const { data: stats } = await service.from("arena_challenge_stats").select("points, tasks_completed, current_streak, longest_streak, last_completed_week").eq("user_id", userId).maybeSingle();
+  const { data: stats } = await service.from("arena_stream_stats").select("points, tasks_completed, current_streak, longest_streak, last_completed_week").eq("user_id", userId).maybeSingle();
   const nextStreak = advanceStreak(
     {
       currentStreak: stats?.current_streak ?? 0,
@@ -14,7 +14,7 @@ export async function addChallengePoints(service: SupabaseClient<Database>, user
     },
     currentWeekStart()
   );
-  await service.from("arena_challenge_stats").upsert({
+  await service.from("arena_stream_stats").upsert({
     user_id: userId,
     points: (stats?.points ?? 0) + points,
     tasks_completed: (stats?.tasks_completed ?? 0) + 1,

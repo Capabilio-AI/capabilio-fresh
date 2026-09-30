@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, CircleX, Database } from "lucide-react";
-import { pointsForDifficulty } from "@/lib/arena-challenges/points";
+import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { Countdown } from "./Countdown";
 import { WORKSTATIONS } from "./registry";
 
@@ -54,6 +54,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
   const [feedback, setFeedback] = useState<Feedback | null>(attempt.lastGrade);
   const closed = Boolean(feedback?.passed);
   const [requesterName, requesterTitle] = (challenge.requester ?? "").split("·").map((s) => s.trim());
+  const [expiresAt] = useState(() => new Date(Date.parse(attempt.assignedAt) + challenge.time_limit_minutes * 60_000).toISOString());
 
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -95,7 +96,8 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
         <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px]">
           <span className="text-white/60">{attempt.area.name}</span>
           <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? "Verified" : "In progress"}</span>
-          <span className="font-semibold text-app-orange">+{pointsForDifficulty(challenge.difficulty)} pts</span>
+          {!closed && <Countdown target={expiresAt} onDone={() => onClose(false)} />}
+          <span className="font-semibold text-app-orange">+{ELO_BY_DIFFICULTY[challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO</span>
         </span>
       </header>
 
@@ -143,7 +145,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
             <div className={`rounded-xl border px-5 py-4 ${feedback.passed ? "border-app-success/30 bg-app-success-container" : "border-app-warning/30 bg-app-warning-container"}`} role="status">
               <p className={`flex items-center gap-2 font-lp-body text-[14px] font-semibold ${feedback.passed ? "text-app-success" : "text-app-warning"}`}>
                 {feedback.passed ? <CheckCircle2 size={17} /> : <CircleX size={17} />}
-                {feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} pts` : ""}` : "Not quite — the task is still open"}
+                {feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : "Not quite — the task is still open"}
               </p>
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
               {feedback.checks.length > 0 && (
