@@ -6,13 +6,16 @@ import { Loader2 } from "lucide-react";
 import { searchBranches } from "@/lib/branch-catalog";
 import { CSV_TEMPLATE, parseCurriculumCsv, type CsvSubjectRow } from "@/lib/roadmap/csv";
 import type { AdminSubject } from "@/lib/roadmap/admin-data";
+import type { ExtractionRecord } from "@/lib/roadmap/extract/types";
 import { SubjectMappingRow } from "./SubjectMappingRow";
+import { SyllabusExtraction } from "./SyllabusExtraction";
 
 interface Props {
   subjects: AdminSubject[];
   roleKey: string;
   roleName: string;
   areas: { key: string; name: string }[];
+  extraction: ExtractionRecord | null;
 }
 
 const FIELD = "o-input";
@@ -23,7 +26,7 @@ async function post(body: unknown): Promise<{ ok: boolean; added?: number }> {
   return { ok: res.ok, added: json?.added };
 }
 
-export function CurriculumManager({ subjects, roleKey, roleName, areas }: Props) {
+export function CurriculumManager({ subjects, roleKey, roleName, areas, extraction }: Props) {
   const router = useRouter();
   const [branch, setBranch] = useState("");
   const [year, setYear] = useState("1");
@@ -156,6 +159,8 @@ export function CurriculumManager({ subjects, roleKey, roleName, areas }: Props)
         {csvErrors.length > 0 && <ul className="mt-2 list-disc pl-5 font-lp-body text-[12px] text-app-orange" role="alert">{csvErrors.slice(0, 8).map((e) => <li key={e}>{e}</li>)}</ul>}
         {preview && <p className="mt-2 font-lp-body text-[12px] text-app-muted">Preview: {preview.slice(0, 5).map((r) => `${r.name} (${r.branch}, Y${r.year})`).join("; ")}{preview.length > 5 ? "…" : ""}</p>}
       </section>
+
+      <SyllabusExtraction initial={extraction} roleKey={roleKey} areas={areas} onMessage={setMessage} />
 
       {message && <p className="font-lp-body text-[12.5px] text-app-charcoal" role="status">{message}</p>}
 

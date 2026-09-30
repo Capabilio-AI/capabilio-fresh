@@ -16,5 +16,6 @@ export async function POST(request: Request) {
 
   const result = await addSubjects(createServiceClient(), admin, parsed.data);
   if (!result.ok) return NextResponse.json({ error: result.message }, { status: result.status });
-  return NextResponse.json({ ok: true, added: result.count });
+  // `subjects` = the rows this call created (skipped duplicates are absent), so a caller can attach mappings to them
+  return NextResponse.json({ ok: true, added: result.count, subjects: result.subjects });
 }

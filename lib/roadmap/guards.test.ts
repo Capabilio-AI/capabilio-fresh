@@ -67,6 +67,11 @@ describe("AI never touches what the student is shown", () => {
     expect(read("lib/roadmap/suggest.ts")).not.toMatch(/supabase|\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
     expect(read("app/api/admin/curriculum/suggest-mapping/route.ts")).not.toMatch(/\.insert\(|\.update\(|\.upsert\(|\.delete\(|setMapping|addSubjects/);
   });
+  it("syllabus extraction only stages: no extraction code or route touches the curriculum tables directly", () => {
+    const files = [...walk("lib/roadmap/extract"), ...walk("app/api/admin/curriculum/extractions")].filter((f) => !f.endsWith(".test.ts"));
+    expect(files.length).toBeGreaterThan(5);
+    for (const f of files) expect(read(f), f).not.toMatch(/curriculum_subjects|curriculum_subject_skill_map|addSubjects|setMapping/);
+  });
   it("the gap engine is pure: no imports at all", () => {
     expect(read("lib/roadmap/build.ts")).not.toMatch(/^import /m);
   });

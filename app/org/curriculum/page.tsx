@@ -4,6 +4,7 @@ import { orgPageContext } from "@/lib/org/page";
 import { listSubjectsForAdmin } from "@/lib/roadmap/admin-data";
 import { listEnabledRoles, loadRoleTaxonomy } from "@/lib/arena-workstations/taxonomy";
 import { CurriculumManager } from "@/components/admin/CurriculumManager";
+import { latestExtraction } from "@/lib/roadmap/extract/store";
 import { PageHeader } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Curriculum — Capabilio AI" };
@@ -16,6 +17,7 @@ export default async function OrgCurriculumPage() {
   if (!role) notFound();
   const { areas } = await loadRoleTaxonomy(service, role.role_key);
   const subjects = await listSubjectsForAdmin(service, ctx.institutionId, role.role_key);
+  const extraction = await latestExtraction(service, ctx.institutionId, ctx.userId);
 
   return (
     <div>
@@ -23,7 +25,7 @@ export default async function OrgCurriculumPage() {
         title="Curriculum"
         subtitle={`${ctx.institutionName}. Enter your subjects by branch and year, then map each to the skills it builds. Students on the job track see how their curriculum lines up with ${role.display_name} skills.`}
       />
-      <CurriculumManager subjects={subjects} roleKey={role.role_key} roleName={role.display_name} areas={areas.filter((a) => a.enabled).map((a) => ({ key: a.area_key, name: a.display_name }))} />
+      <CurriculumManager subjects={subjects} roleKey={role.role_key} roleName={role.display_name} areas={areas.filter((a) => a.enabled).map((a) => ({ key: a.area_key, name: a.display_name }))} extraction={extraction} />
     </div>
   );
 }

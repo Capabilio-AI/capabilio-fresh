@@ -3,7 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import type { SubjectsBody } from "./schemas";
 
 type Service = SupabaseClient<Database>;
-export type WriteResult = { ok: true; count?: number } | { ok: false; status: number; message: string };
+export type WriteResult = { ok: true; count?: number; subjects?: { name: string; id: string }[] } | { ok: false; status: number; message: string };
 
 /** Adds subjects for the admin's own institution; a duplicate (same branch/year/name) is skipped, not duplicated. */
 export async function addSubjects(service: Service, admin: { userId: string; institutionId: string }, body: SubjectsBody): Promise<WriteResult> {
@@ -21,13 +21,13 @@ export async function addSubjects(service: Service, admin: { userId: string; ins
 }
 
 async function insertSkippingDuplicates(service: Service, rows: Database["public"]["Tables"]["curriculum_subjects"]["Insert"][]): Promise<WriteResult> {
-  let added = 0;
+  const subjects: { name: string; id: string }[] = [];
   for (const row of rows) {
-    const { error } = await service.from("curriculum_subjects").insert(row);
-    if (!error) added++;
-    else if (error.code !== "23505") return { ok: false, status: 500, message: "Could not save subjects." };
+    const { data, error } = await service.from("curriculum_subjects").insert(row).select("id").single();
+    if (!error && data) subjects.push({ name: row.name, id: data.id });
+    else if (error?.code !== "23505") return { ok: false, status: 500, message: "Could not save subjects." };
   }
-  return { ok: true, count: added };
+  return { ok: true, count: subjects.length, subjects };
 }
 
 async function ownedSubject(service: Service, institutionId: string, subjectId: string) {
