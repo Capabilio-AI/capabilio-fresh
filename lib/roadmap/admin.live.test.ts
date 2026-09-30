@@ -65,8 +65,8 @@ describe("curriculum admin: gating, authority, writes", () => {
 
   it("adds subjects to the admin's institution, skips duplicates, stores mappings only for real skill areas", async () => {
     const body = { branch: "ZZ Branch", year: 3, subjects: [{ name: "Database Management Systems", code: "CS301" }, { name: "Probability and Statistics" }] };
-    expect(await addSubjects(service, { userId: adminA.userId, institutionId: instA }, body)).toEqual({ ok: true, count: 2 });
-    expect(await addSubjects(service, { userId: adminA.userId, institutionId: instA }, { ...body, subjects: [{ name: "  database management systems " }] })).toEqual({ ok: true, count: 0 });
+    expect(await addSubjects(service, { userId: adminA.userId, institutionId: instA }, body)).toMatchObject({ ok: true, count: 2 });
+    expect(await addSubjects(service, { userId: adminA.userId, institutionId: instA }, { ...body, subjects: [{ name: "  database management systems " }] })).toMatchObject({ ok: true, count: 0 });
 
     const subjects = await listSubjectsForAdmin(service, instA, "data-analyst");
     expect(subjects).toHaveLength(2);

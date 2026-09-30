@@ -70,7 +70,7 @@ export function ExtractionReview({ extraction, roleKey, areas, onDone }: Props) 
         const id = ids.get(r.name.trim());
         if (!id || r.areaKeys.length === 0) continue; // an already-existing subject keeps whatever mapping it has
         const m = await fetch(`/api/admin/curriculum/subjects/${id}/mapping`, {
-          method: "POST",
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ roleKey, areaKeys: r.areaKeys, fromSuggestion: sameSet(r.areaKeys, r.suggestedAreaKeys) }),
         });

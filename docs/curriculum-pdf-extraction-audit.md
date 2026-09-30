@@ -46,3 +46,43 @@ never trusts the browser Content-Type; institution from `authorizeOrg`. The syll
   DATA` + wrapped `MINING`) or the next line(s), then `L T P C`. 58 such sections. 29 contain "Course Outcomes"; statements are
   `CO1: … (K3)` lines (235 `CO\d` lines, but the `CO1 H M L …` PO-matrix rows have no colon and must be excluded).
 - So a subject exists in two places: the semester table (authoritative list) and its course section (Course Outcomes).
+
+---
+
+# Phase 2 — Design (with reasoning)
+
+**Pipeline.** PDF bytes → `checkPdfBytes` (magic bytes, ≤15 MB) → `pdf-parse` per-page text (running page header/number stripped) → `chunkSyllabus`
+→ (a) one **table chunk** per semester, trimmed at its `Total` row so Minor/Honors/MOOC pools after it are excluded, and (b) one **course section**
+per course (title + parsed Course Outcomes) → per table chunk one AI call (`extractSubjectsFromTable`, strict zod schema, JSON mode, retry-with-error) →
+each name **grounded** against the chunk text (≥90 % of its words must appear; otherwise flagged) → `mergeRows` joins table rows to course sections
+(table authoritative; sections with no table row are added *flagged*) → per semester, batches of ≤10 subjects **that have Course Outcomes** go to
+`suggestAreasForOutcomes` (keys filtered to the role's real skill areas; empty list is a valid answer) → one `ExtractionResult`.
+Why chunk this way: the document has clear per-semester tables; one call per semester keeps prompts under ~3 k tokens (cost + quality) and lets a
+failed semester degrade to a visible warning instead of failing the whole file.
+
+**Schema.** `CandidateRow` = the CSV row's fields (`year`, `semester`, `name`, `code`; branch is chosen once at upload) plus `category`, `kind`
+(course/lab/elective_option/project/audit), `confidence`, `needsReview` + `reason`, `outcomesCount`, `suggestedAreaKeys`, `mappingNote`.
+Extending the CSV shape means the confirm step is literally the CSV import's own request (`POST /subjects` grouped by year/semester).
+
+**Boundary detection.** Confirmed on the real file: table = line matching `B.Tech.[–-] <I–IV> Year <I|II> Semester`; course section = line matching
+`<I–IV> Year <I|II> Semester` without `B.Tech`; a heading that repeats (page-break fragment) is merged. Roman numerals only — other colleges'
+formats are the known limitation (they yield an honest `unrecognised_format`).
+
+**Job shape.** `POST /api/admin/curriculum/extractions` validates, inserts a `processing` row (`curriculum_extractions`, migration 046), returns **202**,
+and runs the job in `after()` (`maxDuration` 300; real file ≈ 90–115 s). The page polls `GET …/extractions/[id]` every 2.5 s; the server page also loads
+the admin's latest extraction, so navigating away and back resumes. A `processing` row idle > 10 min is reported `failed` (instance died). One active job
+per institution; 5 uploads/hour/admin. The PDF is never stored — only the validated candidates.
+
+**Confidence UI.** Rows the reader wasn't sure of (`needsReview`) start **unticked** with a visible reason; the header says "N need your review". A row
+with no confident skill match shows "No confident skill match — map by hand or skip"; one with no Course Outcomes text shows "No course outcomes in the
+PDF — use Suggest after import" (mapping is only ever suggested from outcomes text, never from a title alone).
+
+**Validation.** Non-PDF (415), empty (400), > 15 MB (413) rejected before parsing; the real syllabus is 2.2 MB, so 15 MB leaves ~7× headroom for
+image-heavy syllabi. No text layer (< 80 chars/page) → `no_text_layer`; > 400 pages or damaged → `unreadable`.
+
+# Phases 3–6 — Build and verification record
+Real-fixture result (JNTUK R23 CSE, live model): **61 subjects** — II-I 9, II-II 9, III-I 12, III-II 16, IV-I 14, IV-II 1 — all attributed to the right
+semester; 0 unmatched; 28 course sections carry parsed Course Outcomes; 6 subjects got a suggested mapping (e.g. DBMS → SQL, Probability & Statistics →
+Statistics, Data Mining Lab → Data cleaning + Statistics), 22 had outcomes but no confident match, 33 had no outcomes text. ~90–115 s end to end.
+Bugs found by running the real file and fixed: pool lists after the semester `Total` row were extracted as subjects; `1` vs `I` and "/ SWAYAM …" suffixes
+broke table↔section matching; three Course-Outcome formats; `pdf-parse` detaches the buffer it is given.
