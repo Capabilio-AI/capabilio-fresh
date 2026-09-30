@@ -264,93 +264,6 @@ export type Database = {
           },
         ]
       }
-      arena_stream_stats: {
-        Row: {
-          current_streak: number
-          last_completed_week: string | null
-          longest_streak: number
-          points: number
-          tasks_completed: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          current_streak?: number
-          last_completed_week?: string | null
-          longest_streak?: number
-          points?: number
-          tasks_completed?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          current_streak?: number
-          last_completed_week?: string | null
-          longest_streak?: number
-          points?: number
-          tasks_completed?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      arena_domain_stats: {
-        Row: {
-          current_streak: number
-          last_completed_week: string | null
-          longest_streak: number
-          points: number
-          tasks_completed: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          current_streak?: number
-          last_completed_week?: string | null
-          longest_streak?: number
-          points?: number
-          tasks_completed?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          current_streak?: number
-          last_completed_week?: string | null
-          longest_streak?: number
-          points?: number
-          tasks_completed?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      arena_stream_weeks: {
-        Row: {
-          challenge_ids: string[]
-          created_at: string
-          id: string
-          scope_key: string
-          user_id: string
-          week_start: string
-        }
-        Insert: {
-          challenge_ids?: string[]
-          created_at?: string
-          id?: string
-          scope_key: string
-          user_id: string
-          week_start: string
-        }
-        Update: {
-          challenge_ids?: string[]
-          created_at?: string
-          id?: string
-          scope_key?: string
-          user_id?: string
-          week_start?: string
-        }
-        Relationships: []
-      }
       arena_challenges: {
         Row: {
           active: boolean
@@ -542,6 +455,36 @@ export type Database = {
         }
         Relationships: []
       }
+      arena_domain_stats: {
+        Row: {
+          current_streak: number
+          last_completed_week: string | null
+          longest_streak: number
+          points: number
+          tasks_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       arena_ratings: {
         Row: {
           rating: number
@@ -696,6 +639,63 @@ export type Database = {
             referencedColumns: ["role_key", "area_key"]
           },
         ]
+      }
+      arena_stream_stats: {
+        Row: {
+          current_streak: number
+          last_completed_week: string | null
+          longest_streak: number
+          points: number
+          tasks_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          last_completed_week?: string | null
+          longest_streak?: number
+          points?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      arena_stream_weeks: {
+        Row: {
+          challenge_ids: string[]
+          created_at: string
+          id: string
+          scope_key: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          challenge_ids?: string[]
+          created_at?: string
+          id?: string
+          scope_key: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          challenge_ids?: string[]
+          created_at?: string
+          id?: string
+          scope_key?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
       }
       assessment_attempts: {
         Row: {
@@ -1072,6 +1072,388 @@ export type Database = {
         }
         Relationships: []
       }
+      class_materials: {
+        Row: {
+          author_membership_id: string
+          body: string | null
+          branch: string
+          description: string | null
+          id: string
+          institution_id: string
+          published_at: string
+          subject_id: string | null
+          title: string
+          type: string
+          url: string | null
+          year: number
+        }
+        Insert: {
+          author_membership_id: string
+          body?: string | null
+          branch: string
+          description?: string | null
+          id?: string
+          institution_id: string
+          published_at?: string
+          subject_id?: string | null
+          title: string
+          type: string
+          url?: string | null
+          year: number
+        }
+        Update: {
+          author_membership_id?: string
+          body?: string | null
+          branch?: string
+          description?: string | null
+          id?: string
+          institution_id?: string
+          published_at?: string
+          subject_id?: string | null
+          title?: string
+          type?: string
+          url?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_materials_author_membership_id_fkey"
+            columns: ["author_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_materials_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_materials_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_project_grades: {
+        Row: {
+          feedback: string | null
+          grade: string
+          graded_at: string
+          graded_by_membership_id: string
+          group_id: string
+          id: string
+          member_contribution_notes: Json
+        }
+        Insert: {
+          feedback?: string | null
+          grade: string
+          graded_at?: string
+          graded_by_membership_id: string
+          group_id: string
+          id?: string
+          member_contribution_notes?: Json
+        }
+        Update: {
+          feedback?: string | null
+          grade?: string
+          graded_at?: string
+          graded_by_membership_id?: string
+          group_id?: string
+          id?: string
+          member_contribution_notes?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_project_grades_graded_by_membership_id_fkey"
+            columns: ["graded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_project_grades_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: true
+            referencedRelation: "class_project_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_project_group_members: {
+        Row: {
+          branch: string | null
+          group_id: string
+          id: string
+          joined_at: string
+          project_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          branch?: string | null
+          group_id: string
+          id?: string
+          joined_at?: string
+          project_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          branch?: string | null
+          group_id?: string
+          id?: string
+          joined_at?: string
+          project_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_project_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_project_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_project_group_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "class_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_project_group_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_project_groups: {
+        Row: {
+          created_at: string
+          created_by_user_id: string
+          id: string
+          name: string
+          project_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_user_id: string
+          id?: string
+          name: string
+          project_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_user_id?: string
+          id?: string
+          name?: string
+          project_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_project_groups_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_project_groups_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "class_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_projects: {
+        Row: {
+          brief: string
+          created_at: string
+          created_by_membership_id: string
+          deadline_at: string
+          department_scope: string[] | null
+          id: string
+          institution_id: string
+          starts_at: string
+          status: string
+          subject_id: string | null
+          submission_type: string
+          team_size: number
+          title: string
+          weekly_report_required: boolean
+        }
+        Insert: {
+          brief: string
+          created_at?: string
+          created_by_membership_id: string
+          deadline_at: string
+          department_scope?: string[] | null
+          id?: string
+          institution_id: string
+          starts_at?: string
+          status?: string
+          subject_id?: string | null
+          submission_type: string
+          team_size?: number
+          title: string
+          weekly_report_required?: boolean
+        }
+        Update: {
+          brief?: string
+          created_at?: string
+          created_by_membership_id?: string
+          deadline_at?: string
+          department_scope?: string[] | null
+          id?: string
+          institution_id?: string
+          starts_at?: string
+          status?: string
+          subject_id?: string | null
+          submission_type?: string
+          team_size?: number
+          title?: string
+          weekly_report_required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_projects_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_projects_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_projects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_submissions: {
+        Row: {
+          group_id: string
+          id: string
+          link_url: string | null
+          physical_confirmed_by_membership_id: string | null
+          submission_type: string
+          submitted_at: string
+          submitted_by_user_id: string | null
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          link_url?: string | null
+          physical_confirmed_by_membership_id?: string | null
+          submission_type: string
+          submitted_at?: string
+          submitted_by_user_id?: string | null
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          link_url?: string | null
+          physical_confirmed_by_membership_id?: string | null
+          submission_type?: string
+          submitted_at?: string
+          submitted_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_submissions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: true
+            referencedRelation: "class_project_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_submissions_physical_confirmed_by_membership_id_fkey"
+            columns: ["physical_confirmed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_submissions_submitted_by_user_id_fkey"
+            columns: ["submitted_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_weekly_reports: {
+        Row: {
+          attachment_url: string | null
+          content: string
+          group_id: string
+          id: string
+          staff_feedback: string | null
+          staff_seen_at: string | null
+          submitted_at: string
+          submitted_by_user_id: string
+          week_number: number
+        }
+        Insert: {
+          attachment_url?: string | null
+          content: string
+          group_id: string
+          id?: string
+          staff_feedback?: string | null
+          staff_seen_at?: string | null
+          submitted_at?: string
+          submitted_by_user_id: string
+          week_number: number
+        }
+        Update: {
+          attachment_url?: string | null
+          content?: string
+          group_id?: string
+          id?: string
+          staff_feedback?: string | null
+          staff_seen_at?: string | null
+          submitted_at?: string
+          submitted_by_user_id?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_weekly_reports_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_project_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_weekly_reports_submitted_by_user_id_fkey"
+            columns: ["submitted_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cohorts: {
         Row: {
           created_at: string
@@ -1106,6 +1488,92 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_subject_skill_map: {
+        Row: {
+          area_key: string
+          confirmed_at: string
+          confirmed_by: string | null
+          role_key: string
+          source: string
+          subject_id: string
+        }
+        Insert: {
+          area_key: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          role_key: string
+          source: string
+          subject_id: string
+        }
+        Update: {
+          area_key?: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          role_key?: string
+          source?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_subject_skill_map_role_key_area_key_fkey"
+            columns: ["role_key", "area_key"]
+            isOneToOne: false
+            referencedRelation: "arena_skill_areas"
+            referencedColumns: ["role_key", "area_key"]
+          },
+          {
+            foreignKeyName: "curriculum_subject_skill_map_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_subjects: {
+        Row: {
+          branch: string
+          code: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          institution_id: string
+          name: string
+          semester: number | null
+          year: number
+        }
+        Insert: {
+          branch: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id: string
+          name: string
+          semester?: number | null
+          year: number
+        }
+        Update: {
+          branch?: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id?: string
+          name?: string
+          semester?: number | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_subjects_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
             referencedColumns: ["id"]
           },
         ]
@@ -1538,197 +2006,90 @@ export type Database = {
           },
         ]
       }
-      curriculum_subjects: {
-        Row: {
-          branch: string
-          code: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          institution_id: string
-          name: string
-          semester: number | null
-          year: number
-        }
-        Insert: {
-          branch: string
-          code?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          institution_id: string
-          name: string
-          semester?: number | null
-          year: number
-        }
-        Update: {
-          branch?: string
-          code?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          institution_id?: string
-          name?: string
-          semester?: number | null
-          year?: number
-        }
-        Relationships: []
-      }
-      curriculum_subject_skill_map: {
-        Row: {
-          area_key: string
-          confirmed_at: string
-          confirmed_by: string | null
-          role_key: string
-          source: string
-          subject_id: string
-        }
-        Insert: {
-          area_key: string
-          confirmed_at?: string
-          confirmed_by?: string | null
-          role_key: string
-          source: string
-          subject_id: string
-        }
-        Update: {
-          area_key?: string
-          confirmed_at?: string
-          confirmed_by?: string | null
-          role_key?: string
-          source?: string
-          subject_id?: string
-        }
-        Relationships: []
-      }
-      role_target_profiles: {
-        Row: {
-          area_key: string
-          min_verified_count: number
-          role_key: string
-        }
-        Insert: {
-          area_key: string
-          min_verified_count: number
-          role_key: string
-        }
-        Update: {
-          area_key?: string
-          min_verified_count?: number
-          role_key?: string
-        }
-        Relationships: []
-      }
-      skill_area_resources: {
-        Row: {
-          active: boolean
-          area_key: string
-          created_at: string
-          description: string | null
-          id: string
-          kind: string
-          role_key: string
-          title: string
-          url: string | null
-        }
-        Insert: {
-          active?: boolean
-          area_key: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          kind: string
-          role_key: string
-          title: string
-          url?: string | null
-        }
-        Update: {
-          active?: boolean
-          area_key?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          kind?: string
-          role_key?: string
-          title?: string
-          url?: string | null
-        }
-        Relationships: []
-      }
       institution_memberships: {
         Row: {
           active_role_key: string | null
-          goal_state: string | null
-          goal_state_prompted_at: string | null
-          goal_state_updated_at: string | null
-          higher_studies_checkin_at: string | null
-          portfolio_prompt_seen_at: string | null
-          year_confirmed_at: string | null
-          year_override: number | null
           branch: string | null
           cohort_id: string | null
           created_at: string
           degree: string | null
           end_year: number | null
           field_of_study: string | null
+          goal_state: string | null
+          goal_state_prompted_at: string | null
+          goal_state_updated_at: string | null
+          higher_studies_checkin_at: string | null
           id: string
           institution_id: string
+          permissions: string[] | null
+          portfolio_prompt_seen_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           start_year: number | null
           status: Database["public"]["Enums"]["membership_status"]
           updated_at: string
           user_id: string
           year: string | null
+          year_confirmed_at: string | null
+          year_override: number | null
         }
         Insert: {
           active_role_key?: string | null
-          goal_state?: string | null
-          goal_state_prompted_at?: string | null
-          goal_state_updated_at?: string | null
-          higher_studies_checkin_at?: string | null
-          portfolio_prompt_seen_at?: string | null
-          year_confirmed_at?: string | null
-          year_override?: number | null
           branch?: string | null
           cohort_id?: string | null
           created_at?: string
           degree?: string | null
           end_year?: number | null
           field_of_study?: string | null
+          goal_state?: string | null
+          goal_state_prompted_at?: string | null
+          goal_state_updated_at?: string | null
+          higher_studies_checkin_at?: string | null
           id?: string
           institution_id: string
+          permissions?: string[] | null
+          portfolio_prompt_seen_at?: string | null
           role: Database["public"]["Enums"]["app_role"]
           start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id: string
           year?: string | null
+          year_confirmed_at?: string | null
+          year_override?: number | null
         }
         Update: {
           active_role_key?: string | null
-          goal_state?: string | null
-          goal_state_prompted_at?: string | null
-          goal_state_updated_at?: string | null
-          higher_studies_checkin_at?: string | null
-          portfolio_prompt_seen_at?: string | null
-          year_confirmed_at?: string | null
-          year_override?: number | null
           branch?: string | null
           cohort_id?: string | null
           created_at?: string
           degree?: string | null
           end_year?: number | null
           field_of_study?: string | null
+          goal_state?: string | null
+          goal_state_prompted_at?: string | null
+          goal_state_updated_at?: string | null
+          higher_studies_checkin_at?: string | null
           id?: string
           institution_id?: string
+          permissions?: string[] | null
+          portfolio_prompt_seen_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string
           year?: string | null
+          year_confirmed_at?: string | null
+          year_override?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "institution_memberships_active_role_key_fkey"
+            columns: ["active_role_key"]
+            isOneToOne: false
+            referencedRelation: "arena_domain_roles"
+            referencedColumns: ["role_key"]
+          },
           {
             foreignKeyName: "institution_memberships_cohort_id_fkey"
             columns: ["cohort_id"]
@@ -1760,6 +2121,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          org_type: string
           slug: string
           state: string | null
           updated_at: string
@@ -1771,6 +2133,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          org_type?: string
           slug: string
           state?: string | null
           updated_at?: string
@@ -1782,6 +2145,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          org_type?: string
           slug?: string
           state?: string | null
           updated_at?: string
@@ -1942,8 +2306,12 @@ export type Database = {
           company: string
           created_at: string
           created_by: string | null
+          ctc_offered: string | null
           deadline: string | null
+          drive_date: string | null
+          drive_status: string
           eligibility: string | null
+          eligible_branches: string[] | null
           id: string
           institution_id: string | null
           location: string | null
@@ -1956,8 +2324,12 @@ export type Database = {
           company: string
           created_at?: string
           created_by?: string | null
+          ctc_offered?: string | null
           deadline?: string | null
+          drive_date?: string | null
+          drive_status?: string
           eligibility?: string | null
+          eligible_branches?: string[] | null
           id?: string
           institution_id?: string | null
           location?: string | null
@@ -1970,8 +2342,12 @@ export type Database = {
           company?: string
           created_at?: string
           created_by?: string | null
+          ctc_offered?: string | null
           deadline?: string | null
+          drive_date?: string | null
+          drive_status?: string
           eligibility?: string | null
+          eligible_branches?: string[] | null
           id?: string
           institution_id?: string | null
           location?: string | null
@@ -1993,6 +2369,596 @@ export type Database = {
             columns: ["recruiter_id"]
             isOneToOne: false
             referencedRelation: "recruiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_chat_channel_members: {
+        Row: {
+          added_at: string
+          channel_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          channel_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          channel_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "org_chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_chat_channel_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_chat_channels: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string | null
+          description: string | null
+          id: string
+          institution_id: string
+          is_private: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          description?: string | null
+          id?: string
+          institution_id: string
+          is_private?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          description?: string | null
+          id?: string
+          institution_id?: string
+          is_private?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_chat_channels_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_chat_channels_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_chat_messages: {
+        Row: {
+          author_user_id: string | null
+          body: string
+          channel_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_user_id?: string | null
+          body: string
+          channel_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_user_id?: string | null
+          body?: string
+          channel_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_chat_messages_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "org_chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_chat_reads: {
+        Row: {
+          channel_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_chat_reads_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "org_chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_chat_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_event_rsvps: {
+        Row: {
+          post_id: string
+          rsvped_at: string
+          user_id: string
+        }
+        Insert: {
+          post_id: string
+          rsvped_at?: string
+          user_id: string
+        }
+        Update: {
+          post_id?: string
+          rsvped_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_event_rsvps_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "org_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_event_rsvps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_follows: {
+        Row: {
+          followed_at: string
+          institution_id: string
+          user_id: string
+        }
+        Insert: {
+          followed_at?: string
+          institution_id: string
+          user_id: string
+        }
+        Update: {
+          followed_at?: string
+          institution_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_follows_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_follows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          institution_id: string
+          invited_by_membership_id: string | null
+          permissions: string[] | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          institution_id: string
+          invited_by_membership_id?: string | null
+          permissions?: string[] | null
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          institution_id?: string
+          invited_by_membership_id?: string | null
+          permissions?: string[] | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_invitations_accepted_user_id_fkey"
+            columns: ["accepted_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_invitations_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_invitations_invited_by_membership_id_fkey"
+            columns: ["invited_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_join_link_uses: {
+        Row: {
+          join_link_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          join_link_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          join_link_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_join_link_uses_join_link_id_fkey"
+            columns: ["join_link_id"]
+            isOneToOne: false
+            referencedRelation: "org_join_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_join_link_uses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_join_links: {
+        Row: {
+          active: boolean
+          branch: string | null
+          code: string
+          created_at: string
+          created_by_membership_id: string | null
+          end_year: number | null
+          id: string
+          institution_id: string
+          label: string | null
+        }
+        Insert: {
+          active?: boolean
+          branch?: string | null
+          code: string
+          created_at?: string
+          created_by_membership_id?: string | null
+          end_year?: number | null
+          id?: string
+          institution_id: string
+          label?: string | null
+        }
+        Update: {
+          active?: boolean
+          branch?: string | null
+          code?: string
+          created_at?: string
+          created_by_membership_id?: string | null
+          end_year?: number | null
+          id?: string
+          institution_id?: string
+          label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_join_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_join_links_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_placements: {
+        Row: {
+          company: string
+          confirmed_at: string
+          confirmed_by_membership_id: string | null
+          ctc_lpa: number | null
+          id: string
+          institution_id: string
+          offer_date: string | null
+          offer_letter_path: string | null
+          opportunity_id: string | null
+          responded_at: string | null
+          role_title: string
+          show_on_wall: boolean
+          student_response: string
+          student_user_id: string
+        }
+        Insert: {
+          company: string
+          confirmed_at?: string
+          confirmed_by_membership_id?: string | null
+          ctc_lpa?: number | null
+          id?: string
+          institution_id: string
+          offer_date?: string | null
+          offer_letter_path?: string | null
+          opportunity_id?: string | null
+          responded_at?: string | null
+          role_title: string
+          show_on_wall?: boolean
+          student_response?: string
+          student_user_id: string
+        }
+        Update: {
+          company?: string
+          confirmed_at?: string
+          confirmed_by_membership_id?: string | null
+          ctc_lpa?: number | null
+          id?: string
+          institution_id?: string
+          offer_date?: string | null
+          offer_letter_path?: string | null
+          opportunity_id?: string | null
+          responded_at?: string | null
+          role_title?: string
+          show_on_wall?: boolean
+          student_response?: string
+          student_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_placements_confirmed_by_membership_id_fkey"
+            columns: ["confirmed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_placements_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_placements_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_placements_student_user_id_fkey"
+            columns: ["student_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_post_likes: {
+        Row: {
+          liked_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          liked_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          liked_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "org_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_posts: {
+        Row: {
+          author_membership_id: string
+          body: string
+          cover_image_url: string | null
+          created_at: string
+          event_link: string | null
+          event_location: string | null
+          event_starts_at: string | null
+          id: string
+          institution_id: string
+          is_public: boolean
+          published_at: string | null
+          status: string
+          title: string
+          type: string
+        }
+        Insert: {
+          author_membership_id: string
+          body: string
+          cover_image_url?: string | null
+          created_at?: string
+          event_link?: string | null
+          event_location?: string | null
+          event_starts_at?: string | null
+          id?: string
+          institution_id: string
+          is_public?: boolean
+          published_at?: string | null
+          status?: string
+          title: string
+          type: string
+        }
+        Update: {
+          author_membership_id?: string
+          body?: string
+          cover_image_url?: string | null
+          created_at?: string
+          event_link?: string | null
+          event_location?: string | null
+          event_starts_at?: string | null
+          id?: string
+          institution_id?: string
+          is_public?: boolean
+          published_at?: string | null
+          status?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_posts_author_membership_id_fkey"
+            columns: ["author_membership_id"]
+            isOneToOne: false
+            referencedRelation: "institution_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_posts_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_profiles: {
+        Row: {
+          bio: string | null
+          cover_image_url: string | null
+          founded_year: number | null
+          institution_id: string
+          is_public: boolean
+          logo_url: string | null
+          tagline: string | null
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          bio?: string | null
+          cover_image_url?: string | null
+          founded_year?: number | null
+          institution_id: string
+          is_public?: boolean
+          logo_url?: string | null
+          tagline?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          bio?: string | null
+          cover_image_url?: string | null
+          founded_year?: number | null
+          institution_id?: string
+          is_public?: boolean
+          logo_url?: string | null
+          tagline?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_profiles_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: true
+            referencedRelation: "institutions"
             referencedColumns: ["id"]
           },
         ]
@@ -2516,6 +3482,32 @@ export type Database = {
           },
         ]
       }
+      role_target_profiles: {
+        Row: {
+          area_key: string
+          min_verified_count: number
+          role_key: string
+        }
+        Insert: {
+          area_key: string
+          min_verified_count: number
+          role_key: string
+        }
+        Update: {
+          area_key?: string
+          min_verified_count?: number
+          role_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_target_profiles_role_key_area_key_fkey"
+            columns: ["role_key", "area_key"]
+            isOneToOne: true
+            referencedRelation: "arena_skill_areas"
+            referencedColumns: ["role_key", "area_key"]
+          },
+        ]
+      }
       roles: {
         Row: {
           created_at: string
@@ -2539,6 +3531,50 @@ export type Database = {
           scope?: string
         }
         Relationships: []
+      }
+      skill_area_resources: {
+        Row: {
+          active: boolean
+          area_key: string
+          created_at: string
+          description: string | null
+          id: string
+          kind: string
+          role_key: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          active?: boolean
+          area_key: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: string
+          role_key: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          active?: boolean
+          area_key?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: string
+          role_key?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_area_resources_role_key_area_key_fkey"
+            columns: ["role_key", "area_key"]
+            isOneToOne: false
+            referencedRelation: "arena_skill_areas"
+            referencedColumns: ["role_key", "area_key"]
+          },
+        ]
       }
       skills: {
         Row: {
@@ -2690,6 +3726,80 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      class_assert_staff_for_project: {
+        Args: {
+          p_membership_id: string
+          p_project: Database["public"]["Tables"]["class_projects"]["Row"]
+        }
+        Returns: {
+          active_role_key: string | null
+          branch: string | null
+          cohort_id: string | null
+          created_at: string
+          degree: string | null
+          end_year: number | null
+          field_of_study: string | null
+          goal_state: string | null
+          goal_state_prompted_at: string | null
+          goal_state_updated_at: string | null
+          higher_studies_checkin_at: string | null
+          id: string
+          institution_id: string
+          permissions: string[] | null
+          portfolio_prompt_seen_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          start_year: number | null
+          status: Database["public"]["Enums"]["membership_status"]
+          updated_at: string
+          user_id: string
+          year: string | null
+          year_confirmed_at: string | null
+          year_override: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "institution_memberships"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      class_create_group: {
+        Args: { p_name: string; p_project_id: string; p_user_id: string }
+        Returns: string
+      }
+      class_grade_group: {
+        Args: {
+          p_feedback: string
+          p_grade: string
+          p_group_id: string
+          p_membership_id: string
+          p_notes: Json
+        }
+        Returns: string
+      }
+      class_join_group: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      class_leave_group: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      class_mark_physical_received: {
+        Args: { p_group_id: string; p_membership_id: string }
+        Returns: undefined
+      }
+      class_student_branch_for_project: {
+        Args: {
+          p_project: Database["public"]["Tables"]["class_projects"]["Row"]
+          p_user_id: string
+        }
+        Returns: string
+      }
+      class_submit_project: {
+        Args: { p_group_id: string; p_link: string; p_user_id: string }
+        Returns: undefined
+      }
       commit_rotation_attempt: {
         Args: {
           p_area_key: string
@@ -2710,6 +3820,19 @@ export type Database = {
           p_submission: Json
         }
         Returns: Json
+      }
+      create_org_signup: {
+        Args: {
+          p_org_name: string
+          p_org_type: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: {
+          institution_id: string
+          matched_existing: boolean
+          membership_id: string
+        }[]
       }
       finish_arena_challenge: { Args: { p_attempt_id: string }; Returns: Json }
       get_coding_question_for_grading: {
@@ -2738,6 +3861,13 @@ export type Database = {
       increment_rate_limit: {
         Args: { p_bucket: string; p_user_id: string; p_window_start: string }
         Returns: number
+      }
+      org_effective_permissions: {
+        Args: {
+          p_permissions: string[]
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string[]
       }
       record_arena_answer: {
         Args: {
@@ -2786,6 +3916,8 @@ export type Database = {
         | "ceo"
         | "mentor"
         | "professional"
+        | "tpo"
+        | "company_admin"
       assessment_attempt_status: "in_progress" | "completed"
       assessment_section:
         | "quantitative_aptitude"
@@ -2952,6 +4084,8 @@ export const Constants = {
         "ceo",
         "mentor",
         "professional",
+        "tpo",
+        "company_admin",
       ],
       assessment_attempt_status: ["in_progress", "completed"],
       assessment_section: [
@@ -2981,6 +4115,8 @@ export const Constants = {
         "law",
         "other",
       ],
+      interview_mode: ["practice", "technical", "behavioral", "hr"],
+      interview_status: ["in_progress", "completed", "abandoned"],
       journey_axis: ["capability", "career"],
       membership_status: ["pending", "active", "revoked"],
       section_progress_status: ["not_started", "in_progress", "completed"],
