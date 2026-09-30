@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCurriculumCsv } from "./csv";
+import { CSV_SAMPLE, parseCurriculumCsv } from "./csv";
 
 describe("parseCurriculumCsv", () => {
   it("parses rows, optional columns and quoted commas", () => {
@@ -17,5 +17,13 @@ describe("parseCurriculumCsv", () => {
   it("rejects a missing header and an empty file", () => {
     expect(parseCurriculumCsv("foo,bar\n1,2").ok).toBe(false);
     expect(parseCurriculumCsv("  \n").ok).toBe(false);
+  });
+});
+
+describe("downloadable template", () => {
+  it("parses cleanly, quoted comma included", () => {
+    const r = parseCurriculumCsv(CSV_SAMPLE);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.rows.some((x) => x.name === "Machine Learning, Introduction")).toBe(true);
   });
 });

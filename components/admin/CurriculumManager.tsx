@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { BranchAutocomplete } from "@/components/login/BranchAutocomplete";
+import { searchBranches } from "@/lib/branch-catalog";
 import { CSV_TEMPLATE, parseCurriculumCsv, type CsvSubjectRow } from "@/lib/roadmap/csv";
 import type { AdminSubject } from "@/lib/roadmap/admin-data";
 import { SubjectMappingRow } from "./SubjectMappingRow";
@@ -15,7 +15,7 @@ interface Props {
   areas: { key: string; name: string }[];
 }
 
-const FIELD = "w-full rounded-lg border border-app-border bg-white px-3 py-2 font-lp-body text-[13px] text-app-charcoal focus:border-app-orange focus:outline-none";
+const FIELD = "o-input";
 
 async function post(body: unknown): Promise<{ ok: boolean; added?: number }> {
   const res = await fetch("/api/admin/curriculum/subjects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -47,6 +47,13 @@ export function CurriculumManager({ subjects, roleKey, roleName, areas }: Props)
     setMessage(`${r.added} subject${r.added === 1 ? "" : "s"} added (duplicates skipped).`);
     setLines("");
     router.refresh();
+  }
+
+  async function loadFile(file: File | undefined) {
+    if (!file) return;
+    setCsv(await file.text());
+    setPreview(null);
+    setCsvErrors([]);
   }
 
   function previewCsv() {
@@ -93,12 +100,15 @@ export function CurriculumManager({ subjects, roleKey, roleName, areas }: Props)
 
   return (
     <div className="mt-6 flex flex-col gap-8">
-      <section className="rounded-xl border border-app-border bg-white p-5">
+      <section className="o-card p-5">
         <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Add subjects</h2>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_120px]">
           <div>
             <label className="mb-1 block font-lp-mono text-[11px] text-app-muted" htmlFor="cur-branch">Branch</label>
-            <BranchAutocomplete id="cur-branch" value={branch} onChange={setBranch} />
+            <input id="cur-branch" list="cur-branch-options" className={FIELD} value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="Start typing, e.g. Computer Science" autoComplete="off" />
+            <datalist id="cur-branch-options">
+              {(branch.trim() ? searchBranches(branch) : []).map((b) => <option key={b.name} value={b.name} />)}
+            </datalist>
           </div>
           <div>
             <label className="mb-1 block font-lp-mono text-[11px] text-app-muted" htmlFor="cur-year">Year of study</label>
@@ -109,22 +119,36 @@ export function CurriculumManager({ subjects, roleKey, roleName, areas }: Props)
         </div>
         <label className="mt-3 mb-1 block font-lp-mono text-[11px] text-app-muted" htmlFor="cur-lines">One subject per line — optional code after a comma</label>
         <textarea id="cur-lines" className={`${FIELD} h-28`} value={lines} onChange={(e) => setLines(e.target.value)} placeholder={"Database Management Systems, CS301\nProbability and Statistics"} />
-        <button type="button" disabled={busy} onClick={addFromForm} className="mt-3 flex items-center gap-2 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[12.5px] font-semibold text-white disabled:opacity-60">
+        <button type="button" disabled={busy} onClick={addFromForm} className="o-btn mt-3">
           {busy && <Loader2 size={13} className="animate-spin" />} Add subjects
         </button>
       </section>
 
-      <section className="rounded-xl border border-app-border bg-white p-5">
+      <section className="o-card p-5">
         <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Import from a template</h2>
         <p className="mt-1 font-lp-body text-[12px] text-app-muted">
           Paste CSV with the header <code className="font-lp-mono">branch,year,semester,subject_name,subject_code</code>. You&apos;ll see a preview before anything is saved.{" "}
           <button type="button" className="text-app-blue hover:underline" onClick={() => setCsv(CSV_TEMPLATE)}>Insert header</button>
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3 font-lp-body text-[12.5px]">
+          <a
+            href="/org/curriculum/template"
+            download="curriculum-template.csv"
+            className="o-btn-ghost"
+          >
+            Download template (.csv)
+          </a>
+          <label className="o-btn-ghost cursor-pointer">
+            Upload filled file
+            <input type="file" accept=".csv,text/csv" className="sr-only" onChange={(e) => { void loadFile(e.target.files?.[0]); e.target.value = ""; }} />
+          </label>
+          <span className="text-app-muted">Year 1–4, semester 1 or 2 (optional). Open the template in Excel or Google Sheets, fill one row per subject, save as CSV.</span>
+        </div>
         <textarea aria-label="CSV" className={`${FIELD} mt-2 h-28 font-lp-mono text-[12px]`} value={csv} onChange={(e) => { setCsv(e.target.value); setPreview(null); }} />
         <div className="mt-3 flex gap-2">
-          <button type="button" onClick={previewCsv} className="rounded-lg border border-app-border px-4 py-2 font-lp-body text-[12.5px] font-medium text-app-charcoal">Preview</button>
+          <button type="button" onClick={previewCsv} className="o-btn-ghost">Preview</button>
           {preview && (
-            <button type="button" disabled={busy} onClick={importCsv} className="rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[12.5px] font-semibold text-white disabled:opacity-60">
+            <button type="button" disabled={busy} onClick={importCsv} className="o-btn">
               Import {preview.length} subject{preview.length === 1 ? "" : "s"}
             </button>
           )}

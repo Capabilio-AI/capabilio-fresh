@@ -77,7 +77,8 @@ describe("role mapping and permission sets", () => {
   });
   it("nav only offers pages the member's permissions allow", () => {
     const labels = (role: string, custom: string[] | null = null) => orgNavFor(effectivePermissions(role, custom)).map((n) => n.label);
-    expect(labels("tpo")).toEqual(["Home", "College page", "Company visits", "Insights", "Outcomes", "Team chat"]);
+    expect(labels("tpo")).toEqual(["Home", "College page", "Company visits", "Career intent", "Insights", "Outcomes", "Team chat"]);
+    expect(labels("faculty")).not.toContain("Career intent");
     expect(labels("faculty")).toEqual(["Home", "College page", "Posts", "Students", "Materials", "Projects", "Team chat"]);
     expect(labels("principal")).toContain("Team & access");
     expect(labels("principal")).toContain("Curriculum");

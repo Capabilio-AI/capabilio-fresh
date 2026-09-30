@@ -64,7 +64,7 @@ export function SubjectMappingRow({ subject, roleKey, areas }: Props) {
   }
 
   return (
-    <li className="rounded-lg border border-app-border bg-white p-3.5">
+    <li className="o-card !rounded-xl p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">
@@ -87,10 +87,10 @@ export function SubjectMappingRow({ subject, roleKey, areas }: Props) {
         ))}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={suggest} disabled={busy !== null} className="flex items-center gap-1.5 rounded-lg border border-app-border px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-charcoal disabled:opacity-60">
+        <button type="button" onClick={suggest} disabled={busy !== null} className="o-btn-ghost !px-3 !py-1.5 !text-[12px]">
           {busy === "suggest" ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Suggest
         </button>
-        <button type="button" onClick={save} disabled={busy !== null || !dirty} className="rounded-lg bg-app-charcoal px-3 py-1.5 font-lp-body text-[12px] font-semibold text-white disabled:opacity-40">
+        <button type="button" onClick={save} disabled={busy !== null || !dirty} className="o-btn !px-3 !py-1.5 !text-[12px]">
           {busy === "save" ? <Loader2 size={12} className="animate-spin" /> : "Confirm mapping"}
         </button>
         {note && <span className="font-lp-body text-[12px] text-app-muted" role="status">{note}</span>}

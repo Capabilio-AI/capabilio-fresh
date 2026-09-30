@@ -57,6 +57,9 @@ export function GoalStateOptions({ current, onSaved }: { current: GoalState | nu
           );
         })}
       </div>
+      <p className="mt-2.5 font-lp-body text-[11.5px] text-app-muted">
+        Your choice is visible to your college&apos;s placement cell and admin, so they can plan company visits and support. Companies never see it.
+      </p>
       {error && <p className="mt-2 font-lp-body text-[12px] text-app-orange" role="alert">{error}</p>}
     </div>
   );

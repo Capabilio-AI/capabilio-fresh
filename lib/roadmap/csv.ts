@@ -9,6 +9,19 @@ export interface CsvSubjectRow {
 export type CsvParse = { ok: true; rows: CsvSubjectRow[] } | { ok: false; errors: string[] };
 
 export const CSV_TEMPLATE = "branch,year,semester,subject_name,subject_code\n";
+/** Downloadable starter file: replace the example rows with your own (the first line is the header). */
+export const CSV_SAMPLE =
+  CSV_TEMPLATE +
+  [
+    "Computer Science and Engineering,1,1,Engineering Mathematics I,MA101",
+    "Computer Science and Engineering,2,1,Data Structures,CS201",
+    "Computer Science and Engineering,2,2,Database Management Systems,CS202",
+    "Computer Science and Engineering,3,1,Operating Systems,CS301",
+    'Computer Science and Engineering,3,2,"Machine Learning, Introduction",CS302',
+    "Electronics and Communication Engineering,2,1,Signals and Systems,EC201",
+    "Mechanical Engineering,3,1,Thermodynamics,ME301",
+  ].join("\n") +
+  "\n";
 const MAX_ROWS = 300;
 
 /** Minimal RFC-4180-ish line splitter: handles quoted fields with commas and "" escapes. */

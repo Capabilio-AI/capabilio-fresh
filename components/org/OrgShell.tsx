@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BadgeCheck, BarChart3, BookOpen, Briefcase, ExternalLink, FolderKanban, GraduationCap, LayoutDashboard, LogOut, Megaphone, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
+import { BadgeCheck, BarChart3, BookOpen, Briefcase, ExternalLink, FolderKanban, GraduationCap, LayoutDashboard, LogOut, Megaphone, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import { signOut } from "@/components/login/auth";
 import type { OrgNavGroup } from "@/lib/org/nav";
@@ -17,7 +17,8 @@ const ICONS: Record<string, LucideIcon> = {
   "/org/projects": FolderKanban,
   "/org/placements": Briefcase,
   "/org/members": UserCheck,
-  "/admin/curriculum": GraduationCap,
+  "/org/curriculum": GraduationCap,
+  "/org/career": Target,
   "/org/insights": BarChart3,
   "/org/outcomes": Trophy,
 };
@@ -110,8 +111,8 @@ export function OrgShell({
         </nav>
 
         <div className="mt-auto hidden border-t border-app-border p-3 md:block">
-          <Link href={publicHref} className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px] font-semibold text-app-muted hover:bg-white/5 hover:text-app-charcoal">
-            <ExternalLink size={15} aria-hidden="true" /> View college page
+          <Link href={publicHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px] font-semibold text-app-muted hover:bg-white/5 hover:text-app-charcoal">
+            <ExternalLink size={15} aria-hidden="true" /> Preview public page
           </Link>
           <button type="button" onClick={doSignOut} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px] font-semibold text-app-muted hover:bg-white/5 hover:text-app-charcoal">
             <LogOut size={15} aria-hidden="true" /> Sign out
