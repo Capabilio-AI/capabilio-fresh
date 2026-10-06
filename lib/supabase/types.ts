@@ -4536,6 +4536,538 @@ export type Database = {
         }
         Relationships: []
       }
+      roadmap_arena_challenges: {
+        Row: {
+          challenge_id: string | null
+          covered_skill_ids: string[]
+          difficulty: string
+          title: string
+          version_id: string
+        }
+        Insert: {
+          challenge_id?: string | null
+          covered_skill_ids?: string[]
+          difficulty: string
+          title: string
+          version_id: string
+        }
+        Update: {
+          challenge_id?: string | null
+          covered_skill_ids?: string[]
+          difficulty?: string
+          title?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_arena_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_arena_challenges_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_certifications: {
+        Row: {
+          certification_id: string | null
+          covered_skill_ids: string[]
+          name: string
+          provider: string
+          relevance: string
+          url: string | null
+          version_id: string
+        }
+        Insert: {
+          certification_id?: string | null
+          covered_skill_ids?: string[]
+          name: string
+          provider: string
+          relevance: string
+          url?: string | null
+          version_id: string
+        }
+        Update: {
+          certification_id?: string | null
+          covered_skill_ids?: string[]
+          name?: string
+          provider?: string
+          relevance?: string
+          url?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_certifications_certification_id_fkey"
+            columns: ["certification_id"]
+            isOneToOne: false
+            referencedRelation: "certification_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_certifications_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_courses: {
+        Row: {
+          ai_explanation: string | null
+          course_id: string | null
+          facts: Json
+          schedule: string
+          score: number
+          semester: number | null
+          sort_order: number
+          stars: number
+          tier: string
+          title: string
+          version_id: string
+          year: number
+        }
+        Insert: {
+          ai_explanation?: string | null
+          course_id?: string | null
+          facts: Json
+          schedule: string
+          score: number
+          semester?: number | null
+          sort_order: number
+          stars: number
+          tier: string
+          title: string
+          version_id: string
+          year: number
+        }
+        Update: {
+          ai_explanation?: string | null
+          course_id?: string | null
+          facts?: Json
+          schedule?: string
+          score?: number
+          semester?: number | null
+          sort_order?: number
+          stars?: number
+          tier?: string
+          title?: string
+          version_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_courses_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_goals: {
+        Row: {
+          career_id: string | null
+          career_name: string
+          kind: string
+          readiness: number | null
+          version_id: string
+        }
+        Insert: {
+          career_id?: string | null
+          career_name: string
+          kind: string
+          readiness?: number | null
+          version_id: string
+        }
+        Update: {
+          career_id?: string | null
+          career_name?: string
+          kind?: string
+          readiness?: number | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_goals_career_id_fkey"
+            columns: ["career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_goals_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_learning_items: {
+        Row: {
+          estimated_hours: number | null
+          learning_item_id: string | null
+          level_from: number
+          level_to: number
+          provider: string
+          reason: string
+          skill_id: string | null
+          skill_name: string
+          starts_now: boolean
+          title: string
+          url: string | null
+          version_id: string
+        }
+        Insert: {
+          estimated_hours?: number | null
+          learning_item_id?: string | null
+          level_from: number
+          level_to: number
+          provider: string
+          reason: string
+          skill_id?: string | null
+          skill_name: string
+          starts_now: boolean
+          title: string
+          url?: string | null
+          version_id: string
+        }
+        Update: {
+          estimated_hours?: number | null
+          learning_item_id?: string | null
+          level_from?: number
+          level_to?: number
+          provider?: string
+          reason?: string
+          skill_id?: string | null
+          skill_name?: string
+          starts_now?: boolean
+          title?: string
+          url?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_learning_items_learning_item_id_fkey"
+            columns: ["learning_item_id"]
+            isOneToOne: false
+            referencedRelation: "learning_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_learning_items_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_learning_items_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_milestones: {
+        Row: {
+          blocked_by_skill_id: string | null
+          horizon: string
+          kind: string
+          optional_exploration: boolean
+          reason: string
+          ref_id: string | null
+          sort_order: number
+          status: string
+          title: string
+          version_id: string
+        }
+        Insert: {
+          blocked_by_skill_id?: string | null
+          horizon: string
+          kind: string
+          optional_exploration?: boolean
+          reason: string
+          ref_id?: string | null
+          sort_order: number
+          status: string
+          title: string
+          version_id: string
+        }
+        Update: {
+          blocked_by_skill_id?: string | null
+          horizon?: string
+          kind?: string
+          optional_exploration?: boolean
+          reason?: string
+          ref_id?: string | null
+          sort_order?: number
+          status?: string
+          title?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_milestones_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_projects: {
+        Row: {
+          covered_skill_ids: string[]
+          difficulty: string
+          is_ai_recommendation: boolean
+          project_id: string | null
+          status: string
+          title: string
+          version_id: string
+        }
+        Insert: {
+          covered_skill_ids?: string[]
+          difficulty: string
+          is_ai_recommendation?: boolean
+          project_id?: string | null
+          status?: string
+          title: string
+          version_id: string
+        }
+        Update: {
+          covered_skill_ids?: string[]
+          difficulty?: string
+          is_ai_recommendation?: boolean
+          project_id?: string | null
+          status?: string
+          title?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_projects_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_skill_gaps: {
+        Row: {
+          blocked_by_skill_id: string | null
+          confidence: number
+          coverage: string
+          current_level: number
+          gap: number
+          gap_type: string | null
+          importance: string
+          self_declared_only: boolean
+          skill_id: string | null
+          skill_name: string
+          sort_order: number
+          stage: string
+          target_level: number
+          verified: boolean
+          version_id: string
+        }
+        Insert: {
+          blocked_by_skill_id?: string | null
+          confidence?: number
+          coverage: string
+          current_level: number
+          gap: number
+          gap_type?: string | null
+          importance: string
+          self_declared_only?: boolean
+          skill_id?: string | null
+          skill_name: string
+          sort_order: number
+          stage: string
+          target_level: number
+          verified: boolean
+          version_id: string
+        }
+        Update: {
+          blocked_by_skill_id?: string | null
+          confidence?: number
+          coverage?: string
+          current_level?: number
+          gap?: number
+          gap_type?: string | null
+          importance?: string
+          self_declared_only?: boolean
+          skill_id?: string | null
+          skill_name?: string
+          sort_order?: number
+          stage?: string
+          target_level?: number
+          verified?: boolean
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_skill_gaps_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_skill_gaps_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_versions: {
+        Row: {
+          baseline_recommended: boolean
+          curriculum_version_id: string | null
+          generated_at: string
+          id: string
+          input_hash: string
+          input_snapshot: Json
+          mode: string
+          next_best_action: Json | null
+          notes: Json
+          readiness_score: number
+          roadmap_id: string
+          trigger: string
+          version_no: number
+        }
+        Insert: {
+          baseline_recommended?: boolean
+          curriculum_version_id?: string | null
+          generated_at?: string
+          id?: string
+          input_hash: string
+          input_snapshot: Json
+          mode?: string
+          next_best_action?: Json | null
+          notes?: Json
+          readiness_score: number
+          roadmap_id: string
+          trigger: string
+          version_no: number
+        }
+        Update: {
+          baseline_recommended?: boolean
+          curriculum_version_id?: string | null
+          generated_at?: string
+          id?: string
+          input_hash?: string
+          input_snapshot?: Json
+          mode?: string
+          next_best_action?: Json | null
+          notes?: Json
+          readiness_score?: number
+          roadmap_id?: string
+          trigger?: string
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_versions_curriculum_version_id_fkey"
+            columns: ["curriculum_version_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_versions_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmaps: {
+        Row: {
+          branch_key: string | null
+          career_id: string
+          created_at: string
+          curriculum_version_id: string | null
+          id: string
+          institution_id: string | null
+          is_current: boolean
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_key?: string | null
+          career_id: string
+          created_at?: string
+          curriculum_version_id?: string | null
+          id?: string
+          institution_id?: string | null
+          is_current?: boolean
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_key?: string | null
+          career_id?: string
+          created_at?: string
+          curriculum_version_id?: string | null
+          id?: string
+          institution_id?: string | null
+          is_current?: boolean
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmaps_career_id_fkey"
+            columns: ["career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmaps_curriculum_version_id_fkey"
+            columns: ["curriculum_version_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmaps_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           action: string
@@ -5136,6 +5668,10 @@ export type Database = {
         Returns: undefined
       }
       normalize_skill_text: { Args: { p_text: string }; Returns: string }
+      only_dangling_refs_nulled: {
+        Args: { n: Json; o: Json }
+        Returns: boolean
+      }
       org_effective_permissions: {
         Args: {
           p_permissions: string[]
@@ -5180,6 +5716,7 @@ export type Database = {
         Args: { role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
       }
+      save_roadmap_version: { Args: { p: Json }; Returns: Json }
       start_arena_challenge: {
         Args: {
           p_question_count?: number
