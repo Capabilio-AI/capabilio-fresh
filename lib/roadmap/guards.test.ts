@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
 const read = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
 function walk(dir: string, out: string[] = []): string[] {
+  if (!existsSync(join(ROOT, dir))) return out; // an empty dir is not tracked by git, so CI may lack it
   for (const n of readdirSync(join(ROOT, dir))) {
     const rel = `${dir}/${n}`;
     if (statSync(join(ROOT, rel)).isDirectory()) walk(rel, out);
