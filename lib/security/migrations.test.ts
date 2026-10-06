@@ -166,3 +166,38 @@ describe("migration 054: careers, intent, suggestions", () => {
     expect(sql).not.toMatch(/similarity|levenshtein|ilike/i);
   });
 });
+
+describe("migration 055: catalogs and Arena skill tags", () => {
+  const sql = migration("055_catalogs_and_arena_skills.sql");
+  const tables = ["certification_catalog", "certification_skills", "certification_careers", "learning_catalog", "learning_item_skills", "project_catalog", "project_skills", "arena_challenge_skills"];
+  it("is additive: skill_area_resources is only read, nothing is dropped or deleted", () => {
+    expect(sql).not.toMatch(/\bdrop (table|column)\b|\bdelete from public\.(skill_area_resources|arena_challenges|careers)\b|\btruncate table\b/i);
+    expect(sql).not.toMatch(/(alter table|update|insert into) public\.skill_area_resources\b/i);
+  });
+  it.each(tables)("%s: RLS on and no client write privileges", (t) => {
+    expect(sql).toMatch(new RegExp(`alter table public\\.${t} enable row level security`, "i"));
+    expect(sql).toMatch(new RegExp(`revoke insert, update, delete, truncate on[^;]*public\\.${t}\\b[^;]*from anon, authenticated`, "is"));
+  });
+  it("only ever creates read policies", () => {
+    expect(sql).not.toMatch(/for (insert|update|delete|all)/i);
+    expect((sql.match(/create policy/g) ?? []).length).toBeGreaterThanOrEqual(8);
+  });
+  it("an AI-generated project can only be a recommendation for one student; a college project needs a college", () => {
+    expect(sql).toMatch(/ai_projects_are_recommendations/);
+    expect(sql).toMatch(/ai_projects_belong_to_a_student check \(\(source = 'AI_GENERATED'\) = \(for_student_id is not null\)\)/);
+    expect(sql).toMatch(/college_projects_belong_to_a_college check \(\(source = 'COLLEGE'\) = \(institution_id is not null\)\)/);
+  });
+  it("only public, live, general projects are readable by anyone", () => {
+    expect(sql).toMatch(/project_catalog_read on public\.project_catalog for select using \(status = 'ACTIVE' and source in \('CAPABILIO', 'MENTOR'\)\)/);
+  });
+  it("Arena tagging is exact-match only, runs in the database, and its functions are locked down and pin search_path", () => {
+    expect(sql).not.toMatch(/similarity|levenshtein/i);
+    expect(sql).toMatch(/revoke execute on function public\.tag_arena_challenge_skills\(uuid\) from public, anon, authenticated/i);
+    expect(sql).toMatch(/revoke execute on function public\.arena_challenge_tag_trigger\(\) from public, anon, authenticated/i);
+    expect((sql.match(/set search_path = public, pg_temp/g) ?? []).length).toBeGreaterThanOrEqual(3);
+  });
+  it("carried-over certifications keep unstated fields NULL and get the weakest relevance", () => {
+    expect(sql).toMatch(/insert into public\.certification_catalog \(name, provider, url\)/);
+    expect(sql).toMatch(/'OPTIONAL'/);
+  });
+});

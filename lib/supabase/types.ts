@@ -264,6 +264,39 @@ export type Database = {
           },
         ]
       }
+      arena_challenge_skills: {
+        Row: {
+          challenge_id: string
+          skill_id: string
+          source: string
+        }
+        Insert: {
+          challenge_id: string
+          skill_id: string
+          source: string
+        }
+        Update: {
+          challenge_id?: string
+          skill_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_challenge_skills_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_challenge_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arena_challenges: {
         Row: {
           active: boolean
@@ -1189,6 +1222,111 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      certification_careers: {
+        Row: {
+          career_id: string
+          certification_id: string
+          relevance: string
+        }
+        Insert: {
+          career_id: string
+          certification_id: string
+          relevance?: string
+        }
+        Update: {
+          career_id?: string
+          certification_id?: string
+          relevance?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certification_careers_career_id_fkey"
+            columns: ["career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certification_careers_certification_id_fkey"
+            columns: ["certification_id"]
+            isOneToOne: false
+            referencedRelation: "certification_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certification_catalog: {
+        Row: {
+          cost: string | null
+          created_at: string
+          difficulty: string | null
+          duration: string | null
+          eligibility: string | null
+          id: string
+          is_active: boolean
+          name: string
+          provider: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          cost?: string | null
+          created_at?: string
+          difficulty?: string | null
+          duration?: string | null
+          eligibility?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          provider: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          cost?: string | null
+          created_at?: string
+          difficulty?: string | null
+          duration?: string | null
+          eligibility?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          provider?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      certification_skills: {
+        Row: {
+          certification_id: string
+          skill_id: string
+        }
+        Insert: {
+          certification_id: string
+          skill_id: string
+        }
+        Update: {
+          certification_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certification_skills_certification_id_fkey"
+            columns: ["certification_id"]
+            isOneToOne: false
+            referencedRelation: "certification_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certification_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       class_materials: {
         Row: {
@@ -2974,6 +3112,78 @@ export type Database = {
           },
         ]
       }
+      learning_catalog: {
+        Row: {
+          created_at: string
+          estimated_hours: number | null
+          id: string
+          is_active: boolean
+          level_from: number
+          level_to: number
+          prerequisites: string[]
+          provider: string
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          estimated_hours?: number | null
+          id?: string
+          is_active?: boolean
+          level_from: number
+          level_to: number
+          prerequisites?: string[]
+          provider: string
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          estimated_hours?: number | null
+          id?: string
+          is_active?: boolean
+          level_from?: number
+          level_to?: number
+          prerequisites?: string[]
+          provider?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      learning_item_skills: {
+        Row: {
+          item_id: string
+          skill_id: string
+        }
+        Insert: {
+          item_id: string
+          skill_id: string
+        }
+        Update: {
+          item_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_item_skills_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "learning_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_item_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentor_evaluations: {
         Row: {
           created_at: string
@@ -3996,6 +4206,59 @@ export type Database = {
           },
         ]
       }
+      project_catalog: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          difficulty: string
+          expected_evidence: string[]
+          for_student_id: string | null
+          id: string
+          institution_id: string | null
+          source: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          difficulty: string
+          expected_evidence?: string[]
+          for_student_id?: string | null
+          id?: string
+          institution_id?: string | null
+          source: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          difficulty?: string
+          expected_evidence?: string[]
+          for_student_id?: string | null
+          id?: string
+          institution_id?: string | null
+          source?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_catalog_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_contributions: {
         Row: {
           created_at: string
@@ -4104,6 +4367,36 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_skills: {
+        Row: {
+          project_id: string
+          skill_id: string
+        }
+        Insert: {
+          project_id: string
+          skill_id: string
+        }
+        Update: {
+          project_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_skills_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
             referencedColumns: ["id"]
           },
         ]
@@ -4893,6 +5186,10 @@ export type Database = {
           p_section: Database["public"]["Enums"]["assessment_section"]
         }
         Returns: Json
+      }
+      tag_arena_challenge_skills: {
+        Args: { p_challenge: string }
+        Returns: undefined
       }
     }
     Enums: {

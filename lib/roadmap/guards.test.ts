@@ -68,6 +68,13 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
       expect(src, f).toContain("auth.userId");
     }
   });
+  it("catalog matching is pure and never reaches for the AI provider; the seed path cannot seed AI or college projects", () => {
+    expect(read("lib/catalog/match.ts")).not.toMatch(/^import /m);
+    for (const f of walk("lib/catalog")) expect(read(f), f).not.toMatch(/@\/lib\/ai\//);
+    const seed = read("scripts/lib/catalog-seed.mjs");
+    expect(seed).not.toMatch(/openai|groq|completeJson/i);
+    expect(seed).toMatch(/source: z\.enum\(\["CAPABILIO", "MENTOR"\]\)/);
+  });
   it("the gate uses the existing RBAC, not a new role system", () => {
     expect(read("lib/roadmap/admin-gate.ts")).toContain('can(supabase, userId, "organisation", "admin"');
   });
