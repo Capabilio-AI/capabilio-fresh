@@ -4611,6 +4611,10 @@ export type Database = {
         Args: { p_group_id: string; p_link: string; p_user_id: string }
         Returns: undefined
       }
+      clone_curriculum_import: {
+        Args: { p_import_id: string; p_user_id: string }
+        Returns: string
+      }
       commit_rotation_attempt: {
         Args: {
           p_area_key: string

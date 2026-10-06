@@ -38,6 +38,18 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
   it("no request body schema can carry an institution or user id", () => {
     expect(read("lib/roadmap/schemas.ts")).not.toMatch(/institution_?id|user_?id/i);
   });
+  it("the curriculum admin request schemas can never carry an institution, a user, or who approved something", () => {
+    const src = read("lib/curriculum/schemas.ts");
+    expect(src).not.toMatch(/institution_?id|user_?id|approved_?by|approved_?at|created_?by|reviewed_?by/i);
+    expect((src.match(/\.strict\(\)/g) ?? []).length).toBeGreaterThanOrEqual(10);
+  });
+  it("every curriculum write goes through a function that checks ownership by the caller's institution", () => {
+    for (const f of ["lib/curriculum/writes.ts", "lib/curriculum/mapping-writes.ts"]) {
+      const src = read(f);
+      expect(src, f).toMatch(/admin\.institutionId/);
+      expect(src, f).not.toMatch(/service\.from\("(curriculum_imports|courses)"\)\.(delete|truncate)\(/); // soft delete only
+    }
+  });
   it("the gate uses the existing RBAC, not a new role system", () => {
     expect(read("lib/roadmap/admin-gate.ts")).toContain('can(supabase, userId, "organisation", "admin"');
   });

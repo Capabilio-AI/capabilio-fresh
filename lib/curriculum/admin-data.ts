@@ -44,6 +44,8 @@ export interface CourseRow {
   confirmed: number;
   suggested: number;
   rejected: number;
+  /** skill suggestions have been run for this course (even if they found nothing) */
+  skillsSuggested: boolean;
 }
 export interface SkillOption {
   id: string;
@@ -110,7 +112,7 @@ export async function listImports(service: Service, institutionId: string): Prom
 export async function getImportOverview(service: Service, institutionId: string, importId: string) {
   const imp = await getOwnedImport(service, institutionId, importId);
   if (!imp) return null;
-  const { data: rows } = await service.from("courses").select("id, year, semester, title, course_code, category, kind, credits, deleted_at, sort_order").eq("import_id", importId).order("year").order("semester", { nullsFirst: false }).order("sort_order");
+  const { data: rows } = await service.from("courses").select("id, year, semester, title, course_code, category, kind, credits, deleted_at, sort_order, provenance").eq("import_id", importId).order("year").order("semester", { nullsFirst: false }).order("sort_order");
   const ids = (rows ?? []).map((c) => c.id);
   const [{ data: outcomes }, { data: units }, { data: labs }, { data: maps }, { data: version }, { data: pos }] = await Promise.all([
     ids.length ? service.from("course_outcomes").select("course_id").in("course_id", ids) : { data: [] as { course_id: string }[] },
@@ -125,6 +127,7 @@ export async function getImportOverview(service: Service, institutionId: string,
     id: c.id, year: c.year, semester: c.semester, title: c.title, code: c.course_code, category: c.category, kind: c.kind, credits: num(c.credits),
     outcomes: count(outcomes, c.id), units: count(units, c.id), experiments: count(labs, c.id),
     confirmed: count(maps, c.id, (m) => m.status === "CONFIRMED"), suggested: count(maps, c.id, (m) => m.status === "SUGGESTED"), rejected: count(maps, c.id, (m) => m.status === "REJECTED"),
+    skillsSuggested: Boolean((c.provenance as Record<string, unknown> | null)?._skillsSuggestedAt),
   });
   return {
     import: imp,

@@ -127,3 +127,18 @@ describe("migration 052: curriculum editing", () => {
     expect(sql).not.toMatch(/create policy/i);
   });
 });
+
+describe("migration 053: clone a published curriculum", () => {
+  const sql = migration("053_clone_curriculum.sql");
+  it("is service-role only, additive, and refuses anything but a published source", () => {
+    expect(sql).toMatch(/revoke execute on function public\.clone_curriculum_import\(uuid, uuid\) from public, anon, authenticated/i);
+    expect(sql).toMatch(/grant execute on function public\.clone_curriculum_import\(uuid, uuid\) to service_role/i);
+    expect(sql).toMatch(/src\.status <> 'PUBLISHED'/);
+    expect(sql).toMatch(/set search_path = public, pg_temp/);
+    expect(sql).not.toMatch(/\bdrop table\b|\bdelete from\b|\bupdate public\./i);
+    expect(sql).not.toMatch(/create policy/i);
+  });
+  it("copies mappings with their statuses and approvals, never re-marking them", () => {
+    expect(sql).toMatch(/m\.mapping_source, m\.confidence, m\.importance, m\.evidence_source, m\.status, m\.created_by, m\.approved_by, m\.approved_at/);
+  });
+});

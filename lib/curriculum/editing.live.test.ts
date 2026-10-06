@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { liveServiceClient } from "@/lib/arena-workstations/live-test-helpers";
-import { addCourses, createImport, mergeCourse, publishImport, removeImport, saveCourse, setCourseRemoved, updateImport, FROZEN_MESSAGE } from "./writes";
+import { addCourses, createImport, createNewVersion, mergeCourse, publishImport, removeImport, saveCourse, setCourseRemoved, updateImport, FROZEN_MESSAGE } from "./writes";
 import { applyDecisions, confirmHighConfidence } from "./mapping-writes";
 import { getCourseDetail, getImportOverview, listImports } from "./admin-data";
 
@@ -202,4 +202,52 @@ describe("curriculum editing (live DB)", () => {
     expect((await listImports(service, instA)).some((i) => i.id === imp)).toBe(false);
     expect((await service.from("curriculum_imports").select("deleted_at").eq("id", imp).single()).data!.deleted_at).not.toBeNull();
   });
+
+  it("a new version copies everything (mappings keep their status and approval), is editable, and publishing it archives the old one", async () => {
+    const imp = await freshImport("ZZ Versioned", "ZZ-V1");
+    const id = await course(imp, "Operating Systems");
+    ok(await saveCourse(service, adminA, id, {
+      objectives: ["Understand processes"], outcomes: [{ code: "CO1", text: "Explain process scheduling" }, { code: "CO2", text: "Implement a simple shell" }],
+      units: [{ unitNo: 1, title: "Processes", topics: ["Scheduling", "Threads"] }], experiments: ["Write a shell"], textbooks: ["OS Concepts"],
+    }));
+    const co1 = (await getCourseDetail(service, instA, id))!.outcomes[0].id;
+    await suggest(id, dbms, 0.7);
+    ok(await applyDecisions(service, adminA, id, [{ skillId: sql, decision: "confirm", importance: "CORE" }, { skillId: stats, decision: "confirm", outcomeId: co1 }]));
+    await service.from("course_skill_mappings").insert({ course_id: id, skill_id: stats, mapping_source: "AI_SUGGESTED", status: "REJECTED", confidence: 0.2 });
+    expect(await createNewVersion(service, adminA, imp)).toMatchObject({ ok: false, status: 409 }); // not published yet
+    ok(await updateImport(service, adminA, imp, { status: "CONFIRMED" }));
+    ok(await publishImport(service, adminA, imp));
+
+    const v2 = ok(await createNewVersion(service, adminA, imp), "clone").id;
+    expect(v2).not.toBe(imp);
+    expect(await createNewVersion(service, adminA, imp)).toMatchObject({ ok: false, status: 409, message: expect.stringMatching(/already in progress/) });
+    const o2 = (await getImportOverview(service, instA, v2))!;
+    expect(o2.import).toMatchObject({ status: "UNDER_REVIEW", regulation: "ZZ-V1", branch: "ZZ Versioned" });
+    const c2 = o2.courses[0];
+    expect(c2.id).not.toBe(id);
+    expect(c2).toMatchObject({ title: "Operating Systems", outcomes: 2, units: 1 });
+    const d2 = (await getCourseDetail(service, instA, c2.id))!;
+    expect(d2.course.objectives).toEqual(["Understand processes"]);
+    expect(d2.course.textbooks).toEqual(["OS Concepts"]);
+    expect(d2.experiments).toEqual(["Write a shell"]);
+    expect(d2.units[0].topics).toEqual(["Scheduling", "Threads"]);
+    expect(d2.mappings.map((m) => [m.skillName, m.status]).sort()).toEqual([["SQL", "CONFIRMED"], ["Statistics", "REJECTED"], ["Database Management Systems", "SUGGESTED"]].sort());
+    const sqlRow = d2.mappings.find((m) => m.skillId === sql)!;
+    expect(sqlRow).toMatchObject({ status: "CONFIRMED", source: "MANUAL", importance: "CORE" });
+    expect(sqlRow.approvedAt).not.toBeNull(); // the approval survived the copy
+    expect(d2.outcomes[0].mappings.map((m) => m.status)).toEqual(["CONFIRMED"]); // outcome-level mapping copied onto the NEW outcome
+
+    // the copy is editable; the original stays frozen
+    ok(await saveCourse(service, adminA, c2.id, { title: "Operating Systems (revised)" }));
+    expect(await saveCourse(service, adminA, id, { title: "x" })).toMatchObject({ ok: false, status: 409 });
+    expect(await createNewVersion(service, adminB, imp)).toMatchObject({ ok: false, status: 404 });
+
+    ok(await updateImport(service, adminA, v2, { status: "CONFIRMED" }));
+    ok(await publishImport(service, adminA, v2));
+    const after = (await service.from("curriculum_imports").select("id, status, supersedes_import_id").in("id", [imp, v2])).data!;
+    expect(after.find((r) => r.id === imp)!.status).toBe("ARCHIVED");
+    expect(after.find((r) => r.id === v2)).toMatchObject({ status: "PUBLISHED", supersedes_import_id: imp });
+    expect((await getImportOverview(service, instA, v2))!.versionNo).toBe(2);
+  });
 });
+

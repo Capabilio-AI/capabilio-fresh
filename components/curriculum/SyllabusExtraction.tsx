@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { searchBranches } from "@/lib/branch-catalog";
 import type { ExtractionErrorCode, ExtractionRecord } from "@/lib/roadmap/extract/types";
-import { ExtractionReview } from "./ExtractionReview";
+import { Panel } from "@/components/org/ui";
 
 const POLL_MS = 2500;
 const MAX_MB = 15;
 
 const FAILURE: Record<ExtractionErrorCode, string> = {
-  no_text_layer: "We couldn't read this file — it looks like a scan with no selectable text. Use the CSV template, or upload a digitally generated PDF.",
-  unrecognised_format: "We couldn't find semester tables in this PDF. Use the CSV template instead.",
+  no_text_layer: "We couldn't read this file — it looks like a scan with no selectable text. Start the curriculum by hand, or upload a digitally generated PDF.",
+  unrecognised_format: "We couldn't find semester tables in this PDF. Start the curriculum by hand instead.",
   unreadable: "We couldn't read this file. It may be damaged, password-protected or too long.",
   ai_unavailable: "The reader is unavailable right now. Please try again in a few minutes.",
   internal: "The extraction didn't finish. Please try again.",
@@ -21,12 +22,10 @@ const FAILURE: Record<ExtractionErrorCode, string> = {
 interface Props {
   initial: ExtractionRecord | null;
   roleKey: string;
-  areas: { key: string; name: string }[];
-  onMessage: (m: string) => void;
 }
 
-/** Third input method: upload → background read (poll) → editable review → import through the existing routes. */
-export function SyllabusExtraction({ initial, roleKey, areas, onMessage }: Props) {
+/** Upload → background read (polled) → a draft curriculum to review. The PDF itself is never stored. */
+export function SyllabusExtraction({ initial, roleKey }: Props) {
   const router = useRouter();
   const [extraction, setExtraction] = useState<ExtractionRecord | null>(initial);
   const [branch, setBranch] = useState(initial?.branch ?? "");
@@ -43,9 +42,10 @@ export function SyllabusExtraction({ initial, roleKey, areas, onMessage }: Props
       if (!res.ok) return;
       const json = (await res.json()) as { extraction: ExtractionRecord };
       setExtraction(json.extraction);
+      if (json.extraction.status !== "processing") router.refresh();
     }, POLL_MS);
     return () => clearInterval(timer);
-  }, [processing, extraction]);
+  }, [processing, extraction, router]);
 
   async function upload() {
     if (!file || !branch.trim()) return setError("Choose a branch and a PDF.");
@@ -71,12 +71,12 @@ export function SyllabusExtraction({ initial, roleKey, areas, onMessage }: Props
   }
 
   const percent = extraction && extraction.chunksTotal > 0 ? Math.round((extraction.chunksDone / extraction.chunksTotal) * 100) : 4;
+  const importId = extraction?.result?.importId ?? null;
 
   return (
-    <section className="o-card p-5">
-      <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Extract from a syllabus PDF</h2>
-      <p className="mt-1 font-lp-body text-[12px] text-app-muted">
-        Upload your college&apos;s syllabus (a digital PDF, up to {MAX_MB} MB). We read the semester tables and course outcomes, then show you what we found. Nothing is saved until you review and import.
+    <Panel title="Extract from a syllabus PDF">
+      <p className="font-lp-body text-[12px] text-app-muted">
+        Upload your college&apos;s syllabus (a digital PDF, up to {MAX_MB} MB). We read the semester tables, course outcomes, units, labs and books into a draft you review. Nothing is saved to students until you review, confirm and publish.
       </p>
 
       {!extraction && (
@@ -92,12 +92,8 @@ export function SyllabusExtraction({ initial, roleKey, areas, onMessage }: Props
               <input id="ext-file" type="file" accept=".pdf,application/pdf" className="o-input" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             </div>
           </div>
-          <div>
-            <button type="button" className="o-btn" disabled={busy || !file} onClick={upload}>
-              {busy && <Loader2 size={13} className="animate-spin" />} Read syllabus
-            </button>
-          </div>
-          {error && <p className="font-lp-body text-[12px] text-app-orange" role="alert">{error}</p>}
+          <div><button type="button" className="o-btn" disabled={busy || !file} onClick={upload}>{busy && <Loader2 size={13} className="animate-spin" aria-hidden="true" />} Read syllabus</button></div>
+          {error && <p className="font-lp-body text-[12px] text-app-rose" role="alert">{error}</p>}
         </div>
       )}
 
@@ -105,29 +101,33 @@ export function SyllabusExtraction({ initial, roleKey, areas, onMessage }: Props
         <div className="mt-4" role="status">
           <p className="font-lp-body text-[13px] text-app-charcoal">Reading <span className="font-medium">{extraction.fileName}</span>… this takes a minute or two for a long syllabus.</p>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full transition-all" style={{ width: `${percent}%`, background: "var(--o-gradient)" }} /></div>
-          <p className="mt-2 font-lp-body text-[12px] text-app-muted">You can leave this page — it keeps going, and the result will be waiting here when you come back.</p>
+          <p className="mt-2 font-lp-body text-[12px] text-app-muted">You can leave this page — it keeps going, and the draft will be waiting in the list below.</p>
         </div>
       )}
 
       {extraction?.status === "failed" && (
         <div className="mt-4">
-          <p className="font-lp-body text-[13px] text-app-orange" role="alert">{FAILURE[extraction.errorCode ?? "internal"]}</p>
+          <p className="font-lp-body text-[13px] text-app-rose" role="alert">{FAILURE[extraction.errorCode ?? "internal"]}</p>
           <button type="button" className="o-btn-ghost mt-3" onClick={reset}>Try another file</button>
         </div>
       )}
 
-      {extraction?.status === "ready" && extraction.result && (
-        <ExtractionReview
-          key={extraction.id}
-          extraction={{ ...extraction, result: extraction.result }}
-          roleKey={roleKey}
-          areas={areas}
-          onDone={(m) => {
-            onMessage(m);
-            setExtraction(null);
-          }}
-        />
+      {extraction?.status === "ready" && (
+        <div className="mt-4" role="status">
+          {importId ? (
+            <>
+              <p className="font-lp-body text-[13px] text-app-success">Done — a draft curriculum for {extraction.branch} is ready for your review.</p>
+              {extraction.result?.warnings.map((w) => <p key={w} className="mt-1 font-lp-body text-[12px] text-app-warning">{w}</p>)}
+              <Link href={`/org/curriculum/${importId}`} className="o-btn mt-3 inline-flex">Review the draft</Link>
+            </>
+          ) : (
+            <>
+              <p className="font-lp-body text-[13px] text-app-rose" role="alert">We read the syllabus but couldn&apos;t save the draft. Nothing was changed — please try again.</p>
+              <button type="button" className="o-btn-ghost mt-3" onClick={reset}>Try again</button>
+            </>
+          )}
+        </div>
       )}
-    </section>
+    </Panel>
   );
 }

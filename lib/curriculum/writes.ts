@@ -137,3 +137,12 @@ export async function publishImport(service: Service, admin: Admin, importId: st
   const { data, error } = await service.rpc("publish_curriculum_import", { p_import_id: importId, p_user_id: admin.userId });
   return error || !data ? dbFailure(error ?? {}, "publishImport") : { ok: true, versionId: data };
 }
+
+/** Copies a PUBLISHED curriculum into a new editable version (clone_curriculum_import): the way to correct something that is frozen. */
+export async function createNewVersion(service: Service, admin: Admin, importId: string): Promise<Result<{ id: string }>> {
+  const imp = await getOwnedImport(service, admin.institutionId, importId);
+  if (!imp) return fail(404, "Curriculum not found.");
+  if (imp.status !== "PUBLISHED") return fail(409, "Only a published curriculum can be copied into a new version.");
+  const { data, error } = await service.rpc("clone_curriculum_import", { p_import_id: importId, p_user_id: admin.userId });
+  return error || !data ? dbFailure(error ?? {}, "createNewVersion") : { ok: true, id: data };
+}

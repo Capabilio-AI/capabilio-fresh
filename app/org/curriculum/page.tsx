@@ -1,31 +1,33 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { orgPageContext } from "@/lib/org/page";
-import { listSubjectsForAdmin } from "@/lib/roadmap/admin-data";
-import { listEnabledRoles, loadRoleTaxonomy } from "@/lib/arena-workstations/taxonomy";
-import { CurriculumManager } from "@/components/admin/CurriculumManager";
+import { listImports } from "@/lib/curriculum/admin-data";
+import { listEnabledRoles } from "@/lib/arena-workstations/taxonomy";
 import { latestExtraction } from "@/lib/roadmap/extract/store";
 import { PageHeader } from "@/components/org/ui";
+import { ImportList } from "@/components/curriculum/ImportList";
+import { NewCurriculum } from "@/components/curriculum/NewCurriculum";
 
 export const metadata: Metadata = { title: "Curriculum — Capabilio AI" };
 
-/** Inside the organisation workspace (it used to open the student shell). Needs the Curriculum permission. */
+/** Inside the organisation workspace. Needs the Curriculum permission; everything is scoped to the caller's own institution. */
 export default async function OrgCurriculumPage() {
   const { ctx, service } = await orgPageContext("manageCurriculum");
   const roles = await listEnabledRoles(service);
   const role = roles[0];
   if (!role) notFound();
-  const { areas } = await loadRoleTaxonomy(service, role.role_key);
-  const subjects = await listSubjectsForAdmin(service, ctx.institutionId, role.role_key);
-  const extraction = await latestExtraction(service, ctx.institutionId, ctx.userId);
+  const [items, staged] = await Promise.all([listImports(service, ctx.institutionId), latestExtraction(service, ctx.institutionId, ctx.userId)]);
+  // A finished upload already shows up as a draft in the list; the banner is only for one still running, failed, or not saved.
+  const extraction = staged && (staged.status !== "ready" || !staged.result?.importId) ? staged : null;
 
   return (
-    <div>
+    <div className="flex flex-col gap-8">
       <PageHeader
         title="Curriculum"
-        subtitle={`${ctx.institutionName}. Enter your subjects by branch and year, then map each to the skills it builds. Students on the job track see how their curriculum lines up with ${role.display_name} skills.`}
+        subtitle={`${ctx.institutionName}. Upload your syllabus, review what was read, confirm the skills each course builds, then publish. Students see their roadmap built from what you confirm — the university's curriculum stays yours; Capabilio only interprets it.`}
       />
-      <CurriculumManager subjects={subjects} roleKey={role.role_key} roleName={role.display_name} areas={areas.filter((a) => a.enabled).map((a) => ({ key: a.area_key, name: a.display_name }))} extraction={extraction} />
+      <NewCurriculum extraction={extraction} roleKey={role.role_key} />
+      <ImportList items={items} />
     </div>
   );
 }
