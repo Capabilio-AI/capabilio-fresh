@@ -18,3 +18,9 @@ export function validateProgramYears(start: unknown, end: unknown, now: Date = n
   if (endYear - startYear > MAX_PROGRAM_YEARS) return { ok: false, message: `A program can't run longer than ${MAX_PROGRAM_YEARS} years.` };
   return { ok: true, startYear, endYear };
 }
+
+/** Program length in years for planning (roadmap milestones): from the start and end years, 4 when either is missing or implausible, bounded 2–6. */
+export function programLengthYears(startYear: number | null, endYear: number | null): number {
+  if (startYear == null || endYear == null || endYear <= startYear) return 4;
+  return Math.min(6, Math.max(2, endYear - startYear));
+}

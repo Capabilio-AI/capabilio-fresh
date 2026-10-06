@@ -196,3 +196,44 @@ export async function suggestCareersForGoal(goalText: string, careers: CareerOpt
   const seen = new Set<string>();
   return out.careers.filter((c) => valid.has(c.key) && !seen.has(c.key) && (seen.add(c.key), true)).sort((a, b) => b.confidence - a.confidence);
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Roadmap prose (Phase 7c). PROPOSE ONLY, and never trusted: every explanation is checked against the facts it was given
+// (lib/roadmap-engine/explanation.ts) before it is stored, and project ideas are stored only as per-student RECOMMENDATIONS.
+// ---------------------------------------------------------------------------------------------------------------------
+
+export interface SubjectFactsForExplanation {
+  id: string;
+  title: string;
+  skillNames: string[];
+  outcomeCount: number;
+  gapPoints: number;
+}
+const ExplanationsSchema = z.object({ results: z.array(z.object({ id: z.string(), sentence: z.string().min(1).max(400) })) });
+
+/** One sentence per subject, using ONLY the supplied skill names and numbers. */
+export async function explainSubjects(careerName: string, subjects: SubjectFactsForExplanation[]): Promise<Map<string, string>> {
+  const ids = new Set(subjects.map((s) => s.id));
+  const body = subjects.map((s) => `id=${s.id} | ${s.title}\n  skills it builds that ${careerName} still needs: ${s.skillNames.join(", ")}\n  confirmed outcomes supporting them: ${s.outcomeCount}\n  gap points on those skills: ${s.gapPoints}`).join("\n\n");
+  const out = await completeJson(
+    `Target career: ${careerName}.\nFor each university subject below, write ONE short sentence (under 30 words) saying why it matters for this career.\nRules: mention only the skill names listed for that subject; use only the numbers given for it; never suggest skipping or ignoring any subject; no advice, no other facts.\n\n${body}\n\nReturn JSON: {"results":[{"id":string,"sentence":string}]} with one entry per id.`,
+    "You write one grounded sentence per subject using only the supplied facts. You never add skills, numbers or claims, and never tell a student to skip a subject.",
+    ExplanationsSchema
+  );
+  return new Map(out.results.filter((r) => ids.has(r.id)).map((r) => [r.id, r.sentence.trim()]));
+}
+
+export const ProjectIdeasSchema = z.object({
+  ideas: z.array(z.object({ title: z.string().trim().min(3).max(120), description: z.string().trim().min(10).max(600), difficulty: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]), expectedEvidence: z.array(z.string().trim().min(3).max(200)).max(5), skills: z.array(z.string()).min(1).max(4) })).max(3),
+});
+
+/** Up to three project ideas for a student's remaining gaps; skill names are filtered to the supplied gap skills by the caller. */
+export async function suggestProjectIdeas(careerName: string, gapSkillNames: string[], maxDifficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED") {
+  const out = await completeJson(
+    `Target career: ${careerName}. The student still needs these skills: ${gapSkillNames.join(", ")}.\nSuggest up to 3 small, concrete projects a student could build to practise them, no harder than ${maxDifficulty}. Each project: a title, a 1–2 sentence description, a difficulty, up to 5 pieces of evidence the student could show (a link, a dashboard, a repo…), and 1–4 of the skills above (exact names).\nReturn JSON: {"ideas":[{"title":string,"description":string,"difficulty":"BEGINNER"|"INTERMEDIATE"|"ADVANCED","expectedEvidence":string[],"skills":string[]}]}`,
+    "You suggest practical student projects. You only name skills from the list you were given. You never claim a project guarantees a job or a skill level.",
+    ProjectIdeasSchema
+  );
+  const valid = new Set(gapSkillNames.map((s) => s.toLowerCase()));
+  return out.ideas.map((i) => ({ ...i, skills: [...new Set(i.skills.filter((s) => valid.has(s.toLowerCase())))] })).filter((i) => i.skills.length > 0);
+}
