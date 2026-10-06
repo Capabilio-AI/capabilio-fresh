@@ -32,12 +32,16 @@ const InterestDistributionSchema = z.object({
   interest_distribution: z.record(z.string(), z.number().min(0).max(100)),
 });
 
-function questionBatchPrompt(statedRole: string, alreadyAsked: string[]): string {
+function questionBatchPrompt(statedRole: string, alreadyAsked: string[], skillNames: string[]): string {
+  const skills =
+    skillNames.length > 0
+      ? `\n\nskill_probe MUST be exactly one of these skill names, copied verbatim: ${skillNames.join("; ")}.`
+      : "";
   const avoid =
     alreadyAsked.length > 0
       ? `\n\nDo not repeat or closely rephrase any of these already-used questions:\n- ${alreadyAsked.join("\n- ")}`
       : "";
-  return `Career role: "${statedRole}"\n\nGenerate ${BATCH_SIZE} multiple-choice questions for this role.${avoid}`;
+  return `Career role: "${statedRole}"\n\nGenerate ${BATCH_SIZE} multiple-choice questions for this role.${skills}${avoid}`;
 }
 
 const QUESTION_SYSTEM_PROMPT = `You write calibrated multiple-choice assessment questions for an Indian engineering
@@ -67,11 +71,11 @@ distribution (0-100 each, needn't sum to 100) covering the stated role plus 3-5 
 how the stated interest overlaps with related careers. Respond with JSON only:
 { "interest_distribution": { "<role name>": 85 } }`;
 
-async function generateAllQuestions(statedRole: string) {
+async function generateAllQuestions(statedRole: string, skillNames: string[]) {
   const questions: z.infer<typeof GeneratedQuestionSchema>[] = [];
   for (let batch = 0; batch < BATCH_COUNT; batch++) {
     const result = await completeJson(
-      questionBatchPrompt(statedRole, questions.map((q) => q.question_text)),
+      questionBatchPrompt(statedRole, questions.map((q) => q.question_text), skillNames),
       QUESTION_SYSTEM_PROMPT,
       QuestionBatchSchema
     );
@@ -93,7 +97,10 @@ export async function generateCareerInterestSection(
   userId: string,
   statedRole: string
 ) {
-  const questions = await generateAllQuestions(statedRole);
+  // Probe names must be canonical skills, or the student's answers can't count toward any career requirement.
+  const { data: skillRows } = await serviceClient.from("career_skill_requirements").select("skills ( name )");
+  const skillNames = [...new Set((skillRows ?? []).flatMap((r) => (r.skills ? [(r.skills as { name: string }).name] : [])))];
+  const questions = await generateAllQuestions(statedRole, skillNames);
   const { interest_distribution } = await completeJson(
     `Career role: "${statedRole}"`,
     DISTRIBUTION_SYSTEM_PROMPT,
