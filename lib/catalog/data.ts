@@ -47,8 +47,12 @@ export async function loadArenaChallengesForSkills(service: Service, skillIds: s
   const { data: tags } = await service.from("arena_challenge_skills").select("challenge_id, skill_id").in("skill_id", skillIds);
   const ids = [...new Set((tags ?? []).map((t) => t.challenge_id))];
   if (ids.length === 0) return [];
-  const { data: challenges } = await service.from("arena_challenges").select("id, title, difficulty, active").in("id", ids);
-  const skillsOf = group(tags, "challenge_id", "skill_id");
+  // every tag of a matched challenge, not just the requested ones: how focused a challenge is depends on what else it teaches
+  const [{ data: challenges }, { data: allTags }] = await Promise.all([
+    service.from("arena_challenges").select("id, title, difficulty, active").in("id", ids),
+    service.from("arena_challenge_skills").select("challenge_id, skill_id").in("challenge_id", ids),
+  ]);
+  const skillsOf = group(allTags ?? tags, "challenge_id", "skill_id");
   return (challenges ?? []).map((c) => ({ id: c.id, title: c.title, difficulty: c.difficulty, active: c.active, skillIds: skillsOf.get(c.id) ?? [] }));
 }
 

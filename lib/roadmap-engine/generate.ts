@@ -108,7 +108,8 @@ export function generateRoadmap(input: EngineInput): RoadmapPlan {
   const projectNote = projects.length ? null : input.catalogs.projects.some((p) => p.status === "ACTIVE") ? "No project in the catalog matches your remaining gaps yet." : "Project recommendations aren't configured yet.";
 
   const wanted = meanLevel < 40 ? "easy" : meanLevel < 70 ? "medium" : "hard";
-  const arena = recommendArena(gapIds, input.catalogs.arena, wanted, 5);
+  const arenaRanked = recommendArena(gapIds, input.catalogs.arena, wanted, Number.POSITIVE_INFINITY);
+  const arena = arenaRanked.slice(0, 5);
   const arenaNote = arena.length ? null : "No Arena challenge is tagged with your remaining gaps yet.";
 
   const milestones = buildMilestones({
@@ -120,6 +121,6 @@ export function generateRoadmap(input: EngineInput): RoadmapPlan {
   return {
     career: input.career, readiness, readinessExplanation: READINESS_EXPLANATION, baselineRecommended: !input.hasAnyCapabilityData,
     gaps, subjects, mandatoryNote: MANDATORY_NOTE, learning, learningNotConfigured, certifications, certificationNote, projects, projectNote, arena, arenaNote, milestones,
-    nextBestAction: nextBestAction({ gaps, milestones, subjects, learning, arena, projects, hasAnyCapabilityData: input.hasAnyCapabilityData }),
+    nextBestAction: nextBestAction({ gaps, milestones, subjects, learning, arena: arenaRanked, projects, hasAnyCapabilityData: input.hasAnyCapabilityData }),
   };
 }

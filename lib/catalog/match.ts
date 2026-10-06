@@ -114,9 +114,15 @@ export function recommendProjects(gapSkillIds: string[], projects: ProjectItem[]
     .sort((a, b) => b.coveredSkillIds.length - a.coveredSkillIds.length || DIFFICULTY_ORDER[a.project.difficulty] - DIFFICULTY_ORDER[b.project.difficulty] || a.project.title.localeCompare(b.project.title));
 }
 
+/** how many of a challenge's skills are NOT among the student's gaps */
+const offTopic = (x: { challenge: ArenaChallengeItem; coveredSkillIds: string[] }) => x.challenge.skillIds.length - x.coveredSkillIds.length;
+
 const ARENA_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
 
-/** Arena challenges tagged with a skill the student still needs, nearest the wanted difficulty first. */
+/**
+ * Arena challenges tagged with a skill the student still needs. Focused ones first (those that teach little beyond the student's gaps —
+ * a challenge that mostly practises another skill is a poor answer to "what should I work on"), then nearest the wanted difficulty.
+ */
 export function recommendArena(gapSkillIds: string[], challenges: ArenaChallengeItem[], wantedDifficulty: string, limit = 5) {
   const gaps = new Set(gapSkillIds);
   const want = ARENA_ORDER[wantedDifficulty] ?? 1;
@@ -126,6 +132,6 @@ export function recommendArena(gapSkillIds: string[], challenges: ArenaChallenge
       const coveredSkillIds = challenge.skillIds.filter((s) => gaps.has(s));
       return coveredSkillIds.length > 0 ? [{ challenge, coveredSkillIds }] : [];
     })
-    .sort((a, b) => Math.abs((ARENA_ORDER[a.challenge.difficulty] ?? 1) - want) - Math.abs((ARENA_ORDER[b.challenge.difficulty] ?? 1) - want) || b.coveredSkillIds.length - a.coveredSkillIds.length || a.challenge.id.localeCompare(b.challenge.id))
+    .sort((a, b) => offTopic(a) - offTopic(b) || Math.abs((ARENA_ORDER[a.challenge.difficulty] ?? 1) - want) - Math.abs((ARENA_ORDER[b.challenge.difficulty] ?? 1) - want) || b.coveredSkillIds.length - a.coveredSkillIds.length || a.challenge.title.localeCompare(b.challenge.title))
     .slice(0, limit);
 }

@@ -101,3 +101,15 @@ describe("recommendArena", () => {
     expect(recommendArena(["cooking"], [ch("e", ["sql"], "easy")], "easy")).toEqual([]);
   });
 });
+
+describe("recommendArena focus", () => {
+  const ch = (id: string, difficulty: string, skillIds: string[]): ArenaChallengeItem => ({ id, title: id, difficulty, skillIds, active: true });
+  it("prefers a challenge that only practises the student's gap over an easier one that mostly practises another skill", () => {
+    // student needs programming; "sql-builder" is easy but also teaches sql (not a gap); "gear-ratio" is medium and programming-only
+    const ranked = recommendArena(["prog"], [ch("sql-builder", "easy", ["prog", "sql"]), ch("gear-ratio", "medium", ["prog"])], "easy");
+    expect(ranked.map((r) => r.challenge.id)).toEqual(["gear-ratio", "sql-builder"]);
+  });
+  it("still falls back to the off-topic challenge when it is the only one", () => {
+    expect(recommendArena(["prog"], [ch("sql-builder", "easy", ["prog", "sql"])], "easy").map((r) => r.challenge.id)).toEqual(["sql-builder"]);
+  });
+});
