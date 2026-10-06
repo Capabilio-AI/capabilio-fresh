@@ -201,3 +201,40 @@ describe("migration 055: catalogs and Arena skill tags", () => {
     expect(sql).toMatch(/'OPTIONAL'/);
   });
 });
+
+describe("migration 056: roadmaps are private, immutable and written through one function", () => {
+  const sql = migration("056_roadmaps.sql");
+  const tables = ["roadmaps", "roadmap_versions", "roadmap_goals", "roadmap_skill_gaps", "roadmap_courses", "roadmap_learning_items", "roadmap_certifications", "roadmap_projects", "roadmap_arena_challenges", "roadmap_milestones"];
+  it("every roadmap table has RLS on and no client write grant", () => {
+    for (const t of tables) {
+      expect(sql, t).toMatch(new RegExp(`alter table public\\.${t} enable row level security`, "i"));
+      expect(sql, t).toMatch(new RegExp(`revoke insert, update, delete, truncate on[^;]*public\\.${t}\\b[^;]*from anon, authenticated`, "is"));
+    }
+  });
+  it("only ever creates read policies, each scoped to the student's own roadmap", () => {
+    const policies = sql.split("\n").filter((l) => /^create policy/i.test(l));
+    expect(policies.length).toBe(tables.length);
+    for (const l of policies) {
+      expect(l).toMatch(/ for select using /i);
+      expect(l).toMatch(/student_id = auth\.uid\(\)/);
+    }
+  });
+  it("one roadmap per student per career, and at most one current roadmap per student", () => {
+    expect(sql).toMatch(/unique \(student_id, career_id\)/);
+    expect(sql).toMatch(/create unique index roadmaps_one_current_per_student on public\.roadmaps \(student_id\) where is_current/);
+    expect(sql).toMatch(/unique \(roadmap_id, version_no\)/);
+  });
+  it("stored versions are immutable (but a deleted catalog item or student still works)", () => {
+    expect(sql).toMatch(/only_dangling_refs_nulled/);
+    expect(sql).toMatch(/immutable/i);
+  });
+  it("saving is one function: service role only, serialised per student, and pinned to a search_path", () => {
+    expect(sql).toMatch(/pg_advisory_xact_lock/);
+    expect(sql).toMatch(/revoke execute on function public\.save_roadmap_version\(jsonb\) from public, anon, authenticated/i);
+    expect(sql).toMatch(/grant execute on function public\.save_roadmap_version\(jsonb\) to service_role/i);
+    expect((sql.match(/set search_path = public, pg_temp/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+  it("the migration is additive: it creates tables and functions only", () => {
+    expect(sql).not.toMatch(/drop (table|column)|alter table public\.(?!roadmap)\w+ (drop|alter column)/i);
+  });
+});

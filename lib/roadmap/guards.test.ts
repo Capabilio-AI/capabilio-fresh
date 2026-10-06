@@ -80,6 +80,28 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
       expect(read(`lib/roadmap-engine/${f}.ts`), f).not.toMatch(/supabase|fetch\(|@\/lib\/ai\/|@\/lib\/roadmap\/suggest|node:|process\.env/);
     }
   });
+  it("every student roadmap route authenticates first and acts only on the signed-in student", () => {
+    const routes = walk("app/api/roadmap").filter((x) => x.endsWith("route.ts"));
+    expect(routes.length).toBeGreaterThanOrEqual(4);
+    for (const f of routes) {
+      const src = read(f);
+      expect(src, f).toContain("requireUser(");
+      expect(src.indexOf("requireUser("), f).toBeLessThan(src.indexOf("createServiceClient()"));
+      expect(src, f).toContain("auth.userId");
+      expect(src, f).not.toMatch(/request\.(json|formData)\(|searchParams/); // nothing in the request can name a student
+    }
+  });
+  it("roadmap persistence and regeneration never import the AI provider; only the explanation step reaches the propose-only module", () => {
+    for (const f of ["store", "read", "service", "regenerate", "curriculum", "load", "prepare", "snapshot"]) expect(read(`lib/roadmap-engine/${f}.ts`), f).not.toMatch(/@\/lib\/ai\//);
+    const importers = walk("lib/roadmap-engine").filter((f) => /@\/lib\/roadmap\/suggest/.test(read(f)));
+    expect(importers).toEqual(["lib/roadmap-engine/explain.ts"]);
+  });
+  it("publishing regenerates in the background, after the response, and never fails the publish", () => {
+    const src = read("app/api/admin/curriculum/imports/[id]/publish/route.ts");
+    expect(src).toContain("after(");
+    expect(src).toContain("regenerateForBranch(");
+    expect(src).toMatch(/catch \(error\)/);
+  });
   it("the gate uses the existing RBAC, not a new role system", () => {
     expect(read("lib/roadmap/admin-gate.ts")).toContain('can(supabase, userId, "organisation", "admin"');
   });
