@@ -58,3 +58,44 @@ describe("migration 047: canonical skills", () => {
     expect(sql).not.toMatch(/create policy[^;]*skill_suggestions/i);
   });
 });
+
+describe("migration 048/049: curriculum model", () => {
+  const sql = migration("048_curriculum_model.sql");
+  const fix = migration("049_curriculum_cascade_delete.sql");
+  const tables = ["curriculum_imports", "curriculum_versions", "courses", "course_outcomes", "course_units", "unit_topics", "lab_experiments", "program_outcomes", "other_curriculum_items", "course_skill_mappings", "course_outcome_skill_mappings", "curriculum_subjects_pre048", "curriculum_subject_skill_map_pre048"];
+  it.each(tables)("%s: RLS on, no policies, no client privileges", (t) => {
+    expect(sql).toMatch(new RegExp(`alter table public\\.${t} enable row level security`, "i"));
+    expect(sql).toMatch(new RegExp(`revoke all on[^;]*public\\.${t}\\b[^;]*from anon, authenticated`, "is"));
+  });
+  it("creates no policies", () => expect(sql).not.toMatch(/create policy/i));
+  it("is additive: legacy tables are never altered, dropped or deleted from", () => {
+    expect(sql).not.toMatch(/\bdrop (table|column)\b/i);
+    expect(sql).not.toMatch(/\bdelete from\b/i);
+    expect(sql).not.toMatch(/\b(alter table|update|truncate)\s+(only\s+)?public\.curriculum_(subjects|subject_skill_map|extractions)\b/i);
+  });
+  it("encodes 'AI never becomes official' and 'confirmed has an approval time' for both mapping tables", () => {
+    expect((sql.match(/ai_never_official check \(not \(mapping_source = 'AI_SUGGESTED' and status = 'CONFIRMED'\)\)/g) ?? []).length).toBe(2);
+    expect((sql.match(/confirmed_has_approval check \(status <> 'CONFIRMED' or approved_at is not null\)/g) ?? []).length).toBe(2);
+  });
+  it("freezes every table under an import with a guard trigger", () => {
+    for (const t of ["courses", "program_outcomes", "other_curriculum_items", "course_outcomes", "course_units", "unit_topics", "lab_experiments", "course_skill_mappings", "course_outcome_skill_mappings"]) {
+      expect(sql).toMatch(new RegExp(`create trigger guard_frozen before insert or update or delete on public\\.${t} `, "i"));
+    }
+  });
+  it("publish is service-role only", () => {
+    expect(sql).toMatch(/revoke execute on function public\.publish_curriculum_import\(uuid, uuid\) from public, anon, authenticated/i);
+    expect(sql).toMatch(/grant execute on function public\.publish_curriculum_import\(uuid, uuid\) to service_role/i);
+  });
+  it("049 only relaxes the delete guards for a cascade from the institution", () => {
+    expect(fix).toMatch(/exists \(select 1 from public\.institutions where id = old\.institution_id\)/i);
+    expect(fix).toMatch(/not exists \(select 1 from public\.institutions where id = old\.institution_id\)/i);
+    expect(fix).not.toMatch(/create policy|grant /i);
+  });
+});
+
+describe("migration 050: curriculum functions pin their search_path", () => {
+  const sql = migration("050_curriculum_function_search_path.sql");
+  it.each(["curriculum_import_is_frozen", "guard_frozen_by_import", "guard_frozen_by_course", "guard_import_lifecycle", "guard_version_immutable", "publish_curriculum_import"])("%s", (fn) => {
+    expect(sql).toMatch(new RegExp(`alter function public\\.${fn}\\([^)]*\\) set search_path = public, pg_temp`));
+  });
+});

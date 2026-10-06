@@ -1502,6 +1502,443 @@ export type Database = {
           },
         ]
       }
+      course_outcome_skill_mappings: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          confidence: number | null
+          course_id: string
+          course_outcome_id: string
+          created_at: string
+          created_by: string | null
+          evidence_source: string | null
+          id: string
+          importance: string | null
+          mapping_source: string
+          skill_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          course_id: string
+          course_outcome_id: string
+          created_at?: string
+          created_by?: string | null
+          evidence_source?: string | null
+          id?: string
+          importance?: string | null
+          mapping_source: string
+          skill_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          course_id?: string
+          course_outcome_id?: string
+          created_at?: string
+          created_by?: string | null
+          evidence_source?: string | null
+          id?: string
+          importance?: string | null
+          mapping_source?: string
+          skill_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_outcome_skill_mappings_course_outcome_id_course_id_fkey"
+            columns: ["course_outcome_id", "course_id"]
+            isOneToOne: false
+            referencedRelation: "course_outcomes"
+            referencedColumns: ["id", "course_id"]
+          },
+          {
+            foreignKeyName: "course_outcome_skill_mappings_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_outcomes: {
+        Row: {
+          bloom_level: string | null
+          code: string
+          course_id: string
+          created_at: string
+          id: string
+          provenance: string | null
+          sort_order: number
+          text: string
+        }
+        Insert: {
+          bloom_level?: string | null
+          code: string
+          course_id: string
+          created_at?: string
+          id?: string
+          provenance?: string | null
+          sort_order?: number
+          text: string
+        }
+        Update: {
+          bloom_level?: string | null
+          code?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          provenance?: string | null
+          sort_order?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_outcomes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_skill_mappings: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          confidence: number | null
+          course_id: string
+          created_at: string
+          created_by: string | null
+          evidence_source: string | null
+          id: string
+          importance: string | null
+          mapping_source: string
+          skill_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          evidence_source?: string | null
+          id?: string
+          importance?: string | null
+          mapping_source: string
+          skill_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          evidence_source?: string | null
+          id?: string
+          importance?: string | null
+          mapping_source?: string
+          skill_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_skill_mappings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_skill_mappings_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_units: {
+        Row: {
+          course_id: string
+          created_at: string
+          hours: number | null
+          id: string
+          title: string
+          unit_no: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          hours?: number | null
+          id?: string
+          title: string
+          unit_no: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          hours?: number | null
+          id?: string
+          title?: string
+          unit_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_units_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          category: string | null
+          course_code: string | null
+          created_at: string
+          credits: number | null
+          id: string
+          import_id: string
+          is_elective: boolean
+          is_lab: boolean
+          kind: string
+          lecture_hours: number | null
+          legacy_subject_id: string | null
+          objectives: string[]
+          online_resources: string[] | null
+          practical_hours: number | null
+          prerequisite_course_ids: string[]
+          prerequisites: string | null
+          provenance: Json | null
+          reference_books: string[] | null
+          semester: number | null
+          sort_order: number
+          textbooks: string[] | null
+          title: string
+          tutorial_hours: number | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          category?: string | null
+          course_code?: string | null
+          created_at?: string
+          credits?: number | null
+          id?: string
+          import_id: string
+          is_elective?: boolean
+          is_lab?: boolean
+          kind?: string
+          lecture_hours?: number | null
+          legacy_subject_id?: string | null
+          objectives?: string[]
+          online_resources?: string[] | null
+          practical_hours?: number | null
+          prerequisite_course_ids?: string[]
+          prerequisites?: string | null
+          provenance?: Json | null
+          reference_books?: string[] | null
+          semester?: number | null
+          sort_order?: number
+          textbooks?: string[] | null
+          title: string
+          tutorial_hours?: number | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          category?: string | null
+          course_code?: string | null
+          created_at?: string
+          credits?: number | null
+          id?: string
+          import_id?: string
+          is_elective?: boolean
+          is_lab?: boolean
+          kind?: string
+          lecture_hours?: number | null
+          legacy_subject_id?: string | null
+          objectives?: string[]
+          online_resources?: string[] | null
+          practical_hours?: number | null
+          prerequisite_course_ids?: string[]
+          prerequisites?: string | null
+          provenance?: Json | null
+          reference_books?: string[] | null
+          semester?: number | null
+          sort_order?: number
+          textbooks?: string[] | null
+          title?: string
+          tutorial_hours?: number | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_extractions: {
+        Row: {
+          branch: string
+          chunks_done: number
+          chunks_total: number
+          created_at: string
+          created_by: string | null
+          error_code: string | null
+          file_bytes: number
+          file_name: string
+          id: string
+          institution_id: string
+          page_count: number | null
+          result: Json | null
+          role_key: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          branch: string
+          chunks_done?: number
+          chunks_total?: number
+          created_at?: string
+          created_by?: string | null
+          error_code?: string | null
+          file_bytes: number
+          file_name: string
+          id?: string
+          institution_id: string
+          page_count?: number | null
+          result?: Json | null
+          role_key: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          branch?: string
+          chunks_done?: number
+          chunks_total?: number
+          created_at?: string
+          created_by?: string | null
+          error_code?: string | null
+          file_bytes?: number
+          file_name?: string
+          id?: string
+          institution_id?: string
+          page_count?: number | null
+          result?: Json | null
+          role_key?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_extractions_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_imports: {
+        Row: {
+          branch: string
+          branch_key: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          extraction_model: string | null
+          extraction_summary: Json | null
+          extraction_version: string | null
+          id: string
+          institution_id: string
+          program: string | null
+          published_at: string | null
+          regulation: string | null
+          reviewed_by: string | null
+          source_file_name: string | null
+          status: string
+          supersedes_import_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch: string
+          branch_key?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          extraction_model?: string | null
+          extraction_summary?: Json | null
+          extraction_version?: string | null
+          id?: string
+          institution_id: string
+          program?: string | null
+          published_at?: string | null
+          regulation?: string | null
+          reviewed_by?: string | null
+          source_file_name?: string | null
+          status?: string
+          supersedes_import_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch?: string
+          branch_key?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          extraction_model?: string | null
+          extraction_summary?: Json | null
+          extraction_version?: string | null
+          id?: string
+          institution_id?: string
+          program?: string | null
+          published_at?: string | null
+          regulation?: string | null
+          reviewed_by?: string | null
+          source_file_name?: string | null
+          status?: string
+          supersedes_import_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_imports_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "curriculum_imports_supersedes_import_id_fkey"
+            columns: ["supersedes_import_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       curriculum_subject_skill_map: {
         Row: {
           area_key: string
@@ -1544,6 +1981,33 @@ export type Database = {
           },
         ]
       }
+      curriculum_subject_skill_map_pre048: {
+        Row: {
+          area_key: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          role_key: string | null
+          source: string | null
+          subject_id: string | null
+        }
+        Insert: {
+          area_key?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          role_key?: string | null
+          source?: string | null
+          subject_id?: string | null
+        }
+        Update: {
+          area_key?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          role_key?: string | null
+          source?: string | null
+          subject_id?: string | null
+        }
+        Relationships: []
+      }
       curriculum_subjects: {
         Row: {
           branch: string
@@ -1581,6 +2045,90 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "curriculum_subjects_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_subjects_pre048: {
+        Row: {
+          branch: string | null
+          code: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          institution_id: string | null
+          name: string | null
+          semester: number | null
+          year: number | null
+        }
+        Insert: {
+          branch?: string | null
+          code?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          institution_id?: string | null
+          name?: string | null
+          semester?: number | null
+          year?: number | null
+        }
+        Update: {
+          branch?: string | null
+          code?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          institution_id?: string | null
+          name?: string | null
+          semester?: number | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      curriculum_versions: {
+        Row: {
+          branch_key: string
+          created_at: string
+          id: string
+          import_id: string
+          institution_id: string
+          published_by: string | null
+          regulation: string | null
+          version_no: number
+        }
+        Insert: {
+          branch_key: string
+          created_at?: string
+          id?: string
+          import_id: string
+          institution_id: string
+          published_by?: string | null
+          regulation?: string | null
+          version_no: number
+        }
+        Update: {
+          branch_key?: string
+          created_at?: string
+          id?: string
+          import_id?: string
+          institution_id?: string
+          published_by?: string | null
+          regulation?: string | null
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_versions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: true
+            referencedRelation: "curriculum_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "curriculum_versions_institution_id_fkey"
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
@@ -2266,6 +2814,38 @@ export type Database = {
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_experiments: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          sort_order: number
+          text: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          text: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_experiments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]
@@ -2973,6 +3553,41 @@ export type Database = {
           },
         ]
       }
+      other_curriculum_items: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          import_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          import_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          import_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "other_curriculum_items_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_b_explorations: {
         Row: {
           career_concepts: Json
@@ -3186,6 +3801,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      program_outcomes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          import_id: string
+          kind: string
+          sort_order: number
+          text: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          import_id: string
+          kind: string
+          sort_order?: number
+          text: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          import_id?: string
+          kind?: string
+          sort_order?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_outcomes_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_imports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       programs: {
         Row: {
@@ -3542,6 +4195,32 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          skill_id: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          skill_id: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_aliases_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_area_resources: {
         Row: {
           active: boolean
@@ -3583,32 +4262,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "arena_skill_areas"
             referencedColumns: ["role_key", "area_key"]
-          },
-        ]
-      }
-      skill_aliases: {
-        Row: {
-          alias: string
-          created_at: string
-          skill_id: string
-        }
-        Insert: {
-          alias: string
-          created_at?: string
-          skill_id: string
-        }
-        Update: {
-          alias?: string
-          created_at?: string
-          skill_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "skill_aliases_skill_id_fkey"
-            columns: ["skill_id"]
-            isOneToOne: false
-            referencedRelation: "skills"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -3773,6 +4426,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "journey_templates"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      unit_topics: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          sort_order: number
+          text: string
+          unit_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          text: string
+          unit_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          text?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_topics_unit_id_course_id_fkey"
+            columns: ["unit_id", "course_id"]
+            isOneToOne: false
+            referencedRelation: "course_units"
+            referencedColumns: ["id", "course_id"]
           },
         ]
       }
@@ -3943,6 +4631,10 @@ export type Database = {
           membership_id: string
         }[]
       }
+      curriculum_import_is_frozen: {
+        Args: { p_import: string }
+        Returns: boolean
+      }
       finish_arena_challenge: { Args: { p_attempt_id: string }; Returns: Json }
       get_coding_question_for_grading: {
         Args: {
@@ -3977,6 +4669,10 @@ export type Database = {
           p_role: Database["public"]["Enums"]["app_role"]
         }
         Returns: string[]
+      }
+      publish_curriculum_import: {
+        Args: { p_import_id: string; p_user_id: string }
+        Returns: string
       }
       record_arena_answer: {
         Args: {
