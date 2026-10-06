@@ -106,6 +106,19 @@ describe("nextBestAction: choosing the action for the top gap", () => {
     expect(pick({ subjects: sub("UPCOMING") }).kind).toBe("COURSE");
     expect(pick({}).title).toBe("No resource configured yet for SQL");
   });
+  it("chooses the highest-impact gap the student can actually act on, not just the biggest gap", () => {
+    // plan's biggest gap is SQL; make a bigger one (VIZ) that has nothing to act on
+    const biggest = { gaps: plan.gaps.map((g) => (g.skillId === "viz" ? { ...g, importance: "CRITICAL" as const, gap: 80, currentLevel: 0, targetLevel: 80 } : g)) };
+    const sub = [{ courseId: "c", title: "DBMS", year: 3, semester: 1, score: 1, tier: "HIGH" as const, stars: 4, schedule: "CURRENT" as const, facts: { skillIds: ["sql"], skillNames: ["SQL"], outcomeCount: 1, gapPoints: 10 } }];
+    expect(pick({ ...biggest, subjects: sub }).skillId).toBe("sql"); // VIZ is bigger but has nothing to do; SQL has this semester's course
+    expect(pick({ ...biggest }).skillId).toBe("viz"); // with nothing actionable anywhere it reports the biggest gap honestly
+  });
+  it("an upcoming course is the fallback only when no gap has anything to do today", () => {
+    const up = [{ courseId: "u", title: "Data Mining", year: 4, semester: 1, score: 1, tier: "HIGH" as const, stars: 4, schedule: "UPCOMING" as const, facts: { skillIds: ["viz"], skillNames: ["VIZ"], outcomeCount: 1, gapPoints: 10 } }];
+    const arena = [{ challenge: { id: "a", title: "Query it", difficulty: "easy", skillIds: ["sql"], active: true }, coveredSkillIds: ["sql"] }];
+    expect(pick({ subjects: up }).kind).toBe("COURSE");
+    expect(pick({ subjects: up, arena }).kind).toBe("ARENA"); // something to do today beats a course that has not started
+  });
   it("skips a gap that is blocked by a prerequisite", () => {
     const blocked = pick({ milestones: [{ kind: "SKILL", refId: "sql", title: "", horizon: "NOW", status: "BLOCKED", reason: "", optionalExploration: true, blockedBySkillId: "x" }] });
     expect(blocked.skillId).toBe("viz");

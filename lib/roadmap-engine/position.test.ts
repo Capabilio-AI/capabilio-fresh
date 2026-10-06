@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { estimateSemester, totalYearsOf } from "./position";
 import { rankCareersForExploration } from "./explore";
-import { hashSnapshot, inferTrigger, stableStringify } from "./snapshot";
+import { canonicalInput, hashSnapshot, inferTrigger, stableStringify } from "./snapshot";
 import { checkExplanation } from "./explanation";
 
 describe("estimateSemester (an estimate from the calendar — the product no longer records a student's semester)", () => {
@@ -89,5 +89,33 @@ describe("checkExplanation (an AI sentence may only restate the facts it was giv
   it("rejects anything that tells the student to skip or ignore a subject", () => {
     expect(checkExplanation("Builds SQL, so you can skip your other subjects.", facts, all)).toMatchObject({ ok: false });
     expect(checkExplanation("Builds SQL; ignore the rest.", facts, all)).toMatchObject({ ok: false });
+  });
+});
+
+describe("canonicalInput (Postgres returns rows in no promised order)", () => {
+  const make = (flip: boolean) => {
+    const f = <T,>(xs: T[]) => (flip ? [...xs].reverse() : xs);
+    return {
+      requirements: f([{ skillId: "a" }, { skillId: "b" }, { skillId: "c" }]),
+      courses: f([{ id: "c1", skills: f([{ skillId: "a" }, { skillId: "b" }]), prerequisiteCourseIds: f(["x", "y"]) }, { id: "c2", skills: [], prerequisiteCourseIds: [] }]),
+      catalogs: {
+        learning: f([{ id: "l1", skillIds: f(["a", "b"]), prerequisites: [] }, { id: "l2", skillIds: ["c"], prerequisites: [] }]),
+        certifications: f([{ id: "k1", skillIds: f(["a", "b"]), careers: f([{ careerId: "p" }, { careerId: "q" }]) }, { id: "k2", skillIds: [], careers: [] }]),
+        projects: f([{ id: "p1", skillIds: f(["a", "b"]), expectedEvidence: [] }, { id: "p2", skillIds: [], expectedEvidence: [] }]),
+        arena: f([{ id: "a1", skillIds: f(["a", "b"]) }, { id: "a2", skillIds: [] }]),
+      },
+    };
+  };
+  it("the same data in any order canonicalises — and hashes — identically", () => {
+    expect(canonicalInput(make(true))).toEqual(canonicalInput(make(false)));
+    expect(hashSnapshot(canonicalInput(make(true)))).toBe(hashSnapshot(canonicalInput(make(false))));
+    expect(hashSnapshot(make(true))).not.toBe(hashSnapshot(make(false))); // without it, order alone would change the hash
+  });
+  it("changes only order, never content", () => {
+    const c = canonicalInput(make(true));
+    expect(c.requirements.map((r) => r.skillId)).toEqual(["a", "b", "c"]);
+    expect(c.courses.map((x) => x.id)).toEqual(["c1", "c2"]);
+    expect(c.catalogs.learning[0].skillIds).toEqual(["a", "b"]);
+    expect(c.catalogs.certifications[0].careers.map((x) => x.careerId)).toEqual(["p", "q"]);
   });
 });

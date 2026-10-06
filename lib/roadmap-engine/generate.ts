@@ -51,27 +51,39 @@ export function nextBestAction(args: {
     return { kind: "ASSESS", skillId: null, skillName: null, title: "Take the baseline assessment", reason: "We don't have any capability data for you yet, so we can't tell where you stand against this career.", ref: null };
   }
   const blocked = new Set(args.milestones.filter((m) => m.status === "BLOCKED").map((m) => m.refId));
-  const top = args.gaps
+  const candidates = args.gaps
     .filter((g) => !g.met && !blocked.has(g.skillId))
     .map((g) => ({ g, impact: REQUIREMENT_WEIGHT[g.importance] * (g.gap / 100) }))
-    .sort((a, b) => b.impact - a.impact || a.g.skillName.localeCompare(b.g.skillName))[0]?.g;
-  if (!top) return { kind: "NONE", skillId: null, skillName: null, title: "You've met every target for this career", reason: "Every required skill is at or above its target level.", ref: null };
+    .sort((a, b) => b.impact - a.impact || a.g.skillName.localeCompare(b.g.skillName))
+    .map((x) => x.g);
+  if (candidates.length === 0) return { kind: "NONE", skillId: null, skillName: null, title: "You've met every target for this career", reason: "Every required skill is at or above its target level.", ref: null };
 
-  const reason = top.selfDeclaredOnly
-    ? `You've told us you know ${top.skillName}, but nothing verifies it yet, so we count it as ${top.currentLevel}. The target is ${top.targetLevel}.`
-    : `Your ${top.skillName} capability is ${top.currentLevel} and your target is ${top.targetLevel}.`;
-  const has = (s: SubjectRow) => s.facts.skillIds.includes(top.skillId);
-  const current = args.subjects.find((s) => s.schedule === "CURRENT" && has(s));
-  if (current) return { kind: "COURSE", skillId: top.skillId, skillName: top.skillName, title: `Focus on ${current.title} this semester`, reason, ref: { type: "course", id: current.courseId } };
-  const learn = args.learning.find((l) => l.skillId === top.skillId && l.startsNow);
-  if (learn) return { kind: "LEARN", skillId: top.skillId, skillName: top.skillName, title: `Start ${learn.item.title}`, reason, ref: { type: "learning", id: learn.item.id } };
-  const arena = args.arena.find((a) => a.coveredSkillIds.includes(top.skillId));
-  if (arena) return { kind: "ARENA", skillId: top.skillId, skillName: top.skillName, title: `Try the Arena challenge “${arena.challenge.title}”`, reason, ref: { type: "arena", id: arena.challenge.id } };
-  const project = args.projects.find((p) => p.coveredSkillIds.includes(top.skillId));
-  if (project) return { kind: "PROJECT", skillId: top.skillId, skillName: top.skillName, title: `Build “${project.project.title}”`, reason, ref: { type: "project", id: project.project.id } };
-  const upcoming = args.subjects.find((s) => s.schedule === "UPCOMING" && has(s));
-  if (upcoming) return { kind: "COURSE", skillId: top.skillId, skillName: top.skillName, title: `Prepare for ${upcoming.title} (Year ${upcoming.year}${upcoming.semester ? `, Semester ${upcoming.semester}` : ""})`, reason, ref: { type: "course", id: upcoming.courseId } };
-  return { kind: "NONE", skillId: top.skillId, skillName: top.skillName, title: `No resource configured yet for ${top.skillName}`, reason, ref: null };
+  const reasonFor = (top: GapRow) =>
+    top.selfDeclaredOnly
+      ? `You've told us you know ${top.skillName}, but nothing verifies it yet, so we count it as ${top.currentLevel}. The target is ${top.targetLevel}.`
+      : `Your ${top.skillName} capability is ${top.currentLevel} and your target is ${top.targetLevel}.`;
+  const has = (top: GapRow) => (s: SubjectRow) => s.facts.skillIds.includes(top.skillId);
+  const base = (top: GapRow) => ({ skillId: top.skillId, skillName: top.skillName, reason: reasonFor(top) });
+  /** something the student can do today: this semester's course, a resource they can start now, an Arena challenge, a project */
+  const immediate = (top: GapRow): NextBestAction | null => {
+    const current = args.subjects.find((s) => s.schedule === "CURRENT" && has(top)(s));
+    if (current) return { ...base(top), kind: "COURSE", title: `Focus on ${current.title} this semester`, ref: { type: "course", id: current.courseId } };
+    const learn = args.learning.find((l) => l.skillId === top.skillId && l.startsNow);
+    if (learn) return { ...base(top), kind: "LEARN", title: `Start ${learn.item.title}`, ref: { type: "learning", id: learn.item.id } };
+    const arena = args.arena.find((a) => a.coveredSkillIds.includes(top.skillId));
+    if (arena) return { ...base(top), kind: "ARENA", title: `Try the Arena challenge “${arena.challenge.title}”`, ref: { type: "arena", id: arena.challenge.id } };
+    const project = args.projects.find((p) => p.coveredSkillIds.includes(top.skillId));
+    if (project) return { ...base(top), kind: "PROJECT", title: `Build “${project.project.title}”`, ref: { type: "project", id: project.project.id } };
+    return null;
+  };
+  const upcoming = (top: GapRow): NextBestAction | null => {
+    const next = args.subjects.find((s) => s.schedule === "UPCOMING" && has(top)(s));
+    return next ? { ...base(top), kind: "COURSE", title: `Prepare for ${next.title} (Year ${next.year}${next.semester ? `, Semester ${next.semester}` : ""})`, ref: { type: "course", id: next.courseId } } : null;
+  };
+  // The highest-impact gap the student can act on today; failing that, one with an upcoming course; and only if no gap has any action, say so.
+  for (const g of candidates) { const a = immediate(g); if (a) return a; }
+  for (const g of candidates) { const a = upcoming(g); if (a) return a; }
+  return { ...base(candidates[0]), kind: "NONE", title: `No resource configured yet for ${candidates[0].skillName}`, ref: null };
 }
 
 export function generateRoadmap(input: EngineInput): RoadmapPlan {
