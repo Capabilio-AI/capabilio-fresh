@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canTransitionImport, confirmMapping, isOfficial, officialOnly, proposeAiMapping, rejectMapping, type MappingRow } from "./mapping-rules";
+import { canTransitionImport, confirmMapping, isOfficial, officialOnly, proposeAiMapping, rejectMapping, statusPath, type MappingRow } from "./mapping-rules";
 
 const NOW = "2026-10-06T00:00:00.000Z";
 const row = (over: Partial<MappingRow> = {}): MappingRow => ({
@@ -66,4 +66,24 @@ describe("canTransitionImport", () => {
   it.each([
     ["DRAFT", "PUBLISHED"], ["EXTRACTED", "PUBLISHED"], ["UNDER_REVIEW", "PUBLISHED"], ["PUBLISHED", "CONFIRMED"], ["PUBLISHED", "DRAFT"], ["ARCHIVED", "PUBLISHED"], ["ARCHIVED", "DRAFT"],
   ] as const)("%s -> %s is refused", (a, b) => expect(canTransitionImport(a, b)).toBe(false));
+});
+
+describe("statusPath", () => {
+  it("walks forward one allowed hop at a time", () => {
+    expect(statusPath("DRAFT", "UNDER_REVIEW")).toEqual(["EXTRACTED", "UNDER_REVIEW"]);
+    expect(statusPath("DRAFT", "CONFIRMED")).toEqual(["EXTRACTED", "UNDER_REVIEW", "CONFIRMED"]);
+    expect(statusPath("EXTRACTED", "UNDER_REVIEW")).toEqual(["UNDER_REVIEW"]);
+  });
+  it("can step back for more editing", () => {
+    expect(statusPath("CONFIRMED", "UNDER_REVIEW")).toEqual(["UNDER_REVIEW"]);
+    expect(statusPath("UNDER_REVIEW", "EXTRACTED")).toEqual(["EXTRACTED"]);
+  });
+  it("never reaches PUBLISHED (that is publish_curriculum_import) or leaves a final state", () => {
+    expect(statusPath("CONFIRMED", "PUBLISHED")).toBeNull();
+    expect(statusPath("PUBLISHED", "UNDER_REVIEW")).toBeNull();
+    expect(statusPath("ARCHIVED", "DRAFT")).toBeNull();
+  });
+  it("is empty when already there", () => {
+    expect(statusPath("UNDER_REVIEW", "UNDER_REVIEW")).toEqual([]);
+  });
 });

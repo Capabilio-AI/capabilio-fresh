@@ -64,3 +64,25 @@ const ALLOWED: Record<ImportStatus, ImportStatus[]> = {
   ARCHIVED: [],
 };
 export const canTransitionImport = (from: ImportStatus, to: ImportStatus): boolean => ALLOWED[from].includes(to);
+
+/**
+ * The hops from `from` to `to` through allowed transitions (shortest path), or null when unreachable. PUBLISHED is never a target:
+ * it is reached only through publish_curriculum_import(), which also writes the version row.
+ */
+export function statusPath(from: ImportStatus, to: ImportStatus): ImportStatus[] | null {
+  if (from === to) return [];
+  if (to === "PUBLISHED") return null;
+  const queue: ImportStatus[][] = [[from]];
+  const seen = new Set<ImportStatus>([from]);
+  while (queue.length) {
+    const path = queue.shift()!;
+    for (const next of ALLOWED[path[path.length - 1]]) {
+      if (seen.has(next) || next === "PUBLISHED") continue;
+      const extended = [...path, next];
+      if (next === to) return extended.slice(1);
+      seen.add(next);
+      queue.push(extended);
+    }
+  }
+  return null;
+}

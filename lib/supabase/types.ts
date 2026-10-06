@@ -1713,6 +1713,7 @@ export type Database = {
           course_code: string | null
           created_at: string
           credits: number | null
+          deleted_at: string | null
           id: string
           import_id: string
           is_elective: boolean
@@ -1740,6 +1741,7 @@ export type Database = {
           course_code?: string | null
           created_at?: string
           credits?: number | null
+          deleted_at?: string | null
           id?: string
           import_id: string
           is_elective?: boolean
@@ -1767,6 +1769,7 @@ export type Database = {
           course_code?: string | null
           created_at?: string
           credits?: number | null
+          deleted_at?: string | null
           id?: string
           import_id?: string
           is_elective?: boolean
@@ -4533,6 +4536,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      array_dedupe: { Args: { p_arr: string[] }; Returns: string[] }
       class_assert_staff_for_project: {
         Args: {
           p_membership_id: string
@@ -4673,6 +4677,10 @@ export type Database = {
         Args: { p_bucket: string; p_user_id: string; p_window_start: string }
         Returns: number
       }
+      merge_courses: {
+        Args: { p_source: string; p_target: string }
+        Returns: undefined
+      }
       org_effective_permissions: {
         Args: {
           p_permissions: string[]
@@ -4708,6 +4716,10 @@ export type Database = {
           p_submitted_code: string
         }
         Returns: Json
+      }
+      replace_course_tree: {
+        Args: { p_course_id: string; p_tree: Json }
+        Returns: undefined
       }
       role_requires_verification: {
         Args: { role: Database["public"]["Enums"]["app_role"] }

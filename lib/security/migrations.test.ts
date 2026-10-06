@@ -107,3 +107,23 @@ describe("migration 051: extraction -> import link", () => {
     expect(sql).not.toMatch(/\bdrop\b|\bdelete from\b|create policy|grant /i);
   });
 });
+
+describe("migration 052: curriculum editing", () => {
+  const sql = migration("052_curriculum_editing.sql");
+  it("is additive: soft delete column, no data deleted", () => {
+    expect(sql).toMatch(/alter table public\.courses add column deleted_at timestamptz/i);
+    expect(sql).not.toMatch(/\bdrop (table|column)\b|\bdelete from public\.(courses|curriculum_|skills)/i);
+  });
+  it("keeps title uniqueness among live courses only", () => {
+    expect(sql).toMatch(/create unique index courses_unique_title on public\.courses \(import_id, year, lower\(btrim\(title\)\)\) where deleted_at is null/i);
+  });
+  it("the new functions are service-role only and pin their search_path", () => {
+    expect(sql).toMatch(/revoke execute on function public\.replace_course_tree\(uuid, jsonb\), public\.merge_courses\(uuid, uuid\), public\.array_dedupe\(text\[\]\) from public, anon, authenticated/i);
+    expect(sql).toMatch(/grant execute on function public\.replace_course_tree\(uuid, jsonb\), public\.merge_courses\(uuid, uuid\), public\.array_dedupe\(text\[\]\) to service_role/i);
+    expect((sql.match(/set search_path = public, pg_temp/g) ?? []).length).toBeGreaterThanOrEqual(4);
+  });
+  it("publish ignores removed courses and creates no policies", () => {
+    expect(sql).toMatch(/exists \(select 1 from public\.courses where import_id = p_import_id and deleted_at is null\)/i);
+    expect(sql).not.toMatch(/create policy/i);
+  });
+});
