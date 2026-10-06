@@ -29,6 +29,7 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
   const [collegeName, setCollegeName] = useState(join?.collegeName ?? "");
   const [, setSelectedCollege] = useState<CollegeMatch | null>(null);
   const [branch, setBranch] = useState(join?.branch ?? "");
+  const [rollNumber, setRollNumber] = useState("");
   const [startYear, setStartYear] = useState("");
   const [endYear, setEndYear] = useState(join?.endYear ? String(join.endYear) : "");
   const [email, setEmail] = useState("");
@@ -67,6 +68,7 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
       lastName,
       collegeName,
       branch,
+      rollNumber,
       startYear: years.startYear,
       endYear: years.endYear,
       email,
@@ -170,6 +172,25 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
               onSelect={setSelectedCollege}
             />
           )}
+        </div>
+
+        <div>
+          <label htmlFor="roll-number" className={FIELD_LABEL}>
+            College roll number
+          </label>
+          <input
+            id="roll-number"
+            type="text"
+            autoComplete="off"
+            maxLength={40}
+            value={rollNumber}
+            onChange={(e) => setRollNumber(e.target.value)}
+            placeholder="As issued by your college"
+            className={FIELD_INPUT}
+          />
+          <p className="mt-1 font-lp-body text-lp-label-sm text-lp-text-muted">
+            Your college checks this against its code. Leave it blank if you don&apos;t have one — your college will see that.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

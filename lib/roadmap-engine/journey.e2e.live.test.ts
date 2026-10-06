@@ -96,7 +96,7 @@ describe("college curriculum → student roadmap, end to end", () => {
     expect(page).not.toContain("Compiler Design"); // unconfirmed AI mapping never counts, and it has no confirmed skill
     expect(page).toContain("Take the baseline assessment"); // no capability data yet: an honest first step, not a fabricated level
     expect(page).toContain("Certifications");
-    expect(page).toContain("Version history");
+    expect(page).not.toContain("Version history");
     expect(page).toContain("Change my career choices");
   }, 180_000);
 

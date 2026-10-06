@@ -99,6 +99,8 @@ export const ProfileSchema = z
     foundedYear: z.coerce.number().int().min(1800).max(2100).optional().or(z.literal("").transform(() => undefined)),
     city: optionalText(100),
     state: optionalText(100),
+    /** unique per college; student roll numbers must start with it */
+    collegeCode: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{2,12}$/, "Use 2–12 letters or digits.").optional().or(z.literal("").transform(() => undefined)),
     isPublic: z.boolean(),
   })
   .strict();

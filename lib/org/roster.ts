@@ -8,6 +8,9 @@ export interface RosterRow {
   name: string;
   branch: string | null;
   endYear: number | null;
+  rollNumber: string | null;
+  /** unchecked: no college code yet; verified: roll number starts with it; flagged: missing or different */
+  rollStatus: "unchecked" | "verified" | "flagged";
   /** project groups the student belongs to */
   groups: number;
   /** projects graded by staff (each is one staff-verified evidence record) */
@@ -32,7 +35,7 @@ const DAY = 86_400_000;
 export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgContext, filters: RosterFilters): Promise<{ rows: RosterRow[]; branches: string[]; years: number[]; truncated: boolean }> {
   const { data } = await service
     .from("institution_memberships")
-    .select("user_id, branch, end_year")
+    .select("user_id, branch, end_year, roll_number, roll_number_status")
     .eq("institution_id", ctx.institutionId)
     .eq("role", "student")
     .eq("status", "active")
@@ -75,6 +78,8 @@ export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgCont
       name: names.get(m.user_id) ?? "Student",
       branch: m.branch,
       endYear: m.end_year,
+      rollNumber: m.roll_number,
+      rollStatus: m.roll_number_status === "verified" || m.roll_number_status === "flagged" ? m.roll_number_status : "unchecked",
       groups: groups.get(m.user_id) ?? 0,
       gradedProjects: graded.get(m.user_id) ?? 0,
       arenaLast30: arenaCounts.get(m.user_id) ?? 0,

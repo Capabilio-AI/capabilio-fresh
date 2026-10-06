@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { orgRoute } from "@/lib/api/org-route";
 import { ProfileSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
@@ -16,6 +17,12 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     });
     if (error) throw error;
+    if (body.collegeCode !== undefined) {
+      const { error: codeError } = await service.from("institutions").update({ college_code: body.collegeCode }).eq("id", ctx.institutionId);
+      // 23505: another college already uses this code
+      if (codeError?.code === "23505") return NextResponse.json({ error: "Another college already uses that code. Choose a different one." }, { status: 409 });
+      if (codeError) throw codeError;
+    }
     if (body.city !== undefined || body.state !== undefined) {
       const { error: locError } = await service.from("institutions").update({ city: body.city ?? null, state: body.state ?? null }).eq("id", ctx.institutionId);
       if (locError) throw locError;

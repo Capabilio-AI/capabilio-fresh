@@ -118,6 +118,8 @@ export interface SignUpInput {
   lastName: string;
   collegeName: string;
   branch: string;
+  /** the college-issued roll number; optional — a missing or non-matching one is flagged for the college, not blocked */
+  rollNumber?: string;
   startYear: number;
   endYear: number;
   email: string;
@@ -140,6 +142,7 @@ export async function signUp(input: SignUpInput): Promise<SignUpOutcome> {
         full_name: fullName,
         college_name: input.collegeName.trim(),
         branch: input.branch.trim(),
+        ...(input.rollNumber?.trim() ? { roll_number: input.rollNumber.trim() } : {}),
         start_year: String(input.startYear),
         end_year: String(input.endYear),
         role: "student",

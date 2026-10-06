@@ -57,10 +57,11 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           <EmptyState title="No students match" body="Students appear when they sign up with your institution's exact name and are active." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left font-lp-body text-[13px]">
+            <table className="w-full min-w-[760px] text-left font-lp-body text-[13px]">
               <thead>
                 <tr className="border-b border-app-border font-lp-mono text-[11px] uppercase text-app-muted">
                   <th className="py-2 pr-3">Name</th>
+                  <th className="py-2 pr-3">Roll number</th>
                   <th className="py-2 pr-3">Branch</th>
                   <th className="py-2 pr-3">Class of</th>
                   <th className="py-2 pr-3">Project groups</th>
@@ -72,6 +73,14 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                 {rows.map((r) => (
                   <tr key={r.userId} className="border-b border-app-border/60 text-app-charcoal">
                     <td className="py-2 pr-3 font-medium">{r.name}</td>
+                    <td className="py-2 pr-3">
+                      {r.rollNumber ?? "—"}
+                      {r.rollStatus === "flagged" && (
+                        <span className="ml-2 rounded bg-app-warning-container px-1.5 py-0.5 font-lp-mono text-[10px] uppercase text-app-charcoal" title="Roll number is missing or doesn't start with your college code">
+                          Not matched
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2 pr-3">{r.branch ?? "—"}</td>
                     <td className="py-2 pr-3">{r.endYear ?? "—"}</td>
                     <td className="py-2 pr-3">{r.groups}</td>

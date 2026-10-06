@@ -10,6 +10,8 @@ export interface PublicOrg {
   slug: string;
   city: string | null;
   state: string | null;
+  /** unique college code; only shown to the college's own editors */
+  collegeCode: string | null;
   profile: OrgProfileRow | null;
   isMember: boolean;
   isFollowing: boolean;
@@ -21,7 +23,7 @@ export interface PublicOrg {
 
 /** Loads an institution by slug for the /o page. `viewerId` null = anonymous. Never returns a private org to a non-member. */
 export async function loadPublicOrg(service: SupabaseClient<Database>, slug: string, viewerId: string | null): Promise<PublicOrg | null> {
-  const { data: inst } = await service.from("institutions").select("id, name, slug, city, state").eq("slug", slug).maybeSingle();
+  const { data: inst } = await service.from("institutions").select("id, name, slug, city, state, college_code").eq("slug", slug).maybeSingle();
   if (!inst) return null;
   const db = untyped(service);
   const [{ data: profile }, memberRes, followRes, countRes, verifyRes, studentRes] = await Promise.all([
@@ -43,6 +45,7 @@ export async function loadPublicOrg(service: SupabaseClient<Database>, slug: str
     slug: inst.slug,
     city: inst.city,
     state: inst.state,
+    collegeCode: inst.college_code,
     profile: p,
     isMember,
     isFollowing: Boolean(followRes.data),

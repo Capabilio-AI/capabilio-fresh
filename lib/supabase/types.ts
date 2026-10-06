@@ -2841,6 +2841,8 @@ export type Database = {
           permissions: string[] | null
           portfolio_prompt_seen_at: string | null
           regulation: string | null
+          roll_number: string | null
+          roll_number_status: string
           role: Database["public"]["Enums"]["app_role"]
           start_year: number | null
           status: Database["public"]["Enums"]["membership_status"]
@@ -2867,6 +2869,8 @@ export type Database = {
           permissions?: string[] | null
           portfolio_prompt_seen_at?: string | null
           regulation?: string | null
+          roll_number?: string | null
+          roll_number_status?: string
           role: Database["public"]["Enums"]["app_role"]
           start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
@@ -2893,6 +2897,8 @@ export type Database = {
           permissions?: string[] | null
           portfolio_prompt_seen_at?: string | null
           regulation?: string | null
+          roll_number?: string | null
+          roll_number_status?: string
           role?: Database["public"]["Enums"]["app_role"]
           start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
@@ -2937,6 +2943,7 @@ export type Database = {
         Row: {
           academic_start_month: number
           city: string | null
+          college_code: string | null
           college_type: Database["public"]["Enums"]["college_type"]
           created_at: string
           id: string
@@ -2949,6 +2956,7 @@ export type Database = {
         Insert: {
           academic_start_month?: number
           city?: string | null
+          college_code?: string | null
           college_type?: Database["public"]["Enums"]["college_type"]
           created_at?: string
           id?: string
@@ -2961,6 +2969,7 @@ export type Database = {
         Update: {
           academic_start_month?: number
           city?: string | null
+          college_code?: string | null
           college_type?: Database["public"]["Enums"]["college_type"]
           created_at?: string
           id?: string

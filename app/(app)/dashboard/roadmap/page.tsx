@@ -5,14 +5,13 @@ import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { ensureRoadmap } from "@/lib/roadmap-engine/service";
-import { getRoadmapVersionView, listRoadmapVersions } from "@/lib/roadmap-engine/read";
+import { getRoadmapVersionView } from "@/lib/roadmap-engine/read";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { MissingState } from "@/components/roadmap/v2/MissingState";
 import { Header } from "@/components/roadmap/v2/Header";
 import { GoalPicker } from "@/components/roadmap/v2/GoalPicker";
 import { Gaps, NextAction } from "@/components/roadmap/v2/Gaps";
 import { Resources, Subjects, Timeline } from "@/components/roadmap/v2/Plan";
-import { VersionHistory } from "@/components/roadmap/v2/VersionHistory";
 
 export const metadata: Metadata = { title: "Roadmap — Capabilio AI" };
 // A first roadmap may call the model for explanations; allow for it.
@@ -27,7 +26,6 @@ export default async function RoadmapPage({ searchParams }: { searchParams: Prom
   const latest = outcome.status === "READY" ? outcome.view : null;
   const old = wanted.success && latest ? await getRoadmapVersionView(service, user.id, wanted.data) : null;
   const view = old ?? latest;
-  const versions = latest ? await listRoadmapVersions(service, user.id) : [];
   const notes = (view?.notes ?? {}) as { position?: { year: number; semester: number }; regulation?: string | null; mandatoryNote?: string; semesterEstimated?: boolean; unmatchedCapabilities?: string[] };
   const isOld = !!old && !!latest && old.versionId !== latest.versionId;
 
@@ -52,7 +50,6 @@ export default async function RoadmapPage({ searchParams }: { searchParams: Prom
             <Subjects subjects={view.subjects} mandatoryNote={notes.mandatoryNote ?? ""} />
             <Resources view={view} />
             <Timeline milestones={view.milestones} />
-            <VersionHistory versions={versions} viewing={view.versionId} />
             {!isOld && (
               <details className="rounded-xl border border-app-border bg-white p-4">
                 <summary className="cursor-pointer font-lp-body text-[13.5px] font-medium text-app-charcoal">Change my career choices</summary>
