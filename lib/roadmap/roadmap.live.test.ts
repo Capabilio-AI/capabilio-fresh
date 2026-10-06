@@ -19,11 +19,27 @@ async function ready() {
   if (!r.applicable || r.roadmap.status !== "ready") throw new Error("expected a ready roadmap: " + JSON.stringify(r));
   return r.roadmap;
 }
-async function subject(inst: string, name: string, year: number, areas: string[]) {
-  const { data } = await service.from("curriculum_subjects").insert({ institution_id: inst, branch: "ZZ Branch", year, name }).select("id").single();
-  if (areas.length) await service.from("curriculum_subject_skill_map").insert(areas.map((a) => ({ subject_id: data!.id, role_key: "data-analyst", area_key: a, source: "admin" as const })));
+let skillOfArea = new Map<string, string>();
+type FixtureCourse = { name: string; year: number; areas: string[]; ai?: boolean; removed?: boolean };
+/** A curriculum in the NEW model: an import with courses and mappings (official unless `ai`), optionally published. Returns the import id. */
+async function curriculum(inst: string, courses: FixtureCourse[], opts: { publish?: boolean } = { publish: true }) {
+  const { data: imp } = await service.from("curriculum_imports").insert({ institution_id: inst, branch: "ZZ Branch", status: "CONFIRMED" }).select("id").single();
+  for (const c of courses) {
+    const { data: row } = await service.from("courses").insert({ import_id: imp!.id, year: c.year, semester: 1, title: c.name, deleted_at: c.removed ? new Date().toISOString() : null }).select("id").single();
+    if (c.areas.length) {
+      const rows = c.areas.map((a) => (c.ai
+        ? { course_id: row!.id, skill_id: skillOfArea.get(a)!, mapping_source: "AI_SUGGESTED", status: "SUGGESTED", confidence: 0.9 }
+        : { course_id: row!.id, skill_id: skillOfArea.get(a)!, mapping_source: "MANUAL", status: "CONFIRMED", approved_at: new Date().toISOString() }));
+      const { error } = await service.from("course_skill_mappings").insert(rows);
+      if (error) throw new Error(error.message);
+    }
+  }
+  if (opts.publish) {
+    const { error } = await service.rpc("publish_curriculum_import", { p_import_id: imp!.id, p_user_id: null as unknown as string });
+    if (error) throw new Error(error.message);
+  }
+  return imp!.id;
 }
-
 describe("roadmap for a real job-track student (disposable fixtures)", () => {
   beforeAll(async () => {
     student = await createThrowawayUserWithLogin(service, "rm-student");
@@ -35,10 +51,11 @@ describe("roadmap for a real job-track student (disposable fixtures)", () => {
     }
     // Student is in year 3 (started two academic years ago), years NOT yet confirmed.
     await service.from("institution_memberships").insert({ user_id: student.userId, institution_id: instA, role: "student", status: "active", branch: "zz BRANCH", start_year: thisYear - 3, end_year: thisYear + 1 });
+    const { data: areas } = await service.from("arena_skill_areas").select("area_key, skill_id").eq("role_key", "data-analyst");
+    skillOfArea = new Map((areas ?? []).map((a) => [a.area_key, a.skill_id!]));
   });
 
   afterAll(async () => {
-    await service.from("curriculum_subjects").delete().in("institution_id", [instA, instB]);
     await service.from("institution_memberships").delete().in("institution_id", [instA, instB]);
     await service.from("institutions").delete().in("id", [instA, instB]);
     await deleteThrowawayUser(service, student.userId);
@@ -56,10 +73,12 @@ describe("roadmap for a real job-track student (disposable fixtures)", () => {
   });
 
   it("real curriculum + real verified state → the three buckets, matched case-insensitively on branch, other colleges never leak", async () => {
-    await subject(instA, "Database Management Systems", 3, ["sql"]);
-    await subject(instA, "Probability and Statistics", 2, ["statistics"]);
-    await subject(instA, "Compilers", 3, []);
-    await subject(instB, "Other college's subject", 3, ["spreadsheet"]); // must not affect this student
+    await curriculum(instA, [
+      { name: "Database Management Systems", year: 3, areas: ["sql"] },
+      { name: "Probability and Statistics", year: 2, areas: ["statistics"] },
+      { name: "Compilers", year: 3, areas: [] },
+    ]);
+    await curriculum(instB, [{ name: "Other college's subject", year: 3, areas: ["spreadsheet"] }]); // must not affect this student
     await service.from("arena_skill_ratings").insert([
       { user_id: student.userId, role_key: "data-analyst", area_key: "sql", rating: 450, verified_count: 3 },
       { user_id: student.userId, role_key: "data-analyst", area_key: "statistics", rating: 410, verified_count: 1 },
@@ -77,6 +96,26 @@ describe("roadmap for a real job-track student (disposable fixtures)", () => {
     expect(titles).toEqual(["Google Data Analytics Professional Certificate", "Microsoft Certified: Power BI Data Analyst Associate (PL-300)"]);
     // Python (executor disabled) is never a gap.
     expect([...rm.affirm, ...rm.engage, ...rm.external].map((i) => i.areaKey)).not.toContain("python");
+  });
+
+  it("AI suggestions, removed courses and unpublished drafts never reach the roadmap", async () => {
+    // v2 replaces v1 on publish: its only mapping is an AI suggestion, and its only confirmed one sits on a removed course
+    await curriculum(instA, [
+      { name: "BI Lab", year: 3, areas: ["dashboard"], ai: true },
+      { name: "Excel Basics", year: 3, areas: ["spreadsheet"], removed: true },
+    ]);
+    // a draft (never published) with an official mapping is invisible too
+    await curriculum(instA, [{ name: "Draft Course", year: 3, areas: ["data_cleaning"] }], { publish: false });
+    const r = await run();
+    expect(r.applicable && r.roadmap.status === "needs_info" && r.roadmap.reasons).toEqual(["no_confirmed_mapping"]);
+  });
+
+  it("a newer published version replaces the older one", async () => {
+    await curriculum(instA, [{ name: "Applied Statistics", year: 3, areas: ["statistics"] }]);
+    const rm = await ready();
+    const covering = [...rm.affirm, ...rm.engage, ...rm.external].flatMap((i) => i.covering.map((c) => c.name));
+    expect(covering).toEqual(["Applied Statistics"]); // v1's Database Management Systems / Probability are archived; v2's suggestions never counted
+    expect(rm.engage.find((i) => i.areaKey === "statistics")!.covering[0]).toMatchObject({ timing: "this_year" });
   });
 
   it("track gating is live: job / not_sure / unset see it; higher studies and entrepreneur do not", async () => {
