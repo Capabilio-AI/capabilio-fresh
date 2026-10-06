@@ -11,6 +11,8 @@ export interface RollNumberNotice {
   collegeName: string;
   /** missing: add one before dueAt; mismatch: entered, but doesn't carry the college's code */
   kind: "missing" | "mismatch";
+  /** what is currently saved, when anything is */
+  rollNumber: string | null;
   dueAt: string | null;
 }
 
@@ -28,5 +30,5 @@ export async function loadRollNumberNotice(service: SupabaseClient<Database>, us
     .maybeSingle();
   if (!data) return null;
   const inst = data.institutions as { name: string } | null;
-  return { collegeName: inst?.name ?? "your college", kind: data.roll_number ? "mismatch" : "missing", dueAt: data.roll_number_due_at };
+  return { collegeName: inst?.name ?? "your college", kind: data.roll_number ? "mismatch" : "missing", rollNumber: data.roll_number, dueAt: data.roll_number_due_at };
 }

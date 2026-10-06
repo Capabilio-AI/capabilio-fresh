@@ -23,8 +23,9 @@ export function RollNumberBanner({ notice }: { notice: RollNumberNotice }) {
     const body = (await res.json().catch(() => ({}))) as { error?: string; status?: string };
     setBusy(false);
     if (!res.ok) return setError(body.error ?? "Could not save your roll number.");
-    if (body.status === "flagged") return setError(`That roll number doesn't match ${notice.collegeName}'s code. Check it and try again.`);
-    router.refresh();
+    if (body.status === "flagged") setError(`That roll number doesn't match ${notice.collegeName}'s code. Check it and try again.`);
+    else setValue("");
+    router.refresh(); // re-read the saved state so the message above matches it
   }
 
   return (
@@ -32,7 +33,7 @@ export function RollNumberBanner({ notice }: { notice: RollNumberNotice }) {
       <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">
         {notice.kind === "missing"
           ? `Add your ${notice.collegeName} roll number${left !== null ? ` within ${left} day${left === 1 ? "" : "s"}` : ""} or your account will be removed.`
-          : `The roll number on your account doesn't match ${notice.collegeName}'s code. Correct it${left !== null ? ` within ${left} day${left === 1 ? "" : "s"}` : ""} or your account will be removed.`}
+          : `The roll number on your account${notice.rollNumber ? ` (${notice.rollNumber})` : ""} doesn't match ${notice.collegeName}'s code. Correct it${left !== null ? ` within ${left} day${left === 1 ? "" : "s"}` : ""} or your account will be removed.`}
       </p>
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-center gap-2">
         <input
