@@ -38,3 +38,23 @@ describe("migration 034: membership-based read policies require an active member
     expect(block).toMatch(/status = 'active'/);
   });
 });
+
+describe("migration 047: canonical skills", () => {
+  const sql = migration("047_canonical_skills.sql");
+  it("is additive: no drops, no deletes", () => {
+    expect(sql).not.toMatch(/\bdrop (table|column)\b/i);
+    expect(sql).not.toMatch(/\bdelete from\b/i);
+  });
+  it("demotes nothing silently: existing rows default to candidate", () => {
+    expect(sql).toMatch(/status text not null default 'candidate'/i);
+  });
+  it("an active skill must carry a key and category", () => {
+    expect(sql).toMatch(/skills_active_has_key/i);
+  });
+  it("taxonomy tables are read-only to clients; suggestions are private", () => {
+    expect(sql).toMatch(/revoke insert, update, delete, truncate on public\.skills, public\.skill_aliases from anon, authenticated/i);
+    expect(sql).toMatch(/revoke all on public\.skill_suggestions from anon, authenticated/i);
+    expect(sql).toMatch(/alter table public\.skill_suggestions enable row level security/i);
+    expect(sql).not.toMatch(/create policy[^;]*skill_suggestions/i);
+  });
+});

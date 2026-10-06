@@ -562,6 +562,7 @@ export type Database = {
           generation_version: string
           grading_version: string
           role_key: string
+          skill_id: string | null
           skill_node_key: string
           sort_order: number
           tool_type: string
@@ -575,6 +576,7 @@ export type Database = {
           generation_version: string
           grading_version: string
           role_key: string
+          skill_id?: string | null
           skill_node_key: string
           sort_order?: number
           tool_type: string
@@ -588,6 +590,7 @@ export type Database = {
           generation_version?: string
           grading_version?: string
           role_key?: string
+          skill_id?: string | null
           skill_node_key?: string
           sort_order?: number
           tool_type?: string
@@ -599,6 +602,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "arena_domain_roles"
             referencedColumns: ["role_key"]
+          },
+          {
+            foreignKeyName: "arena_skill_areas_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3576,26 +3586,125 @@ export type Database = {
           },
         ]
       }
-      skills: {
+      skill_aliases: {
         Row: {
+          alias: string
           created_at: string
-          domain: string | null
-          id: string
-          name: string
+          skill_id: string
         }
         Insert: {
+          alias: string
           created_at?: string
-          domain?: string | null
-          id?: string
-          name: string
+          skill_id: string
         }
         Update: {
+          alias?: string
           created_at?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_aliases_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_suggestions: {
+        Row: {
+          display_text: string
+          first_seen_at: string
+          last_seen_at: string
+          normalized_text: string
+          occurrences: number
+          resolved_by: string | null
+          resolved_skill_id: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          display_text: string
+          first_seen_at?: string
+          last_seen_at?: string
+          normalized_text: string
+          occurrences?: number
+          resolved_by?: string | null
+          resolved_skill_id?: string | null
+          source: string
+          status?: string
+        }
+        Update: {
+          display_text?: string
+          first_seen_at?: string
+          last_seen_at?: string
+          normalized_text?: string
+          occurrences?: number
+          resolved_by?: string | null
+          resolved_skill_id?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_suggestions_resolved_skill_id_fkey"
+            columns: ["resolved_skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          domain: string | null
+          id: string
+          key: string | null
+          level_definition: Json | null
+          name: string
+          parent_skill_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
           domain?: string | null
           id?: string
-          name?: string
+          key?: string | null
+          level_definition?: Json | null
+          name: string
+          parent_skill_id?: string | null
+          status?: string
+          updated_at?: string
         }
-        Relationships: []
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          domain?: string | null
+          id?: string
+          key?: string | null
+          level_definition?: Json | null
+          name?: string
+          parent_skill_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_parent_skill_id_fkey"
+            columns: ["parent_skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_journey_events: {
         Row: {
