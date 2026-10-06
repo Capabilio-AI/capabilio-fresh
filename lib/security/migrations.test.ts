@@ -99,3 +99,11 @@ describe("migration 050: curriculum functions pin their search_path", () => {
     expect(sql).toMatch(new RegExp(`alter function public\\.${fn}\\([^)]*\\) set search_path = public, pg_temp`));
   });
 });
+
+describe("migration 051: extraction -> import link", () => {
+  const sql = migration("051_extraction_import_link.sql");
+  it("only adds a nullable FK, nulled if the import goes", () => {
+    expect(sql).toMatch(/add column import_id uuid references public\.curriculum_imports\(id\) on delete set null/i);
+    expect(sql).not.toMatch(/\bdrop\b|\bdelete from\b|create policy|grant /i);
+  });
+});

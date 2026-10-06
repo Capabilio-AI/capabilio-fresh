@@ -1,6 +1,9 @@
 import { chunkSyllabus } from "./chunk";
 import { mergeRows, type BaseRow } from "./merge";
-import type { AreaOption, SubjectOutcomes } from "../suggest";
+import type { AreaOption, SectionStructure, SubjectOutcomes } from "../suggest";
+import { applyFallback } from "./enrich";
+import { pool } from "./pool";
+import { parseCourseSection, type ParsedSection } from "./section";
 import type { SemesterChunk } from "./chunk";
 import type { CandidateRow, ExtractionErrorCode, ExtractionResult } from "./types";
 
@@ -14,19 +17,24 @@ export class ExtractionError extends Error {
 export interface ExtractionDeps {
   structureSemester: (chunk: SemesterChunk) => Promise<BaseRow[]>;
   suggestAreas: (items: SubjectOutcomes[], roleName: string, areas: AreaOption[]) => Promise<Map<string, string[]>>;
+  /** optional: reads a course section the deterministic parser could not (result is grounded before use) */
+  structureSection?: (title: string, sectionText: string) => Promise<SectionStructure>;
+}
+
+/** Everything the review needs beyond the legacy candidate row, aligned to `rows` by tempId. */
+export interface RichCourse {
+  tempId: string;
+  parsed: ParsedSection;
+  sectionText: string;
+  structuredBy: "parser" | "ai";
 }
 
 const MAP_BATCH = 10;
+/** Below this many characters a section is too thin for the AI structurer to add anything. */
+const MIN_FALLBACK_CHARS = 300;
+/** The AI structurer is a fallback for unrecognised layouts; its cost is bounded so one odd syllabus cannot exhaust the 300 s job limit. */
+const MAX_FALLBACK_SECTIONS = 12;
 const CONCURRENCY = 2;
-
-async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>): Promise<void> {
-  let next = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(size, items.length) }, async () => {
-      while (next < items.length) await fn(items[next++]);
-    })
-  );
-}
 
 const label = (year: number, semester: number) => `Year ${year} · Semester ${semester}`;
 
@@ -39,13 +47,13 @@ export async function buildCandidates(
   ctx: { roleName: string; areas: AreaOption[] },
   deps: ExtractionDeps,
   onProgress: (done: number, total: number) => void | Promise<void>
-): Promise<ExtractionResult> {
+): Promise<ExtractionResult & { rich: RichCourse[] }> {
   const { tables, courses } = chunkSyllabus(pages);
   if (tables.length === 0 && courses.length === 0) throw new ExtractionError("unrecognised_format");
 
   const warnings: string[] = [];
   let done = 0;
-  const total = tables.length + Math.max(1, Math.ceil(courses.length / MAP_BATCH));
+  let total = tables.length + Math.max(1, Math.ceil(courses.length / MAP_BATCH));
   const tick = async () => onProgress(++done, total);
 
   const tableRows: BaseRow[] = [];
@@ -92,6 +100,32 @@ export async function buildCandidates(
     await tick();
   });
 
+  // Full structure per course: deterministic parse first (already in the section); AI only where the layout was not recognised.
+  const rich: RichCourse[] = merged.map((m, i) => {
+    const section = sectionFor.get(m);
+    return { tempId: `r${i + 1}`, parsed: section?.parsed ?? parseCourseSection([]), sectionText: section?.text ?? "", structuredBy: "parser" };
+  });
+
+  if (deps.structureSection) {
+    const structure = deps.structureSection;
+    const unread = rich.filter((c) => !c.parsed.complete && c.sectionText.length > MIN_FALLBACK_CHARS);
+    const thin = unread.slice(0, MAX_FALLBACK_SECTIONS);
+    if (unread.length > thin.length) warnings.push(`${unread.length - thin.length} course(s) have a layout that could not be read automatically — fill in their details by hand.`);
+    total += thin.length;
+    await pool(thin, CONCURRENCY, async (c) => {
+      const title = rows.find((r) => r.tempId === c.tempId)?.name ?? "";
+      try {
+        const { parsed, dropped } = applyFallback(c.parsed, await structure(title, c.sectionText), c.sectionText);
+        if (parsed.complete && !c.parsed.complete) c.structuredBy = "ai";
+        c.parsed = parsed;
+        if (dropped > 0) warnings.push(`${title}: ${dropped} item(s) the AI proposed were not found in the syllabus text and were left out.`);
+      } catch {
+        warnings.push(`${title}: the course details couldn't be read automatically — fill them in by hand.`);
+      }
+      await tick();
+    });
+  }
+
   await onProgress(total, total); // the batch count was an estimate; finish exactly at 100%
-  return { rows, warnings: [...new Set(warnings)] };
+  return { rows, warnings: [...new Set(warnings)], rich };
 }

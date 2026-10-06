@@ -6,6 +6,7 @@ import { buildCandidates, ExtractionError, type ExtractionDeps } from "./build";
 import { isGrounded } from "./structure";
 import { mergeRows, sameCourse, type BaseRow } from "./merge";
 import { toRecord, STALE_AFTER_MS } from "./store";
+import { parseCourseSection } from "./section";
 
 // The real JNTUK R23 B.Tech CSE syllabus (158 pages) — not a synthetic file.
 const FIXTURE = new Uint8Array(readFileSync("docs/fixtures/jntuk-r23-btech-cse.pdf"));
@@ -154,7 +155,7 @@ describe("pipeline on the real fixture (AI stubbed)", () => {
 
 describe("merge", () => {
   it("keeps table rows authoritative", () => {
-    const { rows } = mergeRows([row(2, 1, "Python Programming")], [{ year: 2, semester: 1, title: "PYTHON PROGRAMMING (SKILL ENHANCEMENT COURSE)", outcomes: ["Apply python to solve problems"] }]);
+    const { rows } = mergeRows([row(2, 1, "Python Programming")], [{ year: 2, semester: 1, title: "PYTHON PROGRAMMING (SKILL ENHANCEMENT COURSE)", outcomes: ["Apply python to solve problems"], text: "", parsed: parseCourseSection([]) }]);
     expect(rows).toHaveLength(1);
   });
 });

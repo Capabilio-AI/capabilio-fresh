@@ -1,18 +1,11 @@
 import { extractSubjectsFromTable } from "../suggest";
 import type { SemesterChunk } from "./chunk";
+import { isGrounded, norm } from "./ground";
 import type { CandidateRow } from "./types";
 
 type BaseRow = Omit<CandidateRow, "tempId" | "outcomesCount" | "suggestedAreaKeys" | "mappingNote">;
 
-const norm = (s: string) => s.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim();
-
-/** Pure. True when (nearly) every word of the model's name appears in the source chunk — the guard against invented titles. */
-export function isGrounded(name: string, sourceText: string): boolean {
-  const source = new Set(norm(sourceText).split(" "));
-  const words = norm(name).split(" ").filter((w) => w.length > 1);
-  if (words.length === 0) return false;
-  return words.filter((w) => source.has(w)).length / words.length >= 0.9;
-}
+export { isGrounded };
 
 /** One AI call for one semester table, then grounded against the source text: an ungrounded or low-confidence name is flagged, never trusted. */
 export async function structureSemester(chunk: SemesterChunk): Promise<BaseRow[]> {

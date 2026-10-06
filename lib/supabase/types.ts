@@ -1810,6 +1810,7 @@ export type Database = {
           file_bytes: number
           file_name: string
           id: string
+          import_id: string | null
           institution_id: string
           page_count: number | null
           result: Json | null
@@ -1827,6 +1828,7 @@ export type Database = {
           file_bytes: number
           file_name: string
           id?: string
+          import_id?: string | null
           institution_id: string
           page_count?: number | null
           result?: Json | null
@@ -1844,6 +1846,7 @@ export type Database = {
           file_bytes?: number
           file_name?: string
           id?: string
+          import_id?: string | null
           institution_id?: string
           page_count?: number | null
           result?: Json | null
@@ -1852,6 +1855,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "curriculum_extractions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_imports"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "curriculum_extractions_institution_id_fkey"
             columns: ["institution_id"]

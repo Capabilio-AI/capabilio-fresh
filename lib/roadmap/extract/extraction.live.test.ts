@@ -67,7 +67,7 @@ describe("syllabus extraction: staging, scoping, authority", () => {
     expect((await getExtraction(service, instA, adminA.userId, id))?.status).toBe("processing");
     expect(await hasActiveJob(service, instA)).toBe(true);
 
-    await runExtraction(service, { id, bytes: FIXTURE, roleKey }, deps);
+    await runExtraction(service, { id, institutionId: instA, userId: adminA.userId, branch: "ZZ CSE", fileName: "jntuk.pdf", bytes: FIXTURE, roleKey }, deps);
     const done = await getExtraction(service, instA, adminA.userId, id);
     expect(done?.status).toBe("ready");
     const dbms = done!.result!.rows.find((r) => r.name === "Database Management Systems")!;
@@ -76,6 +76,32 @@ describe("syllabus extraction: staging, scoping, authority", () => {
 
     expect(await subjectCount(instA)).toBe(0); // staged only — nothing is a curriculum record yet
     expect((await latestExtraction(service, instA, adminA.userId))?.id).toBe(id);
+
+    // Phase 3: the full tree was saved as an unpublished draft import, linked to the staged extraction.
+    const importId = (done!.result as { importId?: string | null }).importId!;
+    expect(importId).toBeTruthy();
+    const { data: imp } = await service.from("curriculum_imports").select("status, regulation, program, institution_id, source_file_name, extraction_version").eq("id", importId).single();
+    expect(imp).toMatchObject({ status: "EXTRACTED", regulation: "R23", program: "B.Tech", institution_id: instA, source_file_name: "jntuk.pdf" });
+    const { data: link } = await service.from("curriculum_extractions").select("import_id").eq("id", id).single();
+    expect(link!.import_id).toBe(importId);
+
+    const { data: courses } = await service.from("courses").select("id, title, year, semester, credits, objectives, textbooks").eq("import_id", importId);
+    expect(courses!.length).toBe(done!.result!.rows.length);
+    const db = courses!.find((c) => c.title === "DATABASE MANAGEMENT SYSTEMS" || /^database management systems$/i.test(c.title))!;
+    expect(db).toMatchObject({ year: 2, semester: 2, credits: 3 });
+    expect(db.objectives).toHaveLength(4);
+    const { data: cos } = await service.from("course_outcomes").select("code, bloom_level").eq("course_id", db.id).order("sort_order");
+    expect(cos!.map((c) => c.code)).toEqual(["CO1", "CO2", "CO3", "CO4", "CO5", "CO6"]);
+    expect(cos![0].bloom_level).toBe("Understand");
+    expect((await service.from("course_units").select("id", { count: "exact", head: true }).eq("course_id", db.id)).count).toBe(5);
+    const { data: po } = await service.from("program_outcomes").select("kind").eq("import_id", importId);
+    expect(po!.filter((p) => p.kind === "PO")).toHaveLength(12);
+    expect(po!.filter((p) => p.kind === "PSO")).toHaveLength(3);
+
+    // nothing is published, and no mapping anywhere is confirmed
+    expect((await service.from("curriculum_versions").select("id", { count: "exact", head: true }).eq("institution_id", instA)).count).toBe(0);
+    const ids = courses!.map((c) => c.id);
+    expect((await service.from("course_skill_mappings").select("id", { count: "exact", head: true }).in("course_id", ids).eq("status", "CONFIRMED")).count).toBe(0);
   }, 90_000);
 
   it("another institution's admin can neither read nor delete it", async () => {
@@ -105,10 +131,19 @@ describe("syllabus extraction: staging, scoping, authority", () => {
     expect(again).toMatchObject({ ok: true, count: 0, subjects: [] });
   });
 
+  it("discarding the staged extraction soft-deletes its unpublished draft import", async () => {
+    const rec = (await latestExtraction(service, instA, adminA.userId))!;
+    const importId = (rec.result as { importId?: string | null }).importId!;
+    expect(await deleteExtraction(service, instA, adminA.userId, rec.id)).toBe(true);
+    const { data } = await service.from("curriculum_imports").select("deleted_at, status").eq("id", importId).single();
+    expect(data!.deleted_at).not.toBeNull();
+    expect(data!.status).toBe("EXTRACTED");
+  });
+
   it("a no-text-layer PDF ends in an honest failed state", async () => {
     const id = (await createExtraction(service, { institutionId: instB, userId: adminB.userId, branch: "ZZ", roleKey, fileName: "scan.pdf", fileBytes: 200 }))!;
     const scan = new TextEncoder().encode("%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R/Size 4>>\n%%EOF");
-    await runExtraction(service, { id, bytes: scan, roleKey }, deps);
+    await runExtraction(service, { id, institutionId: instB, userId: adminB.userId, branch: "ZZ", fileName: "scan.pdf", bytes: scan, roleKey }, deps);
     const rec = await getExtraction(service, instB, adminB.userId, id);
     expect(rec).toMatchObject({ status: "failed", errorCode: "no_text_layer", result: null });
     expect((await untyped(service).from("curriculum_extractions").select("result").eq("id", id).single()).data).toMatchObject({ result: null });

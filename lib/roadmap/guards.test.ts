@@ -72,6 +72,13 @@ describe("AI never touches what the student is shown", () => {
     expect(files.length).toBeGreaterThan(5);
     for (const f of files) expect(read(f), f).not.toMatch(/curriculum_subjects|curriculum_subject_skill_map|addSubjects|setMapping/);
   });
+  it("extraction can only ever write AI mappings as SUGGESTED — never a confirmed, manual or college-confirmed one", () => {
+    const persist = read("lib/roadmap/extract/persist.ts");
+    expect(persist).toMatch(/mapping_source: "AI_SUGGESTED"/);
+    expect(persist).toMatch(/status: "SUGGESTED"/);
+    expect(persist).not.toMatch(/status: "CONFIRMED"|"COLLEGE_CONFIRMED"|"MANUAL"|approved_by|approved_at/);
+    for (const f of ["persist.ts", "enrich.ts", "section.ts", "programs.ts", "ground.ts"]) expect(read(`lib/roadmap/extract/${f}`), f).not.toMatch(/@\/lib\/ai\//);
+  });
   it("the gap engine is pure: no imports at all", () => {
     expect(read("lib/roadmap/build.ts")).not.toMatch(/^import /m);
   });

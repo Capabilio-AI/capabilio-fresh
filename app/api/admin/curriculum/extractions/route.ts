@@ -46,9 +46,9 @@ export async function POST(request: Request) {
 
   after(async () => {
     try {
-      await runExtraction(service, { id, bytes, roleKey });
+      await runExtraction(service, { id, institutionId: admin.institutionId, userId: admin.userId, branch, fileName: file.name || "syllabus.pdf", bytes, roleKey });
     } catch {
-      await updateExtraction(service, id, { status: "failed", error_code: "internal" });
+      await updateExtraction(service, id, { status: "failed", error_code: "internal" }).catch(() => undefined);
     }
   });
   return NextResponse.json({ ok: true, id }, { status: 202 });

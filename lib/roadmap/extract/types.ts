@@ -23,6 +23,8 @@ export type CandidateRow = z.infer<typeof CandidateRowSchema>;
 export const ExtractionResultSchema = z.object({
   rows: z.array(CandidateRowSchema),
   warnings: z.array(z.string()),
+  /** the curriculum_imports draft (status EXTRACTED) holding the full course tree; absent on results from before Phase 3 */
+  importId: z.string().uuid().nullish(),
 });
 export type ExtractionResult = z.infer<typeof ExtractionResultSchema>;
 

@@ -33,7 +33,8 @@ export function stripPageChrome(pageText: string): string {
     .join("\n");
 }
 
-export type PdfText = { ok: true; pages: string[] } | { ok: false; code: ExtractionErrorCode };
+/** `header` = the first pages BEFORE page chrome is stripped (the regulation lives in the running header). */
+export type PdfText = { ok: true; pages: string[]; header: string } | { ok: false; code: ExtractionErrorCode };
 
 export async function extractPdfPages(bytes: Uint8Array): Promise<PdfText> {
   const parser = new PDFParse({ data: bytes.slice() }) // pdfjs detaches the buffer it is given — hand it a copy;
@@ -43,7 +44,7 @@ export async function extractPdfPages(bytes: Uint8Array): Promise<PdfText> {
     const pages = result.pages.map((p) => stripPageChrome(p.text));
     const chars = pages.reduce((n, p) => n + p.trim().length, 0);
     if (pages.length === 0 || chars / pages.length < MIN_CHARS_PER_PAGE) return { ok: false, code: "no_text_layer" };
-    return { ok: true, pages };
+    return { ok: true, pages, header: result.pages.slice(0, 3).map((p) => p.text).join("\n") };
   } catch {
     return { ok: false, code: "unreadable" };
   } finally {

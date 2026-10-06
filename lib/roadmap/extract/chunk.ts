@@ -3,6 +3,8 @@
  * Boundaries were confirmed against the real JNTUK R23 CSE PDF (docs/curriculum-pdf-extraction-audit.md): tables begin
  * "B.Tech.– II Year I Semester"; course sections begin "II Year I Semester" (title on the same or following lines).
  */
+import { parseCourseSection, type ParsedSection } from "./section";
+
 const ROMAN: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
 const YS = "(I{1,3}|IV|VI?)\\s+Year\\s*[–—-]?\\s*(I{1,2})\\s+Semester";
 const TABLE_HEADING = new RegExp(`^B\\.?\\s*Tech\\.?\\s*[–—-]?\\s*${YS}\\s*$`, "i");
@@ -19,7 +21,11 @@ export interface CourseSection {
   year: number;
   semester: number;
   title: string;
+  /** Course Outcome texts (kept for the legacy review UI); the full structure is in `parsed`. */
   outcomes: string[];
+  /** raw section text (capped) — the source every extracted field is grounded against */
+  text: string;
+  parsed: ParsedSection;
 }
 
 const parseYs = (y: string, s: string) => ({ year: ROMAN[y.toUpperCase()] ?? 0, semester: ROMAN[s.toUpperCase()] ?? 0 });
@@ -53,24 +59,6 @@ function titleOf(lines: string[], from: number, first: string, to: number): stri
     if (push(t)) break;
   }
   return parts.join(" ").replace(/\s+/g, " ").trim();
-}
-
-const OUTCOME_STOP = /^(PO\d+\b|UNIT\b|List of Experiments|Course Content|Text ?Books?|Reference|Syllabus|Experiment|Week\b)/i;
-// "CO1: …", "1. …", "1) …", or a bullet glyph (the PDF renders bullets as U+F0B7 / U+2022 / U+25CF).
-const OUTCOME_ITEM = /^(?:CO\s?\d+\s*[:.–—-]|\d{1,2}\s*[.)]|[\u2022\uF0B7\u25CF\u25AA·*-])\s*(.*)$/i;
-
-function outcomesOf(sectionLines: string[]): string[] {
-  const start = sectionLines.findIndex((l) => /^Course Outcomes?\b/i.test(l.trim()));
-  if (start < 0) return [];
-  const out: string[] = [];
-  for (const raw of sectionLines.slice(start + 1)) {
-    const t = raw.trim();
-    if (OUTCOME_STOP.test(t)) break;
-    const m = OUTCOME_ITEM.exec(t);
-    if (m) out.push((m[1] ?? "").trim());
-    else if (out.length > 0 && t) out[out.length - 1] += ` ${t}`;
-  }
-  return out.map((o) => o.replace(/\s*\(\s*[KL]\d\s*\)\s*$/i, "").replace(/\s+/g, " ").trim()).filter((o) => o.length > 8).slice(0, 12);
 }
 
 const TABLE_END_INCLUSIVE = /^Total\b/i;
@@ -107,7 +95,9 @@ export function chunkSyllabus(pages: string[]): { tables: SemesterChunk[]; cours
     const sectionLines = lines.slice(b.line, end);
     const title = titleOf(lines, b.line, b.rest, end);
     if (title.length < 3) return;
-    courses.push({ year: b.year, semester: b.semester, title, outcomes: outcomesOf(sectionLines.join("\n").slice(0, MAX_SECTION_CHARS).split("\n")) });
+    const text = sectionLines.join("\n").slice(0, MAX_SECTION_CHARS);
+    const parsed = parseCourseSection(text.split("\n"));
+    courses.push({ year: b.year, semester: b.semester, title, outcomes: parsed.outcomes.map((o) => o.text), text, parsed });
   });
   return { tables: [...tableByKey.values()], courses };
 }

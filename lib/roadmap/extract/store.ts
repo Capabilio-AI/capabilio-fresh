@@ -75,11 +75,32 @@ export async function createExtraction(service: Service, v: { institutionId: str
   return error || !data ? null : (data as { id: string }).id;
 }
 
+const WRITE_ATTEMPTS = 3;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Updates a staging row, retrying a failed write (an idempotent UPDATE) and THROWING if it still fails — a final "ready"/"failed"
+ * write that is silently lost would leave a finished job showing "processing" until it is declared stale.
+ */
 export async function updateExtraction(service: Service, id: string, patch: Record<string, unknown>): Promise<void> {
-  await untyped(service).from("curriculum_extractions").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+  let message = "";
+  for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt++) {
+    const { error } = await untyped(service).from("curriculum_extractions").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+    if (!error) return;
+    message = (error as { message?: string }).message ?? "unknown error";
+    if (attempt < WRITE_ATTEMPTS) await sleep(300 * attempt);
+  }
+  throw new Error(`Could not update extraction ${id}: ${message}`);
 }
 
+/** Progress is cosmetic: a lost progress write must never abort the job. */
+export const reportProgress = (service: Service, id: string, patch: Record<string, unknown>): Promise<void> => updateExtraction(service, id, patch).catch(() => undefined);
+
 export async function deleteExtraction(service: Service, institutionId: string, userId: string, id: string): Promise<boolean> {
-  const { data } = await untyped(service).from("curriculum_extractions").delete().eq("id", id).eq("institution_id", institutionId).eq("created_by", userId).select("id");
-  return ((data as unknown[] | null)?.length ?? 0) > 0;
+  const { data } = await untyped(service).from("curriculum_extractions").delete().eq("id", id).eq("institution_id", institutionId).eq("created_by", userId).select("id, import_id");
+  const rows = (data as { id: string; import_id: string | null }[] | null) ?? [];
+  // Discarding the staged result also discards its unpublished draft; a published or archived import is never touched.
+  const importId = rows[0]?.import_id;
+  if (importId) await service.from("curriculum_imports").update({ deleted_at: new Date().toISOString() }).eq("id", importId).eq("institution_id", institutionId).in("status", ["DRAFT", "EXTRACTED", "UNDER_REVIEW", "CONFIRMED"]);
+  return rows.length > 0;
 }
