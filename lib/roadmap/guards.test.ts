@@ -75,6 +75,11 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
     expect(seed).not.toMatch(/openai|groq|completeJson/i);
     expect(seed).toMatch(/source: z\.enum\(\["CAPABILIO", "MENTOR"\]\)/);
   });
+  it("the roadmap engine core is pure: no database, no network, no AI, no filesystem", () => {
+    for (const f of ["types", "gaps", "subjects", "readiness", "milestones", "generate"]) {
+      expect(read(`lib/roadmap-engine/${f}.ts`), f).not.toMatch(/supabase|fetch\(|@\/lib\/ai\/|@\/lib\/roadmap\/suggest|node:|process\.env/);
+    }
+  });
   it("the gate uses the existing RBAC, not a new role system", () => {
     expect(read("lib/roadmap/admin-gate.ts")).toContain('can(supabase, userId, "organisation", "admin"');
   });
