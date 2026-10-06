@@ -50,6 +50,24 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
       expect(src, f).not.toMatch(/service\.from\("(curriculum_imports|courses)"\)\.(delete|truncate)\(/); // soft delete only
     }
   });
+  it("career and capability code never imports the AI provider directly, and the intent schemas cannot name a student", () => {
+    const files = [...walk("lib/careers"), ...walk("lib/capability")];
+    for (const f of files) expect(read(f), f).not.toMatch(/@\/lib\/ai\//);
+    expect(read("lib/careers/intent-rules.ts")).not.toMatch(/student_?id|user_?id/i);
+    expect((read("lib/careers/intent-rules.ts").match(/\.strict\(\)/g) ?? []).length).toBeGreaterThanOrEqual(3);
+  });
+  it("relevance and the capability combiner are pure: type imports only", () => {
+    expect(read("lib/careers/relevance.ts")).not.toMatch(/^import (?!type)/m);
+    expect(read("lib/careers/intent-rules.ts")).not.toMatch(/supabase|fetch\(/);
+  });
+  it("every career-intent route authenticates the student first and acts only on that student", () => {
+    for (const f of walk("app/api/career-intent").filter((x) => x.endsWith("route.ts"))) {
+      const src = read(f);
+      expect(src, f).toContain("requireUser(");
+      expect(src.indexOf("requireUser("), f).toBeLessThan(src.indexOf("createServiceClient()"));
+      expect(src, f).toContain("auth.userId");
+    }
+  });
   it("the gate uses the existing RBAC, not a new role system", () => {
     expect(read("lib/roadmap/admin-gate.ts")).toContain('can(supabase, userId, "organisation", "admin"');
   });

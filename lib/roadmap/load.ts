@@ -35,10 +35,10 @@ export async function loadRoadmapForStudent(client: Service, service: Service, u
   const roleKey = workstation.role.key;
 
   const branchKey = direction.branch?.trim().toLowerCase();
-  const [{ data: targets }, { data: resources }, subjects] = await Promise.all([
+  const [{ data: targets }, { data: resources }, published] = await Promise.all([
     service.from("role_target_profiles").select("area_key, min_verified_count").eq("role_key", roleKey),
     service.from("skill_area_resources").select("area_key, kind, title, url, description").eq("role_key", roleKey).eq("active", true),
-    direction.institutionId && branchKey ? loadPublishedSubjects(service, direction.institutionId, branchKey, roleKey) : Promise.resolve([] as RoadmapSubject[]),
+    direction.institutionId && branchKey ? loadPublishedSubjects(service, direction.institutionId, branchKey, roleKey, direction.regulation) : Promise.resolve({ subjects: [] as RoadmapSubject[], regulationMismatch: false }),
   ]);
 
   return {
@@ -49,7 +49,8 @@ export async function loadRoadmapForStudent(client: Service, service: Service, u
       targets: (targets ?? []).map((t) => ({ areaKey: t.area_key, minVerified: t.min_verified_count })),
       verified: Object.fromEntries(workstation.progress.map((p) => [p.key, p.verifiedCount])),
       academicYear,
-      subjects,
+      subjects: published.subjects,
+      regulationMismatch: published.regulationMismatch,
       resources: (resources ?? []).map((r) => ({ areaKey: r.area_key, kind: r.kind as "project" | "certification" | "practice", title: r.title, url: r.url, description: r.description })),
     }),
   };

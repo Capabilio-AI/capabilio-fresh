@@ -22,8 +22,8 @@ async function ready() {
 let skillOfArea = new Map<string, string>();
 type FixtureCourse = { name: string; year: number; areas: string[]; ai?: boolean; removed?: boolean };
 /** A curriculum in the NEW model: an import with courses and mappings (official unless `ai`), optionally published. Returns the import id. */
-async function curriculum(inst: string, courses: FixtureCourse[], opts: { publish?: boolean } = { publish: true }) {
-  const { data: imp } = await service.from("curriculum_imports").insert({ institution_id: inst, branch: "ZZ Branch", status: "CONFIRMED" }).select("id").single();
+async function curriculum(inst: string, courses: FixtureCourse[], opts: { publish?: boolean; regulation?: string | null } = { publish: true }) {
+  const { data: imp } = await service.from("curriculum_imports").insert({ institution_id: inst, branch: "ZZ Branch", status: "CONFIRMED", regulation: opts.regulation ?? null }).select("id").single();
   for (const c of courses) {
     const { data: row } = await service.from("courses").insert({ import_id: imp!.id, year: c.year, semester: 1, title: c.name, deleted_at: c.removed ? new Date().toISOString() : null }).select("id").single();
     if (c.areas.length) {
@@ -116,6 +116,19 @@ describe("roadmap for a real job-track student (disposable fixtures)", () => {
     const covering = [...rm.affirm, ...rm.engage, ...rm.external].flatMap((i) => i.covering.map((c) => c.name));
     expect(covering).toEqual(["Applied Statistics"]); // v1's Database Management Systems / Probability are archived; v2's suggestions never counted
     expect(rm.engage.find((i) => i.areaKey === "statistics")!.covering[0]).toMatchObject({ timing: "this_year" });
+  });
+
+  it("a student with a regulation sees only that regulation's curriculum — never a different one", async () => {
+    // a second regulation coexists with the first (different regulation, so nothing is archived)
+    await curriculum(instA, [{ name: "Regulation Two Course", year: 3, areas: ["sql"] }], { publish: true, regulation: "ZZ-R2" });
+    const coveringOf = (rm: Awaited<ReturnType<typeof ready>>) => [...rm.affirm, ...rm.engage, ...rm.external].flatMap((i) => i.covering.map((c) => c.name));
+    await service.from("institution_memberships").update({ regulation: "zz-r2" }).eq("user_id", student.userId); // case-insensitive
+    expect(coveringOf(await ready())).toEqual(["Regulation Two Course"]);
+    await service.from("institution_memberships").update({ regulation: "ZZ-R9" }).eq("user_id", student.userId);
+    const r = await run();
+    expect(r.applicable && r.roadmap.status === "needs_info" && r.roadmap.reasons).toEqual(["no_curriculum_for_regulation"]);
+    await service.from("institution_memberships").update({ regulation: null }).eq("user_id", student.userId); // unknown -> the newest published
+    expect(coveringOf(await ready())).toEqual(["Regulation Two Course"]);
   });
 
   it("track gating is live: job / not_sure / unset see it; higher studies and entrepreneur do not", async () => {

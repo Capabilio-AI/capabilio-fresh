@@ -1082,6 +1082,114 @@ export type Database = {
         }
         Relationships: []
       }
+      career_skill_requirements: {
+        Row: {
+          career_id: string
+          created_at: string
+          importance: string
+          required_by_stage: string
+          skill_id: string
+          target_level: number
+        }
+        Insert: {
+          career_id: string
+          created_at?: string
+          importance: string
+          required_by_stage?: string
+          skill_id: string
+          target_level: number
+        }
+        Update: {
+          career_id?: string
+          created_at?: string
+          importance?: string
+          required_by_stage?: string
+          skill_id?: string
+          target_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_skill_requirements_career_id_fkey"
+            columns: ["career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "career_skill_requirements_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_suggestions: {
+        Row: {
+          created_at: string
+          id: string
+          resolved_at: string | null
+          source_text: string
+          status: string
+          student_id: string
+          suggested_career_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          resolved_at?: string | null
+          source_text: string
+          status?: string
+          student_id: string
+          suggested_career_ids?: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          resolved_at?: string | null
+          source_text?: string
+          status?: string
+          student_id?: string
+          suggested_career_ids?: string[]
+        }
+        Relationships: []
+      }
+      careers: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          legacy_role: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          legacy_role?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          legacy_role?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       class_materials: {
         Row: {
           author_membership_id: string
@@ -2594,6 +2702,7 @@ export type Database = {
           institution_id: string
           permissions: string[] | null
           portfolio_prompt_seen_at: string | null
+          regulation: string | null
           role: Database["public"]["Enums"]["app_role"]
           start_year: number | null
           status: Database["public"]["Enums"]["membership_status"]
@@ -2619,6 +2728,7 @@ export type Database = {
           institution_id: string
           permissions?: string[] | null
           portfolio_prompt_seen_at?: string | null
+          regulation?: string | null
           role: Database["public"]["Enums"]["app_role"]
           start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
@@ -2644,6 +2754,7 @@ export type Database = {
           institution_id?: string
           permissions?: string[] | null
           portfolio_prompt_seen_at?: string | null
+          regulation?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           start_year?: number | null
           status?: Database["public"]["Enums"]["membership_status"]
@@ -4372,6 +4483,51 @@ export type Database = {
           },
         ]
       }
+      student_career_intent: {
+        Row: {
+          career_goal_confidence: number | null
+          career_goal_text: string | null
+          is_exploring: boolean
+          last_updated: string
+          primary_career_id: string | null
+          secondary_career_id: string | null
+          student_id: string
+        }
+        Insert: {
+          career_goal_confidence?: number | null
+          career_goal_text?: string | null
+          is_exploring?: boolean
+          last_updated?: string
+          primary_career_id?: string | null
+          secondary_career_id?: string | null
+          student_id: string
+        }
+        Update: {
+          career_goal_confidence?: number | null
+          career_goal_text?: string | null
+          is_exploring?: boolean
+          last_updated?: string
+          primary_career_id?: string | null
+          secondary_career_id?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_career_intent_primary_career_id_fkey"
+            columns: ["primary_career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_career_intent_secondary_career_id_fkey"
+            columns: ["secondary_career_id"]
+            isOneToOne: false
+            referencedRelation: "careers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_journey_events: {
         Row: {
           created_at: string
@@ -4558,6 +4714,7 @@ export type Database = {
           institution_id: string
           permissions: string[] | null
           portfolio_prompt_seen_at: string | null
+          regulation: string | null
           role: Database["public"]["Enums"]["app_role"]
           start_year: number | null
           status: Database["public"]["Enums"]["membership_status"]
@@ -4685,6 +4842,7 @@ export type Database = {
         Args: { p_source: string; p_target: string }
         Returns: undefined
       }
+      normalize_skill_text: { Args: { p_text: string }; Returns: string }
       org_effective_permissions: {
         Args: {
           p_permissions: string[]

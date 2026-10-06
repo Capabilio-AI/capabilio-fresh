@@ -78,7 +78,7 @@ describe("curriculum wizard over HTTP (real session, real routes, server-rendere
   it("renders every wizard step", async () => {
     const expected: Record<string, string> = {
       upload: "started by hand", structure: "Program, branch and regulation", courses: "Add courses", outcomes: "have learning outcomes",
-      mappings: "Suggest skills", relevance: "configured yet", confirm: "Before you confirm", publish: "Confirm the curriculum first",
+      mappings: "Suggest skills", relevance: "has confirmed skills", confirm: "Before you confirm", publish: "Confirm the curriculum first",
     };
     for (const [step, marker] of Object.entries(expected)) {
       const r = await page(cookieA, `/org/curriculum/${importId}?step=${step}`);
@@ -100,9 +100,14 @@ describe("curriculum wizard over HTTP (real session, real routes, server-rendere
     expect(html).toContain("Suggested — needs review");
     expect(html).toContain("Write SQL queries for data retrieval"); // the outcome
     expect(html).toContain("Relational model"); // the unit
-    expect(html).toContain("Career requirements aren't configured yet");
+    // career relevance is derived from the CONFIRMED skill (SQL) only — the suggested ones do not count
+    expect(html).toContain("Data Analyst");
+    expect(html).toContain("Why?");
+    expect(html).not.toContain("Career requirements aren't configured yet");
     // a course with no mappings says so rather than showing a stale count
-    expect(await text(await page(cookieA, `/org/curriculum/${importId}/courses/${statsId}`))).toContain("No skills yet");
+    const bare = await text(await page(cookieA, `/org/curriculum/${importId}/courses/${statsId}`));
+    expect(bare).toContain("No skills yet");
+    expect(bare).toContain("Confirm this course's skills first"); // no confirmed skills -> no relevance is claimed
   }, 180_000);
 
   it("other institutions and non-admins get nothing", async () => {

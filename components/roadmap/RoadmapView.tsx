@@ -7,6 +7,7 @@ const REASON_COPY: Record<NeedsInfoReason, { text: string; href?: string; cta?: 
   no_target_profile: { text: "This role doesn't have a readiness target defined yet." },
   year_unknown: { text: "Confirm your program years so we know which subjects are yours.", href: "/settings/direction", cta: "Confirm your years" },
   no_curriculum: { text: "Your college hasn't added its curriculum for your branch yet. We won't guess what it covers." },
+  no_curriculum_for_regulation: { text: "Your college has published a curriculum for your branch, but not for your regulation. We won't show you a different regulation's subjects." },
   no_curriculum_for_year: { text: "Your college's curriculum doesn't include your current or next year yet." },
   no_confirmed_mapping: { text: "Your college has added subjects but hasn't linked them to skills yet, so we can't tell what they cover." },
 };

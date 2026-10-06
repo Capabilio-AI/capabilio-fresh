@@ -15,6 +15,7 @@ import { CoursesStep } from "@/components/curriculum/CoursesStep";
 import { OutcomesStep } from "@/components/curriculum/OutcomesStep";
 import { MappingsStep } from "@/components/curriculum/MappingsStep";
 import { RelevanceStep } from "@/components/curriculum/RelevanceStep";
+import { loadImportRelevance } from "@/lib/careers/data";
 import { ConfirmStep } from "@/components/curriculum/ConfirmStep";
 import { PublishStep } from "@/components/curriculum/PublishStep";
 
@@ -50,7 +51,7 @@ export default async function CurriculumWizardPage({ params, searchParams }: { p
         {step === "courses" && <CoursesStep importId={importId} courses={courses} removed={removed} editable={editable} />}
         {step === "outcomes" && <OutcomesStep importId={importId} courses={courses} />}
         {step === "mappings" && <MappingsStep importId={importId} courses={courses} editable={editable} />}
-        {step === "relevance" && <RelevanceStep />}
+        {step === "relevance" && <RelevanceStep importId={importId} data={await loadImportRelevance(service, courses.map((c) => ({ id: c.id, title: c.title, year: c.year })))} />}
         {step === "confirm" && <ConfirmStep importId={importId} summary={summary} coursesWithoutOutcomes={withoutOutcomes} />}
         {step === "publish" && <PublishStep importId={importId} status={status} branch={imp.branch} regulation={imp.regulation} versionNo={overview.versionNo} />}
       </div>

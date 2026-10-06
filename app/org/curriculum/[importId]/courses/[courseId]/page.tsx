@@ -8,6 +8,8 @@ import { PageHeader, Panel, EmptyState } from "@/components/org/ui";
 import { CourseEditor } from "@/components/curriculum/CourseEditor";
 import { MappingList } from "@/components/curriculum/MappingList";
 import { StatusPill } from "@/components/curriculum/bits";
+import { CourseRelevance } from "@/components/curriculum/CourseRelevance";
+import { loadCourseRelevance } from "@/lib/careers/data";
 import type { ImportStatus } from "@/lib/curriculum/mapping-rules";
 
 export const metadata: Metadata = { title: "Course — Capabilio AI" };
@@ -17,7 +19,7 @@ export default async function CoursePage({ params }: { params: Promise<{ importI
   const { ctx, service } = await orgPageContext("manageCurriculum");
   const detail = await getCourseDetail(service, ctx.institutionId, courseId);
   if (!detail || detail.import.id !== importId || detail.course.deleted_at) notFound();
-  const catalog = await getSkillCatalog(service);
+  const [catalog, relevance] = await Promise.all([getSkillCatalog(service), loadCourseRelevance(service, courseId)]);
   const { course } = detail;
 
   return (
@@ -58,7 +60,7 @@ export default async function CoursePage({ params }: { params: Promise<{ importI
       </Panel>
 
       <Panel title="Career relevance">
-        <EmptyState title="Career requirements aren't configured yet" body="Once careers and the skills they need are set up, this shows how strongly this course's confirmed skills match each career — calculated from your confirmations, never typed in." />
+        <CourseRelevance data={relevance} />
       </Panel>
     </div>
   );

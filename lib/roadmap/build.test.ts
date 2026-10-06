@@ -99,3 +99,16 @@ describe("honest needs_info states — never an empty-looking roadmap", () => {
   it("reports every missing precondition together", () =>
     expect(reasons(base({ academicYear: null, subjects: [], targets: [] })).sort()).toEqual(["no_curriculum", "no_target_profile", "year_unknown"]));
 });
+
+describe("regulation mismatch", () => {
+  it("says the college has no curriculum for THEIR regulation — a different reason from having none at all", () => {
+    const r = buildRoadmap(base({ subjects: [], regulationMismatch: true }));
+    expect(r).toEqual({ status: "needs_info", reasons: ["no_curriculum_for_regulation"] });
+  });
+  it("no subjects and no mismatch is still plain no_curriculum", () => {
+    expect(buildRoadmap(base({ subjects: [] }))).toEqual({ status: "needs_info", reasons: ["no_curriculum"] });
+  });
+  it("a mismatch flag never hides a curriculum that was found", () => {
+    expect(buildRoadmap(base({ regulationMismatch: true })).status).toBe("ready");
+  });
+});

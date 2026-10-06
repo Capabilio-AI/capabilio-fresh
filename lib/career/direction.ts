@@ -37,6 +37,8 @@ export interface StudentDirection {
   portfolioPromptSeenAt: string | null;
   institutionId: string | null;
   branch: string | null;
+  /** the curriculum regulation the student follows (e.g. "R23"); null until they or their college set it */
+  regulation: string | null;
 }
 
 type MembershipRow = Pick<
@@ -45,7 +47,7 @@ type MembershipRow = Pick<
   | "goal_state_updated_at" | "goal_state_prompted_at" | "higher_studies_checkin_at"
   | "active_role_key" | "portfolio_prompt_seen_at"
 > &
-  Partial<Pick<Database["public"]["Tables"]["institution_memberships"]["Row"], "institution_id" | "branch">>;
+  Partial<Pick<Database["public"]["Tables"]["institution_memberships"]["Row"], "institution_id" | "branch" | "regulation">>;
 
 export function buildDirection(row: MembershipRow, cycleStartMonth: number, now: Date = new Date()): StudentDirection {
   const goalState = isGoalState(row.goal_state) ? row.goal_state : null;
@@ -70,6 +72,7 @@ export function buildDirection(row: MembershipRow, cycleStartMonth: number, now:
     portfolioPromptSeenAt: row.portfolio_prompt_seen_at,
     institutionId: row.institution_id ?? null,
     branch: row.branch ?? null,
+    regulation: row.regulation ?? null,
   };
 }
 
@@ -99,7 +102,7 @@ export function shouldShowHigherStudiesCheckin(d: StudentDirection, now: Date = 
 }
 
 const COLUMNS =
-  "id, institution_id, status, branch, created_at, start_year, end_year, year_confirmed_at, year_override, goal_state, goal_state_updated_at, goal_state_prompted_at, higher_studies_checkin_at, active_role_key, portfolio_prompt_seen_at, institutions ( academic_start_month )";
+  "id, institution_id, status, branch, regulation, created_at, start_year, end_year, year_confirmed_at, year_override, goal_state, goal_state_updated_at, goal_state_prompted_at, higher_studies_checkin_at, active_role_key, portfolio_prompt_seen_at, institutions ( academic_start_month )";
 
 /**
  * The student's current-program membership, read live (never cached). Same

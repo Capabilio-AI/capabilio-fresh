@@ -142,3 +142,27 @@ describe("migration 053: clone a published curriculum", () => {
     expect(sql).toMatch(/m\.mapping_source, m\.confidence, m\.importance, m\.evidence_source, m\.status, m\.created_by, m\.approved_by, m\.approved_at/);
   });
 });
+
+describe("migration 054: careers, intent, suggestions", () => {
+  const sql = migration("054_careers_and_intent.sql");
+  it("is additive: the legacy career_requirements table is only read", () => {
+    expect(sql).not.toMatch(/\bdrop (table|column)\b|\bdelete from\b|\btruncate table\b/i);
+    expect(sql).not.toMatch(/(alter table|update|insert into) public\.career_requirements\b/i);
+  });
+  it("nothing here is client-writable; the catalog is world-readable, a student's own rows are read-own only", () => {
+    expect(sql).toMatch(/revoke insert, update, delete, truncate on public\.careers, public\.career_skill_requirements, public\.student_career_intent, public\.career_suggestions from anon, authenticated/i);
+    expect(sql).toMatch(/create policy careers_read_all on public\.careers for select using \(true\)/i);
+    expect(sql).toMatch(/create policy student_intent_read_own on public\.student_career_intent for select using \(student_id = auth\.uid\(\)\)/i);
+    expect(sql).toMatch(/create policy career_suggestions_read_own on public\.career_suggestions for select using \(student_id = auth\.uid\(\)\)/i);
+    expect(sql).not.toMatch(/for (insert|update|delete|all)/i);
+  });
+  it("a requirement can only name an active skill, and a Plan B can never equal the main career", () => {
+    expect(sql).toMatch(/guard_requirement_skill_active/);
+    expect(sql).toMatch(/primary_career_id is distinct from secondary_career_id/);
+  });
+  it("legacy skill names resolve by exact match only; the rest are queued for review, never guessed", () => {
+    expect(sql).toMatch(/on conflict \(normalized_text\) do nothing/);
+    expect(sql).toMatch(/'career_requirement'/);
+    expect(sql).not.toMatch(/similarity|levenshtein|ilike/i);
+  });
+});

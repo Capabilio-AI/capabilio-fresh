@@ -33,6 +33,8 @@ export interface RoadmapInput {
   /** All of the student's institution + branch subjects, any year. */
   subjects: RoadmapSubject[];
   resources: RoadmapResource[];
+  /** the student's regulation is known and the college has published curricula, but none for that regulation */
+  regulationMismatch?: boolean;
 }
 
 export type NeedsInfoReason =
@@ -40,6 +42,7 @@ export type NeedsInfoReason =
   | "no_target_profile"
   | "year_unknown"
   | "no_curriculum"
+  | "no_curriculum_for_regulation"
   | "no_curriculum_for_year"
   | "no_confirmed_mapping";
 
@@ -75,7 +78,7 @@ export function buildRoadmap(input: RoadmapInput): Roadmap {
   const reasons: NeedsInfoReason[] = [];
   if (targeted.length === 0) reasons.push("no_target_profile");
   if (input.academicYear == null) reasons.push("year_unknown");
-  if (input.subjects.length === 0) reasons.push("no_curriculum");
+  if (input.subjects.length === 0) reasons.push(input.regulationMismatch ? "no_curriculum_for_regulation" : "no_curriculum");
   else if (input.academicYear != null) {
     const slice = input.subjects.filter((s) => timingOf(s.year, input.academicYear!) !== null);
     // Only past years uploaded: we cannot claim what this or next year covers, so we cannot claim gaps.
