@@ -1,7 +1,10 @@
+import { programLengthYears } from "./years";
+
 export const DEFAULT_ACADEMIC_START_MONTH = 7;
 
 export interface AcademicYearInput {
   startYear: number | null;
+  endYear?: number | null;
   cycleStartMonth?: number;
   override?: number | null;
   now?: Date;
@@ -23,10 +26,12 @@ export function academicYearStart(date: Date, cycleStartMonth: number): number {
  * and a manual override always wins (backlogs, gap years, repeated years).
  */
 export function computeCurrentAcademicYear(input: AcademicYearInput): AcademicYear | null {
-  if (input.override != null) return { year: input.override, source: "override" };
+  // A 2023–2027 program has 4 years: an override or a long-past start can't push past the final year.
+  const last = input.startYear != null && input.endYear != null ? programLengthYears(input.startYear, input.endYear) : Infinity;
+  if (input.override != null) return { year: Math.min(input.override, last), source: "override" };
   if (input.startYear == null) return null;
   const start = academicYearStart(input.now ?? new Date(), input.cycleStartMonth ?? DEFAULT_ACADEMIC_START_MONTH);
-  return { year: Math.max(1, start - input.startYear + 1), source: "computed" };
+  return { year: Math.min(Math.max(1, start - input.startYear + 1), last), source: "computed" };
 }
 
 const ORDINALS: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };

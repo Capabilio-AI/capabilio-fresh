@@ -57,6 +57,7 @@ export function buildDirection(row: MembershipRow, cycleStartMonth: number, now:
     endYear: row.end_year,
     academicYear: computeCurrentAcademicYear({
       startYear: row.start_year,
+      endYear: row.end_year,
       cycleStartMonth,
       override: row.year_override,
       now,
