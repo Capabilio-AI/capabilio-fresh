@@ -15,7 +15,7 @@ export function toPayload(p: PreparedRoadmap, trigger: Trigger): Record<string, 
     trigger, mode: meta.mode, snapshot: p.snapshot, hash: p.hash, readiness: plan.readiness, baseline: plan.baselineRecommended, next_best_action: plan.nextBestAction,
     notes: {
       readinessExplanation: plan.readinessExplanation, mandatoryNote: plan.mandatoryNote, learningNotConfigured: plan.learningNotConfigured, certificationNote: plan.certificationNote,
-      projectNote: plan.projectNote, arenaNote: plan.arenaNote, semesterEstimated: meta.semesterEstimated, unmatchedCapabilities: meta.unmatchedCapabilities,
+      projectNote: plan.projectNote, arenaNote: plan.arenaNote, position: input.position, regulation: meta.regulation, semesterEstimated: meta.semesterEstimated, unmatchedCapabilities: meta.unmatchedCapabilities,
       explanationsRejected: p.explanationNotes.rejected, explanationsFailed: p.explanationNotes.failed,
     },
     goals: meta.goals.map((g) => ({ kind: g.kind, career_id: g.careerId, career_name: g.careerName, readiness: g.readiness })),

@@ -12,7 +12,7 @@ const TABS: { label: string; href: string; jobTrackOnly?: boolean }[] = [
   { label: "Portfolio", href: "/dashboard/portfolio" },
   { label: "Skills", href: "/dashboard/skills" },
   { label: "Skill Gap", href: "/dashboard/skill-gap" },
-  { label: "Roadmap", href: "/dashboard/roadmap", jobTrackOnly: true },
+  { label: "Roadmap", href: "/dashboard/roadmap" },
   { label: "Vault", href: "/dashboard/vault" },
 ];
 

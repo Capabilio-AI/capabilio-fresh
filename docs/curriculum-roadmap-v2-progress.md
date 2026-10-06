@@ -87,3 +87,10 @@ Phase 4 switched the admin UI and the student roadmap to the new model. Legacy `
 
 ## Open questions
 - Starter taxonomy review: category names and the aliases that map broad words (e.g. "communication" → Technical Communication, "devops" → CI/CD) are product choices; flag any you want changed.
+
+## Phase 8 — Student roadmap page and end-to-end test: DONE (cleanup pending)
+- `/dashboard/roadmap` rebuilt on the new engine (`components/roadmap/v2/*`): header (career, Plan B / best matches, estimated year+semester, regulation, readiness with "How is this calculated?", refresh), next best step, skill gaps, subjects (mandatory note, stars, AI sentence labelled), learning, certifications, projects, Arena, timeline, version history (older versions viewable read-only via `?version=`), career picker with Plan B / exploring / free-text suggestions (accept or dismiss). Specific empty states for every missing-data case. Shows for every track (decision 5); the tab is no longer job-track-only.
+- New: `PUT /api/roadmap/regulation` (own memberships only, strict body).
+- Journey test `journey.e2e.live.test.ts` (6, real HTTP): college builds/confirms/publishes → student page → evidence → v2 + history → corrected curriculum refreshes the student in the background → other college sees nothing → regulation mismatch explained.
+- 704 unit tests, tsc clean, eslint 0 errors.
+- **Still open:** regenerate `lib/supabase/types.ts` (Supabase connector unauthorized); remove now-unused legacy `lib/roadmap/load.ts`, `components/roadmap/RoadmapView.tsx`, legacy tables/`*_pre048` copies and `/api/admin/curriculum/subjects*`; manual browser click-through of Phase 4 and Phase 8 UI (server-rendered HTML verified, client interactions not run in a browser).

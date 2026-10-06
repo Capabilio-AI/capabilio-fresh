@@ -88,7 +88,8 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
       expect(src, f).toContain("requireUser(");
       expect(src.indexOf("requireUser("), f).toBeLessThan(src.indexOf("createServiceClient()"));
       expect(src, f).toContain("auth.userId");
-      expect(src, f).not.toMatch(/request\.(json|formData)\(|searchParams/); // nothing in the request can name a student
+      expect(src, f).not.toMatch(/searchParams|formData\(/); // nothing in the URL can name a student
+      if (/request\.json\(/.test(src)) expect(src, f).toMatch(/BodySchema\.safeParse/); // a body is only read through a schema
     }
   });
   it("roadmap persistence and regeneration never import the AI provider; only the explanation step reaches the propose-only module", () => {
@@ -107,17 +108,27 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
   });
 });
 
-describe("roadmap visibility is job-track only", () => {
-  it("the page returns 404 unless the loader says the roadmap applies", () => {
-    expect(read("app/(app)/dashboard/roadmap/page.tsx")).toMatch(/if \(!result\.applicable\) notFound\(\)/);
+describe("the student roadmap page", () => {
+  it("shows for every track — a student with no career goal gets a 'choose a career' state, not a 404 or an invented roadmap", () => {
+    const page = read("app/(app)/dashboard/roadmap/page.tsx");
+    expect(page).not.toMatch(/notFound\(\)/);
+    expect(page).toContain("ensureRoadmap(");
+    expect(page).toContain("<MissingState");
+    expect(read("components/dashboard/DashboardSubNav.tsx")).not.toMatch(/Roadmap.*jobTrackOnly/);
   });
-  it("the loader gates on the existing track resolution, not a reimplementation", () => {
-    const src = read("lib/roadmap/load.ts");
-    expect(src).toContain("getStudentDirection(");
-    expect(src).toContain('direction.track !== "job"');
+  it("the page acts on the signed-in student only: the version in the URL is read through an owner-scoped loader", () => {
+    const page = read("app/(app)/dashboard/roadmap/page.tsx");
+    expect(page).toContain("requireAuthedUser()");
+    expect(page).toContain("getRoadmapVersionView(service, user.id,");
   });
-  it("the dashboard tab is job-track-only", () => {
-    expect(read("components/dashboard/DashboardSubNav.tsx")).toMatch(/Roadmap.*jobTrackOnly: true/);
+  it("the regulation setter updates only the caller's own memberships and its body cannot name a student", () => {
+    expect(read("lib/roadmap-engine/regulation.ts")).toMatch(/\.eq\("user_id", userId\)/);
+    expect(read("lib/roadmap-engine/regulation.ts")).not.toMatch(/student_?id|user_?id:/);
+    expect(read("lib/roadmap-engine/regulation.ts")).toMatch(/\.strict\(\)/);
+  });
+  it("roadmap components never render model text outside the labelled explanation, and fetch only through the shared helper", () => {
+    for (const f of walk("components/roadmap/v2")) expect(read(f), f).not.toMatch(/dangerouslySetInnerHTML|@\/lib\/ai\//);
+    expect(read("components/roadmap/v2/Plan.tsx")).toMatch(/AI-written from your data/);
   });
 });
 
