@@ -181,15 +181,16 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
           <input
             id="roll-number"
             type="text"
+            required
             autoComplete="off"
             maxLength={40}
             value={rollNumber}
             onChange={(e) => setRollNumber(e.target.value)}
-            placeholder="As issued by your college"
+            placeholder="e.g. 13AJ5A0405"
             className={FIELD_INPUT}
           />
           <p className="mt-1 font-lp-body text-lp-label-sm text-lp-text-muted">
-            Your college checks this against its code. Leave it blank if you don&apos;t have one — your college will see that.
+            Required, e.g. 13AJ5A0405. Your college checks it against its own code. Accounts without a valid roll number are removed after 7 days.
           </p>
         </div>
 

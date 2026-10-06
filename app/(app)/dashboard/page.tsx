@@ -22,6 +22,9 @@ import {
 } from "@/components/dashboard/SecondaryCards";
 import { JourneyTimeline } from "@/components/dashboard/JourneyTimeline";
 import { TrackPanel } from "@/components/direction/TrackPanel";
+import { RollNumberBanner } from "@/components/direction/RollNumberBanner";
+import { loadRollNumberNotice } from "@/lib/org/roll-number";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = {
   title: "Dashboard — Capabilio AI",
@@ -59,6 +62,7 @@ export default async function DashboardPage() {
     throw error;
   }
 
+  const rollNotice = await loadRollNumberNotice(createServiceClient(), user.id);
   const topMatch = careerMatches[0] ?? null;
   const nextAction = computeNextAction(topMatch);
   const showCareerDirectionIntro = !hasSeenIntro && topMatch !== null && Boolean(statedInterest);
@@ -74,6 +78,7 @@ export default async function DashboardPage() {
         />
       )}
       <DashboardHeader data={data} />
+      {rollNotice && <div className="pb-2"><RollNumberBanner notice={rollNotice} /></div>}
       <div className="empty:hidden pb-2">
         <TrackPanel supabase={supabase} userId={user.id} />
       </div>

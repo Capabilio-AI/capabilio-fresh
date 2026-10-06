@@ -2842,6 +2842,7 @@ export type Database = {
           portfolio_prompt_seen_at: string | null
           regulation: string | null
           roll_number: string | null
+          roll_number_due_at: string | null
           roll_number_status: string
           role: Database["public"]["Enums"]["app_role"]
           start_year: number | null
@@ -2870,6 +2871,7 @@ export type Database = {
           portfolio_prompt_seen_at?: string | null
           regulation?: string | null
           roll_number?: string | null
+          roll_number_due_at?: string | null
           roll_number_status?: string
           role: Database["public"]["Enums"]["app_role"]
           start_year?: number | null
@@ -2898,6 +2900,7 @@ export type Database = {
           portfolio_prompt_seen_at?: string | null
           regulation?: string | null
           roll_number?: string | null
+          roll_number_due_at?: string | null
           roll_number_status?: string
           role?: Database["public"]["Enums"]["app_role"]
           start_year?: number | null

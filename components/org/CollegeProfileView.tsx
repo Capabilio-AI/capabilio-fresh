@@ -106,7 +106,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
           { name: "foundedYear", label: "Founded", type: "number", defaultValue: org.profile?.founded_year ? String(org.profile.founded_year) : "" },
           { name: "city", label: "City", defaultValue: org.city ?? "" },
           { name: "state", label: "State", defaultValue: org.state ?? "" },
-          { name: "collegeCode", label: "College code (unique — student roll numbers must start with it, e.g. ASIST → ASIST21CS001)", placeholder: "e.g. ASIST", defaultValue: org.collegeCode ?? "" },
+          { name: "collegeCode", label: "College roll-number code — the letters in your students' roll numbers (e.g. AJ for 13AJ5A0405). Unique per college. Students must enter a roll number containing it; those who don't are flagged, and students with no roll number are removed after 7 days.", placeholder: "e.g. AJ", defaultValue: org.collegeCode ?? "" },
           { name: "websiteUrl", label: "Website", type: "url", placeholder: "https://…", defaultValue: org.profile?.website_url ?? "" },
           { name: "bio", label: "About", type: "textarea", defaultValue: bio ?? "" },
           { name: "isPublic", label: "Make this page public — anyone with the link can see it, and events are visible to everyone", type: "checkbox", defaultValue: org.profile?.is_public ?? false },
