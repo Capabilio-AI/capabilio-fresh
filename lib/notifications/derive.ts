@@ -15,6 +15,8 @@ export interface DeriveNotificationsInput {
   topGapSkill?: string | null;
   vaultItemCount: number;
   hasGuidePath: boolean;
+  /** set when the college's roll-number check needs the student to act */
+  rollNumber?: { collegeName: string; kind: "missing" | "mismatch"; daysLeft: number | null } | null;
 }
 
 /**
@@ -25,6 +27,18 @@ export interface DeriveNotificationsInput {
  */
 export function deriveNotifications(input: DeriveNotificationsInput): Notification[] {
   const notifications: Notification[] = [];
+
+  if (input.rollNumber) {
+    const { collegeName, kind, daysLeft } = input.rollNumber;
+    const window = daysLeft === null ? "soon" : `within ${daysLeft} day${daysLeft === 1 ? "" : "s"}`;
+    notifications.push({
+      id: "roll-number",
+      tone: "attention",
+      title: kind === "missing" ? "Add your college roll number" : "Your roll number doesn't match your college",
+      body: `${kind === "missing" ? `${collegeName} needs your roll number.` : `It doesn't carry ${collegeName}'s code.`} Update it ${window} or your account will be removed.`,
+      href: "/dashboard",
+    });
+  }
 
   for (const score of input.sectionScores ?? []) {
     if (score.section === "career_interests") continue;

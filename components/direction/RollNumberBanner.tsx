@@ -32,7 +32,7 @@ export function RollNumberBanner({ notice }: { notice: RollNumberNotice }) {
       <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">
         {notice.kind === "missing"
           ? `Add your ${notice.collegeName} roll number${left !== null ? ` within ${left} day${left === 1 ? "" : "s"}` : ""} or your account will be removed.`
-          : `The roll number on your account doesn't match ${notice.collegeName}. Please correct it — your college can see this.`}
+          : `The roll number on your account doesn't match ${notice.collegeName}'s code. Correct it${left !== null ? ` within ${left} day${left === 1 ? "" : "s"}` : ""} or your account will be removed.`}
       </p>
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-center gap-2">
         <input

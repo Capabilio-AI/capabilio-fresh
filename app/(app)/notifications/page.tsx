@@ -8,6 +8,8 @@ import { getVaultItems } from "@/lib/vault/data";
 import { getGuidePaths } from "@/lib/guide-path/read";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { computeNextAction } from "@/lib/dashboard/next-action";
+import { createServiceClient } from "@/lib/supabase/service";
+import { loadRollNumberNotice } from "@/lib/org/roll-number";
 import { deriveNotifications, type Notification } from "@/lib/notifications/derive";
 
 export const metadata: Metadata = { title: "Notifications — Capabilio AI" };
@@ -41,12 +43,14 @@ export default async function NotificationsPage() {
     matchCareersForStudent(supabase, user.id),
   ]);
   const nextAction = computeNextAction(careerMatches[0] ?? null);
+  const roll = await loadRollNumberNotice(createServiceClient(), user.id);
 
   const notifications = deriveNotifications({
     sectionScores: dashboardData.sectionScores,
     topGapSkill: nextAction?.skill ?? null,
     vaultItemCount: vaultItems.length,
     hasGuidePath: guidePaths.primary !== null,
+    rollNumber: roll ? { collegeName: roll.collegeName, kind: roll.kind, daysLeft: roll.dueAt ? Math.max(0, Math.ceil((new Date(roll.dueAt).getTime() - Date.now()) / 86_400_000)) : null } : null,
   });
 
   return (
