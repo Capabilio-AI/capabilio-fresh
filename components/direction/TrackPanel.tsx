@@ -51,7 +51,7 @@ export async function TrackPanel({ supabase, userId }: { supabase: SupabaseClien
     <JobTrackCard
       newVerifiedCompletions={signals.newVerifiedCompletions}
       completedInterviewSessions={signals.completedInterviewSessions}
-      interviewAvailable={direction.inDirectionWindow}
+      interviewAvailable={direction.launchpadOpen}
     />
   );
 }

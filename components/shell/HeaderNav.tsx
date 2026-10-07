@@ -6,7 +6,7 @@ import { Lock } from "lucide-react";
 import clsx from "clsx";
 import { PRIMARY_NAV, isNavItemActive } from "@/lib/nav/config";
 
-export function HeaderNav({ inDirectionWindow }: { inDirectionWindow: boolean }) {
+export function HeaderNav({ launchpadOpen }: { launchpadOpen: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -14,7 +14,7 @@ export function HeaderNav({ inDirectionWindow }: { inDirectionWindow: boolean })
       <div className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
         {PRIMARY_NAV.map((item) => {
           const active = isNavItemActive(pathname, item.href);
-          const locked = item.requiresDirectionWindow ? !inDirectionWindow : false;
+          const locked = item.requiresLaunchpad ? !launchpadOpen : false;
           const Icon = item.icon;
           return (
             <Link

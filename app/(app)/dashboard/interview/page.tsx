@@ -11,7 +11,7 @@ export default async function InterviewPage() {
   const { supabase, user } = await requireAuthedUser();
 
   const viewer = await getViewerSummary(supabase, user.id);
-  const unlocked = viewer.direction?.inDirectionWindow ?? false;
+  const unlocked = viewer.direction?.launchpadOpen ?? false;
 
   return (
     <div>
@@ -32,7 +32,7 @@ export default async function InterviewPage() {
               <Lock size={18} />
             </span>
             <h2 className="font-lp-display text-[17px] font-semibold text-app-charcoal">
-              AI interview practice opens in your final two years.
+              AI interview practice opens when you enter your final year (4-1).
             </h2>
             <button
               type="button"

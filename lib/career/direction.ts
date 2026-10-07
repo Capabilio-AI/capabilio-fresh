@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { untyped } from "@/lib/org/db";
 import { computeCurrentAcademicYear, DEFAULT_ACADEMIC_START_MONTH, type AcademicYear } from "./academic-year";
 import { isCareerDirectionWindow } from "./trigger";
+import { estimateSemester } from "@/lib/roadmap-engine/position";
+import { isLaunchpadOpen, isPlanBTerm } from "./term";
 
 export const GOAL_STATES = ["job", "higher_studies", "entrepreneur", "not_sure"] as const;
 export type GoalState = (typeof GOAL_STATES)[number];
@@ -30,6 +33,10 @@ export interface StudentDirection {
   goalState: GoalState | null;
   track: Track;
   inDirectionWindow: boolean;
+  /** final year (4-1 onward): Launchpad is visible */
+  launchpadOpen: boolean;
+  /** exactly 3-1: Plan B can be chosen and its baseline questions asked */
+  planBOpen: boolean;
   goalStateUpdatedAt: string | null;
   goalStatePromptedAt: string | null;
   higherStudiesCheckinAt: string | null;
@@ -47,25 +54,31 @@ type MembershipRow = Pick<
   | "goal_state_updated_at" | "goal_state_prompted_at" | "higher_studies_checkin_at"
   | "active_role_key" | "portfolio_prompt_seen_at"
 > &
-  Partial<Pick<Database["public"]["Tables"]["institution_memberships"]["Row"], "institution_id" | "branch" | "regulation">>;
+  Partial<Pick<Database["public"]["Tables"]["institution_memberships"]["Row"], "institution_id" | "branch" | "regulation">> & {
+    /** the semester the student confirmed (migration 066; not in the generated types yet) */
+    current_semester?: number | null;
+  };
 
 export function buildDirection(row: MembershipRow, cycleStartMonth: number, now: Date = new Date()): StudentDirection {
   const goalState = isGoalState(row.goal_state) ? row.goal_state : null;
+  const academicYear = computeCurrentAcademicYear({
+    startYear: row.start_year,
+    endYear: row.end_year,
+    cycleStartMonth,
+    override: row.year_override,
+    now,
+  });
   return {
     membershipId: row.id,
     startYear: row.start_year,
     endYear: row.end_year,
-    academicYear: computeCurrentAcademicYear({
-      startYear: row.start_year,
-      endYear: row.end_year,
-      cycleStartMonth,
-      override: row.year_override,
-      now,
-    }),
+    academicYear,
     yearConfirmedAt: row.year_confirmed_at,
     goalState,
     track: trackFor(goalState),
     inDirectionWindow: isCareerDirectionWindow(row.end_year, now),
+    launchpadOpen: isLaunchpadOpen(academicYear?.year ?? null, row.start_year, row.end_year),
+    planBOpen: isPlanBTerm(academicYear?.year ?? null, row.current_semester ?? estimateSemester(now, cycleStartMonth)),
     goalStateUpdatedAt: row.goal_state_updated_at,
     goalStatePromptedAt: row.goal_state_prompted_at,
     higherStudiesCheckinAt: row.higher_studies_checkin_at,
@@ -103,7 +116,7 @@ export function shouldShowHigherStudiesCheckin(d: StudentDirection, now: Date = 
 }
 
 const COLUMNS =
-  "id, institution_id, status, branch, regulation, created_at, start_year, end_year, year_confirmed_at, year_override, goal_state, goal_state_updated_at, goal_state_prompted_at, higher_studies_checkin_at, active_role_key, portfolio_prompt_seen_at, institutions ( academic_start_month )";
+  "id, current_semester, institution_id, status, branch, regulation, created_at, start_year, end_year, year_confirmed_at, year_override, goal_state, goal_state_updated_at, goal_state_prompted_at, higher_studies_checkin_at, active_role_key, portfolio_prompt_seen_at, institutions ( academic_start_month )";
 
 /**
  * The student's current-program membership, read live (never cached). Same
@@ -115,13 +128,13 @@ export async function getStudentDirection(
   userId: string,
   now: Date = new Date()
 ): Promise<StudentDirection | null> {
-  const { data } = await supabase
+  const { data } = await untyped(supabase)
     .from("institution_memberships")
     .select(COLUMNS)
     .eq("user_id", userId)
     .eq("role", "student")
     .order("created_at", { ascending: false });
-  const rows = data ?? [];
+  const rows = (data ?? []) as unknown as (MembershipRow & { status: string; institutions: unknown })[];
   // Active only: a pending or revoked membership must not unlock track features.
   const best = rows.find((r) => r.status === "active" && r.branch) ?? null;
   if (!best) return null;

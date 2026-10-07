@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCareerIntent } from "@/lib/careers/intent";
+import { PLAN_B_CLOSED_MESSAGE, isPlanBOpen } from "@/lib/careers/plan-b";
 import { chooseDomainCareer } from "@/lib/arena-challenges/career-state";
 import { getDiagnostic } from "@/lib/roadmap-visual/diagnostic-store";
 import { DiagnosticRunner } from "@/components/roadmap/visual/DiagnosticRunner";
@@ -13,6 +14,14 @@ export default async function CheckPage({ searchParams }: { searchParams: Promis
   const { user } = await requireAuthedUser();
   const service = createServiceClient();
   const career = (await searchParams).career === "plan-b" ? "plan-b" : "primary";
+  if (career === "plan-b" && !(await isPlanBOpen(service, user.id))) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <Link href="/dashboard/roadmap" className="font-lp-body text-[13px] text-app-blue hover:underline">← Roadmap</Link>
+        <p role="status" className="mt-4 rounded-xl border border-dashed border-app-border bg-white p-5 font-lp-body text-[13.5px] text-app-charcoal">{PLAN_B_CLOSED_MESSAGE}</p>
+      </div>
+    );
+  }
   const { intent } = await getCareerIntent(service, user.id);
   const chosen = chooseDomainCareer(intent, career);
   const initial = await getDiagnostic(service, user.id, chosen.state === "ready" ? chosen.career.id : null);

@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { getCareerIntent } from "@/lib/careers/intent";
+import { PLAN_B_CLOSED_MESSAGE, isPlanBOpen } from "@/lib/careers/plan-b";
 import { chooseDomainCareer } from "@/lib/arena-challenges/career-state";
 import { ResponseSchema } from "@/lib/roadmap-visual/diagnostic";
 import { DiagnosticError, answerDiagnostic, getDiagnostic, skipDiagnostic, startDiagnostic } from "@/lib/roadmap-visual/diagnostic-store";
@@ -19,7 +20,9 @@ const Body = z.discriminatedUnion("action", [
 export async function GET(request: Request) {
   const auth = await requireUser(await createClient());
   if ("error" in auth) return auth.error;
-  const careerId = await careerOf(auth.userId, new URL(request.url).searchParams.get("career"));
+  const which = new URL(request.url).searchParams.get("career");
+  if (which === "plan-b" && !(await isPlanBOpen(createServiceClient(), auth.userId))) return NextResponse.json({ error: PLAN_B_CLOSED_MESSAGE }, { status: 403 });
+  const careerId = await careerOf(auth.userId, which);
   try {
     return NextResponse.json(await getDiagnostic(createServiceClient(), auth.userId, careerId), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
@@ -35,7 +38,9 @@ export async function POST(request: Request) {
   if (!limit.allowed) return rateLimitedResponse(limit.remaining);
   const body = Body.safeParse(await request.json().catch(() => null));
   if (!body.success) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-  const careerId = await careerOf(auth.userId, new URL(request.url).searchParams.get("career"));
+  const which = new URL(request.url).searchParams.get("career");
+  if (which === "plan-b" && !(await isPlanBOpen(createServiceClient(), auth.userId))) return NextResponse.json({ error: PLAN_B_CLOSED_MESSAGE }, { status: 403 });
+  const careerId = await careerOf(auth.userId, which);
   if (!careerId) return NextResponse.json({ error: "Choose a career first." }, { status: 409 });
   const service = createServiceClient();
   try {

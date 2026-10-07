@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { suggestCareersForGoal, type CareerOption } from "@/lib/roadmap/suggest";
 import { validateIntent, type IntentState } from "./intent-rules";
+import { PLAN_B_CLOSED_MESSAGE, isPlanBOpen } from "./plan-b";
 
 type Service = SupabaseClient<Database>;
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; status: number; message: string };
@@ -88,6 +89,8 @@ export async function saveCareerIntent(service: Service, userId: string, body: {
     secondaryCareerId: body.primaryCareerId === null ? null : body.secondaryCareerId !== undefined ? body.secondaryCareerId : now.secondaryCareerId,
     isExploring: body.isExploring !== undefined ? body.isExploring : now.isExploring,
   };
+  // Plan B can be added or changed in 3-1 only; clearing it, or leaving it as is, is always allowed.
+  if (next.secondaryCareerId && next.secondaryCareerId !== now.secondaryCareerId && !(await isPlanBOpen(service, userId))) return fail(403, PLAN_B_CLOSED_MESSAGE);
   return write(service, userId, next);
 }
 

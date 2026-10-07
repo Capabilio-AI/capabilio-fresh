@@ -5,7 +5,7 @@ import { requireUser } from "./require-user";
 
 function supabaseWithUser(user: { id: string } | null): SupabaseClient<Database> {
   return {
-    auth: { getUser: async () => ({ data: { user } }) },
+    auth: { getClaims: async () => ({ data: user ? { claims: { sub: user.id } } : null }) },
   } as unknown as SupabaseClient<Database>;
 }
 

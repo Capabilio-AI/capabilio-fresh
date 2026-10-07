@@ -11,8 +11,8 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Locked until the student is in the career-direction window (lib/career/trigger.ts). */
-  requiresDirectionWindow?: boolean;
+  /** Locked until the student reaches their final year (lib/career/term.ts#isLaunchpadOpen). */
+  requiresLaunchpad?: boolean;
   lockedMessage?: string;
 }
 
@@ -25,8 +25,8 @@ export const PRIMARY_NAV: NavItem[] = [
     label: "Launchpad",
     href: "/launchpad",
     icon: Rocket,
-    requiresDirectionWindow: true,
-    lockedMessage: "Available in your final two years, once your career direction window opens.",
+    requiresLaunchpad: true,
+    lockedMessage: "Opens when you enter your final year (4-1).",
   },
 ];
 

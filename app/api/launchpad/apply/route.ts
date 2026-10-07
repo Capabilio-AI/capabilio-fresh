@@ -12,7 +12,7 @@ import { untyped } from "@/lib/org/db";
 export async function POST(request: Request) {
   return orgRoute(request, ApplySchema, "applyToDrive", async ({ ctx, supabase, service }, body) => {
     const direction = await getStudentDirection(supabase, ctx.userId);
-    if (!direction?.inDirectionWindow) return NextResponse.json({ error: "Company visits open for registration in your final two years." }, { status: 403 });
+    if (!direction?.launchpadOpen) return NextResponse.json({ error: "Company visits open for registration once you reach your final year." }, { status: 403 });
 
     const { data } = await untyped(service).from("opportunities").select("id, institution_id, deadline, drive_status, eligible_branches").eq("id", body.opportunityId).maybeSingle();
     const opp = data as { id: string; institution_id: string | null; deadline: string | null; drive_status: string; eligible_branches: string[] | null } | null;

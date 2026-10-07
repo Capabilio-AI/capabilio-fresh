@@ -10,12 +10,12 @@ import { DirectionProvider } from "@/components/direction/DirectionContext";
 
 export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; banner?: ReactNode; children: ReactNode }) {
   return (
-    <DirectionProvider isJobTrack={viewer.direction?.track === "job"}>
+    <DirectionProvider isJobTrack={viewer.direction?.track === "job"} launchpadOpen={viewer.direction?.launchpadOpen ?? false}>
       <MessagingProvider userId={viewer.id}>
       <CallProvider>
       <div className="min-h-screen bg-app-background">
         <Topbar viewer={viewer} />
-        <HeaderNav inDirectionWindow={viewer.direction?.inDirectionWindow ?? false} />
+        <HeaderNav launchpadOpen={viewer.direction?.launchpadOpen ?? false} />
         <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
           {banner}
           {children}

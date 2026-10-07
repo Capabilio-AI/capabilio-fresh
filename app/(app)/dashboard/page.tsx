@@ -25,6 +25,9 @@ import { TrackPanel } from "@/components/direction/TrackPanel";
 import { RollNumberBanner } from "@/components/direction/RollNumberBanner";
 import { loadRollNumberNotice } from "@/lib/org/roll-number";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getStudentDirection } from "@/lib/career/direction";
+import { getCareerIntent } from "@/lib/careers/intent";
+import { PlanBPrompt } from "@/components/direction/PlanBPrompt";
 
 export const metadata: Metadata = {
   title: "Dashboard — Capabilio AI",
@@ -62,7 +65,11 @@ export default async function DashboardPage() {
     throw error;
   }
 
-  const rollNotice = await loadRollNumberNotice(createServiceClient(), user.id);
+  const service = createServiceClient();
+  const [rollNotice, direction] = await Promise.all([loadRollNumberNotice(service, user.id), getStudentDirection(service, user.id)]);
+  // Plan B is asked once, in 3-1, and never again after one is saved.
+  const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;
+  const askPlanB = planBAsk && planBAsk.intent.primary && !planBAsk.intent.secondary ? planBAsk : null;
   const topMatch = careerMatches[0] ?? null;
   const nextAction = computeNextAction(topMatch);
   const showCareerDirectionIntro = !hasSeenIntro && topMatch !== null && Boolean(statedInterest);
@@ -79,6 +86,9 @@ export default async function DashboardPage() {
       )}
       <DashboardHeader data={data} />
       {rollNotice && <div className="pb-2"><RollNumberBanner notice={rollNotice} /></div>}
+      {askPlanB?.intent.primary && (
+        <div className="pb-2"><PlanBPrompt mainCareer={askPlanB.intent.primary.name} careers={askPlanB.careers.filter((c) => c.id !== askPlanB.intent.primary?.id)} /></div>
+      )}
       <div className="empty:hidden pb-2">
         <TrackPanel supabase={supabase} userId={user.id} />
       </div>

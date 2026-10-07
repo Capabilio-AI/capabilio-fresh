@@ -5,19 +5,19 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useDirectionFlags } from "@/components/direction/DirectionContext";
 
-const TABS: { label: string; href: string; jobTrackOnly?: boolean }[] = [
+const TABS: { label: string; href: string; jobTrackOnly?: boolean; launchpadOnly?: boolean }[] = [
   { label: "Overview", href: "/dashboard" },
   { label: "Portfolio", href: "/dashboard/portfolio" },
   { label: "Skills & Gaps", href: "/dashboard/skills" },
   { label: "Roadmap", href: "/dashboard/roadmap" },
   { label: "Vault History", href: "/dashboard/vault" },
-  { label: "AI Interview", href: "/dashboard/interview" },
+  { label: "AI Interview", href: "/dashboard/interview", launchpadOnly: true },
 ];
 
 export function DashboardSubNav() {
   const pathname = usePathname();
-  const { isJobTrack } = useDirectionFlags();
-  const tabs = TABS.filter((t) => !t.jobTrackOnly || isJobTrack);
+  const { isJobTrack, launchpadOpen } = useDirectionFlags();
+  const tabs = TABS.filter((t) => (!t.jobTrackOnly || isJobTrack) && (!t.launchpadOnly || launchpadOpen));
   return (
     <div className="-mx-4 overflow-x-auto border-b border-app-border px-4 sm:mx-0 sm:px-0">
       <div className="flex gap-1 whitespace-nowrap">

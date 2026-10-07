@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { getStatedCareerInterest } from "@/lib/career/interest-statement";
 import { listEnabledRoles, matchRoleForStatedCareer } from "@/lib/arena-workstations/taxonomy";
+import { getStudentDirection } from "@/lib/career/direction";
 import { generateInterviewQuestions } from "@/lib/interview/session";
 
 const BodySchema = z.object({ mode: z.enum(["practice", "technical", "behavioral", "hr"]) });
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const service = createServiceClient();
+  if (!(await getStudentDirection(service, auth.userId))?.launchpadOpen) return NextResponse.json({ error: "AI Interview opens when you enter your final year (4-1)." }, { status: 403 });
   const statedRole = await getStatedCareerInterest(service, auth.userId);
   const roles = await listEnabledRoles(service);
   const matched = matchRoleForStatedCareer(roles, statedRole);

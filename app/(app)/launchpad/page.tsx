@@ -28,7 +28,7 @@ export default async function LaunchpadPage() {
   ]);
 
   const direction = viewer.direction;
-  const unlocked = direction?.inDirectionWindow ?? false;
+  const unlocked = direction?.launchpadOpen ?? false;
 
   if (!unlocked) {
     return (
@@ -43,7 +43,7 @@ export default async function LaunchpadPage() {
           </span>
           <h2 className="font-lp-display text-[18px] font-semibold text-app-charcoal">Not open yet</h2>
           <p className="max-w-md font-lp-body text-[13.5px] text-app-muted">
-            Jobs and internships open in your final two years, based on your program end year.
+            Launchpad opens when you enter your final year (4-1).
           </p>
         </div>
       </div>
