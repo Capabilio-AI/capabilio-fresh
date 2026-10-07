@@ -144,7 +144,7 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
                   {a.status === "accepted" && !placement && (
                     <div className="mt-3 rounded-2xl border border-app-border bg-white/[0.03] p-4">
                       <p className="mb-3 text-[12.5px] leading-relaxed text-app-muted">
-                        The company selected this student. When they release the offer, record it here and attach the offer letter. The student is notified in their Classroom, can open the letter, and accepts or declines there.
+                        The company selected this student. When they release the offer, record it here and attach the offer letter. The student is notified in Launchpad, can open the letter, and accepts or declines there.
                       </p>
                       <OfferForm applicationId={a.id} company={visit.company} role={visit.role} />
                     </div>

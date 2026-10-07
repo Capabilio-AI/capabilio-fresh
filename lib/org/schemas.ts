@@ -22,7 +22,8 @@ export const MaterialSchema = z
   .superRefine((v, ctx) => {
     if (v.type === "notes" && !v.body) ctx.addIssue({ code: "custom", path: ["body"], message: "Notes need some text." });
     if (v.type !== "notes" && !v.url) ctx.addIssue({ code: "custom", path: ["url"], message: "Add a link." });
-    if (!v.subjectId && (!v.branch || v.year === undefined)) ctx.addIssue({ code: "custom", path: ["branch"], message: "Pick a subject, or enter a branch and year." });
+    // The branch is checked by the route: a faculty member's own branch is implied, so it is not always sent.
+    if (!v.subjectId && v.year === undefined) ctx.addIssue({ code: "custom", path: ["year"], message: "Pick a subject, or enter a year." });
   });
 
 export const ProjectSchema = z

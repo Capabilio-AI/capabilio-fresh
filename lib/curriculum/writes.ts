@@ -119,6 +119,15 @@ export async function setCourseRemoved(service: Service, admin: Admin, courseId:
   return error ? dbFailure(error, "setCourseRemoved") : { ok: true };
 }
 
+/** Soft-removes several courses of one curriculum at once (the same restorable removal as one at a time). Courses of any other curriculum are ignored. */
+export async function removeCourses(service: Service, admin: Admin, importId: string, courseIds: string[]): Promise<Result<{ removed: number }>> {
+  const imp = await getOwnedImport(service, admin.institutionId, importId);
+  if (!imp) return fail(404, "Curriculum not found.");
+  if (FROZEN.has(imp.status)) return fail(409, FROZEN_MESSAGE);
+  const { data, error } = await service.from("courses").update({ deleted_at: new Date().toISOString() }).eq("import_id", importId).in("id", courseIds).is("deleted_at", null).select("id");
+  return error ? dbFailure(error, "removeCourses") : { ok: true, removed: data?.length ?? 0 };
+}
+
 /** Merges `sourceId` into `intoId` (same curriculum). Skill mappings are not carried over. */
 export async function mergeCourse(service: Service, admin: Admin, sourceId: string, intoId: string): Promise<Result> {
   const [a, b] = await Promise.all([ownedCourse(service, admin.institutionId, sourceId), ownedCourse(service, admin.institutionId, intoId)]);

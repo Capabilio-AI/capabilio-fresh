@@ -12,6 +12,8 @@ import {
   type SubmissionRow,
 } from "./db";
 
+import { sameBranch } from "./branch-scope";
+
 type Service = SupabaseClient<Database>;
 
 export async function nameMap(service: Service, userIds: string[]): Promise<Map<string, string>> {
@@ -26,7 +28,8 @@ export interface SubjectOption {
   label: string;
 }
 
-export async function listSubjects(service: Service, institutionId: string): Promise<SubjectOption[]> {
+/** `branch` limits the list to one department (faculty/HoD are confined to their own). */
+export async function listSubjects(service: Service, institutionId: string, branch: string | null = null): Promise<SubjectOption[]> {
   const { data } = await service
     .from("curriculum_subjects")
     .select("id, name, branch, year")
@@ -34,7 +37,7 @@ export async function listSubjects(service: Service, institutionId: string): Pro
     .order("branch")
     .order("year")
     .order("name");
-  return (data ?? []).map((s) => ({ id: s.id, label: `${s.branch} · Year ${s.year} · ${s.name}` }));
+  return (data ?? []).filter((s) => !branch || sameBranch(s.branch, branch)).map((s) => ({ id: s.id, label: `${s.branch} · Year ${s.year} · ${s.name}` }));
 }
 
 /** Staff see the materials they authored; admins see everything at their institution. */
@@ -103,7 +106,7 @@ export interface StudentProject extends ProjectRow {
   openGroups: { group: GroupRow; memberCount: number; memberBranches: string[] }[];
 }
 
-const inScope = (scope: string[] | null, branch: string | null) =>
+export const inScope = (scope: string[] | null, branch: string | null) =>
   !scope || scope.length === 0 || (branch !== null && scope.some((s) => s.trim().toLowerCase() === branch.trim().toLowerCase()));
 
 /** Projects open to this student's department, with their own group and the open-slots board. */

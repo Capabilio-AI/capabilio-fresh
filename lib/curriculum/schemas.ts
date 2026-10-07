@@ -97,3 +97,10 @@ export const ConfirmHighSchema = z
   .refine((b) => b.preview || b.expectedCount !== undefined, { message: "Preview the list before confirming it." });
 export const MergeSchema = z.object({ intoCourseId: z.string().uuid() }).strict();
 export const IdSchema = z.string().uuid();
+
+export const RemoveCoursesSchema = z.object({ courseIds: z.array(z.string().uuid()).min(1).max(300) }).strict();
+
+/** Sets a regulation on a branch's students: the whole branch, or one graduating batch. `overwrite` replaces a regulation a student already chose. */
+export const AssignRegulationSchema = z
+  .object({ branch: line(200), regulation: z.string().trim().min(1).max(80), endYear: z.number().int().min(2000).max(2100).nullable().optional(), overwrite: z.boolean().optional() })
+  .strict();

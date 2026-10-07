@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { orgPageContext } from "@/lib/org/page";
+import { staffBranchScope } from "@/lib/org/branch-scope";
 import { listMaterialsForStaff, listSubjects } from "@/lib/org/loaders";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
@@ -8,13 +9,14 @@ export const metadata: Metadata = { title: "Course materials — Capabilio AI" }
 
 export default async function MaterialsPage() {
   const { ctx, service } = await orgPageContext("uploadMaterial");
-  const [materials, subjects] = await Promise.all([listMaterialsForStaff(service, ctx), listSubjects(service, ctx.institutionId)]);
+  const scope = staffBranchScope(ctx);
+  const [materials, subjects] = await Promise.all([listMaterialsForStaff(service, ctx), listSubjects(service, ctx.institutionId, scope)]);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Course materials"
-        subtitle="Share notes or links with students of a branch and year. Students see only their own branch and year. Files are shared as links for now (no upload storage yet)."
+        subtitle={scope ? `Share notes or links with ${scope} students of a year. Only students of ${scope} in that year see them, in SkillStudio. Files are shared as links.` : "Share notes or links with students of a branch and year. Students see only their own branch and year, in SkillStudio. Files are shared as links."}
       />
       <Collapsible title="Add material">
         <JsonForm
@@ -27,15 +29,15 @@ export default async function MaterialsPage() {
             { name: "url", label: "Link (for PDF / link)", type: "url", placeholder: "https://…" },
             { name: "body", label: "Notes text (for notes)", type: "textarea" },
             { name: "description", label: "Short description" },
-            { name: "subjectId", label: "Subject", type: "select", options: subjects.map((s) => ({ value: s.id, label: s.label })), help: subjects.length ? "Picking a subject sets branch and year for you." : "No subjects yet — add them under Curriculum, or enter a branch and year below." },
-            { name: "branch", label: "Branch (if no subject)" },
-            { name: "year", label: "Year (if no subject)", type: "number" },
+            { name: "subjectId", label: "Subject", type: "select", options: subjects.map((s) => ({ value: s.id, label: s.label })), help: subjects.length ? "Picking a subject sets branch and year for you." : scope ? "No subjects for your branch yet — enter the year below." : "No subjects yet — add them under Curriculum, or enter a branch and year below." },
+            ...(scope ? [] : [{ name: "branch", label: "Branch (if no subject)" }]),
+            { name: "year", label: "Year (if no subject)", type: "number" as const },
           ]}
         />
       </Collapsible>
       <Panel title="Published">
         {materials.length === 0 ? (
-          <EmptyState title="Nothing shared yet" body="Materials you publish appear here and in your students' Classroom." />
+          <EmptyState title="Nothing shared yet" body="Materials you publish appear here and in your students' SkillStudio." />
         ) : (
           <ul className="divide-y divide-app-border">
             {materials.map((m) => (

@@ -1,5 +1,6 @@
 import type { ImportStatus } from "@/lib/curriculum/mapping-rules";
 import type { ImportSummary } from "@/lib/curriculum/admin-data";
+import { COURSE_GROUPS, GROUP_LABEL } from "@/lib/curriculum/composition";
 import { Pill } from "@/components/org/ui";
 
 const STATUS: Record<ImportStatus, { label: string; tone: "neutral" | "ok" | "warn" | "info" | "bad" }> = {
@@ -30,11 +31,12 @@ export function SummaryCard({ summary }: { summary: ImportSummary }) {
         {cell("Branch", summary.branch)}
         {cell("Regulation", summary.regulation ?? "Not stated")}
         {cell("Years covered", yearsLabel(summary.years))}
-        {cell("Courses", summary.courses)}
+        {cell("Syllabus entries", summary.courses)}
         {cell("Learning outcomes", summary.outcomes)}
         {cell("Skills identified", summary.skillsIdentified)}
         {cell("Mappings to review", summary.mappingsNeedingReview, summary.mappingsNeedingReview > 0 ? "text-app-warning" : "text-app-success")}
       </dl>
+      {summary.courses > 0 && <div className="mt-4 flex flex-wrap items-center gap-2"><span className="o-eyebrow">Made up of</span>{COURSE_GROUPS.filter((g) => summary.composition[g] > 0).map((g) => <Pill key={g}>{summary.composition[g]} {GROUP_LABEL[g].toLowerCase()}</Pill>)}</div>}
       <div className="mt-4 flex items-center gap-2"><span className="o-eyebrow">Status</span><StatusPill status={summary.status} /></div>
     </section>
   );

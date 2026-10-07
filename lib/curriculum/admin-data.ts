@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { composition, yearCoverage, type Composition, type YearCoverage } from "./composition";
 import type { ImportStatus, MappingImportance, MappingSource, MappingStatus } from "./mapping-rules";
 
 type Service = SupabaseClient<Database>;
@@ -11,6 +12,10 @@ export interface ImportSummary {
   /** distinct years of study the curriculum covers, ascending */
   years: number[];
   courses: number;
+  /** what the course count is made of: core theory, labs, elective options, projects and audit */
+  composition: Composition;
+  /** courses in each year of study, so a missing year shows */
+  yearCoverage: YearCoverage[];
   outcomes: number;
   /** distinct canonical skills in any non-rejected mapping */
   skillsIdentified: number;
@@ -76,7 +81,7 @@ export async function getOwnedImport(service: Service, institutionId: string, im
 }
 
 async function summarise(service: Service, imp: Database["public"]["Tables"]["curriculum_imports"]["Row"]): Promise<ImportSummary> {
-  const { data: courses } = await service.from("courses").select("id, year").eq("import_id", imp.id).is("deleted_at", null);
+  const { data: courses } = await service.from("courses").select("id, year, kind, category").eq("import_id", imp.id).is("deleted_at", null);
   const ids = (courses ?? []).map((c) => c.id);
   const [outcomes, maps, omaps] = ids.length
     ? await Promise.all([
@@ -89,7 +94,7 @@ async function summarise(service: Service, imp: Database["public"]["Tables"]["cu
   return {
     program: imp.program, branch: imp.branch, regulation: imp.regulation,
     years: [...new Set((courses ?? []).map((c) => c.year))].sort((a, b) => a - b),
-    courses: ids.length, outcomes: (outcomes as { count: number | null }).count ?? 0,
+    courses: ids.length, composition: composition(courses ?? []), yearCoverage: yearCoverage(courses ?? []), outcomes: (outcomes as { count: number | null }).count ?? 0,
     skillsIdentified: new Set(all.filter((m) => m.status !== "REJECTED").map((m) => m.skill_id)).size,
     mappingsNeedingReview: all.filter((m) => m.status === "SUGGESTED").length,
     confirmedMappings: all.filter((m) => m.status === "CONFIRMED").length,

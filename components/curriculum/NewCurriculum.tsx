@@ -8,6 +8,7 @@ import type { ExtractionRecord } from "@/lib/roadmap/extract/types";
 import { Panel } from "@/components/org/ui";
 import { api } from "./api";
 import { SyllabusExtraction } from "./SyllabusExtraction";
+import { TemplateUpload } from "./TemplateUpload";
 
 /** The two ways to begin: read a syllabus PDF, or start an empty curriculum and type the courses in. */
 export function NewCurriculum({ extraction, roleKey }: { extraction: ExtractionRecord | null; roleKey: string }) {
@@ -28,6 +29,7 @@ export function NewCurriculum({ extraction, roleKey }: { extraction: ExtractionR
 
   return (
     <div className="flex flex-col gap-4">
+      <TemplateUpload />
       <SyllabusExtraction initial={extraction} roleKey={roleKey} />
       <Panel title="Or start by hand">
         <p className="font-lp-body text-[12px] text-app-muted">No PDF? Start an empty curriculum for a branch and add the courses yourself (typed in, or pasted from a CSV).</p>

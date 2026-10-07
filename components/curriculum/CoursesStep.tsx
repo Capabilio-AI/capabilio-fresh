@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { GitMerge, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { parseCurriculumCsv, CSV_TEMPLATE } from "@/lib/roadmap/csv";
 import type { CourseRow } from "@/lib/curriculum/admin-data";
+import { COURSE_GROUPS, GROUP_LABEL, composition, courseGroup, type CourseGroup } from "@/lib/curriculum/composition";
 import { Panel, Pill } from "@/components/org/ui";
 import { api } from "./api";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -29,6 +30,9 @@ export function CoursesStep({ importId, courses, removed, editable }: Props) {
   const [removing, setRemoving] = useState<CourseRow | null>(null);
   const [merging, setMerging] = useState<CourseRow | null>(null);
   const [mergeInto, setMergeInto] = useState("");
+  const [filter, setFilter] = useState<CourseGroup | "all">("all");
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   async function add(rows: { year: number; semester: number | null; title: string; code?: string | null }[]) {
     if (rows.length === 0) return setMsg({ ok: false, text: "Enter at least one course." });
@@ -57,12 +61,48 @@ export function CoursesStep({ importId, courses, removed, editable }: Props) {
     if (r.ok) router.refresh();
   }
 
+  const counts = composition(courses);
+  const shown = filter === "all" ? courses : courses.filter((c) => courseGroup(c) === filter);
+  const shownSelected = shown.filter((c) => selected.has(c.id));
+  const toggle = (id: string) => setSelected((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const toggleShown = () => setSelected((cur) => { const next = new Set(cur); const all = shown.every((c) => next.has(c.id)); for (const c of shown) { if (all) next.delete(c.id); else next.add(c.id); } return next; });
+  async function removeSelected() {
+    const ids = shownSelected.map((c) => c.id);
+    setBulkOpen(false);
+    setBusy("bulk");
+    const r = await api<{ removed: number }>("POST", `/api/admin/curriculum/imports/${importId}/courses/remove`, { courseIds: ids });
+    setBusy(null);
+    if (!r.ok) return setMsg({ ok: false, text: r.error });
+    setSelected(new Set());
+    setMsg({ ok: true, text: `${r.data.removed} course${r.data.removed === 1 ? "" : "s"} removed. You can restore them below until you publish.` });
+    router.refresh();
+  }
+
   const groups = new Map<string, CourseRow[]>();
-  for (const c of courses) groups.set(`Year ${c.year}${c.semester ? ` · Semester ${c.semester}` : ""}`, [...(groups.get(`Year ${c.year}${c.semester ? ` · Semester ${c.semester}` : ""}`) ?? []), c]);
+  for (const c of shown) groups.set(`Year ${c.year}${c.semester ? ` · Semester ${c.semester}` : ""}`, [...(groups.get(`Year ${c.year}${c.semester ? ` · Semester ${c.semester}` : ""}`) ?? []), c]);
 
   return (
     <div className="flex flex-col gap-4">
       {msg && <p className={`font-lp-body text-[12.5px] ${msg.ok ? "text-app-success" : "text-app-rose"}`} role={msg.ok ? "status" : "alert"}>{msg.text}</p>}
+
+      {courses.length > 0 && (
+        <div className="flex flex-col gap-3" aria-label="Filter courses">
+          <p className="font-lp-body text-[12.5px] text-app-muted">A syllabus lists every elective option, lab and audit course, but a student takes only some of them. Filter by type, then remove the entries your college does not run so students see what applies to them.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {(["all", ...COURSE_GROUPS] as const).map((g) => {
+              const n = g === "all" ? courses.length : counts[g];
+              if (g !== "all" && n === 0) return null;
+              return <button key={g} type="button" aria-pressed={filter === g} onClick={() => setFilter(g)} className={filter === g ? "o-btn !px-3 !py-1.5 !text-[12px]" : "o-btn-ghost !px-3 !py-1.5 !text-[12px]"}>{g === "all" ? "All" : GROUP_LABEL[g]} · {n}</button>;
+            })}
+          </div>
+          {editable && (
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 font-lp-body text-[12.5px] text-app-muted"><input type="checkbox" checked={shown.length > 0 && shown.every((c) => selected.has(c.id))} onChange={toggleShown} /> Select all shown ({shown.length})</label>
+              <button type="button" className="o-btn-ghost !px-3 !py-1.5 !text-[12px]" disabled={shownSelected.length === 0 || busy !== null} onClick={() => setBulkOpen(true)}><Trash2 size={12} aria-hidden="true" /> Remove selected ({shownSelected.length})</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {courses.length === 0 ? (
         <p className="rounded-xl border border-dashed border-app-border px-4 py-6 text-center font-lp-body text-[13px] text-app-muted">No courses yet. Add them below.</p>
@@ -73,6 +113,7 @@ export function CoursesStep({ importId, courses, removed, editable }: Props) {
             <ul className="flex flex-col gap-2">
               {items.map((c) => (
                 <li key={c.id} className="o-card !rounded-xl flex flex-wrap items-center gap-3 p-3.5">
+                  {editable && <input type="checkbox" aria-label={`Select ${c.title}`} checked={selected.has(c.id)} onChange={() => toggle(c.id)} />}
                   <div className="min-w-0 flex-1">
                     <Link href={`/org/curriculum/${importId}/courses/${c.id}`} className="font-lp-body text-[13.5px] font-medium text-app-charcoal hover:underline">{c.title}</Link>
                     <p className="font-lp-mono text-[11px] text-app-muted">{[c.code, c.category, c.kind !== "course" ? c.kind.replace("_", " ") : null, c.credits != null ? `${c.credits} credits` : null].filter(Boolean).join(" · ") || "No code or category stated"}</p>
@@ -128,6 +169,9 @@ export function CoursesStep({ importId, courses, removed, editable }: Props) {
 
       <ConfirmDialog open={removing !== null} title={`Remove “${removing?.title ?? ""}”?`} confirmLabel="Remove course" danger busy={busy === "rm"} onCancel={() => setRemoving(null)} onConfirm={() => removing && act("rm", () => api("DELETE", `/api/admin/curriculum/courses/${removing.id}`), `${removing.title} removed. You can restore it below until you publish.`)}>
         It moves to “Removed” and no longer counts. You can restore it until this curriculum is published.
+      </ConfirmDialog>
+      <ConfirmDialog open={bulkOpen} title={`Remove ${shownSelected.length} course${shownSelected.length === 1 ? "" : "s"}?`} confirmLabel="Remove courses" danger busy={busy === "bulk"} onCancel={() => setBulkOpen(false)} onConfirm={removeSelected}>
+        They move to “Removed” and no longer count towards what students see. You can restore any of them until this curriculum is published.
       </ConfirmDialog>
       <ConfirmDialog open={merging !== null} title={`Merge “${merging?.title ?? ""}” into another course`} confirmLabel="Merge" confirmDisabled={!mergeInto} busy={busy === "mg"} onCancel={() => setMerging(null)} onConfirm={() => merging && mergeInto && act("mg", () => api("POST", `/api/admin/curriculum/courses/${merging.id}/merge`, { intoCourseId: mergeInto }), `${merging.title} merged.`)}>
         <p>Its outcomes, units, experiments and books are added to the course you choose, and this one is removed. Skill mappings are not carried over — suggest and confirm them again on the merged course.</p>

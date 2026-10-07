@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { orgPageContext } from "@/lib/org/page";
+import { staffBranchScope } from "@/lib/org/branch-scope";
 import { listProjectsForStaff, listSubjects } from "@/lib/org/loaders";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
@@ -9,13 +10,14 @@ export const metadata: Metadata = { title: "Projects — Capabilio AI" };
 
 export default async function OrgProjectsPage() {
   const { ctx, service } = await orgPageContext("createProject");
-  const [projects, subjects] = await Promise.all([listProjectsForStaff(service, ctx), listSubjects(service, ctx.institutionId)]);
+  const scope = staffBranchScope(ctx);
+  const [projects, subjects] = await Promise.all([listProjectsForStaff(service, ctx), listSubjects(service, ctx.institutionId, scope)]);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Projects"
-        subtitle="Post a project brief. Students form groups of four themselves, across departments unless you restrict it. Only your final grade becomes evidence on each member's Portfolio."
+        subtitle={scope ? `Post a project brief for ${scope}. Only ${scope} students see it, in Arena, and form groups of four themselves. Only your final grade becomes evidence on each member's Portfolio.` : "Post a project brief. Students form groups of four themselves, across departments unless you restrict it. Only your final grade becomes evidence on each member's Portfolio."}
       />
       <Collapsible title="New project">
         <JsonForm
@@ -28,7 +30,7 @@ export default async function OrgProjectsPage() {
             { name: "submissionType", label: "Submission", type: "select", required: true, defaultValue: "in_app", options: [{ value: "in_app", label: "In app (link)" }, { value: "physical", label: "Physical (staff marks received)" }] },
             { name: "deadlineAt", label: "Deadline", type: "datetime-local", required: true },
             { name: "subjectId", label: "Subject (optional)", type: "select", options: subjects.map((s) => ({ value: s.id, label: s.label })) },
-            { name: "departmentScope", label: "Restrict to branches (optional)", type: "list", help: "Comma-separated, e.g. CSE, ECE. Leave empty to open to every department." },
+            ...(scope ? [] : [{ name: "departmentScope", label: "Restrict to branches (optional)", type: "list" as const, help: "Comma-separated, e.g. CSE, ECE. Leave empty to open to every department." }]),
             { name: "weeklyReportRequired", label: "Groups file weekly reports", type: "checkbox", defaultValue: true },
           ]}
         />

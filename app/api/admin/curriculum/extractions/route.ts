@@ -28,6 +28,8 @@ export async function POST(request: Request) {
   const file = form?.get("file");
   const branch = String(form?.get("branch") ?? "").trim();
   const roleKey = String(form?.get("roleKey") ?? "").trim();
+  const regulation = String(form?.get("regulation") ?? "").trim() || null;
+  if (regulation && regulation.length > 80) return NextResponse.json({ error: "The regulation is too long." }, { status: 400 });
   if (!(file instanceof File) || branch.length < 1 || branch.length > 200) return NextResponse.json({ error: "Choose a branch and a syllabus PDF." }, { status: 400 });
 
   // Validate before anything is processed or stored.
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
 
   after(async () => {
     try {
-      await runExtraction(service, { id, institutionId: admin.institutionId, userId: admin.userId, branch, fileName: file.name || "syllabus.pdf", bytes, roleKey });
+      await runExtraction(service, { id, institutionId: admin.institutionId, userId: admin.userId, branch, fileName: file.name || "syllabus.pdf", bytes, roleKey, regulation });
     } catch {
       await updateExtraction(service, id, { status: "failed", error_code: "internal" }).catch(() => undefined);
     }

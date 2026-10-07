@@ -19,7 +19,7 @@ const ENRICH_BUDGET_MS = 150_000;
 /** The background job (started with `after()` from the upload route). Every outcome is written to the staging row. */
 export async function runExtraction(
   service: Service,
-  job: { id: string; institutionId: string; userId: string; branch: string; fileName: string; bytes: Uint8Array; roleKey: string },
+  job: { id: string; institutionId: string; userId: string; branch: string; fileName: string; bytes: Uint8Array; roleKey: string; /** typed by the college at upload; wins over what the PDF header says */ regulation?: string | null },
   depsOverride?: ExtractionDeps
 ): Promise<void> {
   const fail = (code: ExtractionErrorCode) => updateExtraction(service, job.id, { status: "failed", error_code: code }).catch((e) => console.error("[curriculum-extraction] could not record the failure:", e instanceof Error ? e.message : e));
@@ -42,7 +42,9 @@ export async function runExtraction(
     });
 
     let importId: string | null = null;
-    const { regulation, program } = detectRegulation(text.header);
+    const detected = detectRegulation(text.header);
+    const regulation = job.regulation?.trim() || detected.regulation;
+    const program = detected.program;
     const programOutcomes = parseProgramOutcomes(text.pages);
     const save = () =>
       saveExtractionAsImport(service, {
