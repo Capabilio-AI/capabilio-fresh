@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Award, Ban, Flag, Heart, HelpCircle, Loader2, MessageCircle, MoreHorizontal, Send, Sparkles, Trash2 } from "lucide-react";
+import { Award, Ban, Flag, Flame, Heart, HelpCircle, Loader2, MessageCircle, MoreHorizontal, Send, Sparkles, Target, Trash2, Users } from "lucide-react";
 import clsx from "clsx";
 import type { PulseComment, PulsePost } from "@/lib/pulse/data";
-import { relativeTime, splitTags, type PostKind } from "@/lib/pulse/format";
+import { relativeTime, type PostKind } from "@/lib/pulse/format";
 import { Avatar } from "./Avatar";
 import { MentorBadge } from "./MentorBadge";
+import { AttachmentCard, PostBody } from "./PostBody";
 import { ReportDialog } from "./ReportDialog";
 
 const KIND: Record<PostKind, { label: string; icon: typeof Send; bar: string; chip: string } | null> = {
@@ -17,13 +18,19 @@ const KIND: Record<PostKind, { label: string; icon: typeof Send; bar: string; ch
   achievement: { label: "Achievement", icon: Award, bar: "bg-app-success", chip: "bg-app-success-container text-app-success" },
 };
 
-function Body({ text }: { text: string }) {
-  return (
-    <p className="mt-3 whitespace-pre-wrap break-words font-lp-body text-[14px] leading-relaxed text-app-charcoal">
-      {splitTags(text).map((part, i) => part.tag ? <Link key={i} href={`/pulse?tag=${part.tag}`} className="font-medium text-app-blue hover:underline">{part.text}</Link> : <span key={i}>{part.text}</span>)}
-    </p>
-  );
+/** Why a post is in the feed, with an icon that matches the reason. */
+function Reason({ text }: { text: string }) {
+  const Icon = /^Trending/.test(text) ? Flame : /^From someone/.test(text) ? Users : Target;
+  return <p className="mb-2 flex items-center gap-1.5 font-lp-body text-[11.5px] font-medium text-app-muted"><Icon size={12} className="text-app-orange" aria-hidden="true" /> {text}</p>;
 }
+
+/** What replies to a post are called: a question gets answers. */
+const REPLY: Record<PostKind, { noun: string; placeholder: string }> = {
+  post: { noun: "comments", placeholder: "Add a comment…" },
+  project: { noun: "comments", placeholder: "Give feedback or ask about it…" },
+  question: { noun: "answers", placeholder: "Write an answer…" },
+  achievement: { noun: "comments", placeholder: "Congratulate them…" },
+};
 
 interface PostCardProps {
   post: PulsePost;
@@ -79,6 +86,7 @@ export function PostCard({ post, viewerId, apiBase = "/api/pulse/posts", canDele
   return (
     <article className="relative overflow-hidden rounded-2xl border border-app-border bg-white p-5">
       {kind && <span className={clsx("absolute inset-y-0 left-0 w-1", kind.bar)} aria-hidden="true" />}
+      {post.reason && <Reason text={post.reason} />}
       <header className="flex items-start gap-3">
         <Link href={`/pulse/u/${post.author.id}`} aria-label={`${post.author.name ?? "Profile"}`}><Avatar person={post.author} size="md" /></Link>
         <div className="min-w-0 flex-1">
@@ -86,6 +94,7 @@ export function PostCard({ post, viewerId, apiBase = "/api/pulse/posts", canDele
             <Link href={`/pulse/u/${post.author.id}`} className="font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{post.author.name ?? "Capabilio member"}</Link>
             {post.author.isMentor && <MentorBadge />}
           </span>
+          {post.author.tagline && <p className="truncate font-lp-body text-[12.5px] font-medium text-app-blue">{post.author.tagline}</p>}
           <p className="truncate font-lp-body text-[12px] text-app-muted">{post.author.headline ?? "Capabilio member"} · {relativeTime(post.createdAt)}</p>
         </div>
         {kind && <span className={clsx("flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 font-lp-body text-[11px] font-semibold", kind.chip)}><kind.icon size={11} aria-hidden="true" /> {kind.label}</span>}
@@ -107,18 +116,19 @@ export function PostCard({ post, viewerId, apiBase = "/api/pulse/posts", canDele
         )}
       </header>
 
-      <Body text={post.content} />
+      <PostBody kind={post.kind} content={post.content} meta={post.meta} />
       {post.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
         <img src={post.imageUrl} alt="Attached to the post" loading="lazy" className="mt-3 max-h-[480px] w-full rounded-xl border border-app-border object-cover" />
       )}
+      {post.attachment && <AttachmentCard file={post.attachment} />}
 
       <footer className="mt-4 flex items-center gap-5 border-t border-app-border pt-3">
         <button type="button" onClick={onToggleLike} aria-pressed={post.likedByMe} className={clsx("flex items-center gap-1.5 font-lp-body text-[13px] transition-colors", post.likedByMe ? "text-app-rose" : "text-app-muted hover:text-app-charcoal")}>
           <Heart size={16} className={post.likedByMe ? "fill-current" : ""} aria-hidden="true" /> {post.likeCount}<span className="sr-only"> likes</span>
         </button>
         <button type="button" onClick={() => setShowComments((v) => !v)} aria-expanded={showComments} className="flex items-center gap-1.5 font-lp-body text-[13px] text-app-muted hover:text-app-charcoal">
-          <MessageCircle size={16} aria-hidden="true" /> {post.comments.length}<span className="sr-only"> comments</span>
+          <MessageCircle size={16} aria-hidden="true" /> {post.comments.length}<span className={post.kind === "question" ? "ml-0.5" : "sr-only"}>{post.kind === "question" ? ` ${post.comments.length === 1 ? "answer" : "answers"}` : ` ${REPLY[post.kind].noun}`}</span>
         </button>
       </footer>
 
@@ -134,7 +144,7 @@ export function PostCard({ post, viewerId, apiBase = "/api/pulse/posts", canDele
             </div>
           ))}
           <div className="flex items-center gap-2">
-            <input value={draft} onChange={(e) => setDraft(e.target.value.slice(0, 1000))} onKeyDown={(e) => { if (e.key === "Enter") void sendComment(); }} placeholder="Add a comment…" aria-label="Add a comment" className="flex-1 rounded-full border border-app-border bg-app-background px-4 py-2 font-lp-body text-[13px] focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20" />
+            <input value={draft} onChange={(e) => setDraft(e.target.value.slice(0, 1000))} onKeyDown={(e) => { if (e.key === "Enter") void sendComment(); }} placeholder={REPLY[post.kind].placeholder} aria-label={post.kind === "question" ? "Write an answer" : "Add a comment"} className="flex-1 rounded-full border border-app-border bg-app-background px-4 py-2 font-lp-body text-[13px] focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20" />
             <button type="button" onClick={sendComment} disabled={sending || !draft.trim()} aria-label="Send comment" className="flex h-9 w-9 items-center justify-center rounded-full bg-app-charcoal text-white disabled:opacity-50">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}</button>
           </div>
           {error && <p role="alert" className="font-lp-body text-[12px] text-app-rose">{error}</p>}

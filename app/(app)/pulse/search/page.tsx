@@ -38,6 +38,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                     <Link href={`/pulse/u/${p.id}`}><Avatar person={p} size="md" /></Link>
                     <div className="min-w-0 flex-1">
                       <span className="flex items-center gap-2"><Link href={`/pulse/u/${p.id}`} className="truncate font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>{p.isMentor && <MentorBadge />}</span>
+                      {p.tagline && <p className="truncate font-lp-body text-[12.5px] font-medium text-app-blue">{p.tagline}</p>}
                       <p className="truncate font-lp-body text-[12px] text-app-muted">{p.headline ?? "Capabilio member"}</p>
                     </div>
                     <FollowButton userId={p.id} initialFollowing={p.following} compact />

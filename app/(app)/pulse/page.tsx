@@ -13,7 +13,7 @@ import { PulseSidebar } from "@/components/pulse/PulseSidebar";
 
 export const metadata: Metadata = { title: "Pulse — Capabilio AI", description: "Your network on Capabilio: what peers and mentors are building." };
 
-const TABS = new Set<PulseTab>(["for-you", "following", "communities", "mentors"]);
+const TABS = new Set<PulseTab>(["for-you", "following", "trending", "communities", "mentors"]);
 const TAG = /^[A-Za-z][A-Za-z0-9_]{1,29}$/;
 
 export default async function PulsePage({ searchParams }: { searchParams: Promise<{ tab?: string; tag?: string }> }) {
@@ -25,7 +25,7 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
   const me = people.get(user.id) ?? { id: user.id, name: null, avatarUrl: null, headline: null, role: null };
   const viewer = { id: user.id, name: me.name, avatarUrl: me.avatarUrl };
 
-  const view: FeedView = tag && TAG.test(tag) ? { mode: "tag", tag: tag.toLowerCase() } : tab === "following" ? { mode: "following" } : { mode: "for_you" };
+  const view: FeedView = tag && TAG.test(tag) ? { mode: "tag", tag: tag.toLowerCase() } : tab === "following" ? { mode: "following" } : tab === "trending" ? { mode: "trending" } : { mode: "for_you" };
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_320px]">

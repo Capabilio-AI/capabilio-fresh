@@ -119,6 +119,7 @@ export function GlobalSearch() {
                   <Avatar person={p} size="sm" />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5"><span className="truncate font-lp-body text-[13.5px] font-semibold text-app-charcoal">{p.name}</span>{p.isMentor && <MentorBadge />}</span>
+                    {p.tagline && <span className="block truncate font-lp-body text-[11.5px] font-medium text-app-blue">{p.tagline}</span>}
                     <span className="block truncate font-lp-body text-[11.5px] text-app-muted">{p.headline ?? "Capabilio member"}</span>
                   </span>
                   {p.following && <span className="shrink-0 font-lp-mono text-[10.5px] text-app-muted">Following</span>}

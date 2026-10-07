@@ -6,6 +6,7 @@ import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { formatAcademicYear } from "@/lib/career/academic-year";
 import { EditableNameForm } from "@/components/settings/EditableNameForm";
 import { SettingsRow, SettingsSection } from "@/components/settings/SettingsRow";
+import { PulsePrivacy } from "@/components/settings/PulsePrivacy";
 import { ChangePasswordButton } from "@/components/settings/ChangePasswordButton";
 import { SignOutButton } from "@/components/settings/SignOutButton";
 
@@ -66,6 +67,10 @@ export default async function SettingsPage() {
               Open →
             </Link>
           </SettingsRow>
+        </SettingsSection>
+
+        <SettingsSection title="Pulse privacy">
+          <div className="px-5"><PulsePrivacy /></div>
         </SettingsSection>
 
         <SettingsSection title="Security">

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Hash, UserPlus } from "lucide-react";
-import type { Suggestion, TrendingTag } from "@/lib/pulse/sidebar";
+import { Building2, Hash, UserPlus } from "lucide-react";
+import type { Suggestion, SuggestedPage, TrendingTag } from "@/lib/pulse/sidebar";
 import { Avatar } from "./Avatar";
 import { FollowButton } from "./FollowButton";
 import { MentorBadge } from "./MentorBadge";
@@ -11,11 +11,31 @@ import { MentorBadge } from "./MentorBadge";
 interface SidebarData {
   trending: TrendingTag[];
   suggestions: Suggestion[];
+  pages: SuggestedPage[];
 }
 
 const CARD = "rounded-2xl border border-app-border bg-white p-5";
 
-/** Right rail: what people are posting about this week, and people worth following. Both are computed from real activity. */
+/** Follows or unfollows a college page. */
+function PageFollow({ page }: { page: SuggestedPage }) {
+  const [following, setFollowing] = useState(page.following);
+  const [busy, setBusy] = useState(false);
+  async function toggle() {
+    const next = !following;
+    setFollowing(next);
+    setBusy(true);
+    const res = await fetch("/api/orgs/follow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: page.slug, following: next }) }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) setFollowing(!next);
+  }
+  return (
+    <button type="button" onClick={toggle} disabled={busy} aria-pressed={following} className={following ? "rounded-full border border-app-border px-3 py-1 font-lp-body text-[12px] font-semibold text-app-charcoal" : "rounded-full bg-app-charcoal px-3 py-1 font-lp-body text-[12px] font-semibold text-white"}>
+      {following ? "Following" : "Follow"}
+    </button>
+  );
+}
+
+/** Right rail: what people are posting about this week, your college page, and people worth following, each with a reason. */
 export function PulseSidebar() {
   const [data, setData] = useState<SidebarData | null>(null);
   const [failed, setFailed] = useState(false);
@@ -47,23 +67,40 @@ export function PulseSidebar() {
         )}
       </section>
 
+      {data && data.pages.length > 0 && (
+        <section className={CARD} aria-label="College pages">
+          <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-semibold text-app-charcoal"><Building2 size={15} className="text-app-orange" aria-hidden="true" /> Your college</h2>
+          <ul className="mt-3 flex flex-col gap-3">
+            {data.pages.map((p) => (
+              <li key={p.slug} className="flex items-center gap-3">
+                <Link href={`/o/${p.slug}`} className="min-w-0 flex-1 truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>
+                <PageFollow page={p} />
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 font-lp-body text-[11.5px] text-app-muted">Follow it to see announcements and events in your feed.</p>
+        </section>
+      )}
+
       <section className={CARD}>
         <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-semibold text-app-charcoal"><UserPlus size={15} className="text-app-orange" aria-hidden="true" /> People to follow</h2>
         {data === null && !failed ? <div className="mt-4 h-28 animate-pulse rounded-lg bg-app-background" /> : data && data.suggestions.length > 0 ? (
-          <ul className="mt-3 flex flex-col gap-3.5">
+          <ul className="mt-3 flex flex-col gap-4">
             {data.suggestions.map((p) => (
-              <li key={p.id} className="flex items-center gap-3">
+              <li key={p.id} className="flex items-start gap-3">
                 <Link href={`/pulse/u/${p.id}`}><Avatar person={p} size="sm" /></Link>
                 <div className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><Link href={`/pulse/u/${p.id}`} className="truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>{p.isMentor && <MentorBadge />}</span>
-                  <p className="truncate font-lp-body text-[11.5px] text-app-muted">{p.reason}{p.headline ? ` · ${p.headline}` : ""}</p>
+                  <span className="flex flex-wrap items-center gap-1.5"><Link href={`/pulse/u/${p.id}`} className="truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>{p.isMentor && <MentorBadge />}</span>
+                  {p.tagline && <p className="truncate font-lp-body text-[12px] font-medium text-app-blue">{p.tagline}</p>}
+                  <p className="truncate font-lp-body text-[11.5px] text-app-muted">{p.headline ?? p.reason}</p>
+                  {p.headline && <p className="truncate font-lp-body text-[11px] text-app-muted/80">{p.reason}</p>}
                 </div>
                 <FollowButton userId={p.id} initialFollowing={false} compact />
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{failed ? "Couldn't load suggestions." : "No suggestions right now. Use the search bar to find people and colleges."}</p>
+          <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{failed ? "Couldn't load suggestions." : "We suggest people from your college, your branch and your career area. Set your college and a career goal to see them. You can also use the search bar."}</p>
         )}
       </section>
     </aside>

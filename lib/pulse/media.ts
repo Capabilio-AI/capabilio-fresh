@@ -6,10 +6,12 @@ type Service = SupabaseClient<Database>;
 
 export const BUCKET = "pulse-media";
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_DOC_BYTES = 10 * 1024 * 1024;
 export const SIGNED_URL_SECONDS = 3600;
-export type Purpose = "story" | "post";
+export type Purpose = "story" | "post" | "doc";
 export type ImageMime = "image/png" | "image/jpeg" | "image/webp";
-const EXT: Record<ImageMime, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+export type MediaMime = ImageMime | "application/pdf";
+const EXT: Record<MediaMime, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf" };
 
 /** The real type of an image from its first bytes — the browser-supplied content type is never trusted. */
 export function sniffImage(b: Uint8Array): ImageMime | null {
@@ -17,6 +19,11 @@ export function sniffImage(b: Uint8Array): ImageMime | null {
   if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
   if (b.length >= 12 && String.fromCharCode(...b.slice(0, 4)) === "RIFF" && String.fromCharCode(...b.slice(8, 12)) === "WEBP") return "image/webp";
   return null;
+}
+
+/** PDFs start with "%PDF-"; the browser-supplied type is never trusted. */
+export function sniffPdf(b: Uint8Array): boolean {
+  return b.length >= 5 && String.fromCharCode(...b.slice(0, 5)) === "%PDF-";
 }
 
 /** A stored path may only be attached by the person whose folder it is in, for the purpose it was uploaded for. */
@@ -28,15 +35,16 @@ export type UploadResult = { ok: true; path: string } | { ok: false; status: num
 
 export async function uploadImage(service: Service, userId: string, purpose: Purpose, file: File): Promise<UploadResult> {
   if (file.size === 0) return { ok: false, status: 400, message: "That file is empty." };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, status: 413, message: "Images must be under 5 MB." };
+  const isDoc = purpose === "doc";
+  if (file.size > (isDoc ? MAX_DOC_BYTES : MAX_IMAGE_BYTES)) return { ok: false, status: 413, message: isDoc ? "Documents must be under 10 MB." : "Images must be under 5 MB." };
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const mime = sniffImage(bytes);
-  if (!mime) return { ok: false, status: 415, message: "Use a PNG, JPEG or WebP image." };
+  const mime: MediaMime | null = isDoc ? (sniffPdf(bytes) ? "application/pdf" : null) : sniffImage(bytes);
+  if (!mime) return { ok: false, status: 415, message: isDoc ? "Upload a PDF document." : "Use a PNG, JPEG or WebP image." };
   const path = `${userId}/${purpose}/${randomUUID()}.${EXT[mime]}`;
   const { error } = await service.storage.from(BUCKET).upload(path, bytes, { contentType: mime, upsert: false });
   if (error) {
     console.error("[pulse-media] upload failed:", error.message);
-    return { ok: false, status: 500, message: "Couldn't upload the image. Please try again." };
+    return { ok: false, status: 500, message: "Couldn't upload the file. Please try again." };
   }
   return { ok: true, path };
 }

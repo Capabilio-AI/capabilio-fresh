@@ -1,94 +1,173 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Award, HelpCircle, ImagePlus, Loader2, Send, Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { Award, FileText, HelpCircle, ImagePlus, Loader2, Send, Sparkles, X } from "lucide-react";
 import clsx from "clsx";
-import type { PostKind } from "@/lib/pulse/format";
 import { Avatar, type AvatarPerson } from "./Avatar";
+import { EMPTY_DRAFT, FIELD, Labelled, TagInput, draftBody, draftReady, type Draft, type Kind } from "./composer-fields";
 
-const KINDS = [
-  { key: "post", label: "Post", icon: Send, hint: "Share an update, an idea or a win. Use #tags so people can find it." },
-  { key: "project", label: "Project", icon: Sparkles, hint: "Show what you're building: what it does, the stack, what you learned." },
-  { key: "question", label: "Question", icon: HelpCircle, hint: "Ask the network. Say what you tried and where you're stuck." },
-  { key: "achievement", label: "Achievement", icon: Award, hint: "A certificate, a ranking, an offer. Add the proof to your Vault too." },
-] as const;
-const MAX = 3000;
+const MAX_DOC = 10 * 1024 * 1024;
+const MAX_IMAGE = 5 * 1024 * 1024;
 
+const KINDS: Record<Kind, { label: string; icon: typeof Send; heading: string; submit: string; accent: string; chip: string; docHint: string }> = {
+  post: { label: "Post", icon: Send, heading: "Share an update", submit: "Post", accent: "border-l-app-charcoal", chip: "border-app-charcoal bg-app-charcoal text-white", docHint: "Attach a PDF" },
+  project: { label: "Project", icon: Sparkles, heading: "Show what you're building", submit: "Share project", accent: "border-l-app-blue", chip: "border-app-blue bg-app-blue-container text-app-blue", docHint: "Attach report or slides (PDF)" },
+  question: { label: "Question", icon: HelpCircle, heading: "Ask the network", submit: "Ask question", accent: "border-l-app-warning", chip: "border-app-warning bg-app-warning-container text-app-warning", docHint: "Attach a PDF for context" },
+  achievement: { label: "Achievement", icon: Award, heading: "Share an achievement", submit: "Share achievement", accent: "border-l-app-success", chip: "border-app-success bg-app-success-container text-app-success", docHint: "Attach the certificate (PDF)" },
+};
+
+interface Picked {
+  file: File;
+  preview?: string;
+}
+
+/**
+ * Create a post. Each kind has its own form, because a project, a question and an achievement say different things:
+ * a project has a stack and links, a question a title and topics, an achievement an issuer, a date and proof.
+ * Every kind can carry one photo and one PDF.
+ */
 export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placeholder }: { me: AvatarPerson; onPosted: () => void; endpoint?: string; placeholder?: string }) {
-  const [kind, setKind] = useState<PostKind>("post");
-  const [text, setText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [kind, setKind] = useState<Kind>("post");
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [image, setImage] = useState<Picked | null>(null);
+  const [doc, setDoc] = useState<Picked | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const input = useRef<HTMLInputElement>(null);
-  const active = KINDS.find((k) => k.key === kind) ?? KINDS[0];
+  const imageInput = useRef<HTMLInputElement>(null);
+  const docInput = useRef<HTMLInputElement>(null);
+  const k = KINDS[kind];
+  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => ({ ...d, [key]: value }));
 
-  function pick(f: File | null) {
-    if (preview) URL.revokeObjectURL(preview);
-    setFile(f);
-    setPreview(f ? URL.createObjectURL(f) : null);
+  function pickImage(file: File | null) {
+    if (image?.preview) URL.revokeObjectURL(image.preview);
+    if (file && file.size > MAX_IMAGE) return setError("Photos must be under 5 MB.");
+    setError(null);
+    setImage(file ? { file, preview: URL.createObjectURL(file) } : null);
+  }
+  function pickDoc(file: File | null) {
+    if (file && file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) return setError("Attach a PDF document.");
+    if (file && file.size > MAX_DOC) return setError("Documents must be under 10 MB.");
+    setError(null);
+    setDoc(file ? { file } : null);
+  }
+
+  async function upload(file: File, purpose: "post" | "doc") {
+    const form = new FormData();
+    form.set("file", file);
+    form.set("purpose", purpose);
+    const res = await fetch("/api/pulse/media", { method: "POST", body: form });
+    const json = (await res.json().catch(() => null)) as { path?: string; error?: string } | null;
+    if (!res.ok || !json?.path) throw new Error(json?.error ?? "Couldn't upload the file.");
+    return json.path;
   }
 
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      let imagePath: string | undefined;
-      if (file) {
-        const form = new FormData();
-        form.set("file", file);
-        form.set("purpose", "post");
-        const up = await fetch("/api/pulse/media", { method: "POST", body: form });
-        const upJson = (await up.json().catch(() => null)) as { path?: string; error?: string } | null;
-        if (!up.ok || !upJson?.path) return setError(upJson?.error ?? "Couldn't upload the photo.");
-        imagePath = upJson.path;
-      }
-      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: text.trim(), kind, imagePath }) });
+      const imagePath = image ? await upload(image.file, "post") : undefined;
+      const attachment = doc ? { path: await upload(doc.file, "doc"), name: doc.file.name.slice(0, 200), size: doc.file.size } : undefined;
+      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...draftBody(kind, draft), imagePath, attachment }) });
       const json = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) return setError(json?.error ?? "Couldn't post.");
-      setText("");
-      pick(null);
+      setDraft(EMPTY_DRAFT);
+      pickImage(null);
+      setDoc(null);
       setKind("post");
       onPosted();
-    } catch {
-      setError("Couldn't reach the server. Check your connection.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't reach the server. Check your connection.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section aria-label="Create a post" className="rounded-2xl border border-app-border bg-white p-4">
+    <section aria-label="Create a post" className={clsx("rounded-2xl border border-l-4 border-app-border bg-white p-4", k.accent)}>
       <div className="flex gap-3">
         <Avatar person={me} size="md" />
         <div className="min-w-0 flex-1">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value.slice(0, MAX))}
-            placeholder={placeholder ?? active.hint}
-            aria-label="Post text"
-            rows={3}
-            className="w-full resize-none rounded-xl bg-app-background px-4 py-3 font-lp-body text-[14px] text-app-charcoal placeholder:text-app-muted focus:outline-none focus:ring-2 focus:ring-app-orange/25"
-          />
-          {preview && (
-            <div className="relative mt-2 inline-block">
-              {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-              <img src={preview} alt="Attached photo" className="max-h-48 rounded-xl border border-app-border" />
-              <button type="button" onClick={() => pick(null)} aria-label="Remove photo" className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white"><X size={13} /></button>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="What are you sharing?">
+            {(Object.keys(KINDS) as Kind[]).map((key) => {
+              const Icon = KINDS[key].icon;
+              return (
+                <button key={key} type="button" onClick={() => setKind(key)} aria-pressed={kind === key} className={clsx("flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-lp-body text-[12px] font-semibold transition-colors", kind === key ? KINDS[key].chip : "border-app-border text-app-muted hover:text-app-charcoal")}>
+                  <Icon size={12} aria-hidden="true" /> {KINDS[key].label}
+                </button>
+              );
+            })}
+          </div>
+          <h2 className="mt-3 font-lp-display text-[15px] font-semibold text-app-charcoal">{k.heading}</h2>
+
+          <div className="mt-3 flex flex-col gap-3">
+            {kind === "post" && (
+              <textarea value={draft.content} onChange={(e) => set("content", e.target.value.slice(0, 3000))} placeholder={placeholder ?? "What's on your mind? Use #tags so people can find it."} aria-label="Post text" rows={3} className={clsx(FIELD, "resize-none")} />
+            )}
+
+            {kind === "project" && (
+              <>
+                <Labelled id="pj-title" label="Project name"><input id="pj-title" value={draft.title} onChange={(e) => set("title", e.target.value.slice(0, 100))} placeholder="e.g. Smart Attendance with Face Recognition" className={FIELD} /></Labelled>
+                <Labelled id="pj-desc" label="What does it do?" hint="and what did you learn?"><textarea id="pj-desc" value={draft.content} onChange={(e) => set("content", e.target.value.slice(0, 3000))} rows={3} placeholder="The problem, how you built it, what's next." className={clsx(FIELD, "resize-none")} /></Labelled>
+                <Labelled id="pj-stack" label="Tech stack" hint="up to 8, press Enter after each"><TagInput id="pj-stack" value={draft.stack} onChange={(v) => set("stack", v)} max={8} placeholder="Python, OpenCV, Flask…" /></Labelled>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Labelled id="pj-repo" label="Code"><input id="pj-repo" type="url" value={draft.repoUrl} onChange={(e) => set("repoUrl", e.target.value)} placeholder="https://github.com/you/project" className={FIELD} /></Labelled>
+                  <Labelled id="pj-demo" label="Live demo"><input id="pj-demo" type="url" value={draft.demoUrl} onChange={(e) => set("demoUrl", e.target.value)} placeholder="https://" className={FIELD} /></Labelled>
+                </div>
+                <fieldset className="flex items-center gap-4"><legend className="sr-only">Status</legend>
+                  {(["building", "shipped"] as const).map((s) => <label key={s} className="flex items-center gap-1.5 font-lp-body text-[13px] text-app-charcoal"><input type="radio" name="pj-status" checked={draft.status === s} onChange={() => set("status", s)} /> {s === "building" ? "Still building" : "Shipped"}</label>)}
+                </fieldset>
+              </>
+            )}
+
+            {kind === "question" && (
+              <>
+                <Labelled id="q-title" label="Your question" hint="be specific"><input id="q-title" value={draft.title} onChange={(e) => set("title", e.target.value.slice(0, 150))} placeholder="e.g. How do I speed up a slow join in PostgreSQL?" className={FIELD} /></Labelled>
+                <Labelled id="q-body" label="Details" hint="what you tried, what happened"><textarea id="q-body" value={draft.content} onChange={(e) => set("content", e.target.value.slice(0, 3000))} rows={3} className={clsx(FIELD, "resize-none")} /></Labelled>
+                <Labelled id="q-tags" label="Topics" hint="up to 5"><TagInput id="q-tags" value={draft.tags} onChange={(v) => set("tags", v)} max={5} placeholder="sql, postgres, indexing…" /></Labelled>
+              </>
+            )}
+
+            {kind === "achievement" && (
+              <>
+                <Labelled id="a-title" label="What did you achieve?"><input id="a-title" value={draft.title} onChange={(e) => set("title", e.target.value.slice(0, 120))} placeholder="e.g. AWS Certified Cloud Practitioner" className={FIELD} /></Labelled>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Labelled id="a-issuer" label="Issued by"><input id="a-issuer" value={draft.issuer} onChange={(e) => set("issuer", e.target.value.slice(0, 100))} placeholder="Amazon Web Services" className={FIELD} /></Labelled>
+                  <Labelled id="a-date" label="Date"><input id="a-date" type="date" value={draft.achievedOn} max={new Date().toISOString().slice(0, 10)} onChange={(e) => set("achievedOn", e.target.value)} className={FIELD} /></Labelled>
+                </div>
+                <Labelled id="a-proof" label="Proof link" hint="credential or result page"><input id="a-proof" type="url" value={draft.proofUrl} onChange={(e) => set("proofUrl", e.target.value)} placeholder="https://" className={FIELD} /></Labelled>
+                <Labelled id="a-note" label="Anything to add?" hint="optional"><textarea id="a-note" value={draft.content} onChange={(e) => set("content", e.target.value.slice(0, 1000))} rows={2} className={clsx(FIELD, "resize-none")} /></Labelled>
+                <p className="font-lp-body text-[12px] text-app-muted">Want it counted as evidence? <Link href="/dashboard/vault" className="text-app-blue hover:underline">Add it to your Vault</Link> too.</p>
+              </>
+            )}
+          </div>
+
+          {(image || doc) && (
+            <div className="mt-3 flex flex-wrap items-start gap-3">
+              {image?.preview && (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+                  <img src={image.preview} alt="Attached photo" className="max-h-32 rounded-xl border border-app-border" />
+                  <button type="button" onClick={() => pickImage(null)} aria-label="Remove photo" className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white"><X size={12} /></button>
+                </div>
+              )}
+              {doc && (
+                <div className="flex items-center gap-2 rounded-xl border border-app-border bg-app-background px-3 py-2">
+                  <FileText size={16} className="text-app-rose" aria-hidden="true" />
+                  <span className="max-w-[14rem] truncate font-lp-body text-[12.5px] text-app-charcoal">{doc.file.name}</span>
+                  <button type="button" onClick={() => setDoc(null)} aria-label="Remove document" className="text-app-muted hover:text-app-charcoal"><X size={13} /></button>
+                </div>
+              )}
             </div>
           )}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {KINDS.map(({ key, label, icon: Icon }) => (
-              <button key={key} type="button" onClick={() => setKind(key)} aria-pressed={kind === key} className={clsx("flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-lp-body text-[12px] font-medium transition-colors", kind === key ? "border-app-orange bg-app-orange-container text-app-orange" : "border-app-border text-app-muted hover:text-app-charcoal")}>
-                <Icon size={12} aria-hidden="true" /> {label}
-              </button>
-            ))}
-            <button type="button" onClick={() => input.current?.click()} className="flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-muted hover:text-app-charcoal"><ImagePlus size={12} aria-hidden="true" /> Photo</button>
-            <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Photo" onChange={(e) => pick(e.target.files?.[0] ?? null)} />
-            <span className="ml-auto font-lp-mono text-[10.5px] text-app-muted" aria-live="polite">{text.length}/{MAX}</span>
-            <button type="button" onClick={submit} disabled={busy || text.trim().length === 0} className="flex items-center gap-2 rounded-full bg-app-charcoal px-5 py-2 font-lp-body text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
-              {busy ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Send size={13} aria-hidden="true" />} Post
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-app-border pt-3">
+            <button type="button" onClick={() => imageInput.current?.click()} className="flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-muted hover:text-app-charcoal"><ImagePlus size={13} aria-hidden="true" /> Photo</button>
+            <button type="button" onClick={() => docInput.current?.click()} className="flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-muted hover:text-app-charcoal"><FileText size={13} aria-hidden="true" /> {k.docHint}</button>
+            <input ref={imageInput} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Photo" onChange={(e) => { pickImage(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+            <input ref={docInput} type="file" accept="application/pdf,.pdf" className="sr-only" aria-label="PDF document" onChange={(e) => { pickDoc(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+            <button type="button" onClick={submit} disabled={busy || !draftReady(kind, draft)} className="ml-auto flex items-center gap-2 rounded-full bg-app-charcoal px-5 py-2 font-lp-body text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
+              {busy ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Send size={13} aria-hidden="true" />} {k.submit}
             </button>
           </div>
           {error && <p role="alert" className="mt-2 font-lp-body text-[12px] text-app-rose">{error}</p>}

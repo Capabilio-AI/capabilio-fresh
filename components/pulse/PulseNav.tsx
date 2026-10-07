@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { GraduationCap, Home, MessageCircle, UserCheck, Users } from "lucide-react";
+import { Flame, GraduationCap, Home, MessageCircle, UserCheck, Users } from "lucide-react";
 import clsx from "clsx";
 import { UnreadBadge } from "@/components/messages/UnreadBadge";
 
-export type PulseTab = "for-you" | "following" | "communities" | "mentors";
+export type PulseTab = "for-you" | "following" | "trending" | "communities" | "mentors";
 export const PULSE_TABS: { key: PulseTab; label: string; icon: typeof Home; soon?: boolean }[] = [
   { key: "for-you", label: "For You", icon: Home },
   { key: "following", label: "Following", icon: UserCheck },
+  { key: "trending", label: "Trending", icon: Flame },
   { key: "communities", label: "Communities", icon: Users },
   { key: "mentors", label: "Mentors", icon: GraduationCap },
 ];
