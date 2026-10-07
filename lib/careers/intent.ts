@@ -3,6 +3,8 @@ import type { Database } from "@/lib/supabase/types";
 import { suggestCareersForGoal, type CareerOption } from "@/lib/roadmap/suggest";
 import { validateIntent, type IntentState } from "./intent-rules";
 import { PLAN_B_CLOSED_MESSAGE, isPlanBOpen } from "./plan-b";
+import { isPlanBKind, validatePlanB, type PlanBKind } from "./plan-b-rules";
+import { untyped } from "@/lib/org/db";
 
 type Service = SupabaseClient<Database>;
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; status: number; message: string };
@@ -20,6 +22,8 @@ export interface IntentView {
   /** how sure the interpretation of the goal text was (0–1); not a statement about the student */
   goalConfidence: number | null;
   isExploring: boolean;
+  /** how the student answered the one-time Plan B question (3-1); null until they do */
+  planBKind: PlanBKind | null;
   lastUpdated: string | null;
 }
 export interface SuggestionView {
@@ -28,6 +32,12 @@ export interface SuggestionView {
   careers: CareerRef[];
   createdAt: string;
 }
+
+/** plan_b_kind (migration 076) is not in the generated types yet. */
+const planBKindOf = (row: object | null): PlanBKind | null => {
+  const kind = (row as { plan_b_kind?: unknown } | null)?.plan_b_kind;
+  return isPlanBKind(kind) ? kind : null;
+};
 
 async function activeCareers(service: Service): Promise<(CareerRef & { description: string | null })[]> {
   const { data } = await service.from("careers").select("id, key, name, description").eq("is_active", true).order("name");
@@ -48,6 +58,7 @@ export async function getCareerIntent(service: Service, userId: string) {
     goalText: row?.career_goal_text ?? null,
     goalConfidence: row?.career_goal_confidence == null ? null : Number(row.career_goal_confidence),
     isExploring: row?.is_exploring ?? false,
+    planBKind: planBKindOf(row),
     lastUpdated: row?.last_updated ?? null,
   };
   const suggestions: SuggestionView[] = (pending ?? []).map((s) => ({
@@ -131,4 +142,28 @@ export async function resolveSuggestion(service: Service, userId: string, sugges
   }
   const { error } = await service.from("career_suggestions").update({ status: body.action === "accept" ? "ACCEPTED" : "DISMISSED", resolved_at: new Date().toISOString() }).eq("id", suggestionId).eq("status", "PENDING");
   return error ? fail(500, "Something went wrong. Please try again.") : { ok: true };
+}
+
+/**
+ * The one-time Plan B answer, allowed only in 3-1. "change_role" also stores the chosen career as the Plan B career (so its roadmap
+ * and baseline check work); every other kind clears it. Asked once: a real choice is final, while "undecided" can still be replaced during 3-1.
+ */
+export async function savePlanB(service: Service, userId: string, body: { kind: PlanBKind; careerId?: string }): Promise<Result> {
+  if (!(await isPlanBOpen(service, userId))) return fail(403, PLAN_B_CLOSED_MESSAGE);
+  const { data: row } = await untyped(service).from("student_career_intent").select("primary_career_id, plan_b_kind").eq("student_id", userId).maybeSingle();
+  const earlier = planBKindOf(row);
+  if (earlier && earlier !== "undecided") return fail(409, "You've already chosen your Plan B.");
+  const active = new Set((await activeCareers(service)).map((c) => c.id));
+  const valid = validatePlanB(body, (row as { primary_career_id: string | null } | null)?.primary_career_id ?? null, active);
+  if (!valid.ok) return fail(400, valid.message);
+  const now = new Date().toISOString();
+  const { error } = await untyped(service).from("student_career_intent").upsert(
+    { student_id: userId, plan_b_kind: body.kind, plan_b_decided_at: now, secondary_career_id: body.kind === "change_role" ? body.careerId : null, last_updated: now },
+    { onConflict: "student_id" }
+  );
+  if (error) {
+    console.error("[career-intent] plan b write failed:", error.code, error.message);
+    return fail(500, "Something went wrong. Please try again.");
+  }
+  return { ok: true };
 }

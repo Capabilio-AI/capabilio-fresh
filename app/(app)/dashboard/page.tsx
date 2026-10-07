@@ -27,7 +27,7 @@ import { loadRollNumberNotice } from "@/lib/org/roll-number";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getCareerIntent } from "@/lib/careers/intent";
-import { PlanBPrompt } from "@/components/direction/PlanBPrompt";
+import { PlanBDialog } from "@/components/direction/PlanBDialog";
 
 export const metadata: Metadata = {
   title: "Dashboard — Capabilio AI",
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
   const [rollNotice, direction] = await Promise.all([loadRollNumberNotice(service, user.id), getStudentDirection(service, user.id)]);
   // Plan B is asked once, in 3-1, and never again after one is saved.
   const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;
-  const askPlanB = planBAsk && planBAsk.intent.primary && !planBAsk.intent.secondary ? planBAsk : null;
+  const askPlanB = planBAsk && !planBAsk.intent.planBKind ? planBAsk : null;
   const topMatch = careerMatches[0] ?? null;
   const nextAction = computeNextAction(topMatch);
   const showCareerDirectionIntro = !hasSeenIntro && topMatch !== null && Boolean(statedInterest);
@@ -86,8 +86,14 @@ export default async function DashboardPage() {
       )}
       <DashboardHeader data={data} />
       {rollNotice && <div className="pb-2"><RollNumberBanner notice={rollNotice} /></div>}
-      {askPlanB?.intent.primary && (
-        <div className="pb-2"><PlanBPrompt mainCareer={askPlanB.intent.primary.name} careers={askPlanB.careers.filter((c) => c.id !== askPlanB.intent.primary?.id)} /></div>
+      {askPlanB && (
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white p-4">
+          <div className="max-w-[60ch]">
+            <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">Choose your Plan B</p>
+            <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">You&apos;re in 3rd year, 1st semester. Tell us what you would do if your main plan changes. You are asked once.</p>
+          </div>
+          <PlanBDialog autoOpen mainCareer={askPlanB.intent.primary?.name ?? null} careers={askPlanB.careers.filter((c) => c.id !== askPlanB.intent.primary?.id)} />
+        </div>
       )}
       <div className="empty:hidden pb-2">
         <TrackPanel supabase={supabase} userId={user.id} />
