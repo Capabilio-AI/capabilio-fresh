@@ -1,0 +1,1022 @@
+{
+  "career": "ai-ml-engineer",
+  "version": 1,
+  "title": "AI/ML Engineer roadmap",
+  "description": "From the maths and Python behind machine learning to models that ship.",
+  "provenance": {
+    "designedBy": "Capabilio",
+    "method": "Stages follow the order in which each skill is normally needed on the job; targets for skills the career already requires come from that career's requirement rows, and the rest are set by Capabilio to be reachable by a final-year student.",
+    "notes": "Original tree. Designed from first principles and the canonical skill taxonomy; not derived from any third-party roadmap."
+  },
+  "nodes": [
+    {
+      "key": "stage-math",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Mathematical foundations",
+      "description": "The linear algebra and probability that every model is built on.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 10
+    },
+    {
+      "key": "stage-stats",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Statistics for modelling",
+      "description": "Describe data and quantify uncertainty.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 20
+    },
+    {
+      "key": "stage-python",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Python for machine learning",
+      "description": "The numeric and data tools used every day.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 30
+    },
+    {
+      "key": "stage-ml",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Core machine learning",
+      "description": "Build and judge classical models.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 40
+    },
+    {
+      "key": "stage-features",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Data, features and optimization",
+      "description": "Prepare inputs and train models well.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 50
+    },
+    {
+      "key": "stage-deep",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Deep learning",
+      "description": "Train neural networks for rich data.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "CENTER",
+      "order": 60
+    },
+    {
+      "key": "stage-language",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Language and responsible AI",
+      "description": "Work with text and use AI responsibly.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "CENTER",
+      "order": 70
+    },
+    {
+      "key": "stage-ship",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Shipping models",
+      "description": "Move from a notebook to a maintained system.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "CENTER",
+      "order": 80
+    },
+    {
+      "key": "g-la",
+      "parent": "stage-math",
+      "type": "GROUP",
+      "title": "Linear algebra",
+      "description": "Vectors, matrices and what they do to data.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "g-prob",
+      "parent": "stage-math",
+      "type": "GROUP",
+      "title": "Probability",
+      "description": "Reasoning under uncertainty.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "g-describe",
+      "parent": "stage-stats",
+      "type": "GROUP",
+      "title": "Describing and testing",
+      "description": "Summarise data and test claims.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "g-stat-skill",
+      "parent": "stage-stats",
+      "type": "GROUP",
+      "title": "Statistics in practice",
+      "description": "Bring it together.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 4
+    },
+    {
+      "key": "g-py-core",
+      "parent": "stage-python",
+      "type": "GROUP",
+      "title": "Python and arrays",
+      "description": "The language and fast numeric computing.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 5
+    },
+    {
+      "key": "g-py-data",
+      "parent": "stage-python",
+      "type": "GROUP",
+      "title": "Tables and plots",
+      "description": "Load, reshape and look at data.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 6
+    },
+    {
+      "key": "g-supervised",
+      "parent": "stage-ml",
+      "type": "GROUP",
+      "title": "Supervised models",
+      "description": "Predict a number or a category.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 7
+    },
+    {
+      "key": "g-evaluate",
+      "parent": "stage-ml",
+      "type": "GROUP",
+      "title": "Judging models",
+      "description": "Know whether a model will work on new data.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 8
+    },
+    {
+      "key": "g-data",
+      "parent": "stage-features",
+      "type": "GROUP",
+      "title": "Preparing data",
+      "description": "Inputs a model can learn from.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 9
+    },
+    {
+      "key": "g-learning",
+      "parent": "stage-features",
+      "type": "GROUP",
+      "title": "Learning methods",
+      "description": "How models are fitted.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 10
+    },
+    {
+      "key": "g-nn",
+      "parent": "stage-deep",
+      "type": "GROUP",
+      "title": "Neural networks",
+      "description": "Layers, training and image models.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 11
+    },
+    {
+      "key": "g-modern",
+      "parent": "stage-deep",
+      "type": "GROUP",
+      "title": "Modern architectures",
+      "description": "Attention and the breadth of deep learning.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 12
+    },
+    {
+      "key": "g-nlp",
+      "parent": "stage-language",
+      "type": "GROUP",
+      "title": "Language",
+      "description": "Turn text into something a model can use.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 13
+    },
+    {
+      "key": "g-resp",
+      "parent": "stage-language",
+      "type": "GROUP",
+      "title": "Responsible AI",
+      "description": "Spot and reduce harm.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 14
+    },
+    {
+      "key": "g-deploy",
+      "parent": "stage-ship",
+      "type": "GROUP",
+      "title": "Deployment",
+      "description": "Put a model behind an interface and watch it.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 15
+    },
+    {
+      "key": "g-eng",
+      "parent": "stage-ship",
+      "type": "GROUP",
+      "title": "Engineering base",
+      "description": "The engineering habits that keep models maintainable.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 16
+    },
+    {
+      "key": "vectors-and-matrices",
+      "parent": "g-la",
+      "type": "TOPIC",
+      "title": "Vectors and Matrices",
+      "description": "Represents data as vectors and matrices and uses dot products, norms and matrix multiplication. Data and model parameters are stored and transformed as matrices.",
+      "skill": "Vectors and Matrices",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "eigenvalues-and-matrix-decomposition",
+      "parent": "g-la",
+      "type": "TOPIC",
+      "title": "Eigenvalues and Matrix Decomposition",
+      "description": "Understands eigenvectors and decompositions such as SVD and where they appear in data work. Underlies dimensionality reduction and many algorithms.",
+      "skill": "Eigenvalues and Matrix Decomposition",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "linear-algebra-in-practice",
+      "parent": "g-la",
+      "type": "TOPIC",
+      "title": "Linear algebra in practice",
+      "description": "Works with vectors, matrices and linear transformations, the language of machine learning. The career expects you to read a model's maths without fear.",
+      "skill": "Linear Algebra",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "random-variables-and-distributions",
+      "parent": "g-prob",
+      "type": "TOPIC",
+      "title": "Random Variables and Distributions",
+      "description": "Describes uncertain quantities with common distributions and computes expectations. Models describe uncertain outcomes, so they speak in distributions.",
+      "skill": "Random Variables and Distributions",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "conditional-probability-and-bayes-rule",
+      "parent": "g-prob",
+      "type": "TOPIC",
+      "title": "Conditional Probability and Bayes' Rule",
+      "description": "Updates beliefs with new evidence using conditional probability and Bayes' rule. The basis of probabilistic reasoning and many classifiers.",
+      "skill": "Conditional Probability and Bayes' Rule",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "probability-in-practice",
+      "parent": "g-prob",
+      "type": "TOPIC",
+      "title": "Probability in practice",
+      "description": "Quantifies uncertainty and reasons about random events. The career expects fluent probabilistic thinking.",
+      "skill": "Probability",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "descriptive-statistics",
+      "parent": "g-describe",
+      "type": "TOPIC",
+      "title": "Descriptive Statistics",
+      "description": "Summarises data with centre, spread and shape, and chooses measures that suit the data. Know your data before you model it.",
+      "skill": "Descriptive Statistics",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "sampling-and-confidence-intervals",
+      "parent": "g-describe",
+      "type": "TOPIC",
+      "title": "Sampling and Confidence Intervals",
+      "description": "Draws conclusions about a population from a sample and states the uncertainty. Explains why a result from a sample may not hold in general.",
+      "skill": "Sampling and Confidence Intervals",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "hypothesis-testing",
+      "parent": "g-describe",
+      "type": "TOPIC",
+      "title": "Hypothesis Testing",
+      "description": "Tests a claim with a null hypothesis, a test statistic and a p-value, and states what the result means. Used to compare models and run experiments.",
+      "skill": "Hypothesis Testing",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "statistics-in-practice",
+      "parent": "g-stat-skill",
+      "type": "TOPIC",
+      "title": "Statistics in practice",
+      "description": "Uses data to describe, compare and draw careful conclusions. The career expects sound statistical judgement.",
+      "skill": "Statistics",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "python",
+      "parent": "g-py-core",
+      "type": "TOPIC",
+      "title": "Python",
+      "description": "Writes clear, working programs in Python. The working language of machine learning.",
+      "skill": "Python",
+      "importance": "CORE",
+      "target": 85,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "numpy-arrays",
+      "parent": "g-py-core",
+      "type": "TOPIC",
+      "title": "NumPy Arrays",
+      "description": "Computes on whole arrays at once with vectorised operations, broadcasting and indexing. Vectorised array code is what makes numeric work fast.",
+      "skill": "NumPy Arrays",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "data-wrangling-with-pandas",
+      "parent": "g-py-data",
+      "type": "TOPIC",
+      "title": "Data Wrangling with Pandas",
+      "description": "Loads, reshapes, joins and summarises tabular data with pandas. Most project time goes into getting data into shape.",
+      "skill": "Data Wrangling with Pandas",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "data-visualization-with-python",
+      "parent": "g-py-data",
+      "type": "TOPIC",
+      "title": "Data Visualization with Python",
+      "description": "Plots distributions and relationships with Python libraries and labels them clearly. Looking at data catches problems models cannot.",
+      "skill": "Data Visualization with Python",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "regression-models",
+      "parent": "g-supervised",
+      "type": "TOPIC",
+      "title": "Regression Models",
+      "description": "Predicts a number from features with linear and related models and reads their coefficients. The simplest and most interpretable predictive models.",
+      "skill": "Regression Models",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "classification-models",
+      "parent": "g-supervised",
+      "type": "TOPIC",
+      "title": "Classification Models",
+      "description": "Predicts a category with models such as logistic regression and reads their outputs. Predicting categories is the most common task.",
+      "skill": "Classification Models",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "tree-based-models",
+      "parent": "g-supervised",
+      "type": "TOPIC",
+      "title": "Tree-Based Models",
+      "description": "Uses decision trees and ensembles such as random forests and boosting. Often the strongest choice for tabular data.",
+      "skill": "Tree-Based Models",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "machine-learning-in-practice",
+      "parent": "g-supervised",
+      "type": "TOPIC",
+      "title": "Machine learning in practice",
+      "description": "Builds models that learn patterns from data and judges how well they work. The career expects you to take a model from idea to evidence.",
+      "skill": "Machine Learning",
+      "importance": "CORE",
+      "target": 85,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 4
+    },
+    {
+      "key": "model-evaluation-and-metrics",
+      "parent": "g-evaluate",
+      "type": "TOPIC",
+      "title": "Model Evaluation and Metrics",
+      "description": "Chooses and interprets metrics such as accuracy, precision, recall, F1 and error measures. A model is only as good as the measure used to judge it.",
+      "skill": "Model Evaluation and Metrics",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "cross-validation",
+      "parent": "g-evaluate",
+      "type": "TOPIC",
+      "title": "Cross-Validation",
+      "description": "Estimates how a model will do on new data with held-out folds and avoids leaking information. Estimates real-world performance and avoids fooling yourself.",
+      "skill": "Cross-Validation",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "overfitting-and-regularization",
+      "parent": "g-evaluate",
+      "type": "TOPIC",
+      "title": "Overfitting and Regularization",
+      "description": "Recognises a model that memorises its training data and controls it with regularization and simpler models. The most common reason a good model fails in use.",
+      "skill": "Overfitting and Regularization",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "feature-engineering",
+      "parent": "g-data",
+      "type": "TOPIC",
+      "title": "Feature Engineering",
+      "description": "Creates, encodes and scales input features that make patterns easier for a model to learn. Good inputs often matter more than a fancier model.",
+      "skill": "Feature Engineering",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "cleaning-data-for-models",
+      "parent": "g-data",
+      "type": "TOPIC",
+      "title": "Cleaning data for models",
+      "description": "Turns messy raw data into data that is safe to analyse. Bad data produces confident, wrong models.",
+      "skill": "Data Cleaning",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "dimensionality-reduction",
+      "parent": "g-data",
+      "type": "TOPIC",
+      "title": "Dimensionality Reduction",
+      "description": "Compresses many features into a few with methods such as PCA while keeping what matters. Handles many features and helps visualisation.",
+      "skill": "Dimensionality Reduction",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "clustering-and-unsupervised-learning",
+      "parent": "g-learning",
+      "type": "TOPIC",
+      "title": "Clustering and Unsupervised Learning",
+      "description": "Finds structure in unlabeled data with clustering and judges whether it is meaningful. Finds structure when there are no labels.",
+      "skill": "Clustering and Unsupervised Learning",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "optimization-and-gradient-descent",
+      "parent": "g-learning",
+      "type": "TOPIC",
+      "title": "Optimization and Gradient Descent",
+      "description": "Minimises a loss by following its gradient and understands learning rate and convergence. How almost every modern model is trained.",
+      "skill": "Optimization and Gradient Descent",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "neural-network-fundamentals",
+      "parent": "g-nn",
+      "type": "TOPIC",
+      "title": "Neural Network Fundamentals",
+      "description": "Explains layers, activations and loss, and builds a small network end to end. The building block of deep learning.",
+      "skill": "Neural Network Fundamentals",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "backpropagation-and-training",
+      "parent": "g-nn",
+      "type": "TOPIC",
+      "title": "Backpropagation and Training",
+      "description": "Understands how gradients flow backward and trains a network with batches, epochs and optimizers. Explains why training works and how it fails.",
+      "skill": "Backpropagation and Training",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "convolutional-networks",
+      "parent": "g-nn",
+      "type": "TOPIC",
+      "title": "Convolutional Networks",
+      "description": "Uses convolution and pooling to learn from images and other grid-like data. The standard approach to images.",
+      "skill": "Convolutional Networks",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "transformers-and-attention",
+      "parent": "g-modern",
+      "type": "TOPIC",
+      "title": "Transformers and Attention",
+      "description": "Explains self-attention and how transformer models process sequences. The architecture behind modern language models.",
+      "skill": "Transformers and Attention",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "deep-learning-in-practice",
+      "parent": "g-modern",
+      "type": "TOPIC",
+      "title": "Deep learning in practice",
+      "description": "Trains multi-layer neural networks for images, text and other rich data. The career expects hands-on deep learning.",
+      "skill": "Deep Learning",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "text-preprocessing",
+      "parent": "g-nlp",
+      "type": "TOPIC",
+      "title": "Text Preprocessing",
+      "description": "Cleans and tokenizes text and chooses normalisation steps that suit the task. Text must be cleaned and split before it can be modelled.",
+      "skill": "Text Preprocessing",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "word-and-sentence-embeddings",
+      "parent": "g-nlp",
+      "type": "TOPIC",
+      "title": "Word and Sentence Embeddings",
+      "description": "Represents words and sentences as vectors and uses them for search and similarity. How meaning becomes numbers.",
+      "skill": "Word and Sentence Embeddings",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "natural-language-processing-in-practice",
+      "parent": "g-nlp",
+      "type": "TOPIC",
+      "title": "Natural language processing in practice",
+      "description": "Makes software that works with human language. Applies the pieces to real language tasks.",
+      "skill": "Natural Language Processing",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "artificial-intelligence-fundamentals",
+      "parent": "g-resp",
+      "type": "TOPIC",
+      "title": "Artificial Intelligence Fundamentals",
+      "description": "Understands the core ideas, methods and limits of AI systems. Gives the wider picture of what AI can and cannot do.",
+      "skill": "Artificial Intelligence Fundamentals",
+      "importance": "RECOMMENDED",
+      "target": 70,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "responsible-ai-and-bias",
+      "parent": "g-resp",
+      "type": "TOPIC",
+      "title": "Responsible AI and Bias",
+      "description": "Spots bias, privacy and safety risks in data and models and applies basic mitigations. Models that harm users or exclude groups are failures.",
+      "skill": "Responsible AI and Bias",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "model-deployment-basics",
+      "parent": "g-deploy",
+      "type": "TOPIC",
+      "title": "Model Deployment Basics",
+      "description": "Packages a trained model behind an interface, versions it and watches it after release. A model nobody can use has no value.",
+      "skill": "Model Deployment Basics",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "software-engineering-for-ml",
+      "parent": "g-eng",
+      "type": "TOPIC",
+      "title": "Software engineering for ML",
+      "description": "Builds software as a team: planning, design, quality and delivery. Reproducible, tested code keeps models maintainable.",
+      "skill": "Software Engineering",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "version-control-for-ml-work",
+      "parent": "g-eng",
+      "type": "TOPIC",
+      "title": "Version control for ML work",
+      "description": "Tracks and shares changes to code so a team can work together safely. Tracks code, data and experiments.",
+      "skill": "Version Control",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "algorithms-for-ml-work",
+      "parent": "g-eng",
+      "type": "TOPIC",
+      "title": "Algorithms for ML work",
+      "description": "Designs step-by-step procedures that solve problems correctly and efficiently. Efficiency matters when data and models are large.",
+      "skill": "Algorithms",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 3
+    }
+  ],
+  "edges": [
+    {
+      "from": "vectors-and-matrices",
+      "to": "eigenvalues-and-matrix-decomposition",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "vectors-and-matrices",
+      "to": "linear-algebra-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "random-variables-and-distributions",
+      "to": "conditional-probability-and-bayes-rule",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "conditional-probability-and-bayes-rule",
+      "to": "probability-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "descriptive-statistics",
+      "to": "sampling-and-confidence-intervals",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sampling-and-confidence-intervals",
+      "to": "hypothesis-testing",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "hypothesis-testing",
+      "to": "statistics-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "python",
+      "to": "numpy-arrays",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "numpy-arrays",
+      "to": "data-wrangling-with-pandas",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "data-wrangling-with-pandas",
+      "to": "data-visualization-with-python",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "statistics-in-practice",
+      "to": "regression-models",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "regression-models",
+      "to": "classification-models",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "classification-models",
+      "to": "tree-based-models",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "tree-based-models",
+      "to": "machine-learning-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "regression-models",
+      "to": "model-evaluation-and-metrics",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "model-evaluation-and-metrics",
+      "to": "cross-validation",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "cross-validation",
+      "to": "overfitting-and-regularization",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "data-wrangling-with-pandas",
+      "to": "cleaning-data-for-models",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "cleaning-data-for-models",
+      "to": "feature-engineering",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "feature-engineering",
+      "to": "dimensionality-reduction",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "eigenvalues-and-matrix-decomposition",
+      "to": "dimensionality-reduction",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "linear-algebra-in-practice",
+      "to": "optimization-and-gradient-descent",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "regression-models",
+      "to": "optimization-and-gradient-descent",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "optimization-and-gradient-descent",
+      "to": "clustering-and-unsupervised-learning",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "optimization-and-gradient-descent",
+      "to": "neural-network-fundamentals",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "neural-network-fundamentals",
+      "to": "backpropagation-and-training",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "backpropagation-and-training",
+      "to": "convolutional-networks",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "backpropagation-and-training",
+      "to": "transformers-and-attention",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "convolutional-networks",
+      "to": "deep-learning-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "text-preprocessing",
+      "to": "word-and-sentence-embeddings",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "word-and-sentence-embeddings",
+      "to": "natural-language-processing-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "transformers-and-attention",
+      "to": "natural-language-processing-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "machine-learning-in-practice",
+      "to": "model-deployment-basics",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "overfitting-and-regularization",
+      "to": "responsible-ai-and-bias",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "version-control-for-ml-work",
+      "to": "model-deployment-basics",
+      "type": "PREREQUISITE"
+    }
+  ]
+}

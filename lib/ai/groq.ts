@@ -27,23 +27,42 @@ export function getGroqClient(): Groq {
   return client;
 }
 
+export interface TokenUsage {
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+}
+export interface JsonCompletion<T> {
+  value: T;
+  usage: TokenUsage;
+  model: string;
+  attempts: number;
+  latencyMs: number;
+}
+
 /**
  * Requests JSON matching `schema`, retrying with the validation error fed
  * back to the model — LLM JSON-mode output is not guaranteed to be valid
  * JSON (Groq's own validator can reject it) or to match the requested
  * shape on the first try, so this must self-correct rather than trust a
- * single response.
+ * single response. Returns what the provider reported about token use
+ * (null when it reported nothing: unknown stays unknown) so callers can log it.
  */
-export async function completeJson<T>(
+export async function completeJsonDetailed<T>(
   prompt: string,
   systemPrompt: string,
   schema: z.ZodType<T>
-): Promise<T> {
+): Promise<JsonCompletion<T>> {
   const groq = getGroqClient();
+  const startedAt = Date.now();
   const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: systemPrompt },
     { role: "user", content: prompt },
   ];
+  const usage: TokenUsage = { promptTokens: null, completionTokens: null, totalTokens: null };
+  const add = (key: keyof TokenUsage, n: number | undefined) => {
+    if (typeof n === "number") usage[key] = (usage[key] ?? 0) + n;
+  };
 
   let lastError = "";
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -62,6 +81,9 @@ export async function completeJson<T>(
         response_format: { type: "json_object" },
         temperature: 0.4,
       });
+      add("promptTokens", completion.usage?.prompt_tokens);
+      add("completionTokens", completion.usage?.completion_tokens);
+      add("totalTokens", completion.usage?.total_tokens);
       content = completion.choices[0]?.message?.content ?? undefined;
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
@@ -90,9 +112,14 @@ export async function completeJson<T>(
     }
 
     const result = schema.safeParse(parsed);
-    if (result.success) return result.data;
+    if (result.success) return { value: result.data, usage, model: GROQ_MODEL, attempts: attempt, latencyMs: Date.now() - startedAt };
     lastError = result.error.message;
   }
 
   throw new Error(`Groq did not return a valid response after ${MAX_ATTEMPTS} attempts: ${lastError}`);
+}
+
+/** Same as completeJsonDetailed, for callers that only need the value. */
+export async function completeJson<T>(prompt: string, systemPrompt: string, schema: z.ZodType<T>): Promise<T> {
+  return (await completeJsonDetailed(prompt, systemPrompt, schema)).value;
 }

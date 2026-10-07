@@ -35,7 +35,7 @@ describe("rankCareersForExploration (a student who is still exploring)", () => {
     { id: "se", name: "Software Engineer", requirements: [req("dsa", "CRITICAL", 80), req("oop", "HIGH", 70)] },
     { id: "pm", name: "Product Manager", requirements: [req("pm", "CRITICAL", 80)] },
   ];
-  const lvl = (level: number) => ({ level, confidence: 0.7, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
+  const lvl = (level: number) => ({ level, assessed: true, confidence: 0.7, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
   it("ranks by how close the student already is plus how much their curriculum already covers, best first", () => {
     const r = rankCareersForExploration(careers, { sql: lvl(70), stats: lvl(60) }, [{ skills: [{ skillId: "sql", importance: "CORE" }, { skillId: "stats", importance: "CORE" }] }]);
     expect(r.map((x) => x.careerId)).toEqual(["da", "pm", "se"]);

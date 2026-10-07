@@ -9,11 +9,14 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:live": "LIVE_DB=1 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "arena:content": "node --env-file=.env.local --import tsx scripts/arena-content.mts",
+    "roadmap:content": "node --env-file=.env.local --import tsx scripts/roadmap-content.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
+    "@xyflow/react": "^12.12.0",
     "clsx": "^2.1.1",
     "framer-motion": "^13.4.0",
     "groq-sdk": "^1.6.0",
@@ -23,6 +26,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
+    "sql.js": "^1.13.0",
     "thinking-orbs": "^0.3.2",
     "ws": "^8.21.3",
     "zod": "^4.6.5"
@@ -32,10 +36,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sql.js": "^1.4.11",
     "@types/ws": "^8.18.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.11"
   }

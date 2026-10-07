@@ -7,7 +7,7 @@ import { ThinkingOrb } from "thinking-orbs";
 interface Completion {
   id: string;
   ratingDelta: number;
-  ratingAfter: number;
+  ratingAfter: number | null;
   completedAt: string;
   areaName: string;
   challenge: { title: string; company: string | null } | null;
@@ -53,7 +53,7 @@ export function DomainHistory() {
                   </p>
                 </div>
               </div>
-              <span className="rounded-full bg-app-background px-3 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">+{c.ratingDelta} ELO · {c.ratingAfter}</span>
+              <span className="rounded-full bg-app-background px-3 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">+{c.ratingDelta} ELO{c.ratingAfter !== null ? ` · ${c.ratingAfter}` : ""}</span>
             </div>
           ))}
         </div>

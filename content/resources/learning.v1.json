@@ -1,0 +1,385 @@
+{
+ "provenance": {
+  "author": "Capabilio",
+  "note": "Free, publicly available learning resources chosen by Capabilio. Only the link, title and provider are recorded; nothing is copied. Links are checked when imported."
+ },
+ "items": [
+  {
+   "title": "HTTP overview and reference",
+   "provider": "MDN Web Docs",
+   "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 4,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "HTTP Fundamentals"
+   ]
+  },
+  {
+   "title": "Pro Git (the book)",
+   "provider": "Git project",
+   "url": "https://git-scm.com/book/en/v2",
+   "type": "BOOK",
+   "tier": "FREE",
+   "hours": 10,
+   "levelFrom": 0,
+   "levelTo": 70,
+   "skills": [
+    "Git Fundamentals",
+    "Branching and Merging",
+    "Version Control"
+   ]
+  },
+  {
+   "title": "PostgreSQL tutorial",
+   "provider": "PostgreSQL Global Development Group",
+   "url": "https://www.postgresql.org/docs/current/tutorial.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 4,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "SQL Query Basics",
+    "SQL Joins",
+    "SQL Aggregation and Grouping",
+    "Transactions and ACID",
+    "SQL"
+   ]
+  },
+  {
+   "title": "SQLBolt: interactive SQL lessons",
+   "provider": "SQLBolt",
+   "url": "https://sqlbolt.com/",
+   "type": "PRACTICE",
+   "tier": "FREE",
+   "hours": 3,
+   "levelFrom": 0,
+   "levelTo": 50,
+   "skills": [
+    "SQL Query Basics",
+    "SQL Joins",
+    "SQL Aggregation and Grouping",
+    "SQL"
+   ]
+  },
+  {
+   "title": "The Python tutorial",
+   "provider": "Python Software Foundation",
+   "url": "https://docs.python.org/3/tutorial/",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 10,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "Python",
+    "Variables and Control Flow",
+    "Functions and Scope",
+    "Error Handling and Debugging"
+   ]
+  },
+  {
+   "title": "NumPy: the absolute basics for beginners",
+   "provider": "NumPy",
+   "url": "https://numpy.org/doc/stable/user/absolute_beginners.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 2,
+   "levelFrom": 0,
+   "levelTo": 50,
+   "skills": [
+    "NumPy Arrays",
+    "Vectors and Matrices"
+   ]
+  },
+  {
+   "title": "10 minutes to pandas",
+   "provider": "pandas",
+   "url": "https://pandas.pydata.org/docs/user_guide/10min.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 1,
+   "levelFrom": 0,
+   "levelTo": 50,
+   "skills": [
+    "Data Wrangling with Pandas",
+    "Handling Missing Values"
+   ]
+  },
+  {
+   "title": "Model evaluation: quantifying prediction quality",
+   "provider": "scikit-learn",
+   "url": "https://scikit-learn.org/stable/modules/model_evaluation.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 3,
+   "levelFrom": 30,
+   "levelTo": 80,
+   "skills": [
+    "Model Evaluation and Metrics"
+   ]
+  },
+  {
+   "title": "Cross-validation: evaluating estimator performance",
+   "provider": "scikit-learn",
+   "url": "https://scikit-learn.org/stable/modules/cross_validation.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 2,
+   "levelFrom": 30,
+   "levelTo": 80,
+   "skills": [
+    "Cross-Validation",
+    "Overfitting and Regularization"
+   ]
+  },
+  {
+   "title": "Supervised learning guide",
+   "provider": "scikit-learn",
+   "url": "https://scikit-learn.org/stable/supervised_learning.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 8,
+   "levelFrom": 20,
+   "levelTo": 80,
+   "skills": [
+    "Regression Models",
+    "Classification Models",
+    "Tree-Based Models",
+    "Machine Learning"
+   ]
+  },
+  {
+   "title": "Statistics and probability",
+   "provider": "Khan Academy",
+   "url": "https://www.khanacademy.org/math/statistics-probability",
+   "type": "COURSE",
+   "tier": "FREE",
+   "hours": 30,
+   "levelFrom": 0,
+   "levelTo": 70,
+   "skills": [
+    "Descriptive Statistics",
+    "Hypothesis Testing",
+    "Sampling and Confidence Intervals",
+    "Conditional Probability and Bayes' Rule",
+    "Random Variables and Distributions",
+    "Correlation and Regression Basics",
+    "Statistics",
+    "Probability"
+   ]
+  },
+  {
+   "title": "Linear algebra",
+   "provider": "Khan Academy",
+   "url": "https://www.khanacademy.org/math/linear-algebra",
+   "type": "COURSE",
+   "tier": "FREE",
+   "hours": 25,
+   "levelFrom": 0,
+   "levelTo": 70,
+   "skills": [
+    "Linear Algebra",
+    "Vectors and Matrices",
+    "Eigenvalues and Matrix Decomposition"
+   ]
+  },
+  {
+   "title": "Essence of linear algebra",
+   "provider": "3Blue1Brown",
+   "url": "https://www.3blue1brown.com/topics/linear-algebra",
+   "type": "VIDEO",
+   "tier": "FREE",
+   "hours": 4,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "Linear Algebra",
+    "Vectors and Matrices",
+    "Eigenvalues and Matrix Decomposition"
+   ]
+  },
+  {
+   "title": "Neural networks (video series)",
+   "provider": "3Blue1Brown",
+   "url": "https://www.3blue1brown.com/topics/neural-networks",
+   "type": "VIDEO",
+   "tier": "FREE",
+   "hours": 2,
+   "levelFrom": 10,
+   "levelTo": 60,
+   "skills": [
+    "Neural Network Fundamentals",
+    "Backpropagation and Training",
+    "Optimization and Gradient Descent"
+   ]
+  },
+  {
+   "title": "Matplotlib tutorials",
+   "provider": "Matplotlib",
+   "url": "https://matplotlib.org/stable/tutorials/index.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 4,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "Data Visualization with Python"
+   ]
+  },
+  {
+   "title": "From Data to Viz: choose the right chart",
+   "provider": "Data to Viz",
+   "url": "https://www.data-to-viz.com/",
+   "type": "ARTICLE",
+   "tier": "FREE",
+   "hours": 2,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "Chart Selection"
+   ]
+  },
+  {
+   "title": "Machine Learning Crash Course",
+   "provider": "Google for Developers",
+   "url": "https://developers.google.com/machine-learning/crash-course",
+   "type": "COURSE",
+   "tier": "FREE",
+   "hours": 15,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "Machine Learning",
+    "Neural Network Fundamentals",
+    "Overfitting and Regularization",
+    "Classification Models",
+    "Model Evaluation and Metrics"
+   ]
+  },
+  {
+   "title": "CS50x: Introduction to Computer Science",
+   "provider": "Harvard University",
+   "url": "https://cs50.harvard.edu/x/",
+   "type": "COURSE",
+   "tier": "FREE",
+   "hours": 100,
+   "levelFrom": 0,
+   "levelTo": 70,
+   "skills": [
+    "Variables and Control Flow",
+    "Arrays and Strings",
+    "Hash Maps and Hashing",
+    "Algorithms",
+    "Data Structures"
+   ]
+  },
+  {
+   "title": "Practical Deep Learning for Coders",
+   "provider": "fast.ai",
+   "url": "https://course.fast.ai/",
+   "type": "COURSE",
+   "tier": "FREE",
+   "hours": 40,
+   "levelFrom": 30,
+   "levelTo": 85,
+   "skills": [
+    "Deep Learning",
+    "Neural Network Fundamentals",
+    "Convolutional Networks"
+   ]
+  },
+  {
+   "title": "The Linux Command Line (free book)",
+   "provider": "William Shotts",
+   "url": "https://linuxcommand.org/tlcl.php",
+   "type": "BOOK",
+   "tier": "FREE",
+   "hours": 15,
+   "levelFrom": 0,
+   "levelTo": 60,
+   "skills": [
+    "Command Line Basics",
+    "Linux"
+   ]
+  },
+  {
+   "title": "Hugging Face NLP Course",
+   "provider": "Hugging Face",
+   "url": "https://huggingface.co/learn/nlp-course",
+   "type": "COURSE",
+   "tier": "FREE",
+   "hours": 20,
+   "levelFrom": 30,
+   "levelTo": 85,
+   "skills": [
+    "Natural Language Processing",
+    "Transformers and Attention",
+    "Word and Sentence Embeddings",
+    "Text Preprocessing"
+   ]
+  },
+  {
+   "title": "Design patterns catalog",
+   "provider": "Refactoring Guru",
+   "url": "https://refactoring.guru/design-patterns",
+   "type": "ARTICLE",
+   "tier": "FREE",
+   "hours": 6,
+   "levelFrom": 30,
+   "levelTo": 80,
+   "skills": [
+    "Object-Oriented Design Patterns"
+   ]
+  },
+  {
+   "title": "Refactoring: techniques and code smells",
+   "provider": "Refactoring Guru",
+   "url": "https://refactoring.guru/refactoring",
+   "type": "ARTICLE",
+   "tier": "FREE",
+   "hours": 5,
+   "levelFrom": 30,
+   "levelTo": 80,
+   "skills": [
+    "Code Quality and Refactoring"
+   ]
+  },
+  {
+   "title": "Authentication cheat sheet",
+   "provider": "OWASP",
+   "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+   "type": "OFFICIAL",
+   "tier": "FREE",
+   "hours": 2,
+   "levelFrom": 30,
+   "levelTo": 80,
+   "skills": [
+    "Authentication and Authorization"
+   ]
+  },
+  {
+   "title": "VisuAlgo: visualising data structures and algorithms",
+   "provider": "VisuAlgo",
+   "url": "https://visualgo.net/en",
+   "type": "PRACTICE",
+   "tier": "FREE",
+   "hours": 8,
+   "levelFrom": 10,
+   "levelTo": 70,
+   "skills": [
+    "Sorting and Searching Algorithms",
+    "Data Structures",
+    "Linked List Operations",
+    "Stacks and Queues",
+    "Trees and Binary Search Trees",
+    "Heaps and Priority Queues",
+    "Graph Algorithms",
+    "Hash Maps and Hashing"
+   ]
+  }
+ ]
+}

@@ -59,7 +59,9 @@ export function nextBestAction(args: {
   if (candidates.length === 0) return { kind: "NONE", skillId: null, skillName: null, title: "You've met every target for this career", reason: "Every required skill is at or above its target level.", ref: null };
 
   const reasonFor = (top: GapRow) =>
-    top.selfDeclaredOnly
+    !top.assessed
+      ? `You haven't been assessed on ${top.skillName} yet, so we don't know where you are. The target is ${top.targetLevel}.`
+      : top.selfDeclaredOnly
       ? `You've told us you know ${top.skillName}, but nothing verifies it yet, so we count it as ${top.currentLevel}. The target is ${top.targetLevel}.`
       : `Your ${top.skillName} capability is ${top.currentLevel} and your target is ${top.targetLevel}.`;
   const has = (top: GapRow) => (s: SubjectRow) => s.facts.skillIds.includes(top.skillId);

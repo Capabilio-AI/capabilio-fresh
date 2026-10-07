@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Clock, Lock } from "lucide-react";
 import { ChallengeSolvePanel, type ChallengeDetail } from "./ChallengeSolvePanel";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
@@ -8,6 +10,8 @@ import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 export interface TrackState {
   scopeKey: string | null;
   scopeLabel: string | null;
+  /** how many of the weekly 8 could not be filled from published content */
+  shortfall?: number;
   challenges: (ChallengeDetail & { solved: boolean })[];
 }
 
@@ -25,7 +29,19 @@ const WORKSPACE_HINT: Record<string, string> = {
 };
 
 export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: TrackState; emptyHint: string; onRefresh: () => void }) {
+  const router = useRouter();
   const [openChallenge, setOpenChallenge] = useState<ChallengeDetail | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+
+  // Ticket-style challenges run in a workstation on their own page; classic code/numeric ones open in the panel below.
+  async function open(c: ChallengeDetail) {
+    if (!c.workstation_template_id) return setOpenChallenge(c);
+    setStartError(null);
+    const res = await fetch("/api/arena/challenge-attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ challengeId: c.id }) });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok) router.push(`/arena/challenges/attempt/${body.attemptId}`);
+    else setStartError(body.error ?? "Could not start this challenge.");
+  }
 
   if (!state.scopeKey) {
     return (
@@ -56,9 +72,20 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
 
       {state.challenges.length === 0 ? (
         <div className="rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
-          <p className="font-lp-body text-[13.5px] text-app-muted">No challenges available yet — try refreshing shortly.</p>
+          <p className="font-lp-body text-[13.5px] text-app-charcoal">No challenges configured yet for {state.scopeLabel}.</p>
+          <p className="mt-1 font-lp-body text-[13px] text-app-muted">New ones are added after review. Meanwhile you can try the Domain track.</p>
+          <Link href="/arena/challenges/domain" className="mt-4 inline-block font-lp-body text-[13px] font-semibold text-app-orange hover:underline">
+            Browse Domain challenges
+          </Link>
         </div>
       ) : (
+        <>
+          {startError && <p role="alert" className="mb-4 text-center font-lp-body text-[13px] text-app-rose">{startError}</p>}
+          {(state.shortfall ?? 0) > 0 && (
+            <p className="mb-4 rounded-lg border border-app-border bg-white px-4 py-2.5 text-center font-lp-body text-[12.5px] text-app-muted">
+              Only {state.challenges.length} challenge{state.challenges.length === 1 ? " is" : "s are"} published for {state.scopeLabel} so far — more are added after review.
+            </p>
+          )}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {state.challenges.map((c, i) => {
             const palette = CARD_PALETTE[i % CARD_PALETTE.length];
@@ -66,7 +93,7 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setOpenChallenge(c)}
+                onClick={() => open(c)}
                 disabled={c.solved}
                 className={`group relative flex min-h-[220px] flex-col rounded-3xl p-7 text-left transition-all duration-200 ${palette.bg} ${
                   c.solved ? "cursor-default" : "hover:-translate-y-1 hover:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.3)]"
@@ -106,6 +133,7 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
             );
           })}
         </div>
+        </>
       )}
     </div>
   );

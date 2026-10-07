@@ -1,0 +1,273 @@
+[
+  {
+    "key": "aiml-profile-a-dataset",
+    "track": "domain",
+    "title": "Profile a small housing dataset",
+    "category": "Data Preparation",
+    "difficulty": "easy",
+    "estMinutes": 15,
+    "isSeed": true,
+    "template": "python-notebook",
+    "ticketBrief": "# Ticket ML-201\nBefore modelling, profile the dataset `housing.csv` (columns `price`, `rooms`). Some cells are empty.\n\n**Deliverable:** set `mean_price` to the mean of the non-empty `price` values and `missing_rooms` to the number of rows where `rooms` is empty. Use only the Python standard library.",
+    "skills": [
+      "Python",
+      "Statistics"
+    ],
+    "careers": [
+      "ai-ml-engineer"
+    ],
+    "steps": [
+      {
+        "title": "Compute the two numbers",
+        "instruction": "Read housing.csv, ignore empty prices for the mean, and count empty rooms."
+      }
+    ],
+    "checks": [
+      {
+        "key": "mean",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Mean price",
+        "config": {
+          "expected": 200,
+          "tolerancePct": 0.5,
+          "public": {
+            "variable": "mean_price",
+            "label": "mean_price",
+            "prompt": ""
+          }
+        }
+      },
+      {
+        "key": "missing",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Rows with missing rooms",
+        "config": {
+          "expected": 1,
+          "tolerancePct": 0.1,
+          "public": {
+            "variable": "missing_rooms",
+            "label": "missing_rooms",
+            "prompt": ""
+          }
+        }
+      }
+    ],
+    "hints": [
+      {
+        "body": "csv.DictReader gives each empty cell as an empty string.",
+        "penalty": 10
+      }
+    ],
+    "provenance": {
+      "source": "Synthetic dataset written by Capabilio for this challenge",
+      "license": "Original content (no real people or businesses)",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "cells": [
+        "import csv\nrows = list(csv.DictReader(open('housing.csv')))\nprices = [float(r['price']) for r in rows if r['price'] != '']\nmean_price = sum(prices) / len(prices)\nmissing_rooms = sum(1 for r in rows if r['rooms'] == '')"
+      ]
+    },
+    "assets": {
+      "cells": [
+        "import csv\nrows = list(csv.DictReader(open('housing.csv')))\n# read the data, then set mean_price and missing_rooms\nmean_price = None\nmissing_rooms = None"
+      ],
+      "files": {
+        "housing.csv": "price,rooms\n100,2\n150,3\n,3\n200,4\n250,\n300,5\n"
+      }
+    },
+    "wrong": {
+      "cells": [
+        "mean_price = 150\nmissing_rooms = 0"
+      ]
+    }
+  },
+  {
+    "key": "aiml-fit-a-line",
+    "track": "domain",
+    "title": "Fit a straight line by least squares",
+    "category": "Machine Learning Fundamentals",
+    "difficulty": "medium",
+    "estMinutes": 20,
+    "isSeed": true,
+    "template": "python-notebook",
+    "ticketBrief": "# Ticket ML-202\n`points.csv` holds measurements (`x`, `y`). Fit the line **y = m·x + b** by ordinary least squares, **without** any library, and report the slope and intercept.\n\n**Deliverable:** set `slope` and `intercept`.",
+    "skills": [
+      "Python",
+      "Machine Learning",
+      "Statistics"
+    ],
+    "careers": [
+      "ai-ml-engineer"
+    ],
+    "steps": [
+      {
+        "title": "Compute slope and intercept",
+        "instruction": "Use the closed-form least-squares formulas: m = (nΣxy − ΣxΣy) / (nΣx² − (Σx)²) and b = (Σy − mΣx) / n."
+      }
+    ],
+    "checks": [
+      {
+        "key": "slope",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Slope",
+        "config": {
+          "expected": 1.99,
+          "tolerancePct": 1,
+          "public": {
+            "variable": "slope",
+            "label": "slope",
+            "prompt": ""
+          }
+        }
+      },
+      {
+        "key": "icpt",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Intercept",
+        "config": {
+          "expected": 1.05,
+          "tolerancePct": 2,
+          "public": {
+            "variable": "intercept",
+            "label": "intercept",
+            "prompt": ""
+          }
+        }
+      }
+    ],
+    "hints": [
+      {
+        "body": "Parse the two columns into lists of floats first, then compute the sums.",
+        "penalty": 10
+      }
+    ],
+    "provenance": {
+      "source": "Synthetic dataset written by Capabilio for this challenge",
+      "license": "Original content (no real people or businesses)",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "cells": [
+        "import csv\nrows = list(csv.DictReader(open('points.csv')))\nxs = [float(r['x']) for r in rows]\nys = [float(r['y']) for r in rows]\nn = len(xs)\nsx, sy = sum(xs), sum(ys)\nsxy = sum(a*b for a, b in zip(xs, ys))\nsxx = sum(a*a for a in xs)\nslope = (n*sxy - sx*sy) / (n*sxx - sx*sx)\nintercept = (sy - slope*sx) / n"
+      ]
+    },
+    "assets": {
+      "cells": [
+        "import csv\nrows = list(csv.DictReader(open('points.csv')))\n# compute slope and intercept\nslope = None\nintercept = None"
+      ],
+      "files": {
+        "points.csv": "x,y\n1,3.1\n2,4.9\n3,7.2\n4,8.8\n5,11.1\n"
+      }
+    },
+    "wrong": {
+      "cells": [
+        "slope = 1\nintercept = 0"
+      ]
+    }
+  },
+  {
+    "key": "aiml-evaluate-a-classifier",
+    "track": "domain",
+    "title": "Evaluate a binary classifier",
+    "category": "Model Evaluation",
+    "difficulty": "medium",
+    "estMinutes": 20,
+    "isSeed": true,
+    "template": "python-notebook",
+    "ticketBrief": "# Ticket ML-203\n`predictions.csv` holds true labels (`y_true`) and a model's predictions (`y_pred`) for ten examples (1 = positive).\n\n**Deliverable:** set `accuracy`, `precision` and `recall` as fractions between 0 and 1.",
+    "skills": [
+      "Python",
+      "Machine Learning"
+    ],
+    "careers": [
+      "ai-ml-engineer"
+    ],
+    "steps": [
+      {
+        "title": "Compute the metrics",
+        "instruction": "Count true positives, false positives and false negatives, then apply the definitions."
+      }
+    ],
+    "checks": [
+      {
+        "key": "acc",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Accuracy",
+        "config": {
+          "expected": 0.8,
+          "tolerancePct": 0.5,
+          "public": {
+            "variable": "accuracy",
+            "label": "accuracy",
+            "prompt": ""
+          }
+        }
+      },
+      {
+        "key": "prec",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Precision",
+        "config": {
+          "expected": 0.8,
+          "tolerancePct": 0.5,
+          "public": {
+            "variable": "precision",
+            "label": "precision",
+            "prompt": ""
+          }
+        }
+      },
+      {
+        "key": "rec",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Recall",
+        "config": {
+          "expected": 0.8,
+          "tolerancePct": 0.5,
+          "public": {
+            "variable": "recall",
+            "label": "recall",
+            "prompt": ""
+          }
+        }
+      }
+    ],
+    "hints": [
+      {
+        "body": "Precision = TP / (TP + FP); recall = TP / (TP + FN).",
+        "penalty": 10
+      }
+    ],
+    "provenance": {
+      "source": "Synthetic dataset written by Capabilio for this challenge",
+      "license": "Original content (no real people or businesses)",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "cells": [
+        "import csv\nrows = list(csv.DictReader(open('predictions.csv')))\npairs = [(int(r['y_true']), int(r['y_pred'])) for r in rows]\ntp = sum(1 for t, p in pairs if t == 1 and p == 1)\nfp = sum(1 for t, p in pairs if t == 0 and p == 1)\nfn = sum(1 for t, p in pairs if t == 1 and p == 0)\naccuracy = sum(1 for t, p in pairs if t == p) / len(pairs)\nprecision = tp / (tp + fp)\nrecall = tp / (tp + fn)"
+      ]
+    },
+    "assets": {
+      "cells": [
+        "import csv\nrows = list(csv.DictReader(open('predictions.csv')))\n# compute the three metrics\naccuracy = precision = recall = None"
+      ],
+      "files": {
+        "predictions.csv": "y_true,y_pred\n1,1\n0,0\n1,0\n1,1\n0,0\n1,1\n0,1\n0,0\n1,1\n0,0\n"
+      }
+    },
+    "wrong": {
+      "cells": [
+        "accuracy = 0.5\nprecision = 0.5\nrecall = 0.5"
+      ]
+    }
+  }
+]

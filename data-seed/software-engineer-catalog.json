@@ -1,0 +1,211 @@
+{
+  "learning": [
+    {
+      "title": "CS50x: Introduction to Computer Science",
+      "provider": "Harvard",
+      "url": "https://cs50.harvard.edu/x/",
+      "levelFrom": 0,
+      "levelTo": 50,
+      "estimatedHours": 100,
+      "skills": [
+        "SKILL_PROGRAMMING_FUNDAMENTALS",
+        "SKILL_PROBLEM_SOLVING"
+      ]
+    },
+    {
+      "title": "The Python Tutorial",
+      "provider": "Python Software Foundation",
+      "url": "https://docs.python.org/3/tutorial/",
+      "levelFrom": 0,
+      "levelTo": 60,
+      "estimatedHours": 20,
+      "skills": [
+        "SKILL_PYTHON",
+        "SKILL_PROGRAMMING_FUNDAMENTALS"
+      ]
+    },
+    {
+      "title": "Introduction to Algorithms (6.006)",
+      "provider": "MIT OpenCourseWare",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+      "levelFrom": 30,
+      "levelTo": 90,
+      "estimatedHours": 60,
+      "skills": [
+        "SKILL_ALGORITHMS",
+        "SKILL_DATA_STRUCTURES"
+      ]
+    },
+    {
+      "title": "Design Patterns",
+      "provider": "Refactoring Guru",
+      "url": "https://refactoring.guru/design-patterns",
+      "levelFrom": 30,
+      "levelTo": 80,
+      "estimatedHours": 15,
+      "skills": [
+        "SKILL_OOP",
+        "SKILL_SOFTWARE_ENGINEERING"
+      ]
+    },
+    {
+      "title": "Pro Git",
+      "provider": "Git SCM",
+      "url": "https://git-scm.com/book/en/v2",
+      "levelFrom": 0,
+      "levelTo": 80,
+      "estimatedHours": 12,
+      "skills": [
+        "SKILL_VERSION_CONTROL"
+      ]
+    },
+    {
+      "title": "Operating Systems: Three Easy Pieces",
+      "provider": "University of Wisconsin\u2013Madison",
+      "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/",
+      "levelFrom": 20,
+      "levelTo": 80,
+      "estimatedHours": 60,
+      "skills": [
+        "SKILL_OPERATING_SYSTEMS"
+      ]
+    },
+    {
+      "title": "Beej's Guide to Network Programming",
+      "provider": "Brian Hall",
+      "url": "https://beej.us/guide/bgnet/",
+      "levelFrom": 20,
+      "levelTo": 70,
+      "estimatedHours": 20,
+      "skills": [
+        "SKILL_COMPUTER_NETWORKS"
+      ]
+    },
+    {
+      "title": "SQLBolt: Learn SQL",
+      "provider": "SQLBolt",
+      "url": "https://sqlbolt.com/",
+      "levelFrom": 0,
+      "levelTo": 60,
+      "estimatedHours": 8,
+      "skills": [
+        "SKILL_SQL",
+        "SKILL_DBMS"
+      ]
+    },
+    {
+      "title": "Software Engineering at Google",
+      "provider": "Google / Abseil",
+      "url": "https://abseil.io/resources/swe-book",
+      "levelFrom": 30,
+      "levelTo": 80,
+      "estimatedHours": 20,
+      "skills": [
+        "SKILL_SOFTWARE_ENGINEERING",
+        "SKILL_SOFTWARE_TESTING"
+      ]
+    },
+    {
+      "title": "Responsive Web Design and JavaScript certifications",
+      "provider": "freeCodeCamp",
+      "url": "https://www.freecodecamp.org/learn",
+      "levelFrom": 0,
+      "levelTo": 70,
+      "estimatedHours": 300,
+      "skills": [
+        "SKILL_WEB_DEVELOPMENT"
+      ]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Certified Tester Foundation Level (CTFL)",
+      "provider": "ISTQB",
+      "difficulty": "BEGINNER",
+      "url": "https://www.istqb.org/certifications/certified-tester-foundation-level",
+      "skills": [
+        "SKILL_SOFTWARE_TESTING"
+      ],
+      "careers": [
+        {
+          "career": "software-engineer",
+          "relevance": "OPTIONAL"
+        }
+      ]
+    },
+    {
+      "name": "AWS Certified Cloud Practitioner",
+      "provider": "Amazon Web Services",
+      "difficulty": "BEGINNER",
+      "url": "https://aws.amazon.com/certification/certified-cloud-practitioner/",
+      "skills": [
+        "SKILL_CICD",
+        "SKILL_COMPUTER_NETWORKS"
+      ],
+      "careers": [
+        {
+          "career": "software-engineer",
+          "relevance": "OPTIONAL"
+        },
+        {
+          "career": "full-stack-developer",
+          "relevance": "OPTIONAL"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "title": "Build a REST API with tests",
+      "description": "Design and build a small REST API (for example a notes or bookings service) with a database, input validation, automated tests and a README. Push it to a public GitHub repository.",
+      "difficulty": "INTERMEDIATE",
+      "expectedEvidence": [
+        "Public repository link",
+        "Passing automated test run",
+        "API documentation"
+      ],
+      "source": "CAPABILIO",
+      "status": "ACTIVE",
+      "skills": [
+        "SKILL_API_DESIGN",
+        "SKILL_SOFTWARE_TESTING",
+        "SKILL_DBMS",
+        "SKILL_VERSION_CONTROL"
+      ]
+    },
+    {
+      "title": "Implement core data structures from scratch",
+      "description": "Implement a linked list, hash map, binary search tree and heap in a language of your choice, with unit tests and a short write-up of each one's time complexity.",
+      "difficulty": "BEGINNER",
+      "expectedEvidence": [
+        "Repository link",
+        "Unit tests",
+        "Complexity write-up"
+      ],
+      "source": "CAPABILIO",
+      "status": "ACTIVE",
+      "skills": [
+        "SKILL_DATA_STRUCTURES",
+        "SKILL_ALGORITHMS",
+        "SKILL_PROGRAMMING_FUNDAMENTALS"
+      ]
+    },
+    {
+      "title": "Full-stack app with CI",
+      "description": "Build a small web app with a front end, an API and a database, and set up a CI pipeline that runs tests on every pull request.",
+      "difficulty": "ADVANCED",
+      "expectedEvidence": [
+        "Deployed app link",
+        "CI pipeline run",
+        "Repository link"
+      ],
+      "source": "CAPABILIO",
+      "status": "ACTIVE",
+      "skills": [
+        "SKILL_WEB_DEVELOPMENT",
+        "SKILL_CICD",
+        "SKILL_SOFTWARE_ENGINEERING"
+      ]
+    }
+  ]
+}

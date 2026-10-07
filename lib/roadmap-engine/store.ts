@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import type { PreparedRoadmap } from "./prepare";
+import { FORMULA_VERSION } from "@/lib/roadmap-visual/capability";
 import { inferTrigger, type Trigger } from "./snapshot";
 
 type Service = SupabaseClient<Database>;
@@ -12,7 +13,7 @@ export function toPayload(p: PreparedRoadmap, trigger: Trigger): Record<string, 
   const blockedBy = new Map(plan.milestones.filter((m) => m.kind === "SKILL" && m.blockedBySkillId).map((m) => [m.refId, m.blockedBySkillId]));
   return {
     student_id: input.student.id, institution_id: meta.institutionId, branch_key: meta.branchKey, career_id: plan.career.id, curriculum_version_id: meta.curriculumVersionId,
-    trigger, mode: meta.mode, snapshot: p.snapshot, hash: p.hash, readiness: plan.readiness, baseline: plan.baselineRecommended, next_best_action: plan.nextBestAction,
+    trigger, mode: meta.mode, formula_version: FORMULA_VERSION, snapshot: p.snapshot, hash: p.hash, readiness: plan.readiness, baseline: plan.baselineRecommended, next_best_action: plan.nextBestAction,
     notes: {
       readinessExplanation: plan.readinessExplanation, mandatoryNote: plan.mandatoryNote, learningNotConfigured: plan.learningNotConfigured, certificationNote: plan.certificationNote,
       projectNote: plan.projectNote, arenaNote: plan.arenaNote, position: input.position, regulation: meta.regulation, semesterEstimated: meta.semesterEstimated, unmatchedCapabilities: meta.unmatchedCapabilities,
@@ -20,7 +21,7 @@ export function toPayload(p: PreparedRoadmap, trigger: Trigger): Record<string, 
     },
     goals: meta.goals.map((g) => ({ kind: g.kind, career_id: g.careerId, career_name: g.careerName, readiness: g.readiness })),
     gaps: plan.gaps.map((g, i) => ({
-      skill_id: g.skillId, skill_name: g.skillName, importance: g.importance, target_level: g.targetLevel, current_level: g.currentLevel, confidence: Number(g.confidence.toFixed(2)),
+      skill_id: g.skillId, skill_name: g.skillName, importance: g.importance, target_level: g.targetLevel, current_level: g.currentLevel, assessed: g.assessed, confidence: Number(g.confidence.toFixed(2)),
       verified: g.verified, self_declared_only: g.selfDeclaredOnly, gap: g.gap, coverage: g.coverage, gap_type: g.gapType, stage: g.stage, blocked_by_skill_id: blockedBy.get(g.skillId) ?? null, sort_order: i,
     })),
     courses: plan.subjects.map((s, i) => ({ course_id: s.courseId, title: s.title, year: s.year, semester: s.semester, tier: s.tier, stars: s.stars, score: Number(s.score.toFixed(4)), schedule: s.schedule, facts: s.facts, ai_explanation: p.explanations.get(s.courseId) ?? null, sort_order: i })),

@@ -4,7 +4,7 @@ import type { GapRow, SubjectRow } from "./types";
 
 const pos = { year: 3, semester: 1 as const, totalYears: 4 };
 const gap = (skillId: string, over: Partial<GapRow> = {}): GapRow => ({
-  skillId, skillName: skillId.toUpperCase(), importance: "HIGH", targetLevel: 80, stage: "JOB_READY", parentSkillId: null, currentLevel: 20, confidence: 0.7, verified: true, selfDeclaredOnly: false,
+  skillId, skillName: skillId.toUpperCase(), importance: "HIGH", targetLevel: 80, stage: "JOB_READY", parentSkillId: null, currentLevel: 20, assessed: true, confidence: 0.7, verified: true, selfDeclaredOnly: false,
   gap: 60, met: false, coverage: "NONE", coverageCourseIds: [], coverageOutcomeCount: 0, gapType: "NOT_COVERED", ...over,
 });
 const subject = (courseId: string, year: number, semester: number | null, schedule: SubjectRow["schedule"]): SubjectRow => ({ courseId, title: `Course ${courseId}`, year, semester, score: 1, tier: "HIGH", stars: 4, schedule, facts: { skillIds: [], skillNames: [], outcomeCount: 0, gapPoints: 0 } });

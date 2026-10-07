@@ -1,0 +1,1262 @@
+{
+  "career": "software-engineer",
+  "version": 1,
+  "title": "Software Engineer roadmap",
+  "description": "From first programs to shipping reliable software in a team.",
+  "provenance": {
+    "designedBy": "Capabilio",
+    "method": "Stages follow the order in which each skill is normally needed on the job; targets for skills the career already requires come from that career's requirement rows, and the rest are set by Capabilio to be reachable by a final-year student.",
+    "notes": "Original tree. Designed from first principles and the canonical skill taxonomy; not derived from any third-party roadmap."
+  },
+  "nodes": [
+    {
+      "key": "stage-foundations",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Programming foundations",
+      "description": "Write and debug small programs with confidence.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 10
+    },
+    {
+      "key": "stage-tooling",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Tools of the trade",
+      "description": "Work the way software teams work: version control and the command line.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 20
+    },
+    {
+      "key": "stage-structures",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Data structures",
+      "description": "Store and organise data so programs stay simple and fast.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 30
+    },
+    {
+      "key": "stage-algorithms",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Algorithms and problem solving",
+      "description": "Turn a problem into an efficient procedure.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 40
+    },
+    {
+      "key": "stage-design",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Object-oriented design and quality",
+      "description": "Model software clearly and keep it correct as it changes.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 50
+    },
+    {
+      "key": "stage-data",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Data and persistence",
+      "description": "Keep data correct, queryable and fast.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 60
+    },
+    {
+      "key": "stage-services",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Services and systems basics",
+      "description": "Build networked services and understand what runs beneath them.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "CENTER",
+      "order": 70
+    },
+    {
+      "key": "stage-delivery",
+      "parent": null,
+      "type": "SPINE",
+      "title": "System design and delivery",
+      "description": "Design for scale and ship work as part of a team.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "CENTER",
+      "order": 80
+    },
+    {
+      "key": "g-core-constructs",
+      "parent": "stage-foundations",
+      "type": "GROUP",
+      "title": "Core constructs",
+      "description": "The building blocks every program is made of.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "g-language-skill",
+      "parent": "stage-foundations",
+      "type": "GROUP",
+      "title": "Craft",
+      "description": "Habits that make code something others can use.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "g-vcs",
+      "parent": "stage-tooling",
+      "type": "GROUP",
+      "title": "Version control",
+      "description": "Track, share and combine changes.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "g-environment",
+      "parent": "stage-tooling",
+      "type": "GROUP",
+      "title": "Working environment",
+      "description": "Comfort on the command line and with the web's protocol.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 4
+    },
+    {
+      "key": "g-linear",
+      "parent": "stage-structures",
+      "type": "GROUP",
+      "title": "Linear structures",
+      "description": "Ordered collections and the cost of using them.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 5
+    },
+    {
+      "key": "g-nonlinear",
+      "parent": "stage-structures",
+      "type": "GROUP",
+      "title": "Lookup and hierarchy",
+      "description": "Fast lookup, ordering and tree-shaped data.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 6
+    },
+    {
+      "key": "g-techniques",
+      "parent": "stage-algorithms",
+      "type": "GROUP",
+      "title": "Techniques",
+      "description": "Reusable ways of solving problems.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 7
+    },
+    {
+      "key": "g-analysis",
+      "parent": "stage-algorithms",
+      "type": "GROUP",
+      "title": "Reasoning about cost",
+      "description": "Compare approaches before writing code.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 8
+    },
+    {
+      "key": "g-modelling",
+      "parent": "stage-design",
+      "type": "GROUP",
+      "title": "Modelling with objects",
+      "description": "Represent the problem domain in code.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 9
+    },
+    {
+      "key": "g-quality",
+      "parent": "stage-design",
+      "type": "GROUP",
+      "title": "Quality",
+      "description": "Make changes safe.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 10
+    },
+    {
+      "key": "g-relational",
+      "parent": "stage-data",
+      "type": "GROUP",
+      "title": "Relational data",
+      "description": "Tables, queries and guarantees.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 11
+    },
+    {
+      "key": "g-stores",
+      "parent": "stage-data",
+      "type": "GROUP",
+      "title": "Choosing a store",
+      "description": "Know what else exists.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 12
+    },
+    {
+      "key": "g-building",
+      "parent": "stage-services",
+      "type": "GROUP",
+      "title": "Building services",
+      "description": "Interfaces other programs can rely on.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 13
+    },
+    {
+      "key": "g-runtime",
+      "parent": "stage-services",
+      "type": "GROUP",
+      "title": "What runs beneath",
+      "description": "How the machine runs your code.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 14
+    },
+    {
+      "key": "g-sysdesign",
+      "parent": "stage-delivery",
+      "type": "GROUP",
+      "title": "System design",
+      "description": "Design beyond a single machine.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 15
+    },
+    {
+      "key": "g-team",
+      "parent": "stage-delivery",
+      "type": "GROUP",
+      "title": "Delivering as a team",
+      "description": "Turn needs into shipped software.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 16
+    },
+    {
+      "key": "variables-and-control-flow",
+      "parent": "g-core-constructs",
+      "type": "TOPIC",
+      "title": "Variables and Control Flow",
+      "description": "Declares and updates variables and uses conditions and loops to control what a program does. Every other topic rests on this, so it should feel automatic.",
+      "skill": "Variables and Control Flow",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "functions-and-scope",
+      "parent": "g-core-constructs",
+      "type": "TOPIC",
+      "title": "Functions and Scope",
+      "description": "Breaks code into functions with clear inputs and outputs and understands where a name is visible. Small, well-named functions are the unit of reuse in every codebase.",
+      "skill": "Functions and Scope",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "error-handling-and-debugging",
+      "parent": "g-core-constructs",
+      "type": "TOPIC",
+      "title": "Error Handling and Debugging",
+      "description": "Finds the cause of a failing program with a systematic method and handles errors without hiding them. Engineers spend much of their time finding out why code does not do what they expected.",
+      "skill": "Error Handling and Debugging",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "programming-fundamentals-in-practice",
+      "parent": "g-language-skill",
+      "type": "TOPIC",
+      "title": "Programming fundamentals in practice",
+      "description": "Writes correct, readable programs using the basic building blocks of a language. Brings the basics together: the career expects fluent, correct code.",
+      "skill": "Programming Fundamentals",
+      "importance": "CORE",
+      "target": 85,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "git-fundamentals",
+      "parent": "g-vcs",
+      "type": "TOPIC",
+      "title": "Git Fundamentals",
+      "description": "Tracks changes with commits, inspects history and undoes mistakes safely using Git. Nearly every team shares code through Git.",
+      "skill": "Git Fundamentals",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "branching-and-merging",
+      "parent": "g-vcs",
+      "type": "TOPIC",
+      "title": "Branching and Merging",
+      "description": "Works on parallel lines of development and combines them, resolving conflicts correctly. Parallel work needs branches and calm conflict resolution.",
+      "skill": "Branching and Merging",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "code-review-practice",
+      "parent": "g-vcs",
+      "type": "TOPIC",
+      "title": "Code Review Practice",
+      "description": "Gives and receives pull-request feedback that improves correctness and readability. Review is how teams catch mistakes and share knowledge.",
+      "skill": "Code Review Practice",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "version-control-in-a-team",
+      "parent": "g-vcs",
+      "type": "TOPIC",
+      "title": "Version control in a team",
+      "description": "Tracks and shares changes to code so a team can work together safely. The career expects confident everyday use of version control.",
+      "skill": "Version Control",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 4
+    },
+    {
+      "key": "command-line-basics",
+      "parent": "g-environment",
+      "type": "TOPIC",
+      "title": "Command Line Basics",
+      "description": "Navigates the file system and combines shell commands to inspect and transform files. Servers, build tools and many developer tools are driven from the shell.",
+      "skill": "Command Line Basics",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "linux",
+      "parent": "g-environment",
+      "type": "TOPIC",
+      "title": "Linux",
+      "description": "Works comfortably on a Linux system from the command line. Most production software runs on Linux.",
+      "skill": "Linux",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "http-fundamentals",
+      "parent": "g-environment",
+      "type": "TOPIC",
+      "title": "HTTP Fundamentals",
+      "description": "Understands requests, responses, methods, headers, status codes and how the web uses them. Almost every service you build or call speaks HTTP.",
+      "skill": "HTTP Fundamentals",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "arrays-and-strings",
+      "parent": "g-linear",
+      "type": "TOPIC",
+      "title": "Arrays and Strings",
+      "description": "Stores and transforms sequences of values and text, and knows the cost of common operations on them. The most common structures in everyday code and in interviews.",
+      "skill": "Arrays and Strings",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "linked-list-operations",
+      "parent": "g-linear",
+      "type": "TOPIC",
+      "title": "Linked List Operations",
+      "description": "Builds and manipulates singly and doubly linked lists, including insertion, deletion and reversal. Teaches pointer-style thinking that carries into trees and graphs.",
+      "skill": "Linked List Operations",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "stacks-and-queues",
+      "parent": "g-linear",
+      "type": "TOPIC",
+      "title": "Stacks and Queues",
+      "description": "Uses last-in-first-out and first-in-first-out structures and recognises the problems they suit. Appear in parsing, scheduling and search.",
+      "skill": "Stacks and Queues",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "hash-maps-and-hashing",
+      "parent": "g-nonlinear",
+      "type": "TOPIC",
+      "title": "Hash Maps and Hashing",
+      "description": "Uses key-value lookup in constant expected time and reasons about collisions and load. Constant-time lookup is the most used performance tool in practice.",
+      "skill": "Hash Maps and Hashing",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "trees-and-binary-search-trees",
+      "parent": "g-nonlinear",
+      "type": "TOPIC",
+      "title": "Trees and Binary Search Trees",
+      "description": "Represents hierarchical data, traverses trees and keeps ordered data in a binary search tree. Hierarchies and ordered data are everywhere, from file systems to databases.",
+      "skill": "Trees and Binary Search Trees",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "heaps-and-priority-queues",
+      "parent": "g-nonlinear",
+      "type": "TOPIC",
+      "title": "Heaps and Priority Queues",
+      "description": "Maintains the smallest or largest item efficiently and applies it to scheduling and top-k problems. Needed for scheduling, top-k and shortest-path problems.",
+      "skill": "Heaps and Priority Queues",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "data-structures-in-practice",
+      "parent": "g-nonlinear",
+      "type": "TOPIC",
+      "title": "Data structures in practice",
+      "description": "Chooses and builds the right structure for the data and the operations a program needs. The career expects you to pick the right structure without hesitation.",
+      "skill": "Data Structures",
+      "importance": "CORE",
+      "target": 80,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 4
+    },
+    {
+      "key": "sorting-and-searching-algorithms",
+      "parent": "g-techniques",
+      "type": "TOPIC",
+      "title": "Sorting and Searching Algorithms",
+      "description": "Chooses and implements common sorting and searching methods and compares their running time. The standard examples for reasoning about efficiency.",
+      "skill": "Sorting and Searching Algorithms",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "recursion-and-backtracking-patterns",
+      "parent": "g-techniques",
+      "type": "TOPIC",
+      "title": "Recursion and Backtracking Patterns",
+      "description": "Solves problems by breaking them into smaller copies of themselves and exploring choices with undo. Natural for trees, graphs and search problems.",
+      "skill": "Recursion and Backtracking Patterns",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "dynamic-programming-patterns",
+      "parent": "g-techniques",
+      "type": "TOPIC",
+      "title": "Dynamic Programming Patterns",
+      "description": "Solves overlapping-subproblem tasks by defining a state, a recurrence and an order of evaluation. A common test of problem-solving depth.",
+      "skill": "Dynamic Programming Patterns",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "greedy-algorithm-design",
+      "parent": "g-techniques",
+      "type": "TOPIC",
+      "title": "Greedy Algorithm Design",
+      "description": "Builds a solution from locally best choices and judges when that is provably enough. Useful when a locally best choice is provably enough.",
+      "skill": "Greedy Algorithm Design",
+      "importance": "OPTIONAL",
+      "target": 50,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 4
+    },
+    {
+      "key": "algorithm-analysis",
+      "parent": "g-analysis",
+      "type": "TOPIC",
+      "title": "Algorithm Analysis",
+      "description": "Estimates how running time and memory grow with input size using Big-O reasoning. Lets you reject a slow design before building it.",
+      "skill": "Algorithm Analysis",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "graph-algorithms",
+      "parent": "g-analysis",
+      "type": "TOPIC",
+      "title": "Graph Algorithms",
+      "description": "Models relationships as graphs and solves problems with traversal and shortest-path methods. Models networks, dependencies and routes.",
+      "skill": "Graph Algorithms",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "algorithms-in-practice",
+      "parent": "g-analysis",
+      "type": "TOPIC",
+      "title": "Algorithms in practice",
+      "description": "Designs step-by-step procedures that solve problems correctly and efficiently. The career expects solid algorithmic judgement.",
+      "skill": "Algorithms",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "problem-solving",
+      "parent": "g-analysis",
+      "type": "TOPIC",
+      "title": "Problem Solving",
+      "description": "Breaks an unfamiliar problem into parts, tries approaches and checks the result. Reading a vague problem and breaking it down is the core engineering skill.",
+      "skill": "Problem Solving",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 4
+    },
+    {
+      "key": "classes-and-encapsulation",
+      "parent": "g-modelling",
+      "type": "TOPIC",
+      "title": "Classes and Encapsulation",
+      "description": "Models things as classes, hides internal state and exposes a small, clear interface. The basis of structuring larger programs.",
+      "skill": "Classes and Encapsulation",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "inheritance-and-polymorphism",
+      "parent": "g-modelling",
+      "type": "TOPIC",
+      "title": "Inheritance and Polymorphism",
+      "description": "Reuses behaviour through inheritance and composition and writes code that works on many types. Lets you extend behaviour without rewriting code.",
+      "skill": "Inheritance and Polymorphism",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "object-oriented-design-patterns",
+      "parent": "g-modelling",
+      "type": "TOPIC",
+      "title": "Object-Oriented Design Patterns",
+      "description": "Recognises and applies common object-oriented solutions such as factory, observer and strategy. A shared vocabulary for common designs.",
+      "skill": "Object-Oriented Design Patterns",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "object-oriented-programming-in-practice",
+      "parent": "g-modelling",
+      "type": "TOPIC",
+      "title": "Object-oriented programming in practice",
+      "description": "Organises programs around objects that combine data and behaviour. The career expects you to design with objects confidently.",
+      "skill": "Object-Oriented Programming",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 4
+    },
+    {
+      "key": "code-quality-and-refactoring",
+      "parent": "g-quality",
+      "type": "TOPIC",
+      "title": "Code Quality and Refactoring",
+      "description": "Improves the structure of working code without changing behaviour, guided by readability and tests. Maintainable code is what lets a team keep moving.",
+      "skill": "Code Quality and Refactoring",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "unit-testing-practice",
+      "parent": "g-quality",
+      "type": "TOPIC",
+      "title": "Unit Testing Practice",
+      "description": "Writes small automated tests for one behaviour at a time, with clear arrange-act-assert structure. Fast tests make every later change safer.",
+      "skill": "Unit Testing Practice",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "test-driven-development",
+      "parent": "g-quality",
+      "type": "TOPIC",
+      "title": "Test-Driven Development",
+      "description": "Drives a design by writing a failing test first, making it pass, then cleaning up. Builds the testing habit and sharpens design.",
+      "skill": "Test-Driven Development",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "software-testing-in-practice",
+      "parent": "g-quality",
+      "type": "TOPIC",
+      "title": "Software testing in practice",
+      "description": "Checks that software does what it should, and keeps checking as it changes. Brings unit, integration and system testing together.",
+      "skill": "Software Testing",
+      "importance": "CORE",
+      "target": 55,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 4
+    },
+    {
+      "key": "sql-query-basics",
+      "parent": "g-relational",
+      "type": "TOPIC",
+      "title": "SQL Query Basics",
+      "description": "Retrieves and filters rows with SELECT, WHERE, ORDER BY and LIMIT. Most applications store their data in a relational database.",
+      "skill": "SQL Query Basics",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "sql-joins",
+      "parent": "g-relational",
+      "type": "TOPIC",
+      "title": "SQL Joins",
+      "description": "Combines tables with inner and outer joins and reasons about row counts after a join. Real data lives in several tables.",
+      "skill": "SQL Joins",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "relational-database-design",
+      "parent": "g-relational",
+      "type": "TOPIC",
+      "title": "Relational Database Design",
+      "description": "Models data in related tables with keys and constraints that keep it consistent. A good schema prevents whole classes of bugs.",
+      "skill": "Relational Database Design",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "indexing-and-query-performance",
+      "parent": "g-relational",
+      "type": "TOPIC",
+      "title": "Indexing and Query Performance",
+      "description": "Speeds up queries with indexes and reads query plans to find what is slow. Slow queries are a common production problem.",
+      "skill": "Indexing and Query Performance",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 4
+    },
+    {
+      "key": "transactions-and-acid",
+      "parent": "g-relational",
+      "type": "TOPIC",
+      "title": "Transactions and ACID",
+      "description": "Keeps data correct under concurrent change using transactions, isolation levels and constraints. Keeps data correct when many things happen at once.",
+      "skill": "Transactions and ACID",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 5
+    },
+    {
+      "key": "database-systems-in-practice",
+      "parent": "g-relational",
+      "type": "TOPIC",
+      "title": "Database systems in practice",
+      "description": "Explains how database systems store, query and protect data. The career expects you to understand what the database does for you.",
+      "skill": "Database Management Systems",
+      "importance": "CORE",
+      "target": 55,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 6
+    },
+    {
+      "key": "nosql-databases",
+      "parent": "g-stores",
+      "type": "TOPIC",
+      "title": "NoSQL Databases",
+      "description": "Uses non-relational stores such as documents and key-value databases and knows when they fit. Know when a document or key-value store fits better.",
+      "skill": "NoSQL Databases",
+      "importance": "OPTIONAL",
+      "target": 45,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "rest-api-design",
+      "parent": "g-building",
+      "type": "TOPIC",
+      "title": "REST API Design",
+      "description": "Designs resource-oriented HTTP interfaces with consistent naming, status codes, errors and versioning. Clean interfaces let teams build independently.",
+      "skill": "REST API Design",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "authentication-and-authorization",
+      "parent": "g-building",
+      "type": "TOPIC",
+      "title": "Authentication and Authorization",
+      "description": "Separates who a user is from what they may do, and protects endpoints with sessions or tokens. Getting access control wrong is a serious failure.",
+      "skill": "Authentication and Authorization",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "integration-testing",
+      "parent": "g-building",
+      "type": "TOPIC",
+      "title": "Integration Testing",
+      "description": "Tests how components work together, including databases and external services, with controlled test data. Checks that parts work together, not only alone.",
+      "skill": "Integration Testing",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "computer-networks",
+      "parent": "g-building",
+      "type": "TOPIC",
+      "title": "Computer Networks",
+      "description": "Explains how machines communicate across a network and what can go wrong. Explains latency, failures and why requests time out.",
+      "skill": "Computer Networks",
+      "importance": "RECOMMENDED",
+      "target": 45,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 4
+    },
+    {
+      "key": "processes-and-threads",
+      "parent": "g-runtime",
+      "type": "TOPIC",
+      "title": "Processes and Threads",
+      "description": "Explains how programs run as processes and threads and how the operating system schedules them. Explains how your program shares the machine.",
+      "skill": "Processes and Threads",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "concurrency-basics",
+      "parent": "g-runtime",
+      "type": "TOPIC",
+      "title": "Concurrency Basics",
+      "description": "Writes code that shares data safely between threads using locks and avoids races and deadlocks. Concurrent code is easy to get subtly wrong.",
+      "skill": "Concurrency Basics",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "operating-systems-in-practice",
+      "parent": "g-runtime",
+      "type": "TOPIC",
+      "title": "Operating systems in practice",
+      "description": "Explains how an operating system manages processes, memory and files. Knowing what the OS does makes performance and bugs less mysterious.",
+      "skill": "Operating Systems",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "scalability-basics",
+      "parent": "g-sysdesign",
+      "type": "TOPIC",
+      "title": "Scalability Basics",
+      "description": "Reasons about load, bottlenecks and the trade-offs of scaling a service up or out. Understanding bottlenecks comes before adding servers.",
+      "skill": "Scalability Basics",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "caching-strategies",
+      "parent": "g-sysdesign",
+      "type": "TOPIC",
+      "title": "Caching Strategies",
+      "description": "Decides what to cache and where, and handles staleness and invalidation. One of the most effective and most error-prone performance tools.",
+      "skill": "Caching Strategies",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "system-design-in-practice",
+      "parent": "g-sysdesign",
+      "type": "TOPIC",
+      "title": "System design in practice",
+      "description": "Designs the parts of a larger system and how they fit and scale together. Expected for mid-level roles and increasingly for entry interviews.",
+      "skill": "System Design",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "requirements-and-user-stories",
+      "parent": "g-team",
+      "type": "TOPIC",
+      "title": "Requirements and User Stories",
+      "description": "Turns a need into clear, testable requirements and acceptance criteria. Building the right thing starts with understanding the need.",
+      "skill": "Requirements and User Stories",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "agile-delivery",
+      "parent": "g-team",
+      "type": "TOPIC",
+      "title": "Agile Delivery",
+      "description": "Plans and ships work in short iterations, uses feedback and keeps a working product at each step. Most teams ship in short iterations.",
+      "skill": "Agile Delivery",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "ci-cd",
+      "parent": "g-team",
+      "type": "TOPIC",
+      "title": "CI/CD",
+      "description": "Automates building, testing and releasing software. Automated build and test pipelines are standard practice.",
+      "skill": "CI/CD",
+      "importance": "RECOMMENDED",
+      "target": 50,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "software-engineering-in-a-team",
+      "parent": "g-team",
+      "type": "TOPIC",
+      "title": "Software engineering in a team",
+      "description": "Builds software as a team: planning, design, quality and delivery. The career expects you to work effectively on a team codebase.",
+      "skill": "Software Engineering",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 4
+    }
+  ],
+  "edges": [
+    {
+      "from": "variables-and-control-flow",
+      "to": "functions-and-scope",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "functions-and-scope",
+      "to": "error-handling-and-debugging",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "error-handling-and-debugging",
+      "to": "programming-fundamentals-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "git-fundamentals",
+      "to": "branching-and-merging",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "branching-and-merging",
+      "to": "code-review-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "code-review-practice",
+      "to": "version-control-in-a-team",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "programming-fundamentals-in-practice",
+      "to": "arrays-and-strings",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "arrays-and-strings",
+      "to": "linked-list-operations",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "arrays-and-strings",
+      "to": "stacks-and-queues",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "arrays-and-strings",
+      "to": "hash-maps-and-hashing",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "hash-maps-and-hashing",
+      "to": "trees-and-binary-search-trees",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "trees-and-binary-search-trees",
+      "to": "heaps-and-priority-queues",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "linked-list-operations",
+      "to": "data-structures-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "trees-and-binary-search-trees",
+      "to": "data-structures-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "arrays-and-strings",
+      "to": "sorting-and-searching-algorithms",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sorting-and-searching-algorithms",
+      "to": "recursion-and-backtracking-patterns",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "recursion-and-backtracking-patterns",
+      "to": "dynamic-programming-patterns",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sorting-and-searching-algorithms",
+      "to": "algorithm-analysis",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "trees-and-binary-search-trees",
+      "to": "graph-algorithms",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "algorithm-analysis",
+      "to": "algorithms-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "classes-and-encapsulation",
+      "to": "inheritance-and-polymorphism",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "inheritance-and-polymorphism",
+      "to": "object-oriented-design-patterns",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "classes-and-encapsulation",
+      "to": "object-oriented-programming-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "unit-testing-practice",
+      "to": "test-driven-development",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "unit-testing-practice",
+      "to": "software-testing-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "code-quality-and-refactoring",
+      "to": "software-testing-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-query-basics",
+      "to": "sql-joins",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-joins",
+      "to": "indexing-and-query-performance",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-joins",
+      "to": "transactions-and-acid",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-joins",
+      "to": "relational-database-design",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "relational-database-design",
+      "to": "database-systems-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "database-systems-in-practice",
+      "to": "nosql-databases",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "http-fundamentals",
+      "to": "rest-api-design",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "rest-api-design",
+      "to": "authentication-and-authorization",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "unit-testing-practice",
+      "to": "integration-testing",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "processes-and-threads",
+      "to": "concurrency-basics",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "processes-and-threads",
+      "to": "operating-systems-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "scalability-basics",
+      "to": "caching-strategies",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "caching-strategies",
+      "to": "system-design-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "rest-api-design",
+      "to": "scalability-basics",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "requirements-and-user-stories",
+      "to": "agile-delivery",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "git-fundamentals",
+      "to": "ci-cd",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "unit-testing-practice",
+      "to": "ci-cd",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "agile-delivery",
+      "to": "software-engineering-in-a-team",
+      "type": "PREREQUISITE"
+    }
+  ]
+}

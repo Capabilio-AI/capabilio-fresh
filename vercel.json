@@ -1,3 +1,12 @@
 {
-  "crons": [{ "path": "/api/cron/roll-number-cleanup", "schedule": "0 3 * * *" }]
+  "crons": [
+    {
+      "path": "/api/cron/roll-number-cleanup",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/curriculum-enrich",
+      "schedule": "0 4 * * *"
+    }
+  ]
 }

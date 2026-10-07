@@ -3,7 +3,7 @@ import { generateRoadmap, nextBestAction } from "./generate";
 import type { CareerRequirement, EngineInput, StudentSkillInput } from "./types";
 
 const req = (skillId: string, importance: CareerRequirement["importance"], targetLevel: number, stage: CareerRequirement["stage"] = "JOB_READY", parentSkillId: string | null = null): CareerRequirement => ({ skillId, skillName: skillId.toUpperCase(), importance, targetLevel, stage, parentSkillId });
-const v = (level: number): StudentSkillInput => ({ level, confidence: 0.7, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
+const v = (level: number): StudentSkillInput => ({ level, assessed: true, confidence: 0.7, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
 const base = (over: Partial<EngineInput> = {}): EngineInput => ({
   career: { id: "da", name: "Data Analyst" },
   requirements: [req("sql", "CRITICAL", 75, "FOUNDATION"), req("stats", "HIGH", 70, "FOUNDATION"), req("viz", "MEDIUM", 60)],
@@ -79,7 +79,7 @@ describe("generateRoadmap: the whole plan", () => {
     expect(p.milestones.every((m) => m.kind !== "SKILL" || m.status === "COMPLETED")).toBe(true);
   });
   it("a self-declared skill is counted for less and called out in the action", () => {
-    const claimed: StudentSkillInput = { level: 40, confidence: 0, verified: false, verifiedLevel: null, selfDeclaredLevel: 40 };
+    const claimed: StudentSkillInput = { level: 40, assessed: true, confidence: 0, verified: false, verifiedLevel: null, selfDeclaredLevel: 40 };
     const p = generateRoadmap(base({ capability: { sql: claimed, stats: v(65) } }));
     expect(p.gaps.find((g) => g.skillId === "sql")).toMatchObject({ selfDeclaredOnly: true, currentLevel: 20 });
     expect(p.nextBestAction.reason).toMatch(/nothing verifies it yet/);

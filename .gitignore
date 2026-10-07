@@ -45,3 +45,4 @@ next-env.d.ts
 .collaborator
 data/
 .claude/scheduled_tasks.lock
+.env*.local

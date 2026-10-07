@@ -1,0 +1,292 @@
+[
+  {
+    "key": "frontend-accessible-signup-form",
+    "track": "domain",
+    "title": "Make the sign-up form accessible",
+    "category": "Accessibility",
+    "difficulty": "easy",
+    "estMinutes": 15,
+    "isSeed": true,
+    "template": "frontend-editor",
+    "ticketBrief": "# Ticket FE-101\nQA reports that screen-reader users cannot tell what the two sign-up fields are for: the form uses placeholders instead of labels, and the inputs have the wrong types.\n\n**Acceptance criteria**\n- Each field has a visible `<label>` linked with `for`/`id`.\n- The email field uses `type=\"email\"`; the password field uses `type=\"password\"`.\n- The button is explicitly `type=\"submit\"`.",
+    "skills": [
+      "Web Development",
+      "JavaScript"
+    ],
+    "careers": [
+      "full-stack-developer"
+    ],
+    "steps": [
+      {
+        "title": "Fix the form",
+        "instruction": "Edit index.html so the form meets the acceptance criteria."
+      }
+    ],
+    "checks": [
+      {
+        "key": "label_email",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Email field has a linked label",
+        "config": {
+          "path": "index.html",
+          "contains": [
+            "<label for=\"email\">",
+            "id=\"email\""
+          ]
+        }
+      },
+      {
+        "key": "label_password",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Password field has a linked label",
+        "config": {
+          "path": "index.html",
+          "contains": [
+            "<label for=\"password\">",
+            "id=\"password\""
+          ]
+        }
+      },
+      {
+        "key": "types",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Fields use the right input types",
+        "config": {
+          "path": "index.html",
+          "contains": [
+            "type=\"email\"",
+            "type=\"password\""
+          ]
+        }
+      },
+      {
+        "key": "submit",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Button is a submit button",
+        "config": {
+          "path": "index.html",
+          "contains": [
+            "<button type=\"submit\">"
+          ]
+        }
+      }
+    ],
+    "hints": [
+      {
+        "body": "A label is linked to an input when its for attribute equals the input's id.",
+        "penalty": 10
+      }
+    ],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Sign up</title></head>\n<body>\n  <form action=\"/signup\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" autocomplete=\"email\" required>\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" autocomplete=\"new-password\" required>\n    <button type=\"submit\">Sign up</button>\n  </form>\n</body>\n</html>\n"
+      }
+    },
+    "assets": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Sign up</title></head>\n<body>\n  <form action=\"/signup\" method=\"post\">\n    <input type=\"text\" placeholder=\"Email\">\n    <input type=\"text\" placeholder=\"Password\">\n    <button>Sign up</button>\n  </form>\n</body>\n</html>\n"
+      }
+    },
+    "wrong": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Sign up</title></head>\n<body>\n  <form action=\"/signup\" method=\"post\">\n    <input type=\"text\" placeholder=\"Email\">\n    <input type=\"text\" placeholder=\"Password\">\n    <button>Sign up</button>\n  </form>\n</body>\n</html>\n"
+      }
+    }
+  },
+  {
+    "key": "frontend-semantic-page-structure",
+    "track": "domain",
+    "title": "Give the shop page a semantic structure",
+    "category": "HTML",
+    "difficulty": "easy",
+    "estMinutes": 15,
+    "isSeed": true,
+    "template": "frontend-editor",
+    "ticketBrief": "# Ticket FE-102\nThe landing page is built entirely from `<div>`s, which makes it hard for assistive technology and search engines to understand.\n\n**Acceptance criteria**\n- Use `<header>`, `<nav>`, `<main>` and `<footer>` landmarks.\n- The page title \"Welcome\" is the page's `<h1>`.\n- Remove the old generic wrappers (`class=\"header\"`, `id=\"content\"`, `class=\"footer\"`).",
+    "skills": [
+      "Web Development"
+    ],
+    "careers": [
+      "full-stack-developer"
+    ],
+    "steps": [
+      {
+        "title": "Restructure the page",
+        "instruction": "Edit index.html to meet the acceptance criteria."
+      }
+    ],
+    "checks": [
+      {
+        "key": "landmarks",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Page uses header, nav, main and footer",
+        "config": {
+          "path": "index.html",
+          "contains": [
+            "<header>",
+            "<nav>",
+            "<main>",
+            "<footer>"
+          ]
+        }
+      },
+      {
+        "key": "h1",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Title is an h1",
+        "config": {
+          "path": "index.html",
+          "contains": [
+            "<h1>Welcome</h1>"
+          ]
+        }
+      },
+      {
+        "key": "old",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Generic wrappers are gone",
+        "config": {
+          "path": "index.html",
+          "notContains": [
+            "class=\"header\"",
+            "id=\"content\"",
+            "class=\"footer\""
+          ]
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Shop</title></head>\n<body>\n  <header><p>Shop</p>\n    <nav><a href=\"/\">Home</a> <a href=\"/cart\">Cart</a></nav>\n  </header>\n  <main><h1>Welcome</h1><p>Fresh arrivals every week.</p></main>\n  <footer>&copy; Shop</footer>\n</body>\n</html>\n"
+      }
+    },
+    "assets": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Shop</title></head>\n<body>\n  <div class=\"header\"><div class=\"logo\">Shop</div><div class=\"menu\"><a href=\"/\">Home</a> <a href=\"/cart\">Cart</a></div></div>\n  <div id=\"content\"><div class=\"title\">Welcome</div><p>Fresh arrivals every week.</p></div>\n  <div class=\"footer\">&copy; Shop</div>\n</body>\n</html>\n"
+      }
+    },
+    "wrong": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Shop</title></head>\n<body>\n  <div class=\"header\"><div class=\"logo\">Shop</div><div class=\"menu\"><a href=\"/\">Home</a> <a href=\"/cart\">Cart</a></div></div>\n  <div id=\"content\"><div class=\"title\">Welcome</div><p>Fresh arrivals every week.</p></div>\n  <div class=\"footer\">&copy; Shop</div>\n</body>\n</html>\n"
+      }
+    }
+  },
+  {
+    "key": "frontend-product-card-live-checks",
+    "track": "domain",
+    "title": "Build a product card (practice, checked in your browser)",
+    "category": "HTML",
+    "difficulty": "easy",
+    "estMinutes": 15,
+    "isSeed": true,
+    "template": "frontend-editor",
+    "ticketBrief": "# Ticket FE-103\nBuild a product card inside the page.\n\n**Acceptance criteria**\n- A `.card` container.\n- An image with an `alt` attribute.\n- A heading (`h2`) with the product name.\n- An *Add to cart* button.\n\n_These checks run in your browser, so a pass counts as completed practice but earns no ELO or skill evidence._",
+    "skills": [
+      "Web Development"
+    ],
+    "careers": [
+      "full-stack-developer"
+    ],
+    "steps": [
+      {
+        "title": "Build the card",
+        "instruction": "Edit index.html; the preview shows your card and the checks update live."
+      }
+    ],
+    "checks": [
+      {
+        "key": "card",
+        "step": 1,
+        "type": "DOM_ASSERTION",
+        "label": "A .card container exists",
+        "config": {
+          "public": {
+            "assert": {
+              "selector": ".card"
+            }
+          }
+        }
+      },
+      {
+        "key": "img",
+        "step": 1,
+        "type": "DOM_ASSERTION",
+        "label": "The card image has alt text",
+        "config": {
+          "public": {
+            "assert": {
+              "selector": ".card img[alt]"
+            }
+          }
+        }
+      },
+      {
+        "key": "h2",
+        "step": 1,
+        "type": "DOM_ASSERTION",
+        "label": "The card has an h2 heading",
+        "config": {
+          "public": {
+            "assert": {
+              "selector": ".card h2"
+            }
+          }
+        }
+      },
+      {
+        "key": "btn",
+        "step": 1,
+        "type": "DOM_ASSERTION",
+        "label": "The card has an Add to cart button",
+        "config": {
+          "public": {
+            "assert": {
+              "selector": ".card button",
+              "textIncludes": "Add to cart"
+            }
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Card</title>\n<style>.card{border:1px solid #ccc;padding:12px;width:220px}</style></head>\n<body>\n  <div class=\"card\">\n    <img src=\"data:image/gif;base64,R0lGODlhAQABAAAAACw=\" alt=\"Blue running shoe\">\n    <h2>Trail Runner</h2>\n    <button>Add to cart</button>\n  </div>\n</body>\n</html>\n"
+      },
+      "reported": {
+        "card": true,
+        "img": true,
+        "h2": true,
+        "btn": true
+      }
+    },
+    "assets": {
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><title>Card</title>\n<style>.card{border:1px solid #ccc;padding:12px;width:220px}</style></head>\n<body>\n  <!-- build the product card here -->\n</body>\n</html>\n"
+      }
+    }
+  }
+]

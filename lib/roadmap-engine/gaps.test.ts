@@ -5,15 +5,15 @@ import type { CareerRequirement, CourseInput, EngineInput, StudentSkillInput } f
 const req = (skillId: string, importance: CareerRequirement["importance"], targetLevel: number, stage: CareerRequirement["stage"] = "JOB_READY"): CareerRequirement => ({ skillId, skillName: skillId.toUpperCase(), importance, targetLevel, stage, parentSkillId: null });
 const course = (id: string, skills: CourseInput["skills"]): CourseInput => ({ id, title: id, year: 2, semester: 1, skills, prerequisiteCourseIds: [] });
 const cs = (skillId: string, importance: "CORE" | "SUPPORTING" | "MINOR" | null = "SUPPORTING", outcomeCount = 0) => ({ skillId, importance, outcomeCount });
-const verified = (level: number, confidence = 0.7): StudentSkillInput => ({ level, confidence, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
-const claimed = (selfLevel: number): StudentSkillInput => ({ level: Math.min(40, selfLevel), confidence: 0, verified: false, verifiedLevel: null, selfDeclaredLevel: Math.min(40, selfLevel) });
+const verified = (level: number, confidence = 0.7): StudentSkillInput => ({ level, assessed: true, confidence, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
+const claimed = (selfLevel: number): StudentSkillInput => ({ level: Math.min(40, selfLevel), assessed: true, confidence: 0, verified: false, verifiedLevel: null, selfDeclaredLevel: Math.min(40, selfLevel) });
 const empty = { learning: [], certifications: [], projects: [], arena: [] };
 
 describe("effectiveLevel", () => {
   it("is the verified level; a self-declared claim counts for half and never beats verified", () => {
     expect(effectiveLevel(verified(70))).toBe(70);
     expect(effectiveLevel(claimed(80))).toBe(20); // capped at 40, then halved
-    expect(effectiveLevel({ level: 30, confidence: 0.5, verified: true, verifiedLevel: 30, selfDeclaredLevel: 40 })).toBe(30);
+    expect(effectiveLevel({ level: 30, assessed: true, confidence: 0.5, verified: true, verifiedLevel: 30, selfDeclaredLevel: 40 })).toBe(30);
     expect(effectiveLevel(undefined)).toBe(0);
   });
 });

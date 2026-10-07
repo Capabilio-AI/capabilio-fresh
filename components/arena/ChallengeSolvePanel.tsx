@@ -19,6 +19,8 @@ export interface ChallengeDetail {
   answer_unit: string | null;
   skill_tags: string[];
   solved?: boolean;
+  /** set for ticket-style challenges that run in a workstation (opened on their own page) */
+  workstation_template_id?: string | null;
 }
 
 export const DIFFICULTY_CLASS: Record<string, string> = {

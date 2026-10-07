@@ -7,7 +7,7 @@ import { resolveCandidates } from "./enrich";
 import { pool } from "./pool";
 
 type Service = SupabaseClient<Database>;
-type Suggest = (courses: CourseForSkills[], catalog: { name: string; category: string }[]) => Promise<SkillCandidates["results"]>;
+export type Suggest = (courses: CourseForSkills[], catalog: { name: string; category: string }[]) => Promise<SkillCandidates["results"]>;
 
 const BATCH = 4;
 const CONCURRENCY = 2;

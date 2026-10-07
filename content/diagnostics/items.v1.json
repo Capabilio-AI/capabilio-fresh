@@ -1,0 +1,662 @@
+{
+ "provenance": {
+  "author": "Capabilio",
+  "note": "Original questions written for Capabilio's baseline check. Not copied from any course, book, exam or question bank.",
+  "version": 1
+ },
+ "items": [
+  {
+   "kind": "NUMERIC",
+   "skill": "Variables and Control Flow",
+   "difficulty": "easy",
+   "prompt": "total = 0. Repeat for i = 1, 2, 3, 4: if i is even, add i to total. What is total at the end?",
+   "value": 6,
+   "tolerance": 0,
+   "explanation": "Only 2 and 4 are even, and 2 + 4 = 6.",
+   "seconds": 60
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Variables and Control Flow",
+   "difficulty": "medium",
+   "prompt": "n = 10 and count = 0. While n > 1: set n to n divided by 2 (integer division, rounding down) and add 1 to count. What is count when the loop ends?",
+   "value": 3,
+   "tolerance": 0,
+   "explanation": "n goes 10 → 5 → 2 → 1, which takes 3 steps.",
+   "seconds": 60
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Variables and Control Flow",
+   "difficulty": "hard",
+   "prompt": "for i = 0 to 4: for j = i to 4: run the body once. How many times does the body run in total?",
+   "value": 15,
+   "tolerance": 0,
+   "explanation": "The inner loop runs 5, 4, 3, 2, 1 times: 15 in total.",
+   "seconds": 90
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Arrays and Strings",
+   "difficulty": "easy",
+   "prompt": "A zero-indexed array is [4, 8, 15, 16, 23, 42]. What is the element at index 3?",
+   "options": [
+    "15",
+    "16",
+    "23",
+    "8"
+   ],
+   "correct": 1,
+   "explanation": "Index 0 is 4, index 1 is 8, index 2 is 15 and index 3 is 16.",
+   "seconds": 45
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Arrays and Strings",
+   "difficulty": "medium",
+   "prompt": "You reverse a string of length 7 in place by swapping characters from both ends towards the middle. How many swaps are needed?",
+   "value": 3,
+   "tolerance": 0,
+   "explanation": "Pairs are (0,6), (1,5), (2,4); the middle character stays. That is 3 swaps.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Arrays and Strings",
+   "difficulty": "hard",
+   "prompt": "You must check whether a string has all distinct characters, scanning it once. Which approach does this in time proportional to the string's length (for a fixed alphabet)?",
+   "options": [
+    "Compare every pair of characters with two nested loops",
+    "Sort the string, then compare neighbours",
+    "Keep a set of characters seen so far and stop at the first repeat",
+    "Split the string in half recursively and compare the halves"
+   ],
+   "correct": 2,
+   "explanation": "A set gives constant-time checks per character, so one pass is enough. Nested loops are quadratic and sorting is n log n.",
+   "seconds": 75
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Hash Maps and Hashing",
+   "difficulty": "easy",
+   "prompt": "What is the average time to look up a key in a well-designed hash map?",
+   "options": [
+    "Constant time, O(1)",
+    "Logarithmic time, O(log n)",
+    "Linear time, O(n)",
+    "Quadratic time, O(n²)"
+   ],
+   "correct": 0,
+   "explanation": "A good hash function spreads keys across buckets, so a lookup goes straight to its bucket.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Hash Maps and Hashing",
+   "difficulty": "medium",
+   "prompt": "Two different keys are mapped to the same bucket. What is this called?",
+   "options": [
+    "A rehash",
+    "A collision",
+    "An overflow",
+    "A mutation"
+   ],
+   "correct": 1,
+   "explanation": "Different keys that land in the same bucket collide; maps handle this with chaining or probing.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Hash Maps and Hashing",
+   "difficulty": "hard",
+   "prompt": "Why must two keys that are equal always produce the same hash code?",
+   "options": [
+    "So the map uses less memory",
+    "So sorting keys is faster",
+    "So a lookup goes to the same bucket the key was stored in; otherwise it can miss an entry that exists",
+    "So the map never needs resizing"
+   ],
+   "correct": 2,
+   "explanation": "Lookup first finds the bucket from the hash. If equal keys hash differently, the entry sits in a different bucket and is not found.",
+   "seconds": 75
+  },
+  {
+   "kind": "MCQ",
+   "skill": "SQL Joins",
+   "difficulty": "easy",
+   "prompt": "In SQL, what does an INNER JOIN between two tables return?",
+   "options": [
+    "All rows of both tables",
+    "Only rows that have a match in both tables",
+    "All rows of the first table, matched or not",
+    "Rows that have no match"
+   ],
+   "correct": 1,
+   "explanation": "INNER JOIN keeps only the row pairs where the join condition is true.",
+   "seconds": 45
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "SQL Joins",
+   "difficulty": "medium",
+   "prompt": "Table A has ids 1, 2, 3. Table B has a_id values 2, 3, 3, 4. How many rows does A INNER JOIN B ON A.id = B.a_id return?",
+   "value": 3,
+   "tolerance": 0,
+   "explanation": "id 2 matches once and id 3 matches twice: 3 rows. id 1 and a_id 4 have no partner.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "SQL Joins",
+   "difficulty": "hard",
+   "prompt": "Which query finds customers who have never placed an order (tables customers and orders, orders.customer_id refers to customers.id)?",
+   "options": [
+    "SELECT c.* FROM customers c INNER JOIN orders o ON o.customer_id = c.id",
+    "SELECT c.* FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL",
+    "SELECT c.* FROM customers c RIGHT JOIN orders o ON o.customer_id = c.id",
+    "SELECT c.* FROM customers c CROSS JOIN orders o WHERE o.id IS NULL"
+   ],
+   "correct": 1,
+   "explanation": "A LEFT JOIN keeps every customer; customers with no order get NULLs on the orders side, which the WHERE clause selects.",
+   "seconds": 90
+  },
+  {
+   "kind": "MCQ",
+   "skill": "HTTP Fundamentals",
+   "difficulty": "easy",
+   "prompt": "Which HTTP status code means the requested resource was not found?",
+   "options": [
+    "200",
+    "301",
+    "404",
+    "500"
+   ],
+   "correct": 2,
+   "explanation": "404 Not Found.",
+   "seconds": 45
+  },
+  {
+   "kind": "MULTI_SELECT",
+   "skill": "HTTP Fundamentals",
+   "difficulty": "medium",
+   "prompt": "Which of these HTTP methods are idempotent by definition (repeating the same request has the same effect as sending it once)?",
+   "options": [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
+   "correct": [
+    0,
+    2,
+    3
+   ],
+   "explanation": "GET, PUT and DELETE are idempotent. POST usually creates something new each time.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "HTTP Fundamentals",
+   "difficulty": "hard",
+   "prompt": "A response carries the header Cache-Control: no-store. What does it mean?",
+   "options": [
+    "Caches may keep it but must revalidate every time",
+    "Only the browser may cache it, for one hour",
+    "No cache may store any part of the response",
+    "The response may be cached for ever"
+   ],
+   "correct": 2,
+   "explanation": "no-store forbids storing the response at all. no-cache is the one that allows storing but requires revalidation.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Git Fundamentals",
+   "difficulty": "easy",
+   "prompt": "Which command shows changes in your working files that have not been staged yet?",
+   "options": [
+    "git log",
+    "git diff",
+    "git push",
+    "git clone"
+   ],
+   "correct": 1,
+   "explanation": "git diff compares the working tree with the index (staged snapshot).",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Git Fundamentals",
+   "difficulty": "medium",
+   "prompt": "You run git add on a file, then edit that file again, then run git commit. Which version of the file is committed?",
+   "options": [
+    "The version at the time of git add",
+    "The latest edited version",
+    "Both versions",
+    "Neither; the commit fails"
+   ],
+   "correct": 0,
+   "explanation": "A commit records what is staged. The later edit stays as an unstaged change.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Git Fundamentals",
+   "difficulty": "hard",
+   "prompt": "A bad commit is already pushed to a shared branch. Which is the safe way to undo its effect?",
+   "options": [
+    "git reset --hard to the older commit and force-push",
+    "git revert the commit, which adds a new commit that undoes it",
+    "Delete the .git folder and clone again",
+    "git rebase the shared branch onto itself"
+   ],
+   "correct": 1,
+   "explanation": "revert adds a new commit and keeps shared history intact. Rewriting shared history with reset and force-push breaks other people's copies.",
+   "seconds": 75
+  },
+  {
+   "kind": "MCQ",
+   "skill": "SQL Aggregation and Grouping",
+   "difficulty": "easy",
+   "prompt": "Which SQL expression counts the rows in a table?",
+   "options": [
+    "SUM(*)",
+    "COUNT(*)",
+    "TOTAL(*)",
+    "ROWS(*)"
+   ],
+   "correct": 1,
+   "explanation": "COUNT(*) counts rows.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "SQL Aggregation and Grouping",
+   "difficulty": "medium",
+   "prompt": "Which clause filters groups after GROUP BY has computed their aggregates?",
+   "options": [
+    "WHERE",
+    "HAVING",
+    "ORDER BY",
+    "LIMIT"
+   ],
+   "correct": 1,
+   "explanation": "WHERE filters rows before grouping; HAVING filters the groups.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "SQL Aggregation and Grouping",
+   "difficulty": "hard",
+   "prompt": "sales has rows (region, amount): (N,10), (N,20), (S,5), (S,5), (S,50). What does SELECT region FROM sales GROUP BY region HAVING SUM(amount) > 30 return?",
+   "options": [
+    "N only",
+    "S only",
+    "N and S",
+    "No rows"
+   ],
+   "correct": 1,
+   "explanation": "N sums to 30, which is not greater than 30. S sums to 60.",
+   "seconds": 75
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Descriptive Statistics",
+   "difficulty": "easy",
+   "prompt": "What is the mean of 2, 4, 6 and 8?",
+   "value": 5,
+   "tolerance": 0,
+   "explanation": "(2 + 4 + 6 + 8) ÷ 4 = 5.",
+   "seconds": 60
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Descriptive Statistics",
+   "difficulty": "medium",
+   "prompt": "What is the median of 3, 9, 1, 7 and 100?",
+   "value": 7,
+   "tolerance": 0,
+   "explanation": "Sorted: 1, 3, 7, 9, 100. The middle value is 7.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Descriptive Statistics",
+   "difficulty": "hard",
+   "prompt": "Which of these changes least when one extreme outlier is added to a data set?",
+   "options": [
+    "The mean",
+    "The median",
+    "The range",
+    "The standard deviation"
+   ],
+   "correct": 1,
+   "explanation": "The median depends on the middle position, not on how large the extreme values are.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Hypothesis Testing",
+   "difficulty": "easy",
+   "prompt": "In a hypothesis test, a p-value below your chosen significance level (for example 0.05) leads you to:",
+   "options": [
+    "Reject the null hypothesis",
+    "Accept the null hypothesis as proven",
+    "Collect no more data",
+    "Conclude the effect is large"
+   ],
+   "correct": 0,
+   "explanation": "A small p-value is evidence against the null, so you reject it. It says nothing about the size of the effect.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Hypothesis Testing",
+   "difficulty": "medium",
+   "prompt": "What is a Type I error?",
+   "options": [
+    "Failing to reject a false null hypothesis",
+    "Rejecting a true null hypothesis",
+    "Using the wrong sample size",
+    "Measuring the data incorrectly"
+   ],
+   "correct": 1,
+   "explanation": "Type I is a false positive: rejecting a null that is actually true.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Hypothesis Testing",
+   "difficulty": "hard",
+   "prompt": "A test gives p = 0.03. Which statement is correct?",
+   "options": [
+    "There is a 3% chance the null hypothesis is true",
+    "There is a 97% chance the alternative is true",
+    "If the null hypothesis were true, results at least this extreme would occur about 3% of the time",
+    "The effect size is 3%"
+   ],
+   "correct": 2,
+   "explanation": "A p-value is a probability about the data given the null, not a probability that the null is true.",
+   "seconds": 75
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Data Wrangling with Pandas",
+   "difficulty": "easy",
+   "prompt": "In pandas, what does df.shape return?",
+   "options": [
+    "The column names",
+    "The data types",
+    "A tuple of (number of rows, number of columns)",
+    "The first five rows"
+   ],
+   "correct": 2,
+   "explanation": "shape is (rows, columns).",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Data Wrangling with Pandas",
+   "difficulty": "medium",
+   "prompt": "What does df.groupby('team')['score'].mean() return?",
+   "options": [
+    "One overall average of score",
+    "The average score for each team",
+    "The number of teams",
+    "The highest score per team"
+   ],
+   "correct": 1,
+   "explanation": "It splits rows by team and averages score within each group.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Data Wrangling with Pandas",
+   "difficulty": "hard",
+   "prompt": "pd.merge(a, b, on='key') is called with no how argument. Which rows does the result contain?",
+   "options": [
+    "All keys from a, matched or not",
+    "All keys from b, matched or not",
+    "Only keys present in both a and b",
+    "All keys from either table"
+   ],
+   "correct": 2,
+   "explanation": "The default is an inner join.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Chart Selection",
+   "difficulty": "easy",
+   "prompt": "Which chart type is usually best for showing how a value changes over time?",
+   "options": [
+    "Pie chart",
+    "Line chart",
+    "Scatter plot of unrelated points",
+    "Histogram of categories"
+   ],
+   "correct": 1,
+   "explanation": "A line connects ordered points and shows trend.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Chart Selection",
+   "difficulty": "medium",
+   "prompt": "You want to show the relationship between two numeric variables, such as hours studied and exam score. Which chart fits best?",
+   "options": [
+    "Scatter plot",
+    "Pie chart",
+    "Stacked area chart",
+    "Table of totals"
+   ],
+   "correct": 0,
+   "explanation": "A scatter plot shows each pair and reveals correlation or clusters.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Chart Selection",
+   "difficulty": "hard",
+   "prompt": "Why should a bar chart's value axis normally start at zero?",
+   "options": [
+    "It makes the chart load faster",
+    "Bars encode value by length, so a truncated axis exaggerates differences",
+    "Software requires it",
+    "Zero is always the mean"
+   ],
+   "correct": 1,
+   "explanation": "Readers compare bar lengths. Cutting the axis makes small differences look large.",
+   "seconds": 60
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Conditional Probability and Bayes' Rule",
+   "difficulty": "easy",
+   "prompt": "Events A and B are independent. P(A) = 0.5 and P(B) = 0.4. What is P(A and B)?",
+   "value": 0.2,
+   "tolerance": 0.001,
+   "explanation": "For independent events, multiply: 0.5 × 0.4 = 0.2.",
+   "seconds": 45
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Conditional Probability and Bayes' Rule",
+   "difficulty": "medium",
+   "prompt": "P(A and B) = 0.12 and P(B) = 0.4. What is P(A given B)?",
+   "value": 0.3,
+   "tolerance": 0.001,
+   "explanation": "P(A|B) = P(A and B) ÷ P(B) = 0.12 ÷ 0.4 = 0.3.",
+   "seconds": 60
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Conditional Probability and Bayes' Rule",
+   "difficulty": "hard",
+   "prompt": "A disease affects 1% of people. A test is positive for 90% of people who have it and for 9% of people who do not. A person tests positive. What is the probability they have the disease? (Give a decimal.)",
+   "value": 0.092,
+   "tolerance": 0.005,
+   "explanation": "True positives: 0.01 × 0.90 = 0.009. False positives: 0.99 × 0.09 = 0.0891. 0.009 ÷ (0.009 + 0.0891) ≈ 0.092.",
+   "seconds": 150
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Vectors and Matrices",
+   "difficulty": "easy",
+   "prompt": "What is the dot product of [1, 2, 3] and [4, 5, 6]?",
+   "value": 32,
+   "tolerance": 0,
+   "explanation": "1×4 + 2×5 + 3×6 = 4 + 10 + 18 = 32.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Vectors and Matrices",
+   "difficulty": "medium",
+   "prompt": "A is a 2×3 matrix and B is a 3×4 matrix. What is the shape of A × B?",
+   "options": [
+    "3×3",
+    "2×4",
+    "2×3",
+    "4×2"
+   ],
+   "correct": 1,
+   "explanation": "The inner sizes (3 and 3) match and disappear; the outer sizes give 2×4.",
+   "seconds": 45
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Vectors and Matrices",
+   "difficulty": "hard",
+   "prompt": "What is the determinant of the matrix [[2, 1], [1, 3]]?",
+   "value": 5,
+   "tolerance": 0,
+   "explanation": "For [[a, b], [c, d]] the determinant is ad − bc = 2×3 − 1×1 = 5.",
+   "seconds": 75
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Overfitting and Regularization",
+   "difficulty": "easy",
+   "prompt": "A model has very low error on its training data but much higher error on validation data. This suggests:",
+   "options": [
+    "Underfitting",
+    "Overfitting",
+    "Perfect generalisation",
+    "A faulty metric"
+   ],
+   "correct": 1,
+   "explanation": "Memorising the training data without generalising is overfitting.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Overfitting and Regularization",
+   "difficulty": "medium",
+   "prompt": "What does L2 regularization do?",
+   "options": [
+    "Adds a penalty on large weights, shrinking them",
+    "Removes all features with low variance",
+    "Doubles the learning rate",
+    "Randomly drops training rows"
+   ],
+   "correct": 0,
+   "explanation": "L2 adds the sum of squared weights to the loss, which discourages large weights.",
+   "seconds": 45
+  },
+  {
+   "kind": "MULTI_SELECT",
+   "skill": "Overfitting and Regularization",
+   "difficulty": "hard",
+   "prompt": "Which of these help reduce overfitting?",
+   "options": [
+    "Get more training data",
+    "Add regularization",
+    "Make the model much larger without other changes",
+    "Stop training when validation loss stops improving"
+   ],
+   "correct": [
+    0,
+    1,
+    3
+   ],
+   "explanation": "More data, regularization and early stopping all help. A much larger model usually makes overfitting worse.",
+   "seconds": 75
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Model Evaluation and Metrics",
+   "difficulty": "easy",
+   "prompt": "A classifier gets 90 of 120 test examples right. What is its accuracy as a decimal?",
+   "value": 0.75,
+   "tolerance": 0.001,
+   "explanation": "90 ÷ 120 = 0.75.",
+   "seconds": 45
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Model Evaluation and Metrics",
+   "difficulty": "medium",
+   "prompt": "A model predicted 50 positives: 40 were correct (true positives) and 10 were wrong (false positives). What is its precision as a decimal?",
+   "value": 0.8,
+   "tolerance": 0.001,
+   "explanation": "Precision = TP ÷ (TP + FP) = 40 ÷ 50 = 0.8.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Model Evaluation and Metrics",
+   "difficulty": "hard",
+   "prompt": "Only 1% of transactions are fraud. A model that always predicts 'not fraud' is 99% accurate. What does this show?",
+   "options": [
+    "The model is excellent",
+    "Accuracy can be misleading on imbalanced data; recall for fraud is 0",
+    "The data must be wrong",
+    "Precision for fraud is 99%"
+   ],
+   "correct": 1,
+   "explanation": "The model never finds a single fraud case, so recall is 0, yet accuracy looks high.",
+   "seconds": 75
+  },
+  {
+   "kind": "NUMERIC",
+   "skill": "Cross-Validation",
+   "difficulty": "easy",
+   "prompt": "How many models are trained in 5-fold cross-validation?",
+   "value": 5,
+   "tolerance": 0,
+   "explanation": "One per fold: each fold takes a turn as the validation set.",
+   "seconds": 45
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Cross-Validation",
+   "difficulty": "medium",
+   "prompt": "In k-fold cross-validation, how many times is each example used for validation?",
+   "options": [
+    "Never",
+    "Exactly once",
+    "k times",
+    "Twice"
+   ],
+   "correct": 1,
+   "explanation": "Each example sits in exactly one fold, so it is validated exactly once and used for training in the other k−1 rounds.",
+   "seconds": 60
+  },
+  {
+   "kind": "MCQ",
+   "skill": "Cross-Validation",
+   "difficulty": "hard",
+   "prompt": "You standardise features (subtract the mean, divide by the standard deviation) and then cross-validate. Where should the mean and standard deviation be computed?",
+   "options": [
+    "On the whole dataset first, for consistency",
+    "Only on the training part of each fold, then applied to its validation part",
+    "On the validation fold only",
+    "It makes no difference"
+   ],
+   "correct": 1,
+   "explanation": "Computing them on the whole dataset lets information from validation rows leak into training.",
+   "seconds": 75
+  }
+ ]
+}

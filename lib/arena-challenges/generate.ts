@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { untyped } from "@/lib/org/db";
 import { completeJson } from "@/lib/ai/groq";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { IT_CLUSTER_SCOPE_KEY } from "./branch-clusters";
@@ -177,12 +178,13 @@ async function verifyNumericChallenge(c: NumericChallenge): Promise<Omit<Challen
 }
 
 /**
- * Tops up the stream pool for one scope until it has MIN_POOL_SIZE active
- * challenges. The IT cluster gets coding challenges; every other branch
+ * Tops up the stream pool for one scope until it has MIN_POOL_SIZE live or
+ * pending-review challenges. AI output is stored as DRAFT and is never served
+ * to students until a Capabilio admin publishes it (the database enforces this). The IT cluster gets coding challenges; every other branch
  * gets numeric calculation challenges in its own subject.
  */
 export async function ensureChallengePool(serviceClient: SupabaseClient<Database>, scopeKey: string, promptLabel: string): Promise<{ inserted: number }> {
-  const { count } = await serviceClient.from("arena_challenges").select("id", { count: "exact", head: true }).eq("track", "stream").eq("scope_key", scopeKey).eq("active", true);
+  const { count } = await serviceClient.from("arena_challenges").select("id", { count: "exact", head: true }).eq("track", "stream").eq("scope_key", scopeKey).or("active.eq.true,status.eq.DRAFT");
 
   const existing = count ?? 0;
   if (existing >= MIN_POOL_SIZE) return { inserted: 0 };
@@ -207,10 +209,11 @@ export async function ensureChallengePool(serviceClient: SupabaseClient<Database
     }
   }
 
-  const rows = accepted.slice(0, target).map((row) => ({ ...row, track: "stream", scope_key: scopeKey, active: true }));
+  const rows = accepted.slice(0, target).map((row) => ({ ...row, track: "stream", scope_key: scopeKey, active: false, status: "DRAFT", source: "AI_GENERATED" }));
   if (rows.length === 0) return { inserted: 0 };
 
-  const { error } = await serviceClient.from("arena_challenges").insert(rows);
+  // untyped: lib/supabase/types.ts predates migration 061's status/source columns
+  const { error } = await untyped(serviceClient).from("arena_challenges").insert(rows);
   if (error) throw error;
   return { inserted: rows.length };
 }

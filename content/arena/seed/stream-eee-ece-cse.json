@@ -1,0 +1,559 @@
+[
+  {
+    "key": "stream-eee-three-phase-power",
+    "track": "stream",
+    "title": "Power drawn by a balanced three-phase load",
+    "category": "Power Systems",
+    "difficulty": "medium",
+    "estMinutes": 10,
+    "isSeed": true,
+    "template": "calc-worksheet",
+    "ticketBrief": "# Plant log\nA balanced three-phase load is supplied at **415 V line-to-line** and draws **10 A** line current at **0.8 power factor lagging**.\n\nThe plant manager wants the real power and the apparent power.",
+    "skills": [
+      "Problem Solving"
+    ],
+    "branches": [
+      "Electrical and Electronics Engineering (EEE)"
+    ],
+    "courseTags": [
+      "Three Phase Circuits",
+      "Electrical Machines"
+    ],
+    "steps": [
+      {
+        "title": "Real power",
+        "instruction": "Compute the real power in watts."
+      },
+      {
+        "title": "Apparent power",
+        "instruction": "Compute the apparent power in volt-amperes."
+      }
+    ],
+    "checks": [
+      {
+        "key": "p",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Real power",
+        "config": {
+          "expected": 5750.4,
+          "tolerancePct": 1,
+          "public": {
+            "label": "Real power",
+            "unit": "W",
+            "prompt": "P = √3 · V_L · I_L · cos φ"
+          }
+        }
+      },
+      {
+        "key": "s",
+        "step": 2,
+        "type": "NUMERIC_ANSWER",
+        "label": "Apparent power",
+        "config": {
+          "expected": 7188.0,
+          "tolerancePct": 1,
+          "public": {
+            "label": "Apparent power",
+            "unit": "VA",
+            "prompt": "S = √3 · V_L · I_L"
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "p": "5750",
+        "s": "7188"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "p": "7188",
+        "s": "5750"
+      }
+    }
+  },
+  {
+    "key": "stream-eee-circuit-laws",
+    "track": "stream",
+    "title": "Circuit laws and transformers: quick check",
+    "category": "Circuits",
+    "difficulty": "easy",
+    "estMinutes": 8,
+    "isSeed": true,
+    "template": "qf-scenario",
+    "ticketBrief": "# Quick check\nThree short questions on basic circuit laws.",
+    "skills": [
+      "Problem Solving"
+    ],
+    "branches": [
+      "Electrical and Electronics Engineering (EEE)"
+    ],
+    "courseTags": [
+      "Circuit Theory",
+      "Electrical Machines"
+    ],
+    "steps": [
+      {
+        "title": "Answer the questions",
+        "instruction": "Choose the best answer for each question."
+      }
+    ],
+    "checks": [
+      {
+        "key": "series",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "A 12 V source drives 100 Ω and 220 Ω resistors in series. What current flows?",
+        "config": {
+          "correct": "37.5 mA",
+          "public": {
+            "prompt": "A 12 V source drives 100 Ω and 220 Ω resistors in series. What current flows?",
+            "options": [
+              "37.5 mA",
+              "54.5 mA",
+              "120 mA",
+              "26.7 mA"
+            ]
+          }
+        }
+      },
+      {
+        "key": "kcl",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "Which law states that the algebraic sum of currents at a node is zero?",
+        "config": {
+          "correct": "Kirchhoff's current law",
+          "public": {
+            "prompt": "Which law states that the algebraic sum of currents at a node is zero?",
+            "options": [
+              "Kirchhoff's current law",
+              "Kirchhoff's voltage law",
+              "Ohm's law",
+              "Faraday's law"
+            ]
+          }
+        }
+      },
+      {
+        "key": "xfmr",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "An ideal transformer has 230 V on the primary and 23 V on the secondary. The tur",
+        "config": {
+          "correct": "10 : 1",
+          "public": {
+            "prompt": "An ideal transformer has 230 V on the primary and 23 V on the secondary. The turns ratio Np : Ns is:",
+            "options": [
+              "1 : 10",
+              "10 : 1",
+              "2 : 1",
+              "23 : 1"
+            ]
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "series": "37.5 mA",
+        "kcl": "Kirchhoff's current law",
+        "xfmr": "10 : 1"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "series": "54.5 mA",
+        "kcl": "Kirchhoff's current law",
+        "xfmr": "10 : 1"
+      }
+    }
+  },
+  {
+    "key": "stream-ece-rc-lowpass",
+    "track": "stream",
+    "title": "Time constant and cut-off of an RC low-pass filter",
+    "category": "Analog Circuits",
+    "difficulty": "medium",
+    "estMinutes": 10,
+    "isSeed": true,
+    "template": "calc-worksheet",
+    "ticketBrief": "# Bench note\nA first-order RC low-pass filter uses **R = 10 kΩ** and **C = 100 nF**.\n\nFind its time constant and its −3 dB cut-off frequency.",
+    "skills": [
+      "Problem Solving"
+    ],
+    "branches": [
+      "Electronics and Communication Engineering (ECE)"
+    ],
+    "courseTags": [
+      "Analog Circuits",
+      "Network Analysis"
+    ],
+    "steps": [
+      {
+        "title": "Time constant",
+        "instruction": "Compute τ in milliseconds."
+      },
+      {
+        "title": "Cut-off frequency",
+        "instruction": "Compute f_c in hertz."
+      }
+    ],
+    "checks": [
+      {
+        "key": "tau",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Time constant",
+        "config": {
+          "expected": 1,
+          "tolerancePct": 1,
+          "public": {
+            "label": "Time constant",
+            "unit": "ms",
+            "prompt": "τ = R·C"
+          }
+        }
+      },
+      {
+        "key": "fc",
+        "step": 2,
+        "type": "NUMERIC_ANSWER",
+        "label": "Cut-off frequency",
+        "config": {
+          "expected": 159.155,
+          "tolerancePct": 1,
+          "public": {
+            "label": "Cut-off frequency",
+            "unit": "Hz",
+            "prompt": "f_c = 1 / (2π·R·C)"
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "tau": "1",
+        "fc": "159.2"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "tau": "10",
+        "fc": "1591"
+      }
+    }
+  },
+  {
+    "key": "stream-ece-signals-basics",
+    "track": "stream",
+    "title": "Sampling, op-amps and logic: quick check",
+    "category": "Signals and Electronics",
+    "difficulty": "easy",
+    "estMinutes": 8,
+    "isSeed": true,
+    "template": "qf-scenario",
+    "ticketBrief": "# Quick check\nThree short questions across signals, analog and digital electronics.",
+    "skills": [
+      "Problem Solving",
+      "Computer Architecture"
+    ],
+    "branches": [
+      "Electronics and Communication Engineering (ECE)"
+    ],
+    "courseTags": [
+      "Signals and Systems",
+      "Analog Circuits",
+      "Digital Electronics"
+    ],
+    "steps": [
+      {
+        "title": "Answer the questions",
+        "instruction": "Choose the best answer for each question."
+      }
+    ],
+    "checks": [
+      {
+        "key": "nyq",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "A signal contains frequencies up to 4 kHz. According to the Nyquist criterion, t",
+        "config": {
+          "correct": "8 kHz",
+          "public": {
+            "prompt": "A signal contains frequencies up to 4 kHz. According to the Nyquist criterion, the minimum sampling rate to avoid aliasing is:",
+            "options": [
+              "2 kHz",
+              "4 kHz",
+              "8 kHz",
+              "16 kHz"
+            ]
+          }
+        }
+      },
+      {
+        "key": "gain",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "An ideal inverting op-amp amplifier has Rf = 47 kΩ and Rin = 4.7 kΩ. Its voltage",
+        "config": {
+          "correct": "−10",
+          "public": {
+            "prompt": "An ideal inverting op-amp amplifier has Rf = 47 kΩ and Rin = 4.7 kΩ. Its voltage gain is:",
+            "options": [
+              "+10",
+              "−10",
+              "+1",
+              "−0.1"
+            ]
+          }
+        }
+      },
+      {
+        "key": "nand",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "Which single gate type is universal, i.e. any logic function can be built from i",
+        "config": {
+          "correct": "NAND",
+          "public": {
+            "prompt": "Which single gate type is universal, i.e. any logic function can be built from it alone?",
+            "options": [
+              "NAND",
+              "AND",
+              "OR",
+              "XOR"
+            ]
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "nyq": "8 kHz",
+        "gain": "−10",
+        "nand": "NAND"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "nyq": "4 kHz",
+        "gain": "−10",
+        "nand": "NAND"
+      }
+    }
+  },
+  {
+    "key": "stream-cse-subnetting",
+    "track": "stream",
+    "title": "Plan a /26 subnet layout",
+    "category": "Computer Networks",
+    "difficulty": "medium",
+    "estMinutes": 10,
+    "isSeed": true,
+    "template": "calc-worksheet",
+    "ticketBrief": "# Network request\nThe office network is **192.168.10.0/24**. It will be split into equal **/26** subnets.\n\nHow many subnets does that give, and how many usable host addresses does each subnet have? (Exclude the network and broadcast addresses.)",
+    "skills": [
+      "Computer Networks"
+    ],
+    "branches": [
+      "Computer Science and Engineering (CSE)",
+      "Information Technology (IT)"
+    ],
+    "courseTags": [
+      "Computer Networks",
+      "Networking"
+    ],
+    "steps": [
+      {
+        "title": "Subnets",
+        "instruction": "Count the /26 subnets in the /24."
+      },
+      {
+        "title": "Hosts per subnet",
+        "instruction": "Count the usable host addresses in one /26."
+      }
+    ],
+    "checks": [
+      {
+        "key": "subnets",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Number of /26 subnets",
+        "config": {
+          "expected": 4,
+          "tolerancePct": 0.1,
+          "public": {
+            "label": "Number of /26 subnets",
+            "unit": "",
+            "prompt": "How many /26 subnets fit in a /24?"
+          }
+        }
+      },
+      {
+        "key": "hosts",
+        "step": 2,
+        "type": "NUMERIC_ANSWER",
+        "label": "Usable hosts per subnet",
+        "config": {
+          "expected": 62,
+          "tolerancePct": 0.1,
+          "public": {
+            "label": "Usable hosts per subnet",
+            "unit": "",
+            "prompt": "2^(host bits) − 2"
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "subnets": "4",
+        "hosts": "62"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "subnets": "2",
+        "hosts": "64"
+      }
+    }
+  },
+  {
+    "key": "stream-cse-dsa-concepts",
+    "track": "stream",
+    "title": "Data structures and complexity: quick check",
+    "category": "Data Structures",
+    "difficulty": "easy",
+    "estMinutes": 8,
+    "isSeed": true,
+    "template": "qf-scenario",
+    "ticketBrief": "# Quick check\nThree short questions on core data-structure facts.",
+    "skills": [
+      "Algorithm Analysis",
+      "Data Structures"
+    ],
+    "branches": [
+      "Computer Science and Engineering (CSE)",
+      "Information Technology (IT)"
+    ],
+    "courseTags": [
+      "Data Structures",
+      "Algorithms"
+    ],
+    "steps": [
+      {
+        "title": "Answer the questions",
+        "instruction": "Choose the best answer for each question."
+      }
+    ],
+    "checks": [
+      {
+        "key": "bs",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "What is the worst-case time complexity of binary search on a sorted array of n e",
+        "config": {
+          "correct": "O(log n)",
+          "public": {
+            "prompt": "What is the worst-case time complexity of binary search on a sorted array of n elements?",
+            "options": [
+              "O(1)",
+              "O(log n)",
+              "O(n)",
+              "O(n log n)"
+            ]
+          }
+        }
+      },
+      {
+        "key": "stack",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "Which ordering does a stack follow?",
+        "config": {
+          "correct": "Last in, first out",
+          "public": {
+            "prompt": "Which ordering does a stack follow?",
+            "options": [
+              "First in, first out",
+              "Last in, first out",
+              "Random access only",
+              "Priority order"
+            ]
+          }
+        }
+      },
+      {
+        "key": "stable",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "Which of these sorting algorithms is stable in its standard form?",
+        "config": {
+          "correct": "Merge sort",
+          "public": {
+            "prompt": "Which of these sorting algorithms is stable in its standard form?",
+            "options": [
+              "Merge sort",
+              "Heap sort",
+              "Quick sort",
+              "Selection sort"
+            ]
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "bs": "O(log n)",
+        "stack": "Last in, first out",
+        "stable": "Merge sort"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "bs": "O(n)",
+        "stack": "Last in, first out",
+        "stable": "Merge sort"
+      }
+    }
+  }
+]

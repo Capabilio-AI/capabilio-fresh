@@ -1,0 +1,110 @@
+[
+  {
+    "key": "qf-scenario",
+    "name": "Scenario questions",
+    "runtimeType": "QUESTION_FLOW",
+    "description": "Short scenario questions with one or more correct options.",
+    "config": {
+      "shuffle": false
+    },
+    "tools": [
+      "questions"
+    ],
+    "resourceLimits": {}
+  },
+  {
+    "key": "calc-worksheet",
+    "name": "Calculation worksheet",
+    "runtimeType": "CALCULATION_WORKSHEET",
+    "description": "Calculator, working notes and numeric answers with a tolerance.",
+    "config": {
+      "inputs": [
+        {
+          "key": "answer",
+          "label": "Answer",
+          "unit": "units"
+        }
+      ]
+    },
+    "tools": [
+      "calculator"
+    ],
+    "resourceLimits": {}
+  },
+  {
+    "key": "sql-console-sqlite",
+    "name": "SQL console (SQLite)",
+    "runtimeType": "SQL_CONSOLE",
+    "description": "In-browser SQLite with a schema viewer; the final query is re-run and graded on the server.",
+    "config": {
+      "engine": "sqlite",
+      "showSchema": true,
+      "maxRows": 500
+    },
+    "tools": [
+      "sql"
+    ],
+    "resourceLimits": {
+      "memoryMb": 128,
+      "wallTimeSeconds": 1800
+    },
+    "startupTimeEstimateS": 3
+  },
+  {
+    "key": "frontend-editor",
+    "name": "Front-end editor with live preview",
+    "runtimeType": "CODE_EDITOR_PREVIEW",
+    "description": "HTML/CSS/JS files with a sandboxed live preview.",
+    "config": {
+      "framework": "vanilla",
+      "entry": "index.html",
+      "showPreview": true
+    },
+    "tools": [
+      "editor",
+      "preview"
+    ],
+    "resourceLimits": {
+      "memoryMb": 256,
+      "wallTimeSeconds": 1800
+    },
+    "startupTimeEstimateS": 2
+  },
+  {
+    "key": "config-editor",
+    "name": "Configuration editor",
+    "runtimeType": "CODE_EDITOR_PREVIEW",
+    "description": "Edit broken infrastructure files (Dockerfile, YAML); graded on the file contents. A sandboxed terminal is planned.",
+    "config": {
+      "framework": "vanilla",
+      "entry": "Dockerfile",
+      "showPreview": false
+    },
+    "tools": [
+      "editor"
+    ],
+    "resourceLimits": {
+      "memoryMb": 128,
+      "wallTimeSeconds": 1800
+    },
+    "startupTimeEstimateS": 1
+  },
+  {
+    "key": "python-notebook",
+    "name": "Python notebook (standard library)",
+    "runtimeType": "NOTEBOOK_PYTHON",
+    "description": "Python in the browser with the challenge's data files mounted.",
+    "config": {
+      "packages": [],
+      "evaluationHarness": "Run your cells; the named variables are read and checked."
+    },
+    "tools": [
+      "notebook"
+    ],
+    "resourceLimits": {
+      "memoryMb": 512,
+      "wallTimeSeconds": 1800
+    },
+    "startupTimeEstimateS": 20
+  }
+]

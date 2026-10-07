@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { untyped } from "@/lib/org/db";
 import { requireUser } from "@/lib/api/require-user";
 
 const LEADERBOARD_LIMIT = 50;
@@ -20,9 +21,14 @@ export async function GET() {
   if ("error" in auth) return auth.error;
 
   const service = createServiceClient();
-  const { data: ratings, error } = await service.from("arena_skill_ratings").select("user_id, rating");
+  const [{ data: areaRatings, error }, { data: skillRatings }] = await Promise.all([
+    service.from("arena_skill_ratings").select("user_id, rating"),
+    // per-skill ELO from career-based challenges (migration 062) ranks alongside the legacy per-area ratings
+    untyped(service).from("arena_skill_elo").select("student_id, rating"),
+  ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!ratings || ratings.length === 0) return NextResponse.json({ entries: [] });
+  const ratings = [...(areaRatings ?? []), ...((skillRatings ?? []) as { student_id: string; rating: number }[]).map((r) => ({ user_id: r.student_id, rating: r.rating }))];
+  if (ratings.length === 0) return NextResponse.json({ entries: [] });
 
   const sums = new Map<string, { total: number; count: number }>();
   for (const r of ratings) {

@@ -1,0 +1,359 @@
+[
+  {
+    "key": "stream-civil-beam-reactions",
+    "track": "stream",
+    "title": "Reactions and maximum moment of a simply supported beam",
+    "category": "Structural Analysis",
+    "difficulty": "easy",
+    "estMinutes": 10,
+    "isSeed": true,
+    "template": "calc-worksheet",
+    "ticketBrief": "# Site query\nA simply supported beam spans **5 m** and carries a uniformly distributed load of **12 kN/m** over the full span (self-weight already included).\n\nThe site engineer wants the support reaction and the maximum bending moment before approving the section.",
+    "skills": [
+      "Problem Solving"
+    ],
+    "branches": [
+      "Civil Engineering"
+    ],
+    "courseTags": [
+      "Strength of Materials",
+      "Structural Analysis"
+    ],
+    "steps": [
+      {
+        "title": "Support reaction",
+        "instruction": "Find the vertical reaction at each support."
+      },
+      {
+        "title": "Maximum bending moment",
+        "instruction": "Find the maximum bending moment, which occurs at mid-span."
+      }
+    ],
+    "checks": [
+      {
+        "key": "reaction",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Reaction at each support",
+        "config": {
+          "expected": 30,
+          "tolerancePct": 1,
+          "public": {
+            "label": "Reaction at each support",
+            "unit": "kN",
+            "prompt": "Reaction at one support"
+          }
+        }
+      },
+      {
+        "key": "mmax",
+        "step": 2,
+        "type": "NUMERIC_ANSWER",
+        "label": "Maximum bending moment",
+        "config": {
+          "expected": 37.5,
+          "tolerancePct": 1,
+          "public": {
+            "label": "Maximum bending moment",
+            "unit": "kN·m",
+            "prompt": "Mid-span moment"
+          }
+        }
+      }
+    ],
+    "hints": [
+      {
+        "body": "For a symmetric load each support carries half of the total load. Total load = w × L.",
+        "penalty": 10
+      }
+    ],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "reaction": "30",
+        "mmax": "37.5"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "reaction": "60",
+        "mmax": "75"
+      }
+    }
+  },
+  {
+    "key": "stream-civil-concrete-basics",
+    "track": "stream",
+    "title": "Concrete and soil fundamentals",
+    "category": "Materials",
+    "difficulty": "easy",
+    "estMinutes": 8,
+    "isSeed": true,
+    "template": "qf-scenario",
+    "ticketBrief": "# Quick check\nThree short questions on fresh concrete testing and standard practice.",
+    "skills": [
+      "Problem Solving"
+    ],
+    "branches": [
+      "Civil Engineering"
+    ],
+    "courseTags": [
+      "Concrete Technology",
+      "Building Materials"
+    ],
+    "steps": [
+      {
+        "title": "Answer the questions",
+        "instruction": "Choose the best answer for each question."
+      }
+    ],
+    "checks": [
+      {
+        "key": "slump",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "Which test is the standard measure of the workability of fresh concrete?",
+        "config": {
+          "correct": "Slump test",
+          "public": {
+            "prompt": "Which test is the standard measure of the workability of fresh concrete?",
+            "options": [
+              "Slump test",
+              "Cube compressive strength test",
+              "Vicat test",
+              "Los Angeles abrasion test"
+            ]
+          }
+        }
+      },
+      {
+        "key": "age",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "At what curing age is the characteristic compressive strength of concrete conven",
+        "config": {
+          "correct": "28 days",
+          "public": {
+            "prompt": "At what curing age is the characteristic compressive strength of concrete conventionally specified?",
+            "options": [
+              "3 days",
+              "7 days",
+              "28 days",
+              "90 days"
+            ]
+          }
+        }
+      },
+      {
+        "key": "wc",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "Increasing the water–cement ratio of a concrete mix (all else equal) generally:",
+        "config": {
+          "correct": "Decreases strength",
+          "public": {
+            "prompt": "Increasing the water–cement ratio of a concrete mix (all else equal) generally:",
+            "options": [
+              "Increases strength",
+              "Decreases strength",
+              "Has no effect on strength",
+              "Doubles the setting time"
+            ]
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "slump": "Slump test",
+        "age": "28 days",
+        "wc": "Decreases strength"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "slump": "Vicat test",
+        "age": "28 days",
+        "wc": "Decreases strength"
+      }
+    }
+  },
+  {
+    "key": "stream-mech-wall-heat-loss",
+    "track": "stream",
+    "title": "Heat loss through a furnace wall",
+    "category": "Heat Transfer",
+    "difficulty": "medium",
+    "estMinutes": 10,
+    "isSeed": true,
+    "template": "calc-worksheet",
+    "ticketBrief": "# Furnace audit\nA flat furnace wall has area **12 m²**, thickness **0.25 m** and thermal conductivity **0.72 W/m·K**. The inner surface is at **450 °C** and the outer surface at **50 °C**. Assume steady, one-dimensional conduction.\n\nFind the rate of heat loss through the wall.",
+    "skills": [
+      "Problem Solving"
+    ],
+    "branches": [
+      "Mechanical Engineering"
+    ],
+    "courseTags": [
+      "Heat Transfer",
+      "Thermodynamics"
+    ],
+    "steps": [
+      {
+        "title": "Heat loss",
+        "instruction": "Apply Fourier's law of conduction and report the result in kilowatts."
+      }
+    ],
+    "checks": [
+      {
+        "key": "q",
+        "step": 1,
+        "type": "NUMERIC_ANSWER",
+        "label": "Heat loss rate",
+        "config": {
+          "expected": 13.824,
+          "tolerancePct": 1,
+          "public": {
+            "label": "Heat loss rate",
+            "unit": "kW",
+            "prompt": "q = k·A·ΔT / L"
+          }
+        }
+      }
+    ],
+    "hints": [
+      {
+        "body": "ΔT is a temperature difference, so °C and K differences are equal.",
+        "penalty": 10
+      }
+    ],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "q": "13.824"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "q": "13824"
+      }
+    }
+  },
+  {
+    "key": "stream-mech-thermo-concepts",
+    "track": "stream",
+    "title": "Cycles and units: quick check",
+    "category": "Thermodynamics",
+    "difficulty": "easy",
+    "estMinutes": 8,
+    "isSeed": true,
+    "template": "qf-scenario",
+    "ticketBrief": "# Quick check\nThree short questions on thermodynamic cycles and units.",
+    "skills": [
+      "Problem Solving"
+    ],
+    "branches": [
+      "Mechanical Engineering"
+    ],
+    "courseTags": [
+      "Thermodynamics",
+      "Engineering Mechanics"
+    ],
+    "steps": [
+      {
+        "title": "Answer the questions",
+        "instruction": "Choose the best answer for each question."
+      }
+    ],
+    "checks": [
+      {
+        "key": "carnot",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "A Carnot engine works between reservoirs at 800 K and 300 K. What is its efficie",
+        "config": {
+          "correct": "62.5 %",
+          "public": {
+            "prompt": "A Carnot engine works between reservoirs at 800 K and 300 K. What is its efficiency?",
+            "options": [
+              "37.5 %",
+              "62.5 %",
+              "72.5 %",
+              "85 %"
+            ]
+          }
+        }
+      },
+      {
+        "key": "otto",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "For an ideal Otto cycle, the thermal efficiency increases when the:",
+        "config": {
+          "correct": "Compression ratio increases",
+          "public": {
+            "prompt": "For an ideal Otto cycle, the thermal efficiency increases when the:",
+            "options": [
+              "Compression ratio increases",
+              "Compression ratio decreases",
+              "Heat rejected increases",
+              "Cut-off ratio increases"
+            ]
+          }
+        }
+      },
+      {
+        "key": "torque",
+        "step": 1,
+        "type": "CHOICE_ANSWER",
+        "label": "The SI unit of torque is:",
+        "config": {
+          "correct": "N·m",
+          "public": {
+            "prompt": "The SI unit of torque is:",
+            "options": [
+              "N",
+              "N·m",
+              "N/m²",
+              "W"
+            ]
+          }
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "answers": {
+        "carnot": "62.5 %",
+        "otto": "Compression ratio increases",
+        "torque": "N·m"
+      }
+    },
+    "wrong": {
+      "answers": {
+        "carnot": "37.5 %",
+        "otto": "Compression ratio increases",
+        "torque": "N·m"
+      }
+    }
+  }
+]

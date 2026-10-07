@@ -3,8 +3,8 @@ import { computeReadiness, READINESS_EXPLANATION } from "./readiness";
 import type { CareerRequirement, StudentSkillInput } from "./types";
 
 const req = (skillId: string, importance: CareerRequirement["importance"], targetLevel: number): CareerRequirement => ({ skillId, skillName: skillId, importance, targetLevel, stage: "JOB_READY", parentSkillId: null });
-const v = (level: number): StudentSkillInput => ({ level, confidence: 0.7, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
-const claim = (level: number): StudentSkillInput => ({ level: Math.min(40, level), confidence: 0, verified: false, verifiedLevel: null, selfDeclaredLevel: Math.min(40, level) });
+const v = (level: number): StudentSkillInput => ({ level, assessed: true, confidence: 0.7, verified: true, verifiedLevel: level, selfDeclaredLevel: null });
+const claim = (level: number): StudentSkillInput => ({ level: Math.min(40, level), assessed: true, confidence: 0, verified: false, verifiedLevel: null, selfDeclaredLevel: Math.min(40, level) });
 const R = [req("a", "CRITICAL", 80), req("b", "LOW", 50)];
 
 describe("computeReadiness", () => {

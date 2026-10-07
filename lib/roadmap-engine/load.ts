@@ -38,7 +38,7 @@ export type LoadResult =
   | { status: "MISSING_CAREER_REQUIREMENTS"; careerName: string }
   | { status: "READY"; input: EngineInput; meta: LoadedMeta };
 
-const toInput = (c: { level: number; confidence: number; verified: boolean; verifiedLevel: number | null; selfDeclaredLevel: number | null }): StudentSkillInput => ({ level: c.level, confidence: c.confidence, verified: c.verified, verifiedLevel: c.verifiedLevel, selfDeclaredLevel: c.selfDeclaredLevel });
+const toInput = (c: { level: number | null; confidence: number; verified: boolean; verifiedLevel: number | null; selfDeclaredLevel: number | null }): StudentSkillInput => ({ level: c.level ?? 0, assessed: c.level !== null, confidence: c.confidence, verified: c.verified, verifiedLevel: c.verifiedLevel, selfDeclaredLevel: c.selfDeclaredLevel });
 
 async function requirementsOf(service: Service, careers: Career[]): Promise<Map<string, CareerRequirement[]>> {
   const ids = [...new Set(careers.flatMap((c) => c.requirements.map((r) => r.skillId)))];

@@ -32,8 +32,14 @@ export function Gaps({ gaps, unmatched }: { gaps: RoadmapView["gaps"]; unmatched
                 <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{g.skillName}</p>
                 <Pill>{IMPORTANCE[g.importance] ?? g.importance}</Pill>
               </div>
-              <div className="mt-2"><Bar value={(g.currentLevel / Math.max(1, g.targetLevel)) * 100} label={`${g.skillName}: ${g.currentLevel} of ${g.targetLevel}`} tone={g.gap === 0 ? "bg-app-success" : "bg-app-orange"} /></div>
-              <p className="mt-1 font-lp-mono text-[11px] text-app-muted">{g.currentLevel} now · target {g.targetLevel}{g.gap > 0 ? ` · gap ${g.gap}` : " · met"}</p>
+              {g.assessed ? (
+                <>
+                  <div className="mt-2"><Bar value={(g.currentLevel / Math.max(1, g.targetLevel)) * 100} label={`${g.skillName}: ${g.currentLevel} of ${g.targetLevel}`} tone={g.gap === 0 ? "bg-app-success" : "bg-app-orange"} /></div>
+                  <p className="mt-1 font-lp-mono text-[11px] text-app-muted">{g.currentLevel} now · target {g.targetLevel}{g.gap > 0 ? ` · gap ${g.gap}` : " · met"}</p>
+                </>
+              ) : (
+                <p className="mt-2 font-lp-body text-[13px] text-app-muted">Not assessed yet · target {g.targetLevel}</p>
+              )}
               <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">{g.gapType ? GAP_TYPE[g.gapType] ?? g.gapType : "Target met"}{g.selfDeclaredOnly ? " · self-declared, not yet verified" : g.verified ? " · verified" : ""}</p>
               {g.blockedBySkillId && <p className="mt-1 font-lp-body text-[12px] text-app-muted">Best tackled after the skill it builds on.</p>}
             </Card>

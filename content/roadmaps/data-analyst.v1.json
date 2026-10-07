@@ -1,0 +1,922 @@
+{
+  "career": "data-analyst",
+  "version": 1,
+  "title": "Data Analyst roadmap",
+  "description": "From spreadsheets and SQL to analysis that decision-makers trust.",
+  "provenance": {
+    "designedBy": "Capabilio",
+    "method": "Stages follow the order in which each skill is normally needed on the job; targets for skills the career already requires come from that career's requirement rows, and the rest are set by Capabilio to be reachable by a final-year student.",
+    "notes": "Original tree. Designed from first principles and the canonical skill taxonomy; not derived from any third-party roadmap."
+  },
+  "nodes": [
+    {
+      "key": "stage-spreadsheets",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Spreadsheet analysis",
+      "description": "Answer first questions quickly with the tool most workplaces already use.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 10
+    },
+    {
+      "key": "stage-sql",
+      "parent": null,
+      "type": "SPINE",
+      "title": "SQL for analysis",
+      "description": "Pull exactly the data you need from relational databases.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "CENTER",
+      "order": 20
+    },
+    {
+      "key": "stage-prep",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Preparing data",
+      "description": "Make raw data safe to analyse.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 30
+    },
+    {
+      "key": "stage-stats",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Statistics for decisions",
+      "description": "Tell a real pattern from noise.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 40
+    },
+    {
+      "key": "stage-python",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Python for analysis",
+      "description": "Analyse data that is too big or too repetitive for a spreadsheet.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "CENTER",
+      "order": 50
+    },
+    {
+      "key": "stage-viz",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Visualization and BI",
+      "description": "Show results so the main point is obvious.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "CENTER",
+      "order": 60
+    },
+    {
+      "key": "stage-applied",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Applied analysis",
+      "description": "Answer the questions businesses actually ask.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "CENTER",
+      "order": 70
+    },
+    {
+      "key": "stage-comms",
+      "parent": null,
+      "type": "SPINE",
+      "title": "Communicating results",
+      "description": "Turn an analysis into a decision.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "CENTER",
+      "order": 80
+    },
+    {
+      "key": "g-sheet-skills",
+      "parent": "stage-spreadsheets",
+      "type": "GROUP",
+      "title": "Spreadsheet skills",
+      "description": "Formulas and summaries.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "g-sheet-model",
+      "parent": "stage-spreadsheets",
+      "type": "GROUP",
+      "title": "Spreadsheet modelling",
+      "description": "Build analyses others can check.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "g-sql-core",
+      "parent": "stage-sql",
+      "type": "GROUP",
+      "title": "Core queries",
+      "description": "Retrieve, combine and summarise.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "g-sql-adv",
+      "parent": "stage-sql",
+      "type": "GROUP",
+      "title": "Advanced queries",
+      "description": "Multi-step logic and comparisons across rows.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 4
+    },
+    {
+      "key": "g-clean",
+      "parent": "stage-prep",
+      "type": "GROUP",
+      "title": "Cleaning",
+      "description": "Find and fix problems before analysis.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 5
+    },
+    {
+      "key": "g-clean-skill",
+      "parent": "stage-prep",
+      "type": "GROUP",
+      "title": "Data cleaning in practice",
+      "description": "Bring the cleaning skills together.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 6
+    },
+    {
+      "key": "g-describe",
+      "parent": "stage-stats",
+      "type": "GROUP",
+      "title": "Describing and sampling",
+      "description": "Summarise data and reason about samples.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 7
+    },
+    {
+      "key": "g-infer",
+      "parent": "stage-stats",
+      "type": "GROUP",
+      "title": "Testing and relationships",
+      "description": "Test claims and measure association.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 8
+    },
+    {
+      "key": "g-py-core",
+      "parent": "stage-python",
+      "type": "GROUP",
+      "title": "Python basics",
+      "description": "The language and its numeric tools.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 9
+    },
+    {
+      "key": "g-py-data",
+      "parent": "stage-python",
+      "type": "GROUP",
+      "title": "Working with tables",
+      "description": "Reshape, summarise and plot.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 10
+    },
+    {
+      "key": "g-charts",
+      "parent": "stage-viz",
+      "type": "GROUP",
+      "title": "Designing visuals",
+      "description": "Choose and lay out charts.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 11
+    },
+    {
+      "key": "g-bi",
+      "parent": "stage-viz",
+      "type": "GROUP",
+      "title": "Business intelligence",
+      "description": "Dashboards people use.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 12
+    },
+    {
+      "key": "g-methods",
+      "parent": "stage-applied",
+      "type": "GROUP",
+      "title": "Analysis methods",
+      "description": "Approaches for common business questions.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 13
+    },
+    {
+      "key": "g-analysis-skill",
+      "parent": "stage-applied",
+      "type": "GROUP",
+      "title": "Analysis in practice",
+      "description": "Bring the methods together.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 14
+    },
+    {
+      "key": "g-story",
+      "parent": "stage-comms",
+      "type": "GROUP",
+      "title": "Telling the story",
+      "description": "Explain findings to non-analysts.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 15
+    },
+    {
+      "key": "g-workflow",
+      "parent": "stage-comms",
+      "type": "GROUP",
+      "title": "Working with others",
+      "description": "Share and reproduce analysis.",
+      "skill": null,
+      "importance": "CORE",
+      "target": null,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 16
+    },
+    {
+      "key": "spreadsheet-formulas-and-functions",
+      "parent": "g-sheet-skills",
+      "type": "TOPIC",
+      "title": "Spreadsheet Formulas and Functions",
+      "description": "Builds reliable calculations with lookup, logical, text and date functions. Most first analyses at work happen in a spreadsheet.",
+      "skill": "Spreadsheet Formulas and Functions",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "pivot-tables",
+      "parent": "g-sheet-skills",
+      "type": "TOPIC",
+      "title": "Pivot Tables",
+      "description": "Summarises large tables by category and period using pivot tables and charts. The fastest way to summarise a table by category and period.",
+      "skill": "Pivot Tables",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "spreadsheet-modelling",
+      "parent": "g-sheet-model",
+      "type": "TOPIC",
+      "title": "Spreadsheet modelling",
+      "description": "Builds and checks analysis models in a spreadsheet. The career expects reliable, checkable spreadsheet models.",
+      "skill": "Excel / Spreadsheets",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "sql-query-basics",
+      "parent": "g-sql-core",
+      "type": "TOPIC",
+      "title": "SQL Query Basics",
+      "description": "Retrieves and filters rows with SELECT, WHERE, ORDER BY and LIMIT. Most business data lives in databases, not files.",
+      "skill": "SQL Query Basics",
+      "importance": "CORE",
+      "target": 80,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "sql-joins",
+      "parent": "g-sql-core",
+      "type": "TOPIC",
+      "title": "SQL Joins",
+      "description": "Combines tables with inner and outer joins and reasons about row counts after a join. Useful questions almost always need more than one table.",
+      "skill": "SQL Joins",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "sql-aggregation-and-grouping",
+      "parent": "g-sql-core",
+      "type": "TOPIC",
+      "title": "SQL Aggregation and Grouping",
+      "description": "Summarises data with aggregate functions, GROUP BY and HAVING. Most analysis is a summary by some category.",
+      "skill": "SQL Aggregation and Grouping",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "FOUNDATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "sql-subqueries-and-ctes",
+      "parent": "g-sql-adv",
+      "type": "TOPIC",
+      "title": "SQL Subqueries and CTEs",
+      "description": "Structures multi-step queries with subqueries and common table expressions. Lets you break a hard question into readable steps.",
+      "skill": "SQL Subqueries and CTEs",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "sql-window-functions",
+      "parent": "g-sql-adv",
+      "type": "TOPIC",
+      "title": "SQL Window Functions",
+      "description": "Computes rankings, running totals and comparisons across rows without collapsing them. Rankings, running totals and period comparisons.",
+      "skill": "SQL Window Functions",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "sql-in-practice",
+      "parent": "g-sql-adv",
+      "type": "TOPIC",
+      "title": "SQL in practice",
+      "description": "Queries and shapes relational data with SQL. The career expects fluent SQL.",
+      "skill": "SQL",
+      "importance": "CORE",
+      "target": 80,
+      "stage": "FOUNDATION",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "handling-missing-values",
+      "parent": "g-clean",
+      "type": "TOPIC",
+      "title": "Handling Missing Values",
+      "description": "Detects missing data, understands why it is missing and chooses to drop, fill or flag it. Missing data silently changes results if ignored.",
+      "skill": "Handling Missing Values",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "deduplication-and-standardization",
+      "parent": "g-clean",
+      "type": "TOPIC",
+      "title": "Deduplication and Standardization",
+      "description": "Finds duplicate records and makes inconsistent text, dates and categories uniform. Duplicates and inconsistent labels inflate and split counts.",
+      "skill": "Deduplication and Standardization",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "data-validation-checks",
+      "parent": "g-clean",
+      "type": "TOPIC",
+      "title": "Data Validation Checks",
+      "description": "Defines and runs checks that catch impossible, inconsistent or out-of-range data before analysis. Catches impossible values before they reach a report.",
+      "skill": "Data Validation Checks",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "data-cleaning-in-practice",
+      "parent": "g-clean-skill",
+      "type": "TOPIC",
+      "title": "Data cleaning in practice",
+      "description": "Turns messy raw data into data that is safe to analyse. The career expects you to leave data better than you found it.",
+      "skill": "Data Cleaning",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "descriptive-statistics",
+      "parent": "g-describe",
+      "type": "TOPIC",
+      "title": "Descriptive Statistics",
+      "description": "Summarises data with centre, spread and shape, and chooses measures that suit the data. The first step of any analysis.",
+      "skill": "Descriptive Statistics",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "random-variables-and-distributions",
+      "parent": "g-describe",
+      "type": "TOPIC",
+      "title": "Random Variables and Distributions",
+      "description": "Describes uncertain quantities with common distributions and computes expectations. Explains why data is shaped the way it is.",
+      "skill": "Random Variables and Distributions",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "sampling-and-confidence-intervals",
+      "parent": "g-describe",
+      "type": "TOPIC",
+      "title": "Sampling and Confidence Intervals",
+      "description": "Draws conclusions about a population from a sample and states the uncertainty. Lets you say how sure you are from a sample.",
+      "skill": "Sampling and Confidence Intervals",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "hypothesis-testing",
+      "parent": "g-infer",
+      "type": "TOPIC",
+      "title": "Hypothesis Testing",
+      "description": "Tests a claim with a null hypothesis, a test statistic and a p-value, and states what the result means. Separates a real difference from chance.",
+      "skill": "Hypothesis Testing",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "correlation-and-regression-basics",
+      "parent": "g-infer",
+      "type": "TOPIC",
+      "title": "Correlation and Regression Basics",
+      "description": "Measures how variables move together and fits a simple line while avoiding causal over-claims. Measures relationships, with care about cause.",
+      "skill": "Correlation and Regression Basics",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "conditional-probability-and-bayes-rule",
+      "parent": "g-infer",
+      "type": "TOPIC",
+      "title": "Conditional Probability and Bayes' Rule",
+      "description": "Updates beliefs with new evidence using conditional probability and Bayes' rule. Helps with tests, screening and risk questions.",
+      "skill": "Conditional Probability and Bayes' Rule",
+      "importance": "OPTIONAL",
+      "target": 50,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "statistics-in-practice",
+      "parent": "g-infer",
+      "type": "TOPIC",
+      "title": "Statistics in practice",
+      "description": "Uses data to describe, compare and draw careful conclusions. The career expects sound statistical judgement.",
+      "skill": "Statistics",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 4
+    },
+    {
+      "key": "python",
+      "parent": "g-py-core",
+      "type": "TOPIC",
+      "title": "Python",
+      "description": "Writes clear, working programs in Python. The standard tool when data outgrows a spreadsheet.",
+      "skill": "Python",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "numpy-arrays",
+      "parent": "g-py-core",
+      "type": "TOPIC",
+      "title": "NumPy Arrays",
+      "description": "Computes on whole arrays at once with vectorised operations, broadcasting and indexing. Fast numeric computing underneath the data tools.",
+      "skill": "NumPy Arrays",
+      "importance": "RECOMMENDED",
+      "target": 55,
+      "stage": "CORE",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "data-wrangling-with-pandas",
+      "parent": "g-py-data",
+      "type": "TOPIC",
+      "title": "Data Wrangling with Pandas",
+      "description": "Loads, reshapes, joins and summarises tabular data with pandas. Cleaning and reshaping tables is most of the work.",
+      "skill": "Data Wrangling with Pandas",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "data-visualization-with-python",
+      "parent": "g-py-data",
+      "type": "TOPIC",
+      "title": "Data Visualization with Python",
+      "description": "Plots distributions and relationships with Python libraries and labels them clearly. Plot as you explore, not only at the end.",
+      "skill": "Data Visualization with Python",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "CORE",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "chart-selection",
+      "parent": "g-charts",
+      "type": "TOPIC",
+      "title": "Chart Selection",
+      "description": "Picks the chart that shows a comparison, trend, part-to-whole or relationship honestly. The wrong chart hides or exaggerates the point.",
+      "skill": "Chart Selection",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "dashboard-design",
+      "parent": "g-bi",
+      "type": "TOPIC",
+      "title": "Dashboard Design",
+      "description": "Lays out a dashboard so the main question is answered at a glance and filters stay simple. A dashboard should answer a question at a glance.",
+      "skill": "Dashboard Design",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "kpi-and-metric-definition",
+      "parent": "g-bi",
+      "type": "TOPIC",
+      "title": "KPI and Metric Definition",
+      "description": "Defines a metric precisely, with its formula, grain and exclusions, so everyone reads it the same way. Numbers mean nothing until everyone defines them the same way.",
+      "skill": "KPI and Metric Definition",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 2
+    },
+    {
+      "key": "business-intelligence-in-practice",
+      "parent": "g-bi",
+      "type": "TOPIC",
+      "title": "Business intelligence in practice",
+      "description": "Builds dashboards and reports that people use to make decisions. The career expects you to build reports others rely on.",
+      "skill": "BI / Dashboarding",
+      "importance": "CORE",
+      "target": 75,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 3
+    },
+    {
+      "key": "exploratory-data-analysis",
+      "parent": "g-methods",
+      "type": "TOPIC",
+      "title": "Exploratory Data Analysis",
+      "description": "Explores a new dataset to understand its shape, quality and patterns before modelling or reporting. Understanding a new dataset comes before any claim about it.",
+      "skill": "Exploratory Data Analysis",
+      "importance": "CORE",
+      "target": 70,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "a-b-test-analysis",
+      "parent": "g-methods",
+      "type": "TOPIC",
+      "title": "A/B Test Analysis",
+      "description": "Designs and reads a controlled experiment, including sample size, significance and practical effect. Experiments are how businesses learn what works.",
+      "skill": "A/B Test Analysis",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "cohort-and-funnel-analysis",
+      "parent": "g-methods",
+      "type": "TOPIC",
+      "title": "Cohort and Funnel Analysis",
+      "description": "Tracks groups over time and step-by-step drop-off to explain retention and conversion. Explains retention and where users drop off.",
+      "skill": "Cohort and Funnel Analysis",
+      "importance": "RECOMMENDED",
+      "target": 60,
+      "stage": "SPECIALIZATION",
+      "side": "LEFT",
+      "order": 3
+    },
+    {
+      "key": "data-analysis-in-practice",
+      "parent": "g-analysis-skill",
+      "type": "TOPIC",
+      "title": "Data analysis in practice",
+      "description": "Turns data into answers: asks a question, explores, tests and explains. The career expects you to take a question from ask to answer.",
+      "skill": "Data Analysis",
+      "importance": "CORE",
+      "target": 80,
+      "stage": "SPECIALIZATION",
+      "side": "RIGHT",
+      "order": 1
+    },
+    {
+      "key": "data-storytelling",
+      "parent": "g-story",
+      "type": "TOPIC",
+      "title": "Data Storytelling",
+      "description": "Turns analysis into a clear message for a decision-maker, with the evidence and the caveats. Findings only matter if the audience acts on them.",
+      "skill": "Data Storytelling",
+      "importance": "CORE",
+      "target": 65,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 1
+    },
+    {
+      "key": "technical-communication",
+      "parent": "g-story",
+      "type": "TOPIC",
+      "title": "Technical communication",
+      "description": "Explains technical work clearly to the people who need it. Clear writing and speaking about technical work.",
+      "skill": "Technical Communication",
+      "importance": "CORE",
+      "target": 60,
+      "stage": "JOB_READY",
+      "side": "LEFT",
+      "order": 2
+    },
+    {
+      "key": "version-control-for-analysis",
+      "parent": "g-workflow",
+      "type": "TOPIC",
+      "title": "Version control for analysis",
+      "description": "Tracks and shares changes to code so a team can work together safely. Makes analysis shareable and reproducible.",
+      "skill": "Version Control",
+      "importance": "OPTIONAL",
+      "target": 40,
+      "stage": "JOB_READY",
+      "side": "RIGHT",
+      "order": 1
+    }
+  ],
+  "edges": [
+    {
+      "from": "spreadsheet-formulas-and-functions",
+      "to": "pivot-tables",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "pivot-tables",
+      "to": "spreadsheet-modelling",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-query-basics",
+      "to": "sql-joins",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-joins",
+      "to": "sql-aggregation-and-grouping",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-aggregation-and-grouping",
+      "to": "sql-subqueries-and-ctes",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-subqueries-and-ctes",
+      "to": "sql-window-functions",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sql-aggregation-and-grouping",
+      "to": "sql-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "handling-missing-values",
+      "to": "deduplication-and-standardization",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "deduplication-and-standardization",
+      "to": "data-validation-checks",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "data-validation-checks",
+      "to": "data-cleaning-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "descriptive-statistics",
+      "to": "random-variables-and-distributions",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "descriptive-statistics",
+      "to": "sampling-and-confidence-intervals",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "sampling-and-confidence-intervals",
+      "to": "hypothesis-testing",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "descriptive-statistics",
+      "to": "correlation-and-regression-basics",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "hypothesis-testing",
+      "to": "statistics-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "python",
+      "to": "numpy-arrays",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "python",
+      "to": "data-wrangling-with-pandas",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "data-wrangling-with-pandas",
+      "to": "data-visualization-with-python",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "chart-selection",
+      "to": "dashboard-design",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "kpi-and-metric-definition",
+      "to": "dashboard-design",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "dashboard-design",
+      "to": "business-intelligence-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "data-cleaning-in-practice",
+      "to": "exploratory-data-analysis",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "exploratory-data-analysis",
+      "to": "a-b-test-analysis",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "hypothesis-testing",
+      "to": "a-b-test-analysis",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "exploratory-data-analysis",
+      "to": "cohort-and-funnel-analysis",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "exploratory-data-analysis",
+      "to": "data-analysis-in-practice",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "data-analysis-in-practice",
+      "to": "data-storytelling",
+      "type": "PREREQUISITE"
+    },
+    {
+      "from": "data-storytelling",
+      "to": "technical-communication",
+      "type": "PREREQUISITE"
+    }
+  ]
+}

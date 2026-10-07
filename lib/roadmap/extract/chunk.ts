@@ -26,6 +26,9 @@ export interface CourseSection {
   /** raw section text (capped) — the source every extracted field is grounded against */
   text: string;
   parsed: ParsedSection;
+  /** the PDF pages (1-based) this section was read from */
+  pageStart?: number;
+  pageEnd?: number;
 }
 
 const parseYs = (y: string, s: string) => ({ year: ROMAN[y.toUpperCase()] ?? 0, semester: ROMAN[s.toUpperCase()] ?? 0 });
@@ -79,6 +82,10 @@ export function trimTable(text: string): string {
 
 export function chunkSyllabus(pages: string[]): { tables: SemesterChunk[]; courses: CourseSection[] } {
   const lines = pages.join("\n").split(/\r?\n/);
+  // line index -> 1-based page number, so every section can say where in the PDF it came from
+  const pageOfLine: number[] = [];
+  pages.forEach((p, i) => { for (let n = p.split(/\r?\n/).length; n > 0; n--) pageOfLine.push(i + 1); });
+  const pageAt = (line: number) => pageOfLine[Math.min(line, pageOfLine.length - 1)] ?? 1;
   const bs = boundaries(lines);
   const tableByKey = new Map<string, SemesterChunk>();
   const courses: CourseSection[] = [];
@@ -97,7 +104,7 @@ export function chunkSyllabus(pages: string[]): { tables: SemesterChunk[]; cours
     if (title.length < 3) return;
     const text = sectionLines.join("\n").slice(0, MAX_SECTION_CHARS);
     const parsed = parseCourseSection(text.split("\n"));
-    courses.push({ year: b.year, semester: b.semester, title, outcomes: parsed.outcomes.map((o) => o.text), text, parsed });
+    courses.push({ year: b.year, semester: b.semester, title, outcomes: parsed.outcomes.map((o) => o.text), text, parsed, pageStart: pageAt(b.line), pageEnd: pageAt(Math.max(b.line, end - 1)) });
   });
   return { tables: [...tableByKey.values()], courses };
 }

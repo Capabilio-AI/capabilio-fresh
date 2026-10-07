@@ -42,7 +42,7 @@ export function analyseGaps(input: Pick<EngineInput, "requirements" | "courses" 
     const hasPractice = arena.some((a) => a.active && a.skillIds.includes(r.skillId)) || projects.some((p) => p.status === "ACTIVE" && p.skillIds.includes(r.skillId));
     return {
       skillId: r.skillId, skillName: r.skillName, importance: r.importance, targetLevel: r.targetLevel, stage: r.stage, parentSkillId: r.parentSkillId,
-      currentLevel, confidence: s?.confidence ?? 0, verified: Boolean(s?.verified), selfDeclaredOnly: Boolean(s && !s.verified && s.selfDeclaredLevel !== null),
+      currentLevel, assessed: Boolean(s?.assessed), confidence: s?.confidence ?? 0, verified: Boolean(s?.verified), selfDeclaredOnly: Boolean(s && !s.verified && s.selfDeclaredLevel !== null),
       gap, met: gap === 0, coverage: cov.coverage, coverageCourseIds: cov.courseIds, coverageOutcomeCount: cov.outcomeCount,
       gapType: gap === 0 ? null : gapTypeFor(cov.coverage, hasLearning, hasPractice),
     };

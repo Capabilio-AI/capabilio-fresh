@@ -1,61 +1,63 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { currentWeekStart } from "./week";
+import { currentWeekStart, weekStartOf } from "./week";
 import { ensureChallengePool } from "./generate";
-
-const BATCH_SIZE = 8;
+import type { StreamScope } from "./resolve-scope";
+import { BATCH_SIZE, selectStreamBatch } from "./select-stream";
+import { loadStreamPool, type StreamStudentContext } from "./stream-context";
 
 export interface WeeklyBatch {
   weekStart: string;
   challengeIds: string[];
+  /** BATCH_SIZE minus what could be filled from real published content */
+  shortfall: number;
 }
 
-/** Pure. The pool, oldest first, minus anything this user has ever solved, capped at BATCH_SIZE -- never re-serves a completed challenge. */
-export function pickWeeklyChallengeIds(pool: { id: string }[], solvedIds: ReadonlySet<string>): string[] {
-  return pool
-    .filter((c) => !solvedIds.has(c.id))
-    .slice(0, BATCH_SIZE)
-    .map((c) => c.id);
-}
+const RECENT_WEEKS = 2;
 
 /**
- * One fresh batch of BATCH_SIZE challenges per (user, Monday week). Once
- * assigned, a week's batch is fixed -- a new week's batch excludes every
- * challenge this user has ever solved, so a completed challenge is never
- * re-served.
- * ponytail: the shared per-scope pool (ensureChallengePool, min 14) caps how
- * many never-solved challenges exist across all weeks; a very active user
- * could outrun top-up before hitting 8 fresh ones (falls back to returning
- * fewer, never blocks). Raise the pool minimum if that's observed in practice.
+ * One batch of up to BATCH_SIZE challenges per (user, Monday week), chosen by selectStreamBatch from PUBLISHED content only and then fixed
+ * for the week. An empty batch is not frozen: it is re-picked on the next request so newly published challenges appear.
+ * ponytail: a week with a short (non-empty) batch stays short until Monday; re-pick on publish if that proves annoying.
  */
-export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, userId: string, scopeKey: string, promptLabel: string): Promise<WeeklyBatch> {
+export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, userId: string, scope: StreamScope, student: StreamStudentContext): Promise<WeeklyBatch> {
   const weekStart = currentWeekStart();
 
   const { data: existing } = await service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).eq("week_start", weekStart).maybeSingle();
-  if (existing) return { weekStart, challengeIds: existing.challenge_ids };
+  if (existing && existing.challenge_ids.length > 0) return { weekStart, challengeIds: existing.challenge_ids, shortfall: Math.max(0, BATCH_SIZE - existing.challenge_ids.length) };
+  if (existing) await service.from("arena_stream_weeks").delete().eq("user_id", userId).eq("week_start", weekStart);
 
-  // Best-effort top-up: an outage here never blocks the batch from being
-  // assigned with whatever's already stored (see docs/arena-challenges-redesign.md).
+  // Best-effort: new AI output is stored as DRAFT for admin review and is never served from here; an outage never blocks the batch.
   try {
-    await ensureChallengePool(service, scopeKey, promptLabel);
+    await ensureChallengePool(service, scope.scopeKey, scope.promptLabel);
   } catch (generationError) {
-    console.error(`[arena-challenges/weekly-batch] AI top-up failed for ${scopeKey}, using the stored pool:`, generationError);
+    console.error(`[arena-challenges/weekly-batch] AI top-up failed for ${scope.scopeKey}:`, generationError);
   }
 
-  const [{ data: pool }, { data: completions }] = await Promise.all([
-    service.from("arena_challenges").select("id").eq("track", "stream").eq("scope_key", scopeKey).eq("active", true).order("created_at"),
+  const since = weekStartOf(new Date(Date.now() - RECENT_WEEKS * 7 * 24 * 60 * 60 * 1000));
+  const [pool, { data: completions }, { data: stats }, { data: recentWeeks }] = await Promise.all([
+    loadStreamPool(service, scope),
     service.from("arena_challenge_completions").select("challenge_id").eq("user_id", userId).eq("track", "stream").eq("is_correct", true),
+    service.from("arena_stream_stats").select("points").eq("user_id", userId).maybeSingle(),
+    service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).gte("week_start", since).lt("week_start", weekStart),
   ]);
-  const solvedIds = new Set((completions ?? []).map((c) => c.challenge_id));
-  const challengeIds = pickWeeklyChallengeIds(pool ?? [], solvedIds);
 
-  const { error } = await service.from("arena_stream_weeks").insert({ user_id: userId, week_start: weekStart, scope_key: scopeKey, challenge_ids: challengeIds });
-  if (!error) return { weekStart, challengeIds };
+  const selection = selectStreamBatch({
+    pool,
+    solvedIds: new Set((completions ?? []).map((c) => c.challenge_id)),
+    recentIds: new Set((recentWeeks ?? []).flatMap((w) => w.challenge_ids)),
+    courses: student.courses,
+    currentYear: student.currentYear,
+    points: stats?.points ?? 0,
+    seed: `${userId}:${weekStart}`,
+  });
 
-  // 23505 = unique violation: a concurrent request (e.g. a second tab) already
-  // assigned this week's batch first -- use its result instead of erroring.
+  const { error } = await service.from("arena_stream_weeks").insert({ user_id: userId, week_start: weekStart, scope_key: scope.scopeKey, challenge_ids: selection.ids });
+  if (!error) return { weekStart, challengeIds: selection.ids, shortfall: selection.shortfall };
+
+  // 23505 = unique violation: a concurrent request (e.g. a second tab) already assigned this week's batch first -- use its result.
   if (error.code !== "23505") throw error;
   const { data: winner, error: refetchError } = await service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).eq("week_start", weekStart).single();
   if (refetchError || !winner) throw refetchError ?? new Error("Weekly batch missing after conflict");
-  return { weekStart, challengeIds: winner.challenge_ids };
+  return { weekStart, challengeIds: winner.challenge_ids, shortfall: Math.max(0, BATCH_SIZE - winner.challenge_ids.length) };
 }

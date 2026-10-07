@@ -3,7 +3,7 @@ import { MANDATORY_NOTE, prioritiseSubjects, scheduleOf } from "./subjects";
 import type { CourseInput, GapRow } from "./types";
 
 const gap = (skillId: string, importance: GapRow["importance"], g: number, over: Partial<GapRow> = {}): GapRow => ({
-  skillId, skillName: skillId.toUpperCase(), importance, targetLevel: 80, stage: "JOB_READY", parentSkillId: null, currentLevel: 80 - g, confidence: 0.7, verified: true, selfDeclaredOnly: false,
+  skillId, skillName: skillId.toUpperCase(), importance, targetLevel: 80, stage: "JOB_READY", parentSkillId: null, currentLevel: 80 - g, assessed: true, confidence: 0.7, verified: true, selfDeclaredOnly: false,
   gap: g, met: g === 0, coverage: "NONE", coverageCourseIds: [], coverageOutcomeCount: 0, gapType: g === 0 ? null : "NOT_COVERED", ...over,
 });
 const course = (id: string, skills: CourseInput["skills"], year = 3, semester: number | null = 1): CourseInput => ({ id, title: `Course ${id}`, year, semester, skills, prerequisiteCourseIds: [] });

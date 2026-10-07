@@ -1,0 +1,255 @@
+[
+  {
+    "key": "devops-harden-a-dockerfile",
+    "track": "domain",
+    "title": "Harden and speed up a Node.js Dockerfile",
+    "category": "Containers",
+    "difficulty": "medium",
+    "estMinutes": 20,
+    "isSeed": true,
+    "template": "config-editor",
+    "ticketBrief": "# Ticket OPS-301\nThe `api` image builds slowly on every code change, is not reproducible, and runs as root.\n\n**Acceptance criteria**\n- Pin the base image to a specific version (not `latest`).\n- Copy `package*.json` and install dependencies **before** copying the rest of the source, using `npm ci`, so the dependency layer is cached.\n- Run the container as the unprivileged `node` user.",
+    "skills": [
+      "Containerization",
+      "Linux"
+    ],
+    "careers": [
+      "cloud-engineer"
+    ],
+    "steps": [
+      {
+        "title": "Fix the Dockerfile",
+        "instruction": "Edit Dockerfile so it meets the acceptance criteria."
+      }
+    ],
+    "checks": [
+      {
+        "key": "pinned",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Base image is pinned to a version",
+        "config": {
+          "path": "Dockerfile",
+          "regex": "^FROM\\s+node:\\d",
+          "notContains": [
+            "node:latest"
+          ]
+        }
+      },
+      {
+        "key": "cache",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Dependencies are installed before the source is copied",
+        "config": {
+          "path": "Dockerfile",
+          "regex": "COPY package\\*\\.json[\\s\\S]*RUN npm ci[\\s\\S]*COPY \\. \\."
+        }
+      },
+      {
+        "key": "user",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Container runs as the node user",
+        "config": {
+          "path": "Dockerfile",
+          "regex": "^USER\\s+node\\s*$"
+        }
+      }
+    ],
+    "hints": [
+      {
+        "body": "Layer caching works top to bottom: put the files that change least first.",
+        "penalty": 10
+      }
+    ],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "files": {
+        "Dockerfile": "FROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --omit=dev\nCOPY . .\nUSER node\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]\n"
+      }
+    },
+    "assets": {
+      "files": {
+        "Dockerfile": "FROM node:latest\nWORKDIR /app\nCOPY . .\nRUN npm install\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]\n"
+      }
+    },
+    "wrong": {
+      "files": {
+        "Dockerfile": "FROM node:latest\nWORKDIR /app\nCOPY . .\nRUN npm install\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]\n"
+      }
+    }
+  },
+  {
+    "key": "devops-production-ready-deployment",
+    "track": "domain",
+    "title": "Make a Kubernetes Deployment production-ready",
+    "category": "Kubernetes",
+    "difficulty": "medium",
+    "estMinutes": 20,
+    "isSeed": true,
+    "template": "config-editor",
+    "ticketBrief": "# Ticket OPS-302\nThe `api` Deployment has one replica, no health checks and no resource settings, so a single crash causes downtime and a noisy pod can starve its neighbours.\n\n**Acceptance criteria**\n- At least 2 replicas.\n- A readiness probe and a liveness probe.\n- CPU and memory **requests** and **limits**.",
+    "skills": [
+      "Containerization",
+      "Cloud Computing"
+    ],
+    "careers": [
+      "cloud-engineer"
+    ],
+    "steps": [
+      {
+        "title": "Edit the manifest",
+        "instruction": "Edit deployment.yaml so it meets the acceptance criteria."
+      }
+    ],
+    "checks": [
+      {
+        "key": "replicas",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Runs at least 2 replicas",
+        "config": {
+          "path": "deployment.yaml",
+          "regex": "replicas:\\s*([2-9]|\\d{2,})"
+        }
+      },
+      {
+        "key": "probes",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Has readiness and liveness probes",
+        "config": {
+          "path": "deployment.yaml",
+          "contains": [
+            "readinessProbe:",
+            "livenessProbe:"
+          ]
+        }
+      },
+      {
+        "key": "resources",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Sets resource requests and limits",
+        "config": {
+          "path": "deployment.yaml",
+          "contains": [
+            "requests:",
+            "limits:"
+          ]
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "files": {
+        "deployment.yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: api\n  template:\n    metadata:\n      labels:\n        app: api\n    spec:\n      containers:\n        - name: api\n          image: example/api:1.4.2\n          ports:\n            - containerPort: 3000\n          readinessProbe:\n            httpGet:\n              path: /healthz\n              port: 3000\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 3000\n          resources:\n            requests:\n              cpu: 100m\n              memory: 128Mi\n            limits:\n              cpu: 500m\n              memory: 256Mi\n"
+      }
+    },
+    "assets": {
+      "files": {
+        "deployment.yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: api\n  template:\n    metadata:\n      labels:\n        app: api\n    spec:\n      containers:\n        - name: api\n          image: example/api:1.4.2\n          ports:\n            - containerPort: 3000\n"
+      }
+    },
+    "wrong": {
+      "files": {
+        "deployment.yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: api\n  template:\n    metadata:\n      labels:\n        app: api\n    spec:\n      containers:\n        - name: api\n          image: example/api:1.4.2\n          ports:\n            - containerPort: 3000\n"
+      }
+    }
+  },
+  {
+    "key": "devops-fix-a-ci-workflow",
+    "track": "domain",
+    "title": "Fix a CI workflow that never runs the tests",
+    "category": "CI/CD",
+    "difficulty": "easy",
+    "estMinutes": 15,
+    "isSeed": true,
+    "template": "config-editor",
+    "ticketBrief": "# Ticket OPS-303\nThe CI workflow only runs when someone clicks a button, never checks out the code, and does not actually run the test suite.\n\n**Acceptance criteria**\n- Run on every pull request and on pushes to `main`.\n- Check out the repository with `actions/checkout@v4`.\n- Run `npm test`.",
+    "skills": [
+      "CI/CD",
+      "Version Control"
+    ],
+    "careers": [
+      "cloud-engineer"
+    ],
+    "steps": [
+      {
+        "title": "Edit the workflow",
+        "instruction": "Edit ci.yml so it meets the acceptance criteria."
+      }
+    ],
+    "checks": [
+      {
+        "key": "triggers",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Runs on pull requests and pushes to main",
+        "config": {
+          "path": "ci.yml",
+          "contains": [
+            "pull_request",
+            "push:",
+            "main"
+          ]
+        }
+      },
+      {
+        "key": "checkout",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Checks out the code",
+        "config": {
+          "path": "ci.yml",
+          "contains": [
+            "actions/checkout@v4"
+          ]
+        }
+      },
+      {
+        "key": "test",
+        "step": 1,
+        "type": "FILE_STATE",
+        "label": "Runs the tests",
+        "config": {
+          "path": "ci.yml",
+          "contains": [
+            "npm test"
+          ]
+        }
+      }
+    ],
+    "hints": [],
+    "provenance": {
+      "source": "Authored by Capabilio for this platform",
+      "license": "Original content; textbook-standard formulas and facts only, no third-party material",
+      "notes": "Seed content"
+    },
+    "reference": {
+      "files": {
+        "ci.yml": "name: ci\non:\n  push:\n    branches: [main]\n  pull_request:\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n"
+      }
+    },
+    "assets": {
+      "files": {
+        "ci.yml": "name: ci\non: [workflow_dispatch]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm ci\n      - run: echo \"tests later\"\n"
+      }
+    },
+    "wrong": {
+      "files": {
+        "ci.yml": "name: ci\non: [workflow_dispatch]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm ci\n      - run: echo \"tests later\"\n"
+      }
+    }
+  }
+]

@@ -117,7 +117,7 @@ describe("a student with a career goal (live)", () => {
     expect(plan.subjects.map((s) => s.title)).toContain("Database Management Systems");
     expect(plan.subjects.find((s) => s.title === "Database Management Systems")).toMatchObject({ schedule: "CURRENT" });
     // The biggest weighted gap is Data Analysis (0 of 80); two Arena challenges are tagged with it, so that is something the student can do today.
-    expect(plan.nextBestAction).toMatchObject({ kind: "ARENA", skillId: skill.SKILL_DATA_ANALYSIS, reason: "Your Data Analysis capability is 0 and your target is 80." });
+    expect(plan.nextBestAction).toMatchObject({ kind: "ARENA", skillId: skill.SKILL_DATA_ANALYSIS, reason: "You haven't been assessed on Data Analysis yet, so we don't know where you are. The target is 80." });
     const sqlGap = plan.gaps.find((g) => g.skillId === skill.SKILL_SQL)!;
     expect(sqlGap).toMatchObject({ currentLevel: 38, targetLevel: 80, gap: 42, coverage: "STRONG", gapType: "COVERED_BY_CURRICULUM" });
     expect(plan.mandatoryNote).toMatch(/remain part of your academic curriculum/);
@@ -131,7 +131,7 @@ describe("a student with a career goal (live)", () => {
   it("same inputs -> same hash; new evidence, a new curriculum version or a new career each change it", async () => {
     const a = await ready();
     expect((await ready()).hash).toBe(a.hash);
-    await service.from("arena_skill_ratings").insert({ user_id: userId, role_key: "data-analyst", area_key: "sql", rating: 450, verified_count: 3 });
+    await service.from("arena_skill_ratings").insert({ user_id: userId, role_key: "data-analyst", area_key: "sql", rating: 450, verified_count: 3, last_verified_at: new Date().toISOString() });
     const b = await ready();
     expect(b.hash).not.toBe(a.hash);
     expect(b.input.capability[skill.SKILL_SQL].level).toBe(75); // 3 verified Arena tasks > the 38 assessment score

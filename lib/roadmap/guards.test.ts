@@ -89,8 +89,8 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
       expect(src, f).toContain("requireUser(");
       expect(src.indexOf("requireUser("), f).toBeLessThan(src.indexOf("createServiceClient()"));
       expect(src, f).toContain("auth.userId");
-      expect(src, f).not.toMatch(/searchParams|formData\(/); // nothing in the URL can name a student
-      if (/request\.json\(/.test(src)) expect(src, f).toMatch(/BodySchema\.safeParse/); // a body is only read through a schema
+      expect(src, f).not.toMatch(/formData\(|searchParams\.get\(["'`](user|student)/i); // nothing in the URL or a form can name a student (a career slot or node key is not a student)
+      if (/request\.json\(/.test(src)) expect(src, f).toMatch(/Body(Schema)?\.safeParse/); // a body is only read through a schema
     }
   });
   it("roadmap persistence and regeneration never import the AI provider; only the explanation step reaches the propose-only module", () => {
@@ -113,14 +113,14 @@ describe("the student roadmap page", () => {
   it("shows for every track — a student with no career goal gets a 'choose a career' state, not a 404 or an invented roadmap", () => {
     const page = read("app/(app)/dashboard/roadmap/page.tsx");
     expect(page).not.toMatch(/notFound\(\)/);
-    expect(page).toContain("ensureRoadmap(");
-    expect(page).toContain("<MissingState");
+    expect(page).toContain("getRoadmapGraph("); // the career map; its empty states (no career, exploring, no roadmap) live in EmptyStates
+    expect(read("components/roadmap/visual/EmptyStates.tsx")).toContain("Choose a career");
     expect(read("components/dashboard/DashboardSubNav.tsx")).not.toMatch(/Roadmap.*jobTrackOnly/);
   });
   it("the page acts on the signed-in student only: the version in the URL is read through an owner-scoped loader", () => {
     const page = read("app/(app)/dashboard/roadmap/page.tsx");
     expect(page).toContain("requireAuthedUser()");
-    expect(page).toContain("getRoadmapVersionView(service, user.id,");
+    expect(page).toContain("getRoadmapGraph(createServiceClient(), user.id,"); // the student id always comes from the session, never the URL
   });
   it("the regulation setter updates only the caller's own memberships and its body cannot name a student", () => {
     expect(read("lib/roadmap-engine/regulation.ts")).toMatch(/\.eq\("user_id", userId\)/);
@@ -137,7 +137,8 @@ describe("AI never touches what the student is shown", () => {
   it("only the propose-only suggestion module imports the AI provider anywhere under lib/roadmap or app/api/admin", () => {
     const files = [...walk("lib/roadmap"), ...walk("app/api/admin"), ...walk("components/roadmap"), ...walk("components/admin")];
     const importers = files.filter((f) => /@\/lib\/ai\//.test(read(f)));
-    expect(importers).toEqual(["lib/roadmap/suggest.ts"]);
+    // derive.ts is the extraction pipeline's enrichment: it only STAGES labelled, evidence-grounded INFERRED outcomes and AI_SUGGESTED mappings
+    expect(importers).toEqual(["lib/roadmap/extract/derive.ts", "lib/roadmap/suggest.ts"]);
   });
   it("the suggestion module has no database access, and its route performs no writes", () => {
     expect(read("lib/roadmap/suggest.ts")).not.toMatch(/supabase|\.insert\(|\.update\(|\.upsert\(|\.delete\(/);

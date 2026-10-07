@@ -6,6 +6,7 @@ import { structureSemester } from "./structure";
 import { buildCandidates, ExtractionError, type ExtractionDeps } from "./build";
 import { extractPdfPages } from "./pdf";
 import { detectRegulation, parseProgramOutcomes } from "./programs";
+import { enrichImport } from "./derive";
 import { saveExtractionAsImport, type PersistCourse } from "./persist";
 import { reportProgress, updateExtraction } from "./store";
 import type { ExtractionErrorCode } from "./types";
@@ -13,6 +14,7 @@ import type { ExtractionErrorCode } from "./types";
 type Service = SupabaseClient<Database>;
 export const EXTRACTION_VERSION = "p3-1";
 const SAVE_ATTEMPTS = 2;
+const ENRICH_BUDGET_MS = 150_000;
 
 /** The background job (started with `after()` from the upload route). Every outcome is written to the staging row. */
 export async function runExtraction(
@@ -36,7 +38,7 @@ export async function runExtraction(
     // Structure only. Skill suggestions are a separate, explicit step (suggest-skills.ts): bounded per request, resumable, never part of the upload.
     const persistCourses: PersistCourse[] = built.rows.map((row) => {
       const rich = built.rich.find((r) => r.tempId === row.tempId)!;
-      return { row, parsed: rich.parsed, structuredBy: rich.structuredBy, mappings: [] };
+      return { row, parsed: rich.parsed, structuredBy: rich.structuredBy, mappings: [], pageStart: rich.pageStart, pageEnd: rich.pageEnd };
     });
 
     let importId: string | null = null;
@@ -59,6 +61,11 @@ export async function runExtraction(
     }
     if (!importId) warnings.push("The detailed curriculum draft (outcomes, units, labs) could not be saved. The subject list below is unaffected.");
     await updateExtraction(service, job.id, { status: "ready", result: { rows: built.rows, warnings: [...new Set(warnings)], importId }, import_id: importId, error_code: null });
+    // The college only uploads the PDF: Capabilio now derives outcomes where the syllabus prints none and suggests skills per course and unit.
+    // Bounded by what is left of this job; the college's page and the daily job continue it until it is done.
+    if (importId && !depsOverride) {
+      await enrichImport(service, importId, { institutionId: job.institutionId }, { budgetMs: ENRICH_BUDGET_MS }).catch((e) => console.error("[curriculum-enrichment] after extraction:", e instanceof Error ? e.message : e));
+    }
   } catch (error) {
     await fail(error instanceof ExtractionError ? error.code : "internal");
   }

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, Clock, Database, FileText, GraduationCap, type LucideIcon } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { resolveStreamScope } from "@/lib/arena-challenges/resolve-scope";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getCareerIntent } from "@/lib/careers/intent";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 
 export const metadata: Metadata = {
@@ -17,7 +19,8 @@ const ACCENT = {
 
 export default async function ArenaChallengesPage() {
   const { supabase, user } = await requireAuthedUser();
-  const scope = await resolveStreamScope(supabase, user.id);
+  const [scope, { intent }] = await Promise.all([resolveStreamScope(supabase, user.id), getCareerIntent(createServiceClient(), user.id)]);
+  const target = intent.primary?.name ?? null;
 
   return (
     <div>
@@ -42,6 +45,7 @@ export default async function ArenaChallengesPage() {
           count="8 challenges"
           timing="8–15 min each"
           reward="Earn points"
+          context={scope ? { text: `Your stream: ${scope.branch}`, href: "/profile", label: "change" } : { text: "No branch on your profile yet", href: "/profile", label: "Add your branch" }}
         />
         <TrackCard
           href="/arena/challenges/domain"
@@ -53,6 +57,11 @@ export default async function ArenaChallengesPage() {
           count="8 challenges"
           timing="8–15 min each"
           reward="Earn ELO"
+          context={
+            target
+              ? { text: `Your target: ${target}`, href: "/dashboard/roadmap", label: "change" }
+              : { text: intent.isExploring ? "You are still exploring" : "No target career set", href: "/dashboard/roadmap", label: "Set your career" }
+          }
         />
       </div>
     </div>
@@ -69,6 +78,7 @@ function TrackCard({
   count,
   timing,
   reward,
+  context,
 }: {
   href: string;
   icon: LucideIcon;
@@ -79,9 +89,11 @@ function TrackCard({
   count: string;
   timing: string;
   reward: string;
+  context: { text: string; href: string; label: string };
 }) {
   const a = ACCENT[accent];
   return (
+    <div className="flex flex-col gap-2.5">
     <Link
       href={href}
       className={`group flex flex-col gap-6 rounded-[28px] border border-app-border bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_48px_-24px_rgba(0,0,0,0.25)] ${a.ring}`}
@@ -118,5 +130,12 @@ function TrackCard({
         </span>
       </div>
     </Link>
+    <p className="px-2 font-lp-body text-[12.5px] text-app-muted">
+      {context.text} ·{" "}
+      <Link href={context.href} className="font-semibold text-app-charcoal hover:underline">
+        {context.label}
+      </Link>
+    </p>
+    </div>
   );
 }

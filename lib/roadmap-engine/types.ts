@@ -33,7 +33,10 @@ export interface CourseInput {
   prerequisiteCourseIds: string[];
 }
 export interface StudentSkillInput {
+  /** 0 when not assessed; read `assessed` to tell a measured 0 from nothing */
   level: number;
+  /** false = no evidence at all (the level above is a placeholder, shown as "not assessed") */
+  assessed: boolean;
   confidence: number;
   verified: boolean;
   verifiedLevel: number | null;
@@ -60,8 +63,10 @@ export interface GapRow {
   targetLevel: number;
   stage: Stage;
   parentSkillId: string | null;
-  /** the level the roadmap counts (verified level, or half of a self-declared one) */
+  /** the level the roadmap counts (verified level, or half of a self-declared one); 0 when not assessed */
   currentLevel: number;
+  /** false = nothing has been measured for this skill (display "Not assessed yet", never "0") */
+  assessed: boolean;
   confidence: number;
   verified: boolean;
   /** the student has only claimed this skill, with nothing verified */

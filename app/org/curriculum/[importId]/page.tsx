@@ -17,6 +17,7 @@ import { MappingsStep } from "@/components/curriculum/MappingsStep";
 import { RelevanceStep } from "@/components/curriculum/RelevanceStep";
 import { loadImportRelevance } from "@/lib/careers/data";
 import { ConfirmStep } from "@/components/curriculum/ConfirmStep";
+import { AutoAnalysis } from "@/components/curriculum/AutoAnalysis";
 import { PublishStep } from "@/components/curriculum/PublishStep";
 
 export const metadata: Metadata = { title: "Curriculum review — Capabilio AI" };
@@ -42,6 +43,7 @@ export default async function CurriculumWizardPage({ params, searchParams }: { p
     <div className="flex flex-col gap-6">
       <div><Link href="/org/curriculum" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-app-charcoal"><ArrowLeft size={13} aria-hidden="true" /> All curricula</Link></div>
       <PageHeader title={`${imp.branch}${imp.regulation ? ` · ${imp.regulation}` : ""}`} subtitle="Review what was read from the syllabus, confirm the skills each course builds, then publish. Nothing reaches students until you do." action={<StatusPill status={status} />} />
+      <AutoAnalysis importId={importId} initial={(imp as { enrichment?: { state?: "RUNNING" | "DONE"; total?: number; outcomesPending?: number; skillsPending?: number; unitsPending?: number } }).enrichment ?? null} published={!editable} />
       <SummaryCard summary={summary} />
       <WizardNav importId={importId} current={step} badges={badges} />
 

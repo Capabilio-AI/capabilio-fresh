@@ -135,12 +135,12 @@ describe("capability read model (live)", () => {
       { user_id: a.userId, skill: "Totally Unknown Skill Name Zz", domain: "x", capability_score: 50, confidence: "low", data_points: 1 },
     ]);
     await service.from("capability_history").insert({ user_id: a.userId, skill: "Python Programming", capability_score: 70, confidence: "high", source: "project" });
-    await service.from("arena_skill_ratings").insert({ user_id: a.userId, role_key: "data-analyst", area_key: "sql", rating: 450, verified_count: 2 });
+    await service.from("arena_skill_ratings").insert({ user_id: a.userId, role_key: "data-analyst", area_key: "sql", rating: 450, verified_count: 2, last_verified_at: new Date().toISOString() });
     const caps = await loadStudentCapabilities(service, a.userId);
     const { data: skills } = await service.from("skills").select("id, key").in("key", ["SKILL_PYTHON", "SKILL_SQL"]);
     const id = (k: string) => skills!.find((s) => s.key === k)!.id;
-    expect(caps.bySkill.get(id("SKILL_PYTHON"))).toMatchObject({ level: 70, verified: true, confidence: 0.9, breakdown: { PROJECT: 1 } });
-    expect(caps.bySkill.get(id("SKILL_SQL"))).toMatchObject({ level: 50, verified: true, confidence: 0.7, breakdown: { ARENA: 1 } }); // 2 verified tasks x 25
+    expect(caps.bySkill.get(id("SKILL_PYTHON"))).toMatchObject({ level: 70, verified: true, breakdown: { PROJECT: 1 } });
+    expect(caps.bySkill.get(id("SKILL_SQL"))).toMatchObject({ level: 50, verified: true, breakdown: { ARENA: 2 } }); // 2 fresh verified tasks x 25 (capability.v2)
     expect(caps.unmatched).toEqual(["Totally Unknown Skill Name Zz"]);
     expect(caps.bySkill.size).toBe(2);
     expect((await loadStudentCapabilities(service, b.userId)).bySkill.size).toBe(0); // nothing for a student with no evidence

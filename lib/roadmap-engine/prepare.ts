@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import { loadRoadmapContext, type LoadedMeta, type LoadResult } from "./load";
 import { generateRoadmap, type RoadmapPlan } from "./generate";
 import { buildExplanations, type ExplainFn } from "./explain";
+import { FORMULA_VERSION } from "@/lib/roadmap-visual/capability";
 import { canonicalInput, hashSnapshot } from "./snapshot";
 import type { EngineInput } from "./types";
 
@@ -24,7 +25,7 @@ export type PrepareResult = Exclude<LoadResult, { status: "READY" }> | PreparedR
 /** The inputs that determine a roadmap — and nothing derived from them, so identical inputs always hash identically. */
 export function buildSnapshot(input: EngineInput, meta: LoadedMeta): Record<string, unknown> {
   return {
-    mode: meta.mode, career: input.career, requirements: input.requirements, courses: input.courses, capability: input.capability, hasAnyCapabilityData: input.hasAnyCapabilityData,
+    formulaVersion: FORMULA_VERSION, mode: meta.mode, career: input.career, requirements: input.requirements, courses: input.courses, capability: input.capability, hasAnyCapabilityData: input.hasAnyCapabilityData,
     position: input.position, catalogs: input.catalogs, curriculumVersionId: meta.curriculumVersionId, regulation: meta.regulation,
     goals: meta.goals.map((g) => ({ kind: g.kind, careerId: g.careerId })),
   };

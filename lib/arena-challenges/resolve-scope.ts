@@ -3,6 +3,15 @@ import type { Database } from "@/lib/supabase/types";
 import { getStudentBranchContext } from "@/lib/assessment/attempts";
 import { clusterKeyForBranch, promptLabelForBranch } from "./branch-clusters";
 
+export interface StreamScope {
+  scopeKey: string;
+  promptLabel: string;
+  /** the student's own branch as recorded */
+  branch: string;
+  /** same normalisation as curriculum_versions.branch_key */
+  branchKey: string;
+}
+
 /**
  * Stream-only -- Domain (career-based) challenges were removed. Stream
  * challenges are specifically curriculum/branch-focused missions; the
@@ -12,8 +21,8 @@ import { clusterKeyForBranch, promptLabelForBranch } from "./branch-clusters";
  * generator should write about. Null when the student hasn't set a
  * branch yet.
  */
-export async function resolveStreamScope(supabase: SupabaseClient<Database>, userId: string): Promise<{ scopeKey: string; promptLabel: string } | null> {
+export async function resolveStreamScope(supabase: SupabaseClient<Database>, userId: string): Promise<StreamScope | null> {
   const { branch } = await getStudentBranchContext(supabase, userId);
   if (!branch) return null;
-  return { scopeKey: clusterKeyForBranch(branch), promptLabel: promptLabelForBranch(branch) };
+  return { scopeKey: clusterKeyForBranch(branch), promptLabel: promptLabelForBranch(branch), branch, branchKey: branch.trim().toLowerCase() };
 }

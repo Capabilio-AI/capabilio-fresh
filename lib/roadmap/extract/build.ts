@@ -27,6 +27,8 @@ export interface RichCourse {
   parsed: ParsedSection;
   sectionText: string;
   structuredBy: "parser" | "ai";
+  pageStart?: number;
+  pageEnd?: number;
 }
 
 const MAP_BATCH = 10;
@@ -103,7 +105,7 @@ export async function buildCandidates(
   // Full structure per course: deterministic parse first (already in the section); AI only where the layout was not recognised.
   const rich: RichCourse[] = merged.map((m, i) => {
     const section = sectionFor.get(m);
-    return { tempId: `r${i + 1}`, parsed: section?.parsed ?? parseCourseSection([]), sectionText: section?.text ?? "", structuredBy: "parser" };
+    return { tempId: `r${i + 1}`, parsed: section?.parsed ?? parseCourseSection([]), sectionText: section?.text ?? "", structuredBy: "parser", pageStart: section?.pageStart, pageEnd: section?.pageEnd };
   });
 
   if (deps.structureSection) {

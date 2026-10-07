@@ -72,6 +72,13 @@ describe("the first roadmap (live)", () => {
     expect(r.view.notes).toMatchObject({ semesterEstimated: true });
     expect(await getCurrentRoadmapView(service, a.userId)).toMatchObject({ versionNo: 1 });
     expect(await count("roadmap_skill_gaps", "version_id", r.view.versionId)).toBe(r.view.gaps.length);
+    // honest scoring (capability.v2): the version records its formula, and a skill with no evidence is stored as NOT assessed (not as a measured 0)
+    const { data: row } = await service.from("roadmap_versions" as never).select("formula_version").eq("id", r.view.versionId).single();
+    expect((row as unknown as { formula_version: string }).formula_version).toBe("capability.v2");
+    expect(r.view.gaps.find((g) => g.skillName === "SQL")!.assessed).toBe(true);
+    const unassessed = r.view.gaps.filter((g) => !g.assessed);
+    expect(unassessed.length).toBeGreaterThan(0);
+    expect(unassessed.every((g) => g.currentLevel === 0 && !g.verified)).toBe(true);
   });
 });
 
@@ -89,7 +96,7 @@ describe("regeneration is idempotent and hash-driven (live)", () => {
 
   it("new verified evidence creates version 2 (PROGRESS_UPDATE); version 1 stays readable and is marked as no longer the latest", async () => {
     const v1 = (await getCurrentRoadmapView(service, a.userId))!;
-    await service.from("arena_skill_ratings").insert({ user_id: a.userId, role_key: "data-analyst", area_key: "sql", rating: 450, verified_count: 3 });
+    await service.from("arena_skill_ratings").insert({ user_id: a.userId, role_key: "data-analyst", area_key: "sql", rating: 450, verified_count: 3, last_verified_at: new Date().toISOString() });
     const r = await ready(a.userId);
     expect(r).toMatchObject({ created: true, trigger: "PROGRESS_UPDATE" });
     expect(r.view.versionNo).toBe(2);

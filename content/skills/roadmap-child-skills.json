@@ -1,0 +1,491 @@
+{
+  "purpose": "Child skills needed by the first three roadmap trees (Software Engineer, Data Analyst, AI/ML Engineer). Imported as CANDIDATES; nothing is active until a reviewer runs `roadmap:content skills activate`.",
+  "skills": [
+    {
+      "key": "SKILL_VARIABLES_AND_CONTROL_FLOW",
+      "name": "Variables and Control Flow",
+      "parent": "Programming Fundamentals",
+      "description": "Declares and updates variables and uses conditions and loops to control what a program does."
+    },
+    {
+      "key": "SKILL_FUNCTIONS_AND_SCOPE",
+      "name": "Functions and Scope",
+      "parent": "Programming Fundamentals",
+      "description": "Breaks code into functions with clear inputs and outputs and understands where a name is visible."
+    },
+    {
+      "key": "SKILL_ERROR_HANDLING_AND_DEBUGGING",
+      "name": "Error Handling and Debugging",
+      "parent": "Programming Fundamentals",
+      "description": "Finds the cause of a failing program with a systematic method and handles errors without hiding them."
+    },
+    {
+      "key": "SKILL_ARRAYS_AND_STRINGS",
+      "name": "Arrays and Strings",
+      "parent": "Data Structures",
+      "description": "Stores and transforms sequences of values and text, and knows the cost of common operations on them."
+    },
+    {
+      "key": "SKILL_LINKED_LIST_OPERATIONS",
+      "name": "Linked List Operations",
+      "parent": "Data Structures",
+      "description": "Builds and manipulates singly and doubly linked lists, including insertion, deletion and reversal."
+    },
+    {
+      "key": "SKILL_STACKS_AND_QUEUES",
+      "name": "Stacks and Queues",
+      "parent": "Data Structures",
+      "description": "Uses last-in-first-out and first-in-first-out structures and recognises the problems they suit."
+    },
+    {
+      "key": "SKILL_HASH_MAPS_AND_HASHING",
+      "name": "Hash Maps and Hashing",
+      "parent": "Data Structures",
+      "description": "Uses key-value lookup in constant expected time and reasons about collisions and load."
+    },
+    {
+      "key": "SKILL_TREES_AND_BINARY_SEARCH_TREES",
+      "name": "Trees and Binary Search Trees",
+      "parent": "Data Structures",
+      "description": "Represents hierarchical data, traverses trees and keeps ordered data in a binary search tree."
+    },
+    {
+      "key": "SKILL_HEAPS_AND_PRIORITY_QUEUES",
+      "name": "Heaps and Priority Queues",
+      "parent": "Data Structures",
+      "description": "Maintains the smallest or largest item efficiently and applies it to scheduling and top-k problems."
+    },
+    {
+      "key": "SKILL_SORTING_AND_SEARCHING_ALGORITHMS",
+      "name": "Sorting and Searching Algorithms",
+      "parent": "Algorithms",
+      "description": "Chooses and implements common sorting and searching methods and compares their running time."
+    },
+    {
+      "key": "SKILL_RECURSION_AND_BACKTRACKING_PATTERNS",
+      "name": "Recursion and Backtracking Patterns",
+      "parent": "Algorithms",
+      "description": "Solves problems by breaking them into smaller copies of themselves and exploring choices with undo."
+    },
+    {
+      "key": "SKILL_DYNAMIC_PROGRAMMING_PATTERNS",
+      "name": "Dynamic Programming Patterns",
+      "parent": "Algorithms",
+      "description": "Solves overlapping-subproblem tasks by defining a state, a recurrence and an order of evaluation."
+    },
+    {
+      "key": "SKILL_GREEDY_ALGORITHM_DESIGN",
+      "name": "Greedy Algorithm Design",
+      "parent": "Algorithms",
+      "description": "Builds a solution from locally best choices and judges when that is provably enough."
+    },
+    {
+      "key": "SKILL_CLASSES_AND_ENCAPSULATION",
+      "name": "Classes and Encapsulation",
+      "parent": "Object-Oriented Programming",
+      "description": "Models things as classes, hides internal state and exposes a small, clear interface."
+    },
+    {
+      "key": "SKILL_INHERITANCE_AND_POLYMORPHISM",
+      "name": "Inheritance and Polymorphism",
+      "parent": "Object-Oriented Programming",
+      "description": "Reuses behaviour through inheritance and composition and writes code that works on many types."
+    },
+    {
+      "key": "SKILL_OBJECT_ORIENTED_DESIGN_PATTERNS",
+      "name": "Object-Oriented Design Patterns",
+      "parent": "Object-Oriented Programming",
+      "description": "Recognises and applies common object-oriented solutions such as factory, observer and strategy."
+    },
+    {
+      "key": "SKILL_GIT_FUNDAMENTALS",
+      "name": "Git Fundamentals",
+      "parent": "Version Control",
+      "description": "Tracks changes with commits, inspects history and undoes mistakes safely using Git."
+    },
+    {
+      "key": "SKILL_BRANCHING_AND_MERGING",
+      "name": "Branching and Merging",
+      "parent": "Version Control",
+      "description": "Works on parallel lines of development and combines them, resolving conflicts correctly."
+    },
+    {
+      "key": "SKILL_CODE_REVIEW_PRACTICE",
+      "name": "Code Review Practice",
+      "parent": "Version Control",
+      "description": "Gives and receives pull-request feedback that improves correctness and readability."
+    },
+    {
+      "key": "SKILL_UNIT_TESTING_PRACTICE",
+      "name": "Unit Testing Practice",
+      "parent": "Software Testing",
+      "description": "Writes small automated tests for one behaviour at a time, with clear arrange-act-assert structure."
+    },
+    {
+      "key": "SKILL_INTEGRATION_TESTING",
+      "name": "Integration Testing",
+      "parent": "Software Testing",
+      "description": "Tests how components work together, including databases and external services, with controlled test data."
+    },
+    {
+      "key": "SKILL_TEST_DRIVEN_DEVELOPMENT",
+      "name": "Test-Driven Development",
+      "parent": "Software Testing",
+      "description": "Drives a design by writing a failing test first, making it pass, then cleaning up."
+    },
+    {
+      "key": "SKILL_AGILE_DELIVERY",
+      "name": "Agile Delivery",
+      "parent": "Software Engineering",
+      "description": "Plans and ships work in short iterations, uses feedback and keeps a working product at each step."
+    },
+    {
+      "key": "SKILL_CODE_QUALITY_AND_REFACTORING",
+      "name": "Code Quality and Refactoring",
+      "parent": "Software Engineering",
+      "description": "Improves the structure of working code without changing behaviour, guided by readability and tests."
+    },
+    {
+      "key": "SKILL_REQUIREMENTS_AND_USER_STORIES",
+      "name": "Requirements and User Stories",
+      "parent": "Software Engineering",
+      "description": "Turns a need into clear, testable requirements and acceptance criteria."
+    },
+    {
+      "key": "SKILL_REST_API_DESIGN",
+      "name": "REST API Design",
+      "parent": "API Design",
+      "description": "Designs resource-oriented HTTP interfaces with consistent naming, status codes, errors and versioning."
+    },
+    {
+      "key": "SKILL_AUTHENTICATION_AND_AUTHORIZATION",
+      "name": "Authentication and Authorization",
+      "parent": "API Design",
+      "description": "Separates who a user is from what they may do, and protects endpoints with sessions or tokens."
+    },
+    {
+      "key": "SKILL_HTTP_FUNDAMENTALS",
+      "name": "HTTP Fundamentals",
+      "parent": "Computer Networks",
+      "description": "Understands requests, responses, methods, headers, status codes and how the web uses them."
+    },
+    {
+      "key": "SKILL_SQL_QUERY_BASICS",
+      "name": "SQL Query Basics",
+      "parent": "SQL",
+      "description": "Retrieves and filters rows with SELECT, WHERE, ORDER BY and LIMIT."
+    },
+    {
+      "key": "SKILL_SQL_JOINS",
+      "name": "SQL Joins",
+      "parent": "SQL",
+      "description": "Combines tables with inner and outer joins and reasons about row counts after a join."
+    },
+    {
+      "key": "SKILL_SQL_AGGREGATION_AND_GROUPING",
+      "name": "SQL Aggregation and Grouping",
+      "parent": "SQL",
+      "description": "Summarises data with aggregate functions, GROUP BY and HAVING."
+    },
+    {
+      "key": "SKILL_SQL_SUBQUERIES_AND_CTES",
+      "name": "SQL Subqueries and CTEs",
+      "parent": "SQL",
+      "description": "Structures multi-step queries with subqueries and common table expressions."
+    },
+    {
+      "key": "SKILL_SQL_WINDOW_FUNCTIONS",
+      "name": "SQL Window Functions",
+      "parent": "SQL",
+      "description": "Computes rankings, running totals and comparisons across rows without collapsing them."
+    },
+    {
+      "key": "SKILL_INDEXING_AND_QUERY_PERFORMANCE",
+      "name": "Indexing and Query Performance",
+      "parent": "Database Management Systems",
+      "description": "Speeds up queries with indexes and reads query plans to find what is slow."
+    },
+    {
+      "key": "SKILL_TRANSACTIONS_AND_ACID",
+      "name": "Transactions and ACID",
+      "parent": "Database Management Systems",
+      "description": "Keeps data correct under concurrent change using transactions, isolation levels and constraints."
+    },
+    {
+      "key": "SKILL_SCALABILITY_BASICS",
+      "name": "Scalability Basics",
+      "parent": "System Design",
+      "description": "Reasons about load, bottlenecks and the trade-offs of scaling a service up or out."
+    },
+    {
+      "key": "SKILL_CACHING_STRATEGIES",
+      "name": "Caching Strategies",
+      "parent": "System Design",
+      "description": "Decides what to cache and where, and handles staleness and invalidation."
+    },
+    {
+      "key": "SKILL_PROCESSES_AND_THREADS",
+      "name": "Processes and Threads",
+      "parent": "Operating Systems",
+      "description": "Explains how programs run as processes and threads and how the operating system schedules them."
+    },
+    {
+      "key": "SKILL_CONCURRENCY_BASICS",
+      "name": "Concurrency Basics",
+      "parent": "Operating Systems",
+      "description": "Writes code that shares data safely between threads using locks and avoids races and deadlocks."
+    },
+    {
+      "key": "SKILL_COMMAND_LINE_BASICS",
+      "name": "Command Line Basics",
+      "parent": "Linux",
+      "description": "Navigates the file system and combines shell commands to inspect and transform files."
+    },
+    {
+      "key": "SKILL_SPREADSHEET_FORMULAS_AND_FUNCTIONS",
+      "name": "Spreadsheet Formulas and Functions",
+      "parent": "Excel / Spreadsheets",
+      "description": "Builds reliable calculations with lookup, logical, text and date functions."
+    },
+    {
+      "key": "SKILL_PIVOT_TABLES",
+      "name": "Pivot Tables",
+      "parent": "Excel / Spreadsheets",
+      "description": "Summarises large tables by category and period using pivot tables and charts."
+    },
+    {
+      "key": "SKILL_HANDLING_MISSING_VALUES",
+      "name": "Handling Missing Values",
+      "parent": "Data Cleaning",
+      "description": "Detects missing data, understands why it is missing and chooses to drop, fill or flag it."
+    },
+    {
+      "key": "SKILL_DEDUPLICATION_AND_STANDARDIZATION",
+      "name": "Deduplication and Standardization",
+      "parent": "Data Cleaning",
+      "description": "Finds duplicate records and makes inconsistent text, dates and categories uniform."
+    },
+    {
+      "key": "SKILL_DATA_VALIDATION_CHECKS",
+      "name": "Data Validation Checks",
+      "parent": "Data Cleaning",
+      "description": "Defines and runs checks that catch impossible, inconsistent or out-of-range data before analysis."
+    },
+    {
+      "key": "SKILL_DESCRIPTIVE_STATISTICS",
+      "name": "Descriptive Statistics",
+      "parent": "Statistics",
+      "description": "Summarises data with centre, spread and shape, and chooses measures that suit the data."
+    },
+    {
+      "key": "SKILL_HYPOTHESIS_TESTING",
+      "name": "Hypothesis Testing",
+      "parent": "Statistics",
+      "description": "Tests a claim with a null hypothesis, a test statistic and a p-value, and states what the result means."
+    },
+    {
+      "key": "SKILL_CORRELATION_AND_REGRESSION_BASICS",
+      "name": "Correlation and Regression Basics",
+      "parent": "Statistics",
+      "description": "Measures how variables move together and fits a simple line while avoiding causal over-claims."
+    },
+    {
+      "key": "SKILL_SAMPLING_AND_CONFIDENCE_INTERVALS",
+      "name": "Sampling and Confidence Intervals",
+      "parent": "Statistics",
+      "description": "Draws conclusions about a population from a sample and states the uncertainty."
+    },
+    {
+      "key": "SKILL_RANDOM_VARIABLES_AND_DISTRIBUTIONS",
+      "name": "Random Variables and Distributions",
+      "parent": "Probability",
+      "description": "Describes uncertain quantities with common distributions and computes expectations."
+    },
+    {
+      "key": "SKILL_CONDITIONAL_PROBABILITY_AND_BAYES_RULE",
+      "name": "Conditional Probability and Bayes' Rule",
+      "parent": "Probability",
+      "description": "Updates beliefs with new evidence using conditional probability and Bayes' rule."
+    },
+    {
+      "key": "SKILL_DATA_WRANGLING_WITH_PANDAS",
+      "name": "Data Wrangling with Pandas",
+      "parent": "Python",
+      "description": "Loads, reshapes, joins and summarises tabular data with pandas."
+    },
+    {
+      "key": "SKILL_DATA_VISUALIZATION_WITH_PYTHON",
+      "name": "Data Visualization with Python",
+      "parent": "Python",
+      "description": "Plots distributions and relationships with Python libraries and labels them clearly."
+    },
+    {
+      "key": "SKILL_NUMPY_ARRAYS",
+      "name": "NumPy Arrays",
+      "parent": "Python",
+      "description": "Computes on whole arrays at once with vectorised operations, broadcasting and indexing."
+    },
+    {
+      "key": "SKILL_CHART_SELECTION",
+      "name": "Chart Selection",
+      "parent": "BI / Dashboarding",
+      "description": "Picks the chart that shows a comparison, trend, part-to-whole or relationship honestly."
+    },
+    {
+      "key": "SKILL_DASHBOARD_DESIGN",
+      "name": "Dashboard Design",
+      "parent": "BI / Dashboarding",
+      "description": "Lays out a dashboard so the main question is answered at a glance and filters stay simple."
+    },
+    {
+      "key": "SKILL_KPI_AND_METRIC_DEFINITION",
+      "name": "KPI and Metric Definition",
+      "parent": "BI / Dashboarding",
+      "description": "Defines a metric precisely, with its formula, grain and exclusions, so everyone reads it the same way."
+    },
+    {
+      "key": "SKILL_EXPLORATORY_DATA_ANALYSIS",
+      "name": "Exploratory Data Analysis",
+      "parent": "Data Analysis",
+      "description": "Explores a new dataset to understand its shape, quality and patterns before modelling or reporting."
+    },
+    {
+      "key": "SKILL_A_B_TEST_ANALYSIS",
+      "name": "A/B Test Analysis",
+      "parent": "Data Analysis",
+      "description": "Designs and reads a controlled experiment, including sample size, significance and practical effect."
+    },
+    {
+      "key": "SKILL_COHORT_AND_FUNNEL_ANALYSIS",
+      "name": "Cohort and Funnel Analysis",
+      "parent": "Data Analysis",
+      "description": "Tracks groups over time and step-by-step drop-off to explain retention and conversion."
+    },
+    {
+      "key": "SKILL_DATA_STORYTELLING",
+      "name": "Data Storytelling",
+      "parent": "Technical Communication",
+      "description": "Turns analysis into a clear message for a decision-maker, with the evidence and the caveats."
+    },
+    {
+      "key": "SKILL_VECTORS_AND_MATRICES",
+      "name": "Vectors and Matrices",
+      "parent": "Linear Algebra",
+      "description": "Represents data as vectors and matrices and uses dot products, norms and matrix multiplication."
+    },
+    {
+      "key": "SKILL_EIGENVALUES_AND_MATRIX_DECOMPOSITION",
+      "name": "Eigenvalues and Matrix Decomposition",
+      "parent": "Linear Algebra",
+      "description": "Understands eigenvectors and decompositions such as SVD and where they appear in data work."
+    },
+    {
+      "key": "SKILL_REGRESSION_MODELS",
+      "name": "Regression Models",
+      "parent": "Machine Learning",
+      "description": "Predicts a number from features with linear and related models and reads their coefficients."
+    },
+    {
+      "key": "SKILL_CLASSIFICATION_MODELS",
+      "name": "Classification Models",
+      "parent": "Machine Learning",
+      "description": "Predicts a category with models such as logistic regression and reads their outputs."
+    },
+    {
+      "key": "SKILL_MODEL_EVALUATION_AND_METRICS",
+      "name": "Model Evaluation and Metrics",
+      "parent": "Machine Learning",
+      "description": "Chooses and interprets metrics such as accuracy, precision, recall, F1 and error measures."
+    },
+    {
+      "key": "SKILL_OVERFITTING_AND_REGULARIZATION",
+      "name": "Overfitting and Regularization",
+      "parent": "Machine Learning",
+      "description": "Recognises a model that memorises its training data and controls it with regularization and simpler models."
+    },
+    {
+      "key": "SKILL_CROSS_VALIDATION",
+      "name": "Cross-Validation",
+      "parent": "Machine Learning",
+      "description": "Estimates how a model will do on new data with held-out folds and avoids leaking information."
+    },
+    {
+      "key": "SKILL_FEATURE_ENGINEERING",
+      "name": "Feature Engineering",
+      "parent": "Machine Learning",
+      "description": "Creates, encodes and scales input features that make patterns easier for a model to learn."
+    },
+    {
+      "key": "SKILL_TREE_BASED_MODELS",
+      "name": "Tree-Based Models",
+      "parent": "Machine Learning",
+      "description": "Uses decision trees and ensembles such as random forests and boosting."
+    },
+    {
+      "key": "SKILL_CLUSTERING_AND_UNSUPERVISED_LEARNING",
+      "name": "Clustering and Unsupervised Learning",
+      "parent": "Machine Learning",
+      "description": "Finds structure in unlabeled data with clustering and judges whether it is meaningful."
+    },
+    {
+      "key": "SKILL_DIMENSIONALITY_REDUCTION",
+      "name": "Dimensionality Reduction",
+      "parent": "Machine Learning",
+      "description": "Compresses many features into a few with methods such as PCA while keeping what matters."
+    },
+    {
+      "key": "SKILL_OPTIMIZATION_AND_GRADIENT_DESCENT",
+      "name": "Optimization and Gradient Descent",
+      "parent": "Machine Learning",
+      "description": "Minimises a loss by following its gradient and understands learning rate and convergence."
+    },
+    {
+      "key": "SKILL_MODEL_DEPLOYMENT_BASICS",
+      "name": "Model Deployment Basics",
+      "parent": "Machine Learning",
+      "description": "Packages a trained model behind an interface, versions it and watches it after release."
+    },
+    {
+      "key": "SKILL_NEURAL_NETWORK_FUNDAMENTALS",
+      "name": "Neural Network Fundamentals",
+      "parent": "Deep Learning",
+      "description": "Explains layers, activations and loss, and builds a small network end to end."
+    },
+    {
+      "key": "SKILL_BACKPROPAGATION_AND_TRAINING",
+      "name": "Backpropagation and Training",
+      "parent": "Deep Learning",
+      "description": "Understands how gradients flow backward and trains a network with batches, epochs and optimizers."
+    },
+    {
+      "key": "SKILL_CONVOLUTIONAL_NETWORKS",
+      "name": "Convolutional Networks",
+      "parent": "Deep Learning",
+      "description": "Uses convolution and pooling to learn from images and other grid-like data."
+    },
+    {
+      "key": "SKILL_TRANSFORMERS_AND_ATTENTION",
+      "name": "Transformers and Attention",
+      "parent": "Deep Learning",
+      "description": "Explains self-attention and how transformer models process sequences."
+    },
+    {
+      "key": "SKILL_TEXT_PREPROCESSING",
+      "name": "Text Preprocessing",
+      "parent": "Natural Language Processing",
+      "description": "Cleans and tokenizes text and chooses normalisation steps that suit the task."
+    },
+    {
+      "key": "SKILL_WORD_AND_SENTENCE_EMBEDDINGS",
+      "name": "Word and Sentence Embeddings",
+      "parent": "Natural Language Processing",
+      "description": "Represents words and sentences as vectors and uses them for search and similarity."
+    },
+    {
+      "key": "SKILL_RESPONSIBLE_AI_AND_BIAS",
+      "name": "Responsible AI and Bias",
+      "parent": "Artificial Intelligence Fundamentals",
+      "description": "Spots bias, privacy and safety risks in data and models and applies basic mitigations."
+    }
+  ]
+}

@@ -13,7 +13,7 @@ const input: EngineInput = {
   career: { id: "44444444-4444-4444-8444-444444444444", name: "Data Analyst" },
   requirements: [{ skillId: SQL, skillName: "SQL", importance: "CRITICAL", targetLevel: 80, stage: "FOUNDATION", parentSkillId: null }],
   courses: [{ id: DBMS, title: "DBMS", year: 3, semester: 1, skills: [{ skillId: SQL, importance: "CORE", outcomeCount: 2 }], prerequisiteCourseIds: [] }],
-  capability: { [SQL]: { level: 38, confidence: 0.7, verified: true, verifiedLevel: 38, selfDeclaredLevel: null } }, hasAnyCapabilityData: true,
+  capability: { [SQL]: { level: 38, assessed: true, confidence: 0.7, verified: true, verifiedLevel: 38, selfDeclaredLevel: null } }, hasAnyCapabilityData: true,
   position: { year: 3, semester: 1, totalYears: 4 }, student: { id: S, institutionId: "55555555-5555-4555-8555-555555555555" },
   catalogs: { learning: [], certifications: [], projects: [], arena: [] },
 };

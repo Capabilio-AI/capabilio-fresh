@@ -13,6 +13,8 @@ export interface PersistCourse {
   parsed: ParsedSection;
   structuredBy: "parser" | "ai";
   mappings: SkillMappingCandidate[];
+  pageStart?: number;
+  pageEnd?: number;
 }
 export interface PersistInput {
   institutionId: string;
@@ -86,7 +88,7 @@ export async function saveExtractionAsImport(service: Service, input: PersistInp
       is_elective: c.row.kind === "elective_option" || /elective/i.test(c.row.category ?? ""), is_lab: c.row.kind === "lab" || LAB.test(titles[i]),
       textbooks: c.parsed.textbooks.length ? c.parsed.textbooks : null, reference_books: c.parsed.referenceBooks.length ? c.parsed.referenceBooks : null,
       online_resources: c.parsed.onlineResources.length ? c.parsed.onlineResources : null,
-      provenance: { ...c.parsed.provenance, _structuredBy: c.structuredBy }, sort_order: i,
+      provenance: { ...c.parsed.provenance, _structuredBy: c.structuredBy }, sort_order: i, source_page_start: c.pageStart ?? null, source_page_end: c.pageEnd ?? null,
     }));
     const created = await insertReturning<"courses", { id: string; year: number; title: string }>(service, "courses", courseRows, "id, year, title");
     const idOf = new Map(created.map((c) => [`${c.year}|${c.title.toLowerCase()}`, c.id]));
