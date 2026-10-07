@@ -23,7 +23,7 @@ export async function updateSession(request: NextRequest) {
   // Refreshing the session must happen on every request that touches
   // protected routes — do not remove this call or place logic between it
   // and the response, or session refresh silently breaks.
-  await supabase.auth.getUser();
+  await supabase.auth.getClaims(); // local JWT verify + refresh; no network hop when the token is valid
 
   return response;
 }

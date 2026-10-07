@@ -11,9 +11,10 @@ import { createClient } from "@/lib/supabase/server";
  */
 export const getAuthedUser = cache(async () => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT locally against the cached JWKS (asymmetric keys) —
+  // getUser() was a network round trip to the Supabase region on every navigation.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? { id: data.claims.sub, email: data.claims.email ?? null } : null;
   return { supabase, user };
 });
 

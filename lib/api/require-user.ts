@@ -6,12 +6,11 @@ import type { Database } from "@/lib/supabase/types";
 export async function requireUser(
   supabase: SupabaseClient<Database>
 ): Promise<{ userId: string } | { error: NextResponse }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub;
 
-  if (!user) {
+  if (!userId) {
     return { error: NextResponse.json({ error: "Not authenticated" }, { status: 401 }) };
   }
-  return { userId: user.id };
+  return { userId };
 }
