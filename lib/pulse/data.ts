@@ -1,91 +1,108 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { untyped } from "@/lib/org/db";
+import { blockedWith, followingIds } from "./graph";
+import { escapeLike, legacyKind, type PostKind } from "./format";
+import { signPaths } from "./media";
+import { loadPeople } from "./people";
 
+export interface PulseAuthor {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+  headline: string | null;
+}
 export interface PulseComment {
   id: string;
   content: string;
   createdAt: string;
-  author: { id: string; name: string | null; avatarUrl: string | null };
+  author: PulseAuthor;
 }
-
 export interface PulsePost {
   id: string;
   content: string;
+  kind: PostKind;
+  imageUrl: string | null;
   createdAt: string;
-  author: { id: string; name: string | null; avatarUrl: string | null };
+  author: PulseAuthor;
   likeCount: number;
   likedByMe: boolean;
   comments: PulseComment[];
 }
 
-const FEED_LIMIT = 50;
+export type FeedMode = { mode: "for_you" } | { mode: "following" } | { mode: "user"; userId: string } | { mode: "tag"; tag: string };
+export interface FeedPage {
+  posts: PulsePost[];
+  /** created_at of the last post: pass it back as `before` for the next page; null when there is no more */
+  nextCursor: string | null;
+}
+export const FEED_PAGE = 20;
+
+interface PostRow {
+  id: string;
+  content: string;
+  kind: PostKind;
+  image_path: string | null;
+  created_at: string;
+  user_id: string;
+}
 
 /**
- * A global feed (no follow/connection graph exists yet) — every post,
- * newest first, with aggregated likes and full comment threads. Fetched
- * as four flat queries instead of N+1 per-post lookups.
- *
- * Author names are resolved via the get_public_profiles RPC, not a
- * PostgREST embed — profiles' own RLS is select-own-only (it carries
- * email), so an embed silently returns null for every author who isn't
- * the viewer. The RPC is a narrow, audited SECURITY DEFINER function
- * that only ever returns id/full_name/avatar_url.
+ * One page of the feed, newest first. Reads go through the signed-in user's client (the posts policies decide what they may read);
+ * the follow graph, blocks, author names and image URLs come from the service client. Authors are resolved without ever touching
+ * `profiles.email`. Content from someone blocked in either direction is left out.
  */
-export async function getFeed(supabase: SupabaseClient<Database>, viewerId: string): Promise<PulsePost[]> {
-  const { data: posts, error: postsError } = await supabase
-    .from("posts")
-    .select("id, content, created_at, user_id")
-    .order("created_at", { ascending: false })
-    .limit(FEED_LIMIT);
-  if (postsError) throw postsError;
-  if (!posts || posts.length === 0) return [];
+export async function getFeed(supabase: SupabaseClient<Database>, service: SupabaseClient<Database>, viewerId: string, feed: FeedMode, before: string | null = null): Promise<FeedPage> {
+  const blocked = await blockedWith(service, viewerId);
+  let query = untyped(supabase).from("posts").select("id, content, kind, image_path, created_at, user_id").order("created_at", { ascending: false }).limit(FEED_PAGE + 1);
+  if (before) query = query.lt("created_at", before);
+  if (blocked.size > 0) query = query.not("user_id", "in", `(${[...blocked].join(",")})`);
+  if (feed.mode === "following") query = query.in("user_id", [viewerId, ...(await followingIds(service, viewerId))]);
+  if (feed.mode === "user") query = query.eq("user_id", feed.userId);
+  if (feed.mode === "tag") query = query.ilike("content", `%#${escapeLike(feed.tag)}%`);
+  const { data, error } = await query;
+  if (error) throw error;
+  const rows = (data ?? []) as PostRow[];
+  const page = rows.slice(0, FEED_PAGE);
+  if (page.length === 0) return { posts: [], nextCursor: null };
 
-  const postIds = posts.map((p) => p.id);
+  const ids = page.map((p) => p.id);
   const [{ data: likes, error: likesError }, { data: comments, error: commentsError }] = await Promise.all([
-    supabase.from("post_likes").select("post_id, user_id").in("post_id", postIds),
-    supabase
-      .from("post_comments")
-      .select("id, post_id, content, created_at, user_id")
-      .in("post_id", postIds)
-      .order("created_at", { ascending: true }),
+    supabase.from("post_likes").select("post_id, user_id").in("post_id", ids),
+    supabase.from("post_comments").select("id, post_id, content, created_at, user_id").in("post_id", ids).order("created_at", { ascending: true }),
   ]);
   if (likesError) throw likesError;
   if (commentsError) throw commentsError;
 
-  const authorIds = new Set<string>();
-  for (const p of posts) authorIds.add(p.user_id);
-  for (const c of comments ?? []) authorIds.add(c.user_id);
-  const { data: authors, error: authorsError } = await supabase.rpc("get_public_profiles", {
-    p_ids: [...authorIds],
-  });
-  if (authorsError) throw authorsError;
-  const authorById = new Map((authors ?? []).map((a) => [a.id, a]));
-  function authorOf(userId: string) {
-    const a = authorById.get(userId);
-    return { id: userId, name: a?.full_name ?? null, avatarUrl: a?.avatar_url ?? null };
-  }
+  const [people, urls] = await Promise.all([
+    loadPeople(service, [...page.map((p) => p.user_id), ...(comments ?? []).map((c) => c.user_id)]),
+    signPaths(service, page.map((p) => p.image_path)),
+  ]);
+  const authorOf = (userId: string): PulseAuthor => {
+    const a = people.get(userId);
+    return { id: userId, name: a?.name ?? null, avatarUrl: a?.avatarUrl ?? null, headline: a?.headline ?? null };
+  };
 
-  const likeCountByPost = new Map<string, number>();
-  const likedByMeSet = new Set<string>();
+  const likeCount = new Map<string, number>();
+  const likedByMe = new Set<string>();
   for (const like of likes ?? []) {
-    likeCountByPost.set(like.post_id, (likeCountByPost.get(like.post_id) ?? 0) + 1);
-    if (like.user_id === viewerId) likedByMeSet.add(like.post_id);
+    likeCount.set(like.post_id, (likeCount.get(like.post_id) ?? 0) + 1);
+    if (like.user_id === viewerId) likedByMe.add(like.post_id);
   }
-
-  const commentsByPost = new Map<string, PulseComment[]>();
+  const byPost = new Map<string, PulseComment[]>();
   for (const c of comments ?? []) {
-    const bucket = commentsByPost.get(c.post_id) ?? [];
-    bucket.push({ id: c.id, content: c.content, createdAt: c.created_at, author: authorOf(c.user_id) });
-    commentsByPost.set(c.post_id, bucket);
+    if (blocked.has(c.user_id)) continue;
+    byPost.set(c.post_id, [...(byPost.get(c.post_id) ?? []), { id: c.id, content: c.content, createdAt: c.created_at, author: authorOf(c.user_id) }]);
   }
 
-  return posts.map((p) => ({
-    id: p.id,
-    content: p.content,
-    createdAt: p.created_at,
-    author: authorOf(p.user_id),
-    likeCount: likeCountByPost.get(p.id) ?? 0,
-    likedByMe: likedByMeSet.has(p.id),
-    comments: commentsByPost.get(p.id) ?? [],
-  }));
+  return {
+    posts: page.map((p) => {
+      const legacy = p.kind === "post" ? legacyKind(p.content) : { kind: p.kind, content: p.content };
+      return {
+        id: p.id, content: legacy.content, kind: legacy.kind, imageUrl: p.image_path ? (urls.get(p.image_path) ?? null) : null, createdAt: p.created_at,
+        author: authorOf(p.user_id), likeCount: likeCount.get(p.id) ?? 0, likedByMe: likedByMe.has(p.id), comments: byPost.get(p.id) ?? [],
+      };
+    }),
+    nextCursor: rows.length > FEED_PAGE ? page[page.length - 1].created_at : null,
+  };
 }

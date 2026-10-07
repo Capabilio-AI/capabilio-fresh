@@ -1,252 +1,110 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Award, Heart, HelpCircle, Loader2, MessageCircle, Send, Sparkles } from "lucide-react";
-import type { PulseComment, PulsePost } from "@/lib/pulse/data";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { Loader2, X } from "lucide-react";
+import type { FeedPage, PulseComment, PulsePost } from "@/lib/pulse/data";
+import type { AvatarPerson } from "./Avatar";
+import { Composer } from "./Composer";
+import { PostCard } from "./PostCard";
+import { StoriesTray } from "./StoriesTray";
 
-const POST_TYPES = [
-  { key: "post", label: "Post", icon: Send, prefix: "" },
-  { key: "project", label: "Project", icon: Sparkles, prefix: "[Project] " },
-  { key: "question", label: "Question", icon: HelpCircle, prefix: "[Question] " },
-  { key: "achievement", label: "Achievement", icon: Award, prefix: "[Achievement] " },
-] as const;
-type PostTypeKey = (typeof POST_TYPES)[number]["key"];
+export type FeedView = { mode: "for_you" } | { mode: "following" } | { mode: "tag"; tag: string } | { mode: "user"; userId: string };
 
-function initialsOf(name: string | null): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return parts[0]?.slice(0, 2).toUpperCase() ?? "?";
+const EMPTY: Record<FeedView["mode"], { title: string; body: string }> = {
+  for_you: { title: "Nothing here yet", body: "Be the first to share what you're building." },
+  following: { title: "Your following feed is empty", body: "Follow classmates, mentors and people from your college. Their posts show up here, newest first." },
+  tag: { title: "No posts with this tag yet", body: "Post something with the tag and it will appear here." },
+  user: { title: "No posts yet", body: "When they share something, it shows up here." },
+};
+
+function query(view: FeedView, before: string | null): string {
+  const p = new URLSearchParams({ mode: view.mode });
+  if (view.mode === "tag") p.set("tag", view.tag);
+  if (view.mode === "user") p.set("userId", view.userId);
+  if (before) p.set("before", before);
+  return p.toString();
 }
 
-function relativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
-const AVATAR =
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-lp-accent-indigo to-lp-accent-ochre font-lp-display text-lp-label-sm font-semibold text-lp-surface-card";
-
-export function PulseFeed() {
+/** The feed for one view (For You, Following, a #tag, or one person), with stories and the composer on the home views. */
+export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: string } & AvatarPerson }) {
   const [posts, setPosts] = useState<PulsePost[] | null>(null);
-  const [draft, setDraft] = useState("");
-  const [postType, setPostType] = useState<PostTypeKey>("post");
-  const [posting, setPosting] = useState(false);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const home = view.mode === "for_you" || view.mode === "following";
+  const key = JSON.stringify(view);
 
+  const [tick, setTick] = useState(0);
+  const load = useCallback(() => setTick((t) => t + 1), []);
   useEffect(() => {
-    fetch("/api/pulse/posts")
-      .then((res) => res.json())
-      .then((data) => setPosts(data.posts ?? []));
-  }, []);
+    let live = true;
+    fetch(`/api/pulse/posts?${query(JSON.parse(key) as FeedView, null)}`)
+      .then((res) => (res.ok ? (res.json() as Promise<FeedPage>) : Promise.reject(new Error("bad"))))
+      .then((data) => {
+        if (!live) return;
+        setError(null);
+        setPosts(data.posts);
+        setCursor(data.nextCursor);
+      })
+      .catch(() => {
+        if (!live) return;
+        setError("Couldn't load the feed.");
+        setPosts((p) => p ?? []);
+      });
+    return () => {
+      live = false;
+    };
+  }, [key, tick]);
 
-  async function submitPost() {
-    if (draft.trim().length === 0) return;
-    setPosting(true);
-    const prefix = POST_TYPES.find((t) => t.key === postType)?.prefix ?? "";
-    const res = await fetch("/api/pulse/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: `${prefix}${draft.trim()}` }),
-    });
-    setPosting(false);
-    if (!res.ok) return;
-    const data = await res.json();
-    setPosts(data.posts);
-    setDraft("");
-    setPostType("post");
+  async function more() {
+    if (!cursor) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/pulse/posts?${query(view, cursor)}`);
+      if (!res.ok) throw new Error("bad");
+      const data = (await res.json()) as FeedPage;
+      setPosts((p) => [...(p ?? []), ...data.posts]);
+      setCursor(data.nextCursor);
+    } catch {
+      setError("Couldn't load more.");
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
-  function toggleLike(postId: string) {
-    setPosts((prev) =>
-      (prev ?? []).map((p) =>
-        p.id === postId
-          ? { ...p, likedByMe: !p.likedByMe, likeCount: p.likeCount + (p.likedByMe ? -1 : 1) }
-          : p
-      )
-    );
-    fetch(`/api/pulse/posts/${postId}/like`, { method: "POST" }).then((res) => {
-      if (res.ok) return;
-      setPosts((prev) =>
-        (prev ?? []).map((p) =>
-          p.id === postId
-            ? { ...p, likedByMe: !p.likedByMe, likeCount: p.likeCount + (p.likedByMe ? -1 : 1) }
-            : p
-        )
-      );
-    });
-  }
-
-  function addComment(postId: string, comment: PulseComment) {
-    setPosts((prev) =>
-      (prev ?? []).map((p) => (p.id === postId ? { ...p, comments: [...p.comments, comment] } : p))
-    );
+  const patch = (id: string, fn: (p: PulsePost) => PulsePost) => setPosts((ps) => (ps ?? []).map((p) => (p.id === id ? fn(p) : p)));
+  function toggleLike(id: string) {
+    const flip = (p: PulsePost): PulsePost => ({ ...p, likedByMe: !p.likedByMe, likeCount: p.likeCount + (p.likedByMe ? -1 : 1) });
+    patch(id, flip);
+    void fetch(`/api/pulse/posts/${id}/like`, { method: "POST" }).then((r) => { if (!r.ok) patch(id, flip); }).catch(() => patch(id, flip));
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
-      <div className="rounded-xl border border-lp-border-hairline bg-lp-surface-card p-5 shadow-sm">
-        <p className="mb-2 font-lp-body text-lp-body-sm font-medium text-lp-text-ink">What are you building?</p>
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {POST_TYPES.map((t) => {
-            const TypeIcon = t.icon;
-            const selected = postType === t.key;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setPostType(t.key)}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-lp-mono text-lp-label-sm font-medium transition-colors ${
-                  selected
-                    ? "border-app-orange bg-app-orange-container text-app-orange"
-                    : "border-lp-border-hairline text-lp-text-muted hover:text-lp-text-ink"
-                }`}
-              >
-                <TypeIcon size={12} />
-                {t.label}
-              </button>
-            );
-          })}
+    <div className="flex flex-col gap-4">
+      {view.mode === "tag" && (
+        <div className="flex items-center justify-between rounded-2xl border border-app-border bg-white px-5 py-3">
+          <p className="font-lp-body text-[14px] text-app-charcoal">Posts tagged <span className="font-semibold text-app-blue">#{view.tag}</span></p>
+          <Link href="/pulse" aria-label="Clear tag" className="rounded-full p-1.5 text-app-muted hover:bg-app-background"><X size={15} /></Link>
         </div>
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Share something with your peers…"
-          rows={3}
-          className="w-full resize-none rounded-lg border border-lp-border-hairline bg-lp-surface px-4 py-3 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"
-        />
-        <div className="mt-3 flex justify-end">
-          <button
-            type="button"
-            onClick={submitPost}
-            disabled={posting || draft.trim().length === 0}
-            className="flex items-center gap-2 rounded-lg bg-lp-text-ink px-4 py-2 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card shadow-sm transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Post
-            <Send size={14} />
-          </button>
-        </div>
-      </div>
+      )}
+      {home && <StoriesTray me={viewer} />}
+      {home && <Composer me={viewer} onPosted={load} />}
 
       {posts === null ? (
-        <div className="flex justify-center py-12">
-          <Loader2 size={20} className="animate-spin text-lp-accent-indigo" />
-        </div>
+        <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-app-orange" aria-label="Loading" /></div>
       ) : posts.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-lp-border-strong bg-lp-surface-subtle/50 px-6 py-12 text-center">
-          <p className="font-lp-body text-lp-body-sm text-lp-text-muted">
-            No posts yet — be the first to share something.
-          </p>
+        <div className="rounded-2xl border border-dashed border-app-border bg-white px-6 py-12 text-center">
+          <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{EMPTY[view.mode].title}</p>
+          <p className="mx-auto mt-1 max-w-sm font-lp-body text-[13px] text-app-muted">{EMPTY[view.mode].body}</p>
         </div>
       ) : (
         posts.map((post) => (
-          <PostCard key={post.id} post={post} onToggleLike={() => toggleLike(post.id)} onComment={(c) => addComment(post.id, c)} />
+          <PostCard key={post.id} post={post} viewerId={viewer.id} onToggleLike={() => toggleLike(post.id)} onComment={(c: PulseComment) => patch(post.id, (p) => ({ ...p, comments: [...p.comments, c] }))} onHideAuthor={(id) => setPosts((ps) => (ps ?? []).filter((p) => p.author.id !== id))} />
         ))
       )}
-    </div>
-  );
-}
-
-function PostCard({
-  post,
-  onToggleLike,
-  onComment,
-}: {
-  post: PulsePost;
-  onToggleLike: () => void;
-  onComment: (comment: PulseComment) => void;
-}) {
-  const [showComments, setShowComments] = useState(false);
-  const [commentDraft, setCommentDraft] = useState("");
-  const [sending, setSending] = useState(false);
-
-  async function submitComment() {
-    if (commentDraft.trim().length === 0) return;
-    setSending(true);
-    const res = await fetch(`/api/pulse/posts/${post.id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: commentDraft.trim() }),
-    });
-    setSending(false);
-    if (!res.ok) return;
-    const { comment } = await res.json();
-    onComment(comment);
-    setCommentDraft("");
-  }
-
-  return (
-    <div className="rounded-xl border border-lp-border-hairline bg-lp-surface-card p-5 shadow-sm">
-      <div className="flex items-center gap-3">
-        <span className={AVATAR}>{initialsOf(post.author.name)}</span>
-        <div>
-          <p className="font-lp-body text-lp-body-sm font-semibold text-lp-text-ink">
-            {post.author.name ?? "Student"}
-          </p>
-          <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">{relativeTime(post.createdAt)}</p>
-        </div>
-      </div>
-      <p className="mt-3 whitespace-pre-wrap font-lp-body text-lp-body-sm leading-relaxed text-lp-text-ink">
-        {post.content}
-      </p>
-      <div className="mt-4 flex items-center gap-4 border-t border-lp-border-hairline pt-3">
-        <button
-          type="button"
-          onClick={onToggleLike}
-          className={`flex items-center gap-1.5 font-lp-body text-lp-body-sm font-medium transition-colors ${
-            post.likedByMe ? "text-lp-error" : "text-lp-text-muted hover:text-lp-text-ink"
-          }`}
-        >
-          <Heart size={16} fill={post.likedByMe ? "currentColor" : "none"} />
-          {post.likeCount > 0 ? post.likeCount : "Like"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowComments((v) => !v)}
-          className="flex items-center gap-1.5 font-lp-body text-lp-body-sm font-medium text-lp-text-muted transition-colors hover:text-lp-text-ink"
-        >
-          <MessageCircle size={16} />
-          {post.comments.length > 0 ? post.comments.length : "Comment"}
-        </button>
-      </div>
-
-      {showComments && (
-        <div className="mt-3 flex flex-col gap-3 border-t border-lp-border-hairline pt-3">
-          {post.comments.map((c) => (
-            <div key={c.id} className="flex items-start gap-2.5">
-              <span className={`${AVATAR} h-8 w-8 text-[11px]`}>{initialsOf(c.author.name)}</span>
-              <div className="rounded-lg bg-lp-surface-subtle px-3 py-2">
-                <p className="font-lp-body text-lp-label-sm font-semibold text-lp-text-ink">
-                  {c.author.name ?? "Student"}
-                </p>
-                <p className="font-lp-body text-lp-body-sm text-lp-text-ink">{c.content}</p>
-              </div>
-            </div>
-          ))}
-          <div className="flex items-center gap-2">
-            <input
-              value={commentDraft}
-              onChange={(e) => setCommentDraft(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submitComment()}
-              placeholder="Write a comment…"
-              className="flex-1 rounded-full border border-lp-border-hairline bg-lp-surface px-4 py-2 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"
-            />
-            <button
-              type="button"
-              onClick={submitComment}
-              disabled={sending || commentDraft.trim().length === 0}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lp-accent-indigo text-lp-surface-card disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Send size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+      {error && <p role="alert" className="text-center font-lp-body text-[12.5px] text-app-rose">{error} <button type="button" onClick={load} className="underline">Retry</button></p>}
+      {cursor && <button type="button" onClick={more} disabled={loadingMore} className="mx-auto flex items-center gap-2 rounded-full border border-app-border bg-white px-5 py-2 font-lp-body text-[13px] font-medium text-app-charcoal hover:bg-app-background disabled:opacity-60">{loadingMore && <Loader2 size={13} className="animate-spin" aria-hidden="true" />} Load more</button>}
     </div>
   );
 }

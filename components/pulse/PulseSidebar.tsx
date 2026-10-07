@@ -1,49 +1,70 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Hash, UserPlus } from "lucide-react";
-import { MOCK_PEOPLE_TO_FOLLOW, MOCK_TRENDING_TOPICS } from "@/lib/mock/pulse";
+import type { Suggestion, TrendingTag } from "@/lib/pulse/sidebar";
+import { Avatar } from "./Avatar";
+import { FollowButton } from "./FollowButton";
 
+interface SidebarData {
+  trending: TrendingTag[];
+  suggestions: Suggestion[];
+}
+
+const CARD = "rounded-2xl border border-app-border bg-white p-5";
+
+/** Right rail: what people are posting about this week, and people worth following. Both are computed from real activity. */
 export function PulseSidebar() {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-app-border bg-white p-5">
-        <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-muted">
-          <Hash size={13} />
-          Trending
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {MOCK_TRENDING_TOPICS.map((topic) => (
-            <span
-              key={topic}
-              className="rounded-full border border-app-border px-2.5 py-1 font-lp-body text-[12px] text-app-charcoal"
-            >
-              {topic}
-            </span>
-          ))}
-        </div>
-      </div>
+  const [data, setData] = useState<SidebarData | null>(null);
+  const [failed, setFailed] = useState(false);
 
-      <div className="rounded-xl border border-app-border bg-white p-5">
-        <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-muted">
-          <UserPlus size={13} />
-          People to follow
-        </div>
-        <div className="mt-3 flex flex-col gap-3">
-          {MOCK_PEOPLE_TO_FOLLOW.map((person) => (
-            <div key={person.id} className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-charcoal font-lp-display text-[11px] font-semibold text-white">
-                {person.name
-                  .split(" ")
-                  .map((p) => p[0])
-                  .join("")
-                  .slice(0, 2)}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate font-lp-body text-[12.5px] font-medium text-app-charcoal">{person.name}</p>
-                <p className="truncate font-lp-mono text-[10.5px] text-app-muted">{person.role}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+  useEffect(() => {
+    fetch("/api/pulse/sidebar")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad"))))
+      .then((d: SidebarData) => setData(d))
+      .catch(() => setFailed(true));
+  }, []);
+
+  return (
+    <aside aria-label="Trending and suggestions" className="flex flex-col gap-4">
+      <section className={CARD}>
+        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-semibold text-app-charcoal"><Hash size={15} className="text-app-orange" aria-hidden="true" /> Trending this week</h2>
+        {data === null && !failed ? <div className="mt-4 h-20 animate-pulse rounded-lg bg-app-background" /> : data && data.trending.length > 0 ? (
+          <ul className="mt-3 flex flex-col">
+            {data.trending.map((t) => (
+              <li key={t.tag}>
+                <Link href={`/pulse?tag=${t.tag}`} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-app-background">
+                  <span className="font-lp-body text-[13.5px] font-medium text-app-charcoal">#{t.tag}</span>
+                  <span className="font-lp-mono text-[11px] text-app-muted">{t.posts} {t.posts === 1 ? "post" : "posts"}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{failed ? "Couldn't load trending tags." : "Tags people use in posts show up here. Try #projects or #internships."}</p>
+        )}
+      </section>
+
+      <section className={CARD}>
+        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-semibold text-app-charcoal"><UserPlus size={15} className="text-app-orange" aria-hidden="true" /> People to follow</h2>
+        {data === null && !failed ? <div className="mt-4 h-28 animate-pulse rounded-lg bg-app-background" /> : data && data.suggestions.length > 0 ? (
+          <ul className="mt-3 flex flex-col gap-3.5">
+            {data.suggestions.map((p) => (
+              <li key={p.id} className="flex items-center gap-3">
+                <Link href={`/pulse/u/${p.id}`}><Avatar person={p} size="sm" /></Link>
+                <div className="min-w-0 flex-1">
+                  <Link href={`/pulse/u/${p.id}`} className="block truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>
+                  <p className="truncate font-lp-body text-[11.5px] text-app-muted">{p.reason}{p.headline ? ` · ${p.headline}` : ""}</p>
+                </div>
+                <FollowButton userId={p.id} initialFollowing={false} compact />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{failed ? "Couldn't load suggestions." : "No suggestions right now. Use the search bar to find people and colleges."}</p>
+        )}
+      </section>
+    </aside>
   );
 }

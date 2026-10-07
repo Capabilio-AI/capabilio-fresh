@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/curriculum-enrich",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/stories-cleanup",
+      "schedule": "0 5 * * *"
     }
   ]
 }
