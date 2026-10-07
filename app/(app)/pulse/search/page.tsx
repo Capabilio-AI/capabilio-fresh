@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { cleanQuery, MIN_QUERY, searchPulse } from "@/lib/pulse/search";
 import { Avatar } from "@/components/pulse/Avatar";
 import { FollowButton } from "@/components/pulse/FollowButton";
+import { MentorBadge } from "@/components/pulse/MentorBadge";
 
 export const metadata: Metadata = { title: "Search — Capabilio AI" };
 
@@ -36,7 +37,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                   <li key={p.id} className="flex items-center gap-3 px-4 py-3">
                     <Link href={`/pulse/u/${p.id}`}><Avatar person={p} size="md" /></Link>
                     <div className="min-w-0 flex-1">
-                      <Link href={`/pulse/u/${p.id}`} className="block truncate font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>
+                      <span className="flex items-center gap-2"><Link href={`/pulse/u/${p.id}`} className="truncate font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>{p.isMentor && <MentorBadge />}</span>
                       <p className="truncate font-lp-body text-[12px] text-app-muted">{p.headline ?? "Capabilio member"}</p>
                     </div>
                     <FollowButton userId={p.id} initialFollowing={p.following} compact />

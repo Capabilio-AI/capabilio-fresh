@@ -14,7 +14,7 @@ const KINDS = [
 ] as const;
 const MAX = 3000;
 
-export function Composer({ me, onPosted }: { me: AvatarPerson; onPosted: () => void }) {
+export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placeholder }: { me: AvatarPerson; onPosted: () => void; endpoint?: string; placeholder?: string }) {
   const [kind, setKind] = useState<PostKind>("post");
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -44,7 +44,7 @@ export function Composer({ me, onPosted }: { me: AvatarPerson; onPosted: () => v
         if (!up.ok || !upJson?.path) return setError(upJson?.error ?? "Couldn't upload the photo.");
         imagePath = upJson.path;
       }
-      const res = await fetch("/api/pulse/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: text.trim(), kind, imagePath }) });
+      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: text.trim(), kind, imagePath }) });
       const json = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) return setError(json?.error ?? "Couldn't post.");
       setText("");
@@ -66,7 +66,7 @@ export function Composer({ me, onPosted }: { me: AvatarPerson; onPosted: () => v
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, MAX))}
-            placeholder={active.hint}
+            placeholder={placeholder ?? active.hint}
             aria-label="Post text"
             rows={3}
             className="w-full resize-none rounded-xl bg-app-background px-4 py-3 font-lp-body text-[14px] text-app-charcoal placeholder:text-app-muted focus:outline-none focus:ring-2 focus:ring-app-orange/25"

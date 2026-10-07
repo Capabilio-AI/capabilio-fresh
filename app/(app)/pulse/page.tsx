@@ -5,7 +5,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { profileCounts } from "@/lib/pulse/graph";
 import { loadPeople } from "@/lib/pulse/people";
 import { Avatar } from "@/components/pulse/Avatar";
-import { ComingSoon } from "@/components/pulse/ComingSoon";
+import { CommunitiesDirectory } from "@/components/pulse/CommunitiesDirectory";
+import { MentorsHub } from "@/components/pulse/MentorsHub";
 import { PulseFeed, type FeedView } from "@/components/pulse/PulseFeed";
 import { PulseNav, type PulseTab } from "@/components/pulse/PulseNav";
 import { PulseSidebar } from "@/components/pulse/PulseSidebar";
@@ -49,7 +50,7 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
       <div className="min-w-0">
         <div className="mb-4 lg:hidden"><PulseNav active={tab} variant="strip" /></div>
         <h1 className="sr-only">Pulse</h1>
-        {tab === "communities" || tab === "mentors" ? <ComingSoon tab={tab} /> : <PulseFeed key={JSON.stringify(view)} view={view} viewer={viewer} />}
+        {tab === "communities" ? <CommunitiesDirectory /> : tab === "mentors" ? <MentorsHub viewer={viewer} /> : <PulseFeed key={JSON.stringify(view)} view={view} viewer={viewer} />}
       </div>
 
       <div className="hidden xl:block"><div className="sticky top-24"><PulseSidebar /></div></div>

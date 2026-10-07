@@ -9,14 +9,26 @@ import { Composer } from "./Composer";
 import { PostCard } from "./PostCard";
 import { StoriesTray } from "./StoriesTray";
 
-export type FeedView = { mode: "for_you" } | { mode: "following" } | { mode: "tag"; tag: string } | { mode: "user"; userId: string };
+export type FeedView =
+  | { mode: "for_you" }
+  | { mode: "following" }
+  | { mode: "tag"; tag: string }
+  | { mode: "user"; userId: string }
+  | { mode: "mentors" }
+  | { mode: "community"; slug: string; canPost: boolean; canModerate: boolean };
 
 const EMPTY: Record<FeedView["mode"], { title: string; body: string }> = {
   for_you: { title: "Nothing here yet", body: "Be the first to share what you're building." },
   following: { title: "Your following feed is empty", body: "Follow classmates, mentors and people from your college. Their posts show up here, newest first." },
   tag: { title: "No posts with this tag yet", body: "Post something with the tag and it will appear here." },
   user: { title: "No posts yet", body: "When they share something, it shows up here." },
+  mentors: { title: "No mentor posts yet", body: "When approved mentors share something, it shows up here." },
+  community: { title: "No posts yet", body: "Start the conversation: share a question, a project or something you learned." },
 };
+
+const communityBase = (v: { slug: string }) => `/api/pulse/communities/${v.slug}/posts`;
+/** Where likes, comments and deletes for a view's posts live. */
+const endpointOf = (v: FeedView) => (v.mode === "community" ? communityBase(v) : "/api/pulse/posts");
 
 function query(view: FeedView, before: string | null): string {
   const p = new URLSearchParams({ mode: view.mode });
@@ -26,7 +38,12 @@ function query(view: FeedView, before: string | null): string {
   return p.toString();
 }
 
-/** The feed for one view (For You, Following, a #tag, or one person), with stories and the composer on the home views. */
+function feedUrl(view: FeedView, before: string | null): string {
+  if (view.mode === "community") return `${communityBase(view)}${before ? `?before=${encodeURIComponent(before)}` : ""}`;
+  return `/api/pulse/posts?${query(view, before)}`;
+}
+
+/** The feed for one view (For You, Following, a #tag, mentors, a community, or one person), with stories and the composer where they belong. */
 export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: string } & AvatarPerson }) {
   const [posts, setPosts] = useState<PulsePost[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -39,7 +56,7 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
   const load = useCallback(() => setTick((t) => t + 1), []);
   useEffect(() => {
     let live = true;
-    fetch(`/api/pulse/posts?${query(JSON.parse(key) as FeedView, null)}`)
+    fetch(feedUrl(JSON.parse(key) as FeedView, null))
       .then((res) => (res.ok ? (res.json() as Promise<FeedPage>) : Promise.reject(new Error("bad"))))
       .then((data) => {
         if (!live) return;
@@ -61,7 +78,7 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
     if (!cursor) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/pulse/posts?${query(view, cursor)}`);
+      const res = await fetch(feedUrl(view, cursor));
       if (!res.ok) throw new Error("bad");
       const data = (await res.json()) as FeedPage;
       setPosts((p) => [...(p ?? []), ...data.posts]);
@@ -77,7 +94,11 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
   function toggleLike(id: string) {
     const flip = (p: PulsePost): PulsePost => ({ ...p, likedByMe: !p.likedByMe, likeCount: p.likeCount + (p.likedByMe ? -1 : 1) });
     patch(id, flip);
-    void fetch(`/api/pulse/posts/${id}/like`, { method: "POST" }).then((r) => { if (!r.ok) patch(id, flip); }).catch(() => patch(id, flip));
+    void fetch(`${endpointOf(view)}/${id}/like`, { method: "POST" })
+      .then((r) => {
+        if (!r.ok) patch(id, flip);
+      })
+      .catch(() => patch(id, flip));
   }
 
   return (
@@ -90,6 +111,8 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
       )}
       {home && <StoriesTray me={viewer} />}
       {home && <Composer me={viewer} onPosted={load} />}
+      {view.mode === "community" && view.canPost && <Composer me={viewer} onPosted={load} endpoint={communityBase(view)} placeholder="Start a conversation in this community…" />}
+      {view.mode === "community" && !view.canPost && <p className="rounded-2xl border border-dashed border-app-border bg-white px-5 py-3 text-center font-lp-body text-[12.5px] text-app-muted">Join this community to post.</p>}
 
       {posts === null ? (
         <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-app-orange" aria-label="Loading" /></div>
@@ -100,7 +123,18 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
         </div>
       ) : (
         posts.map((post) => (
-          <PostCard key={post.id} post={post} viewerId={viewer.id} onToggleLike={() => toggleLike(post.id)} onComment={(c: PulseComment) => patch(post.id, (p) => ({ ...p, comments: [...p.comments, c] }))} onHideAuthor={(id) => setPosts((ps) => (ps ?? []).filter((p) => p.author.id !== id))} />
+          <PostCard
+            key={post.id}
+            post={post}
+            viewerId={viewer.id}
+            apiBase={endpointOf(view)}
+            reportType={view.mode === "community" ? "community_post" : "post"}
+            canDelete={view.mode === "community" && (post.author.id === viewer.id || view.canModerate)}
+            onDeleted={(id) => setPosts((ps) => (ps ?? []).filter((p) => p.id !== id))}
+            onToggleLike={() => toggleLike(post.id)}
+            onComment={(c: PulseComment) => patch(post.id, (p) => ({ ...p, comments: [...p.comments, c] }))}
+            onHideAuthor={(id) => setPosts((ps) => (ps ?? []).filter((p) => p.author.id !== id))}
+          />
         ))
       )}
       {error && <p role="alert" className="text-center font-lp-body text-[12.5px] text-app-rose">{error} <button type="button" onClick={load} className="underline">Retry</button></p>}

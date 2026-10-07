@@ -8,7 +8,7 @@ import { untyped } from "@/lib/org/db";
 
 const Schema = z
   .object({
-    targetType: z.enum(["user", "post", "comment", "story", "message"]),
+    targetType: z.enum(["user", "post", "comment", "story", "message", "community", "community_post"]),
     targetId: z.string().uuid(),
     reason: z.enum(["spam", "harassment", "inappropriate", "impersonation", "other"]),
     details: z.string().trim().max(1000).optional(),

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Award, Ban, Flag, Heart, HelpCircle, Loader2, MessageCircle, MoreHorizontal, Send, Sparkles } from "lucide-react";
+import { Award, Ban, Flag, Heart, HelpCircle, Loader2, MessageCircle, MoreHorizontal, Send, Sparkles, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import type { PulseComment, PulsePost } from "@/lib/pulse/data";
 import { relativeTime, splitTags, type PostKind } from "@/lib/pulse/format";
 import { Avatar } from "./Avatar";
+import { MentorBadge } from "./MentorBadge";
 import { ReportDialog } from "./ReportDialog";
 
 const KIND: Record<PostKind, { label: string; icon: typeof Send; bar: string; chip: string } | null> = {
@@ -24,7 +25,21 @@ function Body({ text }: { text: string }) {
   );
 }
 
-export function PostCard({ post, viewerId, onToggleLike, onComment, onHideAuthor }: { post: PulsePost; viewerId: string; onToggleLike: () => void; onComment: (c: PulseComment) => void; onHideAuthor: (authorId: string) => void }) {
+interface PostCardProps {
+  post: PulsePost;
+  viewerId: string;
+  /** where this post's comments and deletes live */
+  apiBase?: string;
+  /** the viewer may delete it: the author, or a moderator of the community */
+  canDelete?: boolean;
+  reportType?: "post" | "community_post";
+  onToggleLike: () => void;
+  onComment: (c: PulseComment) => void;
+  onHideAuthor: (authorId: string) => void;
+  onDeleted?: (postId: string) => void;
+}
+
+export function PostCard({ post, viewerId, apiBase = "/api/pulse/posts", canDelete = false, reportType = "post", onToggleLike, onComment, onHideAuthor, onDeleted }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -39,7 +54,7 @@ export function PostCard({ post, viewerId, onToggleLike, onComment, onHideAuthor
     setSending(true);
     setError(null);
     try {
-      const res = await fetch(`/api/pulse/posts/${post.id}/comments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: draft.trim() }) });
+      const res = await fetch(`${apiBase}/${post.id}/comments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: draft.trim() }) });
       if (!res.ok) return setError("Couldn't add your comment.");
       onComment(((await res.json()) as { comment: PulseComment }).comment);
       setDraft("");
@@ -48,6 +63,12 @@ export function PostCard({ post, viewerId, onToggleLike, onComment, onHideAuthor
     } finally {
       setSending(false);
     }
+  }
+  async function remove() {
+    setMenu(false);
+    const res = await fetch(`${apiBase}/${post.id}`, { method: "DELETE" });
+    if (res.ok) onDeleted?.(post.id);
+    else setError("Couldn't delete the post.");
   }
   async function blockAuthor() {
     setMenu(false);
@@ -61,17 +82,25 @@ export function PostCard({ post, viewerId, onToggleLike, onComment, onHideAuthor
       <header className="flex items-start gap-3">
         <Link href={`/pulse/u/${post.author.id}`} aria-label={`${post.author.name ?? "Profile"}`}><Avatar person={post.author} size="md" /></Link>
         <div className="min-w-0 flex-1">
-          <Link href={`/pulse/u/${post.author.id}`} className="font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{post.author.name ?? "Capabilio member"}</Link>
+          <span className="flex flex-wrap items-center gap-2">
+            <Link href={`/pulse/u/${post.author.id}`} className="font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{post.author.name ?? "Capabilio member"}</Link>
+            {post.author.isMentor && <MentorBadge />}
+          </span>
           <p className="truncate font-lp-body text-[12px] text-app-muted">{post.author.headline ?? "Capabilio member"} · {relativeTime(post.createdAt)}</p>
         </div>
         {kind && <span className={clsx("flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 font-lp-body text-[11px] font-semibold", kind.chip)}><kind.icon size={11} aria-hidden="true" /> {kind.label}</span>}
-        {!mine && (
+        {(!mine || canDelete) && (
           <div className="relative">
             <button type="button" onClick={() => setMenu((m) => !m)} aria-label="More options" aria-expanded={menu} className="rounded-full p-1.5 text-app-muted hover:bg-app-background"><MoreHorizontal size={16} /></button>
             {menu && (
               <div className="absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-xl border border-app-border bg-white py-1 shadow-lg">
-                <button type="button" onClick={() => { setMenu(false); setReporting(true); }} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-app-charcoal hover:bg-app-background"><Flag size={13} aria-hidden="true" /> Report post</button>
-                <button type="button" onClick={blockAuthor} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-app-rose hover:bg-app-background"><Ban size={13} aria-hidden="true" /> Block {post.author.name?.split(" ")[0] ?? "this person"}</button>
+                {canDelete && <button type="button" onClick={remove} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-app-rose hover:bg-app-background"><Trash2 size={13} aria-hidden="true" /> Delete post</button>}
+                {!mine && (
+                  <>
+                    <button type="button" onClick={() => { setMenu(false); setReporting(true); }} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-app-charcoal hover:bg-app-background"><Flag size={13} aria-hidden="true" /> Report post</button>
+                    <button type="button" onClick={blockAuthor} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-app-rose hover:bg-app-background"><Ban size={13} aria-hidden="true" /> Block {post.author.name?.split(" ")[0] ?? "this person"}</button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -111,7 +140,7 @@ export function PostCard({ post, viewerId, onToggleLike, onComment, onHideAuthor
           {error && <p role="alert" className="font-lp-body text-[12px] text-app-rose">{error}</p>}
         </div>
       )}
-      {reporting && <ReportDialog targetType="post" targetId={post.id} onClose={() => setReporting(false)} />}
+      {reporting && <ReportDialog targetType={reportType} targetId={post.id} onClose={() => setReporting(false)} />}
     </article>
   );
 }

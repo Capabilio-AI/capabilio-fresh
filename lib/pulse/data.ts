@@ -11,6 +11,7 @@ export interface PulseAuthor {
   name: string | null;
   avatarUrl: string | null;
   headline: string | null;
+  isMentor?: boolean;
 }
 export interface PulseComment {
   id: string;
@@ -30,13 +31,20 @@ export interface PulsePost {
   comments: PulseComment[];
 }
 
-export type FeedMode = { mode: "for_you" } | { mode: "following" } | { mode: "user"; userId: string } | { mode: "tag"; tag: string };
+export type FeedMode = { mode: "for_you" } | { mode: "following" } | { mode: "user"; userId: string } | { mode: "tag"; tag: string } | { mode: "mentors" };
 export interface FeedPage {
   posts: PulsePost[];
   /** created_at of the last post: pass it back as `before` for the next page; null when there is no more */
   nextCursor: string | null;
 }
 export const FEED_PAGE = 20;
+
+/** Everyone Capabilio has approved as a mentor. */
+export async function approvedMentorIds(service: SupabaseClient<Database>): Promise<string[]> {
+  const { data } = await untyped(service).from("mentor_profiles").select("user_id").eq("status", "approved").limit(1000);
+  const ids = ((data ?? []) as { user_id: string }[]).map((m) => m.user_id);
+  return ids.length > 0 ? ids : ["00000000-0000-0000-0000-000000000000"];
+}
 
 interface PostRow {
   id: string;
@@ -58,6 +66,7 @@ export async function getFeed(supabase: SupabaseClient<Database>, service: Supab
   if (before) query = query.lt("created_at", before);
   if (blocked.size > 0) query = query.not("user_id", "in", `(${[...blocked].join(",")})`);
   if (feed.mode === "following") query = query.in("user_id", [viewerId, ...(await followingIds(service, viewerId))]);
+  if (feed.mode === "mentors") query = query.in("user_id", await approvedMentorIds(service));
   if (feed.mode === "user") query = query.eq("user_id", feed.userId);
   if (feed.mode === "tag") query = query.ilike("content", `%#${escapeLike(feed.tag)}%`);
   const { data, error } = await query;
@@ -80,7 +89,7 @@ export async function getFeed(supabase: SupabaseClient<Database>, service: Supab
   ]);
   const authorOf = (userId: string): PulseAuthor => {
     const a = people.get(userId);
-    return { id: userId, name: a?.name ?? null, avatarUrl: a?.avatarUrl ?? null, headline: a?.headline ?? null };
+    return { id: userId, name: a?.name ?? null, avatarUrl: a?.avatarUrl ?? null, headline: a?.headline ?? null, isMentor: a?.isMentor };
   };
 
   const likeCount = new Map<string, number>();

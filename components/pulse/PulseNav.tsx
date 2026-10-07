@@ -7,8 +7,8 @@ export type PulseTab = "for-you" | "following" | "communities" | "mentors";
 export const PULSE_TABS: { key: PulseTab; label: string; icon: typeof Home; soon?: boolean }[] = [
   { key: "for-you", label: "For You", icon: Home },
   { key: "following", label: "Following", icon: UserCheck },
-  { key: "communities", label: "Communities", icon: Users, soon: true },
-  { key: "mentors", label: "Mentors", icon: GraduationCap, soon: true },
+  { key: "communities", label: "Communities", icon: Users },
+  { key: "mentors", label: "Mentors", icon: GraduationCap },
 ];
 
 const href = (key: PulseTab) => (key === "for-you" ? "/pulse" : `/pulse?tab=${key}`);

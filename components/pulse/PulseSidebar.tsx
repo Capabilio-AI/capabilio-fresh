@@ -6,6 +6,7 @@ import { Hash, UserPlus } from "lucide-react";
 import type { Suggestion, TrendingTag } from "@/lib/pulse/sidebar";
 import { Avatar } from "./Avatar";
 import { FollowButton } from "./FollowButton";
+import { MentorBadge } from "./MentorBadge";
 
 interface SidebarData {
   trending: TrendingTag[];
@@ -54,7 +55,7 @@ export function PulseSidebar() {
               <li key={p.id} className="flex items-center gap-3">
                 <Link href={`/pulse/u/${p.id}`}><Avatar person={p} size="sm" /></Link>
                 <div className="min-w-0 flex-1">
-                  <Link href={`/pulse/u/${p.id}`} className="block truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>
+                  <span className="flex items-center gap-1.5"><Link href={`/pulse/u/${p.id}`} className="truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>{p.isMentor && <MentorBadge />}</span>
                   <p className="truncate font-lp-body text-[11.5px] text-app-muted">{p.reason}{p.headline ? ` · ${p.headline}` : ""}</p>
                 </div>
                 <FollowButton userId={p.id} initialFollowing={false} compact />

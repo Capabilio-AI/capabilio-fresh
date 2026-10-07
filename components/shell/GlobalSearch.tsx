@@ -7,6 +7,7 @@ import { Building2, Loader2, Search, X } from "lucide-react";
 import clsx from "clsx";
 import type { SearchResults } from "@/lib/pulse/search";
 import { Avatar } from "@/components/pulse/Avatar";
+import { MentorBadge } from "@/components/pulse/MentorBadge";
 
 const DEBOUNCE_MS = 250;
 const MIN = 2;
@@ -117,7 +118,7 @@ export function GlobalSearch() {
                 <Link key={p.id} id={`${id}-p-${p.id}`} role="option" aria-selected={active === i} href={`/pulse/u/${p.id}`} onClick={() => setOpen(false)} className={clsx("flex items-center gap-3 rounded-xl px-3 py-2", active === i ? "bg-app-background" : "hover:bg-app-background")}>
                   <Avatar person={p} size="sm" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-lp-body text-[13.5px] font-semibold text-app-charcoal">{p.name}</span>
+                    <span className="flex items-center gap-1.5"><span className="truncate font-lp-body text-[13.5px] font-semibold text-app-charcoal">{p.name}</span>{p.isMentor && <MentorBadge />}</span>
                     <span className="block truncate font-lp-body text-[11.5px] text-app-muted">{p.headline ?? "Capabilio member"}</span>
                   </span>
                   {p.following && <span className="shrink-0 font-lp-mono text-[10.5px] text-app-muted">Following</span>}
