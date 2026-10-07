@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export type MessagingEvent = "message" | "conversation" | "read" | "deleted";
+export type MessagingEvent = "message" | "conversation" | "read" | "deleted" | "call" | "signal";
 type Listener = (event: MessagingEvent, payload: Record<string, unknown>) => void;
 interface Summary { unread: number; requests: number }
 interface Ctx extends Summary {
@@ -16,7 +16,9 @@ const MessagingContext = createContext<Ctx>({ unread: 0, requests: 0, subscribe:
 export const useMessaging = () => useContext(MessagingContext);
 
 const POLL_MS = 45_000;
-const EVENTS: MessagingEvent[] = ["message", "conversation", "read", "deleted"];
+const EVENTS: MessagingEvent[] = ["message", "conversation", "read", "deleted", "call", "signal"];
+/** Call signalling is high-frequency and says nothing about unread counts, so it never triggers a refresh. */
+const REFRESH_ON = new Set<MessagingEvent>(["message", "conversation", "read", "deleted"]);
 
 /**
  * One live connection per tab, on the person's own private channel. Everything that wants messages (the inbox, the unread badge)
@@ -51,7 +53,7 @@ export function MessagingProvider({ userId, children }: { userId: string; childr
       for (const event of EVENTS) {
         channel.on("broadcast", { event }, ({ payload }) => {
           listeners.current.forEach((fn) => fn(event, (payload ?? {}) as Record<string, unknown>));
-          setTick((t) => t + 1);
+          if (REFRESH_ON.has(event)) setTick((t) => t + 1);
         });
       }
       channel.subscribe();

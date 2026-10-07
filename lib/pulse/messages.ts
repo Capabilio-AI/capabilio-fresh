@@ -17,6 +17,8 @@ export interface MessageItem {
   body: string;
   createdAt: string;
   deleted: boolean;
+  /** "call" is the line left in the conversation by a voice or video call */
+  kind: "text" | "call";
 }
 export interface ConversationItem {
   id: string;
@@ -50,10 +52,11 @@ interface MessageRow {
   body: string;
   created_at: string;
   deleted_at: string | null;
+  kind?: "text" | "call";
 }
 const CONVO_COLUMNS = "id, user_lo, user_hi, requested_by, status, last_message_at, last_message_preview, last_sender_id";
 
-const toMessage = (m: MessageRow): MessageItem => ({ id: m.id, senderId: m.sender_id, body: m.deleted_at ? "" : m.body, createdAt: m.created_at, deleted: Boolean(m.deleted_at) });
+export const toMessage = (m: MessageRow): MessageItem => ({ id: m.id, senderId: m.sender_id, body: m.deleted_at ? "" : m.body, createdAt: m.created_at, deleted: Boolean(m.deleted_at), kind: m.kind ?? "text" });
 
 /** Tells the people involved, over each one's private channel. A delivery failure never fails the write: clients also refresh on focus. */
 export async function notify(service: Service, userIds: string[], event: string, payload: Record<string, unknown>): Promise<void> {
@@ -117,7 +120,7 @@ export async function sendMessage(service: Service, me: string, otherId: string,
     conversationId = (created as { id: string }).id;
   }
 
-  const { data: row, error: insertError } = await db.from("dm_messages").insert({ conversation_id: conversationId, sender_id: me, body }).select("id, sender_id, body, created_at, deleted_at").single();
+  const { data: row, error: insertError } = await db.from("dm_messages").insert({ conversation_id: conversationId, sender_id: me, body }).select("id, sender_id, body, created_at, deleted_at, kind").single();
   if (insertError || !row) return { ok: false, status: 500, message: "Couldn't send. Please try again." };
   const message = toMessage(row as MessageRow);
   await Promise.all([
@@ -147,7 +150,7 @@ export async function listConversations(service: Service, me: string): Promise<C
   const unread = await Promise.all(
     rows.map(async (r) => {
       if (r.status === "declined" || r.last_sender_id === me || r.last_sender_id === null) return 0;
-      let q = db.from("dm_messages").select("id", { count: "exact", head: true }).eq("conversation_id", r.id).neq("sender_id", me).is("deleted_at", null);
+      let q = db.from("dm_messages").select("id", { count: "exact", head: true }).eq("conversation_id", r.id).eq("kind", "text").neq("sender_id", me).is("deleted_at", null);
       const seen = readAt.get(r.id);
       if (seen) q = q.gt("created_at", seen);
       return (await q).count ?? 0;
@@ -178,7 +181,7 @@ export async function loadThread(service: Service, me: string, conversationId: s
   const row = await ownConversation(service, me, conversationId);
   if (!row || (await blockedWith(service, me)).has(row.other)) return null;
   const db = untyped(service);
-  let q = db.from("dm_messages").select("id, sender_id, body, created_at, deleted_at").eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(THREAD_PAGE + 1);
+  let q = db.from("dm_messages").select("id, sender_id, body, created_at, deleted_at, kind").eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(THREAD_PAGE + 1);
   if (before) q = q.lt("created_at", before);
   const [{ data }, { data: theirRead }, list] = await Promise.all([
     q,
@@ -241,6 +244,12 @@ export interface MessagingSummary {
 export async function messagingSummary(service: Service, me: string): Promise<MessagingSummary> {
   const list = await listConversations(service, me);
   return { unread: list.filter((c) => c.status === "accepted").reduce((n, c) => n + c.unread, 0), requests: list.filter((c) => c.incomingRequest).length };
+}
+
+/** The conversation between two people and its state, or null. Used to decide whether they may call. */
+export async function conversationBetween(service: Service, a: string, b: string): Promise<{ id: string; status: ConversationStatus } | null> {
+  const row = await findConversation(service, a, b);
+  return row ? { id: row.id, status: row.status } : null;
 }
 
 /** The existing conversation with someone, if any, so a "Message" button can open it instead of starting a new one. */

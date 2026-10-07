@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, Check, Flag, Loader2, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Ban, Check, Flag, Loader2, Phone, PhoneMissed, Send, Trash2, Video } from "lucide-react";
 import clsx from "clsx";
 import type { ConversationItem, MessageItem, Thread as ThreadData } from "@/lib/pulse/messages";
 import type { PersonSummary } from "@/lib/pulse/people";
 import { Avatar } from "@/components/pulse/Avatar";
 import { ReportDialog } from "@/components/pulse/ReportDialog";
+import { useCall } from "./CallProvider";
 import { useMessaging } from "./MessagingProvider";
 
 const MAX = 2000;
@@ -30,6 +31,7 @@ interface Props {
 
 export function Thread({ me, conversationId, startWith, onBack, onChanged, onStarted }: Props) {
   const { subscribe } = useMessaging();
+  const call = useCall();
   const [data, setData] = useState<ThreadData | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [otherReadAt, setOtherReadAt] = useState<string | null>(null);
@@ -132,7 +134,7 @@ export function Thread({ me, conversationId, startWith, onBack, onChanged, onSta
 
   const mineCount = messages.filter((m) => m.senderId === me).length;
   const canSend = !conversation || conversation.status === "accepted" || (conversation.outgoingRequest && mineCount < 1) || (conversation.status === "declined" && !conversation.requestedByMe);
-  const lastMineId = [...messages].reverse().find((m) => m.senderId === me && !m.deleted)?.id;
+  const lastMineId = [...messages].reverse().find((m) => m.senderId === me && !m.deleted && m.kind === "text")?.id;
 
   return (
     <div className="flex h-full flex-col">
@@ -143,6 +145,12 @@ export function Thread({ me, conversationId, startWith, onBack, onChanged, onSta
           <Link href={`/pulse/u/${other.id}`} className="block truncate font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{other.name ?? "Capabilio member"}</Link>
           <p className="truncate font-lp-body text-[11.5px] text-app-muted">{other.headline ?? ""}</p>
         </div>
+        {conversation?.status === "accepted" && call.supported && (
+          <>
+            <button type="button" onClick={() => void call.startCall(other, "voice")} disabled={call.state.phase !== "idle"} aria-label={`Voice call ${other.name ?? ""}`.trim()} title={call.state.phase !== "idle" ? "You're on a call" : "Voice call"} className="rounded-full p-2 text-app-charcoal hover:bg-app-background disabled:opacity-40"><Phone size={16} /></button>
+            <button type="button" onClick={() => void call.startCall(other, "video")} disabled={call.state.phase !== "idle"} aria-label={`Video call ${other.name ?? ""}`.trim()} title={call.state.phase !== "idle" ? "You're on a call" : "Video call"} className="rounded-full p-2 text-app-charcoal hover:bg-app-background disabled:opacity-40"><Video size={16} /></button>
+          </>
+        )}
         {conversation && <button type="button" onClick={() => setReporting({ type: "user", id: other.id })} aria-label="Report this person" className="rounded-full p-2 text-app-muted hover:bg-app-background"><Flag size={15} /></button>}
       </header>
 
@@ -153,6 +161,17 @@ export function Thread({ me, conversationId, startWith, onBack, onChanged, onSta
             const mine = m.senderId === me;
             const day = dayLabel(m.createdAt);
             const header = i === 0 || dayLabel(messages[i - 1].createdAt) !== day;
+            if (m.kind === "call") {
+              const missed = /^(Missed|Declined)/.test(m.body);
+              return (
+                <li key={m.id}>
+                  {header && <p className="my-3 text-center font-lp-mono text-[10.5px] text-app-muted">{day}</p>}
+                  <p className={clsx("mx-auto flex w-fit items-center gap-1.5 rounded-full border border-app-border bg-app-background px-3 py-1 font-lp-body text-[12px]", missed ? "text-app-rose" : "text-app-muted")}>
+                    {missed ? <PhoneMissed size={12} aria-hidden="true" /> : /^Video/.test(m.body) ? <Video size={12} aria-hidden="true" /> : <Phone size={12} aria-hidden="true" />} {m.body} <span className="font-lp-mono text-[10px]">{clock(m.createdAt)}</span>
+                  </p>
+                </li>
+              );
+            }
             return (
               <li key={m.id}>
                 {header && <p className="my-3 text-center font-lp-mono text-[10.5px] text-app-muted">{day}</p>}
