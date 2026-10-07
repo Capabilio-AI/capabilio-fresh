@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Search, Settings } from "lucide-react";
+import { Bell, MessageCircle, Search, Settings } from "lucide-react";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { AccountMenu } from "@/components/shell/AccountMenu";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
+import { UnreadBadge } from "@/components/messages/UnreadBadge";
 
 function firstName(fullName: string | null, email: string): string {
   if (fullName) return fullName.trim().split(/\s+/)[0];
@@ -36,6 +37,10 @@ export function Topbar({ viewer }: { viewer: ViewerSummary }) {
         <GlobalSearch />
         <Link href="/pulse/search" aria-label="Search" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-app-charcoal hover:bg-black/5 md:hidden"><Search size={18} /></Link>
 
+        <Link href="/pulse/messages" aria-label="Messages" className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-app-charcoal hover:bg-black/5">
+          <MessageCircle size={18} />
+          <UnreadBadge className="absolute -right-0.5 -top-0.5 h-[18px]" />
+        </Link>
         <Link
           href="/notifications"
           aria-label="Notifications"

@@ -11,7 +11,7 @@ const REASONS = [
   { value: "other", label: "Something else" },
 ] as const;
 
-export type ReportTarget = "user" | "post" | "comment" | "story";
+export type ReportTarget = "user" | "post" | "comment" | "story" | "message";
 
 /** Report a profile, post, comment or story. The Capabilio team reviews every report; the person reported is not told who reported them. */
 export function ReportDialog({ targetType, targetId, onClose }: { targetType: ReportTarget; targetId: string; onClose: () => void }) {

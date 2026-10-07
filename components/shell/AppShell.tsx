@@ -3,11 +3,13 @@ import { Topbar } from "@/components/shell/Topbar";
 import { HeaderNav } from "@/components/shell/HeaderNav";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { MentorWidget } from "@/components/mentor/MentorWidget";
+import { MessagingProvider } from "@/components/messages/MessagingProvider";
 import { DirectionProvider } from "@/components/direction/DirectionContext";
 
 export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; banner?: ReactNode; children: ReactNode }) {
   return (
     <DirectionProvider isJobTrack={viewer.direction?.track === "job"}>
+      <MessagingProvider userId={viewer.id}>
       <div className="min-h-screen bg-app-background">
         <Topbar viewer={viewer} />
         <HeaderNav inDirectionWindow={viewer.direction?.inDirectionWindow ?? false} />
@@ -17,6 +19,7 @@ export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; 
         </main>
         <MentorWidget />
       </div>
+      </MessagingProvider>
     </DirectionProvider>
   );
 }

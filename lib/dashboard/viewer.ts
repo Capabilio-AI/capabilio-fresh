@@ -4,6 +4,7 @@ import { getStudentDirection, type StudentDirection } from "@/lib/career/directi
 
 /** Light profile summary for the app shell (topbar, sidebar) — no assessment requirement, unlike getDashboardData. */
 export interface ViewerSummary {
+  id: string;
   fullName: string | null;
   email: string;
   avatarUrl: string | null;
@@ -32,6 +33,7 @@ export async function getViewerSummary(
   const membership = rows.find((r) => r.status === "active" && r.branch) ?? rows.find((r) => r.branch) ?? rows[0] ?? null;
   const institution = membership?.institutions as { name: string } | null;
   return {
+    id: userId,
     fullName: profile?.full_name ?? null,
     email: profile?.email ?? "",
     avatarUrl: profile?.avatar_url ?? null,

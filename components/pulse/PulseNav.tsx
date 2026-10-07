@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GraduationCap, Home, MessageCircle, UserCheck, Users } from "lucide-react";
 import clsx from "clsx";
+import { UnreadBadge } from "@/components/messages/UnreadBadge";
 
 export type PulseTab = "for-you" | "following" | "communities" | "mentors";
 export const PULSE_TABS: { key: PulseTab; label: string; icon: typeof Home; soon?: boolean }[] = [
@@ -14,7 +15,7 @@ const href = (key: PulseTab) => (key === "for-you" ? "/pulse" : `/pulse?tab=${ke
 
 /** Vertical on large screens (left rail), a scrolling tab strip on small ones. Tabs are real URLs, so they can be shared and the back button works. */
 export function PulseNav({ active, variant }: { active: PulseTab; variant: "rail" | "strip" }) {
-  const items = [...PULSE_TABS, ...(variant === "rail" ? [{ key: "messages" as const, label: "Messages", icon: MessageCircle, soon: true }] : [])];
+  const items = [...PULSE_TABS, ...(variant === "rail" ? [{ key: "messages" as const, label: "Messages", icon: MessageCircle, soon: false }] : [])];
   return (
     <nav aria-label="Pulse sections" className={variant === "rail" ? "flex flex-col gap-1" : "-mx-4 flex gap-1 overflow-x-auto border-b border-app-border bg-white px-4 sm:mx-0 sm:rounded-2xl sm:border sm:px-2"}>
       {items.map(({ key, label, icon: Icon, soon }) => {
@@ -34,7 +35,7 @@ export function PulseNav({ active, variant }: { active: PulseTab; variant: "rail
           variant === "rail" && !isActive && "hover:bg-app-background"
         );
         return key === "messages" ? (
-          <span key={key} className={clsx(cls, "cursor-default opacity-70")} aria-disabled="true">{inner}</span>
+          <Link key={key} href="/pulse/messages" className={cls}>{inner}<UnreadBadge className="ml-auto h-[18px]" /></Link>
         ) : (
           <Link key={key} href={href(key as PulseTab)} aria-current={isActive ? "page" : undefined} className={cls}>{inner}</Link>
         );

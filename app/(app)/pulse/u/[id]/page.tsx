@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Lock, MessageCircle } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
@@ -55,7 +55,7 @@ export default async function PulseProfilePage({ params }: { params: Promise<{ i
           {isMe ? (
             <Link href="/profile" className="rounded-full border border-app-border px-4 py-2 font-lp-body text-[13px] font-semibold text-app-charcoal hover:bg-app-background">Edit profile</Link>
           ) : (
-            <div className="flex items-center gap-2"><FollowButton userId={id} initialFollowing={follows} /><ProfileMenu userId={id} name={name.split(" ")[0]} /></div>
+            <div className="flex items-center gap-2"><Link href={`/pulse/messages?to=${id}`} className="flex items-center gap-1.5 rounded-full border border-app-border px-4 py-2 font-lp-body text-[13px] font-semibold text-app-charcoal hover:bg-app-background"><MessageCircle size={14} aria-hidden="true" /> Message</Link><FollowButton userId={id} initialFollowing={follows} /><ProfileMenu userId={id} name={name.split(" ")[0]} /></div>
           )}
         </div>
       </section>
