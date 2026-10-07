@@ -5,6 +5,7 @@ import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { listOpenOpportunities, type OpportunityType } from "@/lib/launchpad/opportunities";
+import { StudentPlacementOffers } from "@/components/org/StudentPlacementOffers";
 import { ActionButton } from "@/components/org/ActionButton";
 import { REGISTRATION_LABEL } from "@/lib/org/visits";
 
@@ -34,6 +35,7 @@ export default async function LaunchpadPage() {
       <div>
         <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Launchpad</h1>
         <p className="mt-1 font-lp-body text-[13px] text-app-muted">Jobs, internships, competitions, and referrals.</p>
+        <StudentPlacementOffers userId={user.id} />
 
         <div className="mt-8 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-app-border bg-white px-6 py-16 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-app-attention-container text-app-attention">
@@ -59,6 +61,7 @@ export default async function LaunchpadPage() {
     <div>
       <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Launchpad</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Jobs, internships, competitions, and referrals.</p>
+      <StudentPlacementOffers userId={user.id} />
 
       {direction && direction.track !== "job" && (
         <p className="mt-4 rounded-lg border border-app-border bg-white px-4 py-3 font-lp-body text-[12.5px] text-app-muted">

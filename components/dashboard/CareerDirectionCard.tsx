@@ -55,16 +55,16 @@ export function CareerDirectionCard({ match }: { match: CareerMatch | null }) {
 
       <div className="mt-5 flex gap-2">
         <Link
-          href="/dashboard/career-path"
+          href="/dashboard/skills?view=gaps"
           className="flex-1 rounded-lg bg-app-charcoal px-3.5 py-2 text-center font-lp-body text-[12.5px] font-semibold text-white transition-transform hover:-translate-y-0.5"
         >
-          View career path
+          See skill gaps
         </Link>
         <Link
-          href="/dashboard/career-path#explore"
+          href="/dashboard/roadmap"
           className="flex-1 rounded-lg border border-app-border px-3.5 py-2 text-center font-lp-body text-[12.5px] font-medium text-app-charcoal transition-colors hover:bg-app-background"
         >
-          Explore careers
+          Open roadmap
         </Link>
       </div>
     </div>

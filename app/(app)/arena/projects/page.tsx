@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import { Clock } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
+import Link from "next/link";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getOrgContext } from "@/lib/org/context";
+import { loadStudentProjects } from "@/lib/org/loaders";
+import { Pill, formatDateTime } from "@/components/org/ui";
 import { MOCK_ARENA_PROJECTS } from "@/lib/mock/arena";
 
 export const metadata: Metadata = { title: "Projects — Arena — Capabilio AI" };
@@ -14,6 +19,8 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 
 export default async function ArenaProjectsPage() {
   const { supabase, user } = await requireAuthedUser();
+  const ctx = await getOrgContext(supabase, user.id);
+  const facultyProjects = ctx && ctx.kind === "student" ? await loadStudentProjects(createServiceClient(), ctx) : [];
 
   return (
     <div>
@@ -24,6 +31,24 @@ export default async function ArenaProjectsPage() {
       </div>
 
       <div className="pt-6">
+        {facultyProjects.length > 0 && (
+          <section className="mb-8" aria-label="Projects from your faculty">
+            <h2 className="mb-3 font-lp-body text-[15px] font-semibold text-app-charcoal">From your faculty</h2>
+            <ul className="flex flex-col gap-3">
+              {facultyProjects.map((p) => (
+                <li key={p.id}>
+                  <Link href={`/arena/projects/${p.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-app-border bg-white p-4 hover:bg-black/[0.02]">
+                    <div>
+                      <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{p.title}</p>
+                      <p className="font-lp-mono text-[11px] text-app-muted">Due {formatDateTime(p.deadline_at)}</p>
+                    </div>
+                    {p.myGroup ? <Pill tone="ok">{p.myGroup.group.name} · {p.myGroup.group.status}</Pill> : <Pill tone={p.status === "open" ? "warn" : "neutral"}>{p.status === "open" ? "Not in a group" : p.status}</Pill>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <div className="mb-4 rounded-lg border border-dashed border-app-border bg-white px-4 py-3 font-lp-body text-[12.5px] text-app-muted">
           Project catalog is in development — these are sample scopes. Completed work still counts once you log it
           in your Vault.

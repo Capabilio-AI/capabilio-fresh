@@ -48,7 +48,7 @@ export function JobTrackCard({ newVerifiedCompletions, completedInterviewSession
               ? "You haven't completed a practice interview yet."
               : `You've completed ${completedInterviewSessions} practice ${completedInterviewSessions === 1 ? "interview" : "interviews"}.`}
           </p>
-          <Link href="/interview" className="mt-3 inline-block rounded-lg border border-app-border px-3.5 py-1.5 font-lp-body text-[12.5px] font-medium text-app-charcoal">
+          <Link href="/dashboard/interview" className="mt-3 inline-block rounded-lg border border-app-border px-3.5 py-1.5 font-lp-body text-[12.5px] font-medium text-app-charcoal">
             Open AI Interview
           </Link>
         </div>

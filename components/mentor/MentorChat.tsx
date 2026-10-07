@@ -47,7 +47,7 @@ export function MentorChat({ openingMessage }: { openingMessage: string }) {
   }
 
   return (
-    <div className="flex h-[560px] flex-col rounded-xl border border-app-border bg-white">
+    <div className="flex h-[min(560px,70vh)] flex-col rounded-xl border border-app-border bg-white">
       <div className="flex-1 overflow-y-auto p-5">
         <div className="flex flex-col gap-4">
           {messages.map((m, i) => (
@@ -102,7 +102,7 @@ export function MentorChat({ openingMessage }: { openingMessage: string }) {
       </div>
       <div className="flex items-center gap-1.5 border-t border-app-border px-3 py-2 font-lp-mono text-[10.5px] text-app-muted">
         <Sparkles size={11} />
-        This conversation isn&apos;t saved between visits yet.
+        Profile guidance only — ELO, skills and learning. Not saved between visits.
       </div>
     </div>
   );

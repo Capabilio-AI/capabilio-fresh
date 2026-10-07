@@ -28,8 +28,8 @@ export default async function ClassroomProjectPage({ params }: { params: Promise
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
       <div>
-        <Link href="/classroom" className="font-lp-body text-[13px] text-app-blue hover:underline">
-          ← Classroom
+        <Link href="/arena/projects" className="font-lp-body text-[13px] text-app-blue hover:underline">
+          ← Projects
         </Link>
         <h1 className="mt-2 font-lp-display text-[26px] font-semibold text-app-charcoal">{project.title}</h1>
         <p className="font-lp-mono text-[11.5px] text-app-muted">

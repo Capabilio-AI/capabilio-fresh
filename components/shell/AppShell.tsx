@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Topbar } from "@/components/shell/Topbar";
 import { HeaderNav } from "@/components/shell/HeaderNav";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
+import { MentorWidget } from "@/components/mentor/MentorWidget";
 import { DirectionProvider } from "@/components/direction/DirectionContext";
 
 export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; banner?: ReactNode; children: ReactNode }) {
@@ -14,6 +15,7 @@ export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; 
           {banner}
           {children}
         </main>
+        <MentorWidget />
       </div>
     </DirectionProvider>
   );

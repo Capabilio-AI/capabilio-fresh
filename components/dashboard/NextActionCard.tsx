@@ -49,7 +49,7 @@ export function NextActionCard({ action }: { action: NextAction | null }) {
             <ArrowRight size={15} />
           </Link>
           <Link
-            href="/dashboard/skill-gap"
+            href="/dashboard/skills?view=gaps"
             className="text-center font-lp-mono text-[11px] text-white/60 hover:text-white hover:underline"
           >
             Why this?

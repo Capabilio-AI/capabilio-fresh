@@ -48,7 +48,7 @@ export function deriveNotifications(input: DeriveNotificationsInput): Notificati
         tone: "attention",
         title: `${score.label} needs attention`,
         body: `You scored ${score.percentage}% (${score.correct}/${score.total}). This is pulling down related skill gaps.`,
-        href: "/dashboard/skill-gap",
+        href: "/dashboard/skills?view=gaps",
       });
     }
   }
@@ -79,7 +79,7 @@ export function deriveNotifications(input: DeriveNotificationsInput): Notificati
       tone: "info",
       title: "Generate your personalized learning path",
       body: "A phased plan sequenced against your actual skill gaps is ready to generate.",
-      href: "/dashboard/career-path",
+      href: "/skillstudio",
     });
   }
 

@@ -57,7 +57,7 @@ export default async function SettingsPage() {
                 .join(" · ") || "Not set"
             }
           >
-            <Link href="/dashboard/education" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
+            <Link href="/dashboard/vault" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
               Manage →
             </Link>
           </SettingsRow>

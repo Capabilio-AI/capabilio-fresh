@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Lock, MessagesSquare } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
+import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { InterviewTabs } from "@/components/interview/InterviewTabs";
 
 export const metadata: Metadata = { title: "AI Interview — Capabilio AI" };
@@ -18,6 +19,9 @@ export default async function InterviewPage() {
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
         Practice technical, behavioral, and HR rounds before you need them for real.
       </p>
+      <div className="mt-4">
+        <DashboardSubNav />
+      </div>
 
       <div className="pt-6">
         {unlocked ? (

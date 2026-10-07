@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight, Award, FolderKanban, Sparkles } from "lucide
 import type { CareerMatch } from "@/lib/career/skill-gap";
 import type { NextAction } from "@/lib/dashboard/next-action";
 import type { VaultItem } from "@/lib/vault/data";
+import { AskMentorButton } from "@/components/mentor/AskMentorButton";
 
 export function SkillGapsPreviewCard({ match }: { match: CareerMatch | null }) {
   const gaps = match ? [...match.skillGaps].filter((g) => g.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 3) : [];
@@ -14,7 +15,7 @@ export function SkillGapsPreviewCard({ match }: { match: CareerMatch | null }) {
           <AlertTriangle size={14} />
           Priority skill gaps
         </div>
-        <Link href="/dashboard/skill-gap" className="font-lp-mono text-[11px] text-app-blue hover:underline">
+        <Link href="/dashboard/skills?view=gaps" className="font-lp-mono text-[11px] text-app-blue hover:underline">
           View all
         </Link>
       </div>
@@ -81,13 +82,7 @@ export function MentorInsightCard({ action }: { action: NextAction | null }) {
         AI Mentor
       </div>
       <p className="mt-3 flex-1 font-lp-body text-[13px] leading-relaxed text-app-charcoal">{insight}</p>
-      <Link
-        href="/mentor"
-        className="mt-3 flex items-center gap-1.5 font-lp-body text-[12.5px] font-semibold text-app-charcoal hover:underline"
-      >
-        Ask AI Mentor
-        <ArrowRight size={13} />
-      </Link>
+      <AskMentorButton />
     </div>
   );
 }

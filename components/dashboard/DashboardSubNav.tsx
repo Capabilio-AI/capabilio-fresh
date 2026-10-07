@@ -7,13 +7,11 @@ import { useDirectionFlags } from "@/components/direction/DirectionContext";
 
 const TABS: { label: string; href: string; jobTrackOnly?: boolean }[] = [
   { label: "Overview", href: "/dashboard" },
-  { label: "Career Path", href: "/dashboard/career-path" },
-  { label: "Educational History", href: "/dashboard/education" },
   { label: "Portfolio", href: "/dashboard/portfolio" },
-  { label: "Skills", href: "/dashboard/skills" },
-  { label: "Skill Gap", href: "/dashboard/skill-gap" },
+  { label: "Skills & Gaps", href: "/dashboard/skills" },
   { label: "Roadmap", href: "/dashboard/roadmap" },
-  { label: "Vault", href: "/dashboard/vault" },
+  { label: "Vault History", href: "/dashboard/vault" },
+  { label: "AI Interview", href: "/dashboard/interview" },
 ];
 
 export function DashboardSubNav() {
@@ -24,7 +22,7 @@ export function DashboardSubNav() {
     <div className="-mx-4 overflow-x-auto border-b border-app-border px-4 sm:mx-0 sm:px-0">
       <div className="flex gap-1 whitespace-nowrap">
         {tabs.map((tab) => {
-          const active = tab.href === "/dashboard" ? pathname === "/dashboard" : pathname === tab.href;
+          const active = tab.href === "/dashboard" ? pathname === "/dashboard" : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
             <Link
               key={tab.href}

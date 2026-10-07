@@ -108,7 +108,7 @@ export default async function ProfilePage() {
             </ul>
           )}
           <Link
-            href="/dashboard/education"
+            href="/dashboard/vault"
             className="mt-3 inline-block font-lp-mono text-[11px] text-app-blue hover:underline"
           >
             {educationEntries.length > 2 ? `View all ${educationEntries.length} entries` : "View educational history"}

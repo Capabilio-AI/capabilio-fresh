@@ -38,7 +38,7 @@ function SectionScoreCard({ score }: { score: SectionScore }) {
   const tier = scoreTier(score.percentage);
   return (
     <Link
-      href="/dashboard/skill-gap"
+      href="/dashboard/skills?view=gaps"
       className="flex flex-col gap-3 rounded-xl border border-app-border bg-white p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm"
     >
       <div className="flex items-center justify-between">
