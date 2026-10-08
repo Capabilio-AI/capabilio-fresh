@@ -3,7 +3,7 @@
 import { gapTier, type CareerMatch, type GapTier, type SkillGap } from "@/lib/career/skill-gap";
 import { DECAY_LABEL, type SkillPracticeRecency } from "@/lib/career/skill-decay";
 import { EmptyState } from "@/components/dashboard/SkillsTab";
-import { SkillRadarChart } from "@/components/dashboard/SkillRadarChart";
+import { RoundRadar } from "@/components/metro/RoundRadar";
 
 const RECOMMENDATION_CLASSES: Record<CareerMatch["recommendation"], string> = {
   Ready: "bg-lp-success-container text-lp-on-success-container",
@@ -45,8 +45,7 @@ function SkillRow({ gap, recency }: { gap: SkillGap; recency?: SkillPracticeRece
           )}
         </span>
         <span>
-          {gap.current ?? 0} / {gap.required}
-          {gap.gap > 0 && <span className="ml-1.5 text-lp-error">(-{gap.gap})</span>}
+          {gap.current === null ? "Not assessed" : `${gap.current}%`} · target {gap.required}%
         </span>
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-lp-surface-subtle">
@@ -106,18 +105,7 @@ export function SkillGapsTab({
 
             {match.skillGaps.length >= 3 && (
               <div className="mt-4">
-                <SkillRadarChart
-                  data={match.skillGaps.map((g) => ({
-                    subject: g.skill,
-                    current: g.current ?? 0,
-                    required: g.required,
-                  }))}
-                  series={[
-                    { key: "required", label: "Required", color: "#9ca3af" },
-                    { key: "current", label: "Your level", color: "#3457a6" },
-                  ]}
-                  height={280}
-                />
+                <RoundRadar caption={`${match.careerRole} skills`} axes={match.skillGaps.map((g) => ({ label: g.skill, value: g.current, target: g.required }))} />
               </div>
             )}
 

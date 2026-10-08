@@ -57,13 +57,13 @@ export function StoryComposer({ onClose, onShared }: { onClose: () => void; onSh
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Create a story">
       <div className="flex max-h-full w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-app-border px-4 py-3">
-          <h2 className="font-lp-display text-[16px] font-semibold text-app-charcoal">Your story</h2>
+        <div className="flex items-center justify-between border-b border-[var(--m-rule)] px-4 py-3">
+          <h2 className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">Your story</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-1.5 text-app-muted hover:bg-app-background"><X size={16} /></button>
         </div>
         <div className="flex gap-2 px-4 pt-3">
           {([["text", "Text", Type], ["image", "Photo", ImagePlus]] as const).map(([key, label, Icon]) => (
-            <button key={key} type="button" onClick={() => setMode(key)} aria-pressed={mode === key} className={clsx("flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-lp-body text-[12.5px] font-medium", mode === key ? "bg-app-charcoal text-white" : "border border-app-border text-app-muted hover:text-app-charcoal")}>
+            <button key={key} type="button" onClick={() => setMode(key)} aria-pressed={mode === key} className={clsx("flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-lp-body text-[12.5px] font-medium", mode === key ? "bg-app-charcoal text-white" : "border border-[var(--m-rule)] text-app-muted hover:text-[var(--m-ink)]")}>
               <Icon size={13} aria-hidden="true" /> {label}
             </button>
           ))}
@@ -77,7 +77,7 @@ export function StoryComposer({ onClose, onShared }: { onClose: () => void; onSh
                 onChange={(e) => setText(e.target.value.slice(0, MAX))}
                 placeholder="What are you working on today?"
                 aria-label="Story text"
-                className="h-full w-full resize-none bg-transparent p-6 text-center font-lp-display text-[22px] font-semibold leading-snug placeholder:opacity-60 focus:outline-none"
+                className="h-full w-full resize-none bg-transparent p-6 text-center font-lp-display text-[22px] font-bold leading-snug placeholder:opacity-60 focus:outline-none"
                 style={{ color: themeInk(theme) }}
               />
             ) : preview ? (
@@ -101,14 +101,14 @@ export function StoryComposer({ onClose, onShared }: { onClose: () => void; onSh
           ) : (
             <>
               {preview && <button type="button" onClick={() => input.current?.click()} className="mt-3 block w-full text-center font-lp-body text-[12px] text-app-blue hover:underline">Change photo</button>}
-              <input value={text} onChange={(e) => setText(e.target.value.slice(0, MAX))} placeholder="Add a caption (optional)" aria-label="Caption" className="mt-3 w-full rounded-lg border border-app-border bg-app-background px-3 py-2 font-lp-body text-[13px] focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20" />
+              <input value={text} onChange={(e) => setText(e.target.value.slice(0, MAX))} placeholder="Add a caption (optional)" aria-label="Caption" className="mt-3 w-full rounded-lg border border-[var(--m-rule)] bg-app-background px-3 py-2 font-lp-body text-[13px] focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20" />
             </>
           )}
           <p className="mt-3 text-center font-lp-body text-[11.5px] text-app-muted">Visible to your followers for 24 hours, then it disappears.</p>
           {error && <p role="alert" className="mt-2 text-center font-lp-body text-[12px] text-app-rose">{error}</p>}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-app-border px-4 py-3">
+        <div className="flex justify-end gap-2 border-t border-[var(--m-rule)] px-4 py-3">
           <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 font-lp-body text-[13px] text-app-muted hover:bg-app-background">Cancel</button>
           <button type="button" onClick={share} disabled={busy || !canShare} className="flex items-center gap-2 rounded-lg bg-app-orange px-5 py-2 font-lp-body text-[13px] font-semibold text-white disabled:opacity-50">
             {busy && <Loader2 size={13} className="animate-spin" aria-hidden="true" />} Share story

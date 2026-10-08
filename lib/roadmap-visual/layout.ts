@@ -22,10 +22,10 @@ export interface Layout {
 
 export const SPINE_W = 250;
 export const SPINE_H = 58;
-export const GROUP_W = 200;
-export const GROUP_H = 50;
-export const TOPIC_W = 240;
-export const TOPIC_H = 46;
+export const GROUP_W = 220;
+export const GROUP_H = 56;
+export const TOPIC_W = 264;
+export const TOPIC_H = 56;
 export const TOPIC_GAP = 10;
 export const GROUP_GAP = 24;
 export const SPINE_TO_GROUP = 56;

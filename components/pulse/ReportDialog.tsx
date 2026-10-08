@@ -37,22 +37,22 @@ export function ReportDialog({ targetType, targetId, onClose }: { targetType: Re
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Report">
       <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-lp-display text-[16px] font-semibold text-app-charcoal">Report</h2>
+          <h2 className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">Report</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-1.5 text-app-muted hover:bg-app-background"><X size={16} /></button>
         </div>
         {state?.ok ? (
-          <p role="status" className="mt-4 font-lp-body text-[13px] text-app-charcoal">{state.text}</p>
+          <p role="status" className="mt-4 font-lp-body text-[13px] text-[var(--m-ink)]">{state.text}</p>
         ) : (
           <>
             <fieldset className="mt-3 flex flex-col gap-2">
               <legend className="sr-only">Reason</legend>
               {REASONS.map((r) => (
-                <label key={r.value} className="flex items-center gap-2 font-lp-body text-[13px] text-app-charcoal">
+                <label key={r.value} className="flex items-center gap-2 font-lp-body text-[13px] text-[var(--m-ink)]">
                   <input type="radio" name="reason" checked={reason === r.value} onChange={() => setReason(r.value)} /> {r.label}
                 </label>
               ))}
             </fieldset>
-            <textarea value={details} onChange={(e) => setDetails(e.target.value.slice(0, 1000))} placeholder="Anything else we should know? (optional)" aria-label="Details" rows={3} className="mt-3 w-full resize-none rounded-lg border border-app-border bg-app-background px-3 py-2 font-lp-body text-[13px] focus:border-app-orange focus:outline-none" />
+            <textarea value={details} onChange={(e) => setDetails(e.target.value.slice(0, 1000))} placeholder="Anything else we should know? (optional)" aria-label="Details" rows={3} className="mt-3 w-full resize-none rounded-lg border border-[var(--m-rule)] bg-app-background px-3 py-2 font-lp-body text-[13px] focus:border-app-orange focus:outline-none" />
             {state && <p role="alert" className="mt-2 font-lp-body text-[12px] text-app-rose">{state.text}</p>}
           </>
         )}

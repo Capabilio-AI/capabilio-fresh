@@ -39,7 +39,7 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 sm:p-7" onClick={(e) => e.stopPropagation()}>
-        <button type="button" onClick={onClose} aria-label="Close" className="float-right rounded-full p-1.5 text-app-muted hover:bg-app-background hover:text-app-charcoal">
+        <button type="button" onClick={onClose} aria-label="Close" className="float-right rounded-full p-1.5 text-app-muted hover:bg-app-background hover:text-[var(--m-ink)]">
           <X size={18} />
         </button>
 
@@ -49,19 +49,19 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
         {state.status === "ready" && (
           <>
             <p className="font-lp-mono text-[11.5px] text-app-muted">{[state.data.company, state.data.areaName, state.data.toolLabel].filter(Boolean).join(" · ")}</p>
-            <h2 className="mt-1 pr-8 font-lp-display text-[20px] font-semibold text-app-charcoal">{state.data.title}</h2>
+            <h2 className="mt-1 pr-8 font-lp-display text-[20px] font-semibold text-[var(--m-ink)]">{state.data.title}</h2>
             <p className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-lp-body text-[12.5px] font-semibold ${state.data.completedAt ? "bg-app-success-container text-app-success" : "bg-app-attention-container text-app-attention"}`}>
               {state.data.completedAt ? <CheckCircle2 size={14} /> : <CircleX size={14} />}
               {state.data.completedAt ? `Verified Arena submission · ${fmt(state.data.completedAt)}` : "Not yet verified"}
             </p>
 
-            <section className="mt-5 rounded-xl border border-app-border p-4">
-              <h3 className="font-lp-body text-[13px] font-semibold text-app-charcoal">The request</h3>
+            <section className="mt-5 rounded-xl border border-[var(--m-rule)] p-4">
+              <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">The request</h3>
               {state.data.requester && <p className="mt-1 font-lp-mono text-[11.5px] text-app-muted">From {state.data.requester}</p>}
-              <p className="mt-2 font-lp-body text-[13.5px] leading-relaxed text-app-charcoal">{state.data.scenario}</p>
+              <p className="mt-2 font-lp-body text-[13.5px] leading-relaxed text-[var(--m-ink)]">{state.data.scenario}</p>
               <ul className="mt-3 flex flex-col gap-1">
                 {state.data.objectiveLines.map((l, i) => (
-                  <li key={i} className="font-lp-body text-[13px] text-app-charcoal">
+                  <li key={i} className="font-lp-body text-[13px] text-[var(--m-ink)]">
                     {l}
                   </li>
                 ))}
@@ -69,9 +69,9 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
             </section>
 
             {state.data.grade && (
-              <section className="mt-3 rounded-xl border border-app-border p-4">
-                <h3 className="font-lp-body text-[13px] font-semibold text-app-charcoal">Deterministic grading</h3>
-                <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{state.data.grade.message}</p>
+              <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
+                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Deterministic grading</h3>
+                <p className="mt-1 font-lp-body text-[13px] text-[var(--m-ink)]">{state.data.grade.message}</p>
                 <ul className="mt-2 flex flex-col gap-1">
                   {state.data.grade.checks.map((c) => (
                     <li key={c.label} className={`font-lp-mono text-[12px] ${c.passed ? "text-app-success" : "text-app-rose"}`}>
@@ -83,9 +83,9 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
             )}
 
             {state.data.submissionText && (
-              <section className="mt-3 rounded-xl border border-app-border p-4">
-                <h3 className="font-lp-body text-[13px] font-semibold text-app-charcoal">Submitted work</h3>
-                <pre className="mt-2 max-h-[280px] overflow-auto whitespace-pre-wrap rounded-lg bg-app-background p-3 font-lp-mono text-[12px] text-app-charcoal">{state.data.submissionText}</pre>
+              <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
+                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Submitted work</h3>
+                <pre className="mt-2 max-h-[280px] overflow-auto whitespace-pre-wrap rounded-lg bg-app-background p-3 font-lp-mono text-[12px] text-[var(--m-ink)]">{state.data.submissionText}</pre>
               </section>
             )}
 
@@ -93,17 +93,17 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
               const output = sqlOutputDetail(state.data.grade?.detail);
               if (!output) return null;
               return (
-                <section className="mt-3 rounded-xl border border-app-border p-4">
-                  <h3 className="font-lp-body text-[13px] font-semibold text-app-charcoal">Output</h3>
+                <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
+                  <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Output</h3>
                   {"error" in output ? (
                     <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-app-rose-container p-3 font-lp-mono text-[12px] text-app-rose">{output.error}</pre>
                   ) : (
-                    <div className="mt-2 max-h-[240px] overflow-auto rounded-lg border border-app-border">
+                    <div className="mt-2 max-h-[240px] overflow-auto rounded-lg border border-[var(--m-rule)]">
                       <table className="w-full border-collapse font-lp-mono text-[12px]">
                         <thead className="sticky top-0 bg-app-background">
                           <tr>
                             {output.columns.map((c) => (
-                              <th key={c} className="border-b border-app-border px-2.5 py-1.5 text-left font-semibold text-app-charcoal">
+                              <th key={c} className="border-b border-[var(--m-rule)] px-2.5 py-1.5 text-left font-semibold text-[var(--m-ink)]">
                                 {c}
                               </th>
                             ))}
@@ -111,9 +111,9 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
                         </thead>
                         <tbody>
                           {output.rows.map((row, i) => (
-                            <tr key={i} className="border-b border-app-border last:border-0 even:bg-app-background/60">
+                            <tr key={i} className="border-b border-[var(--m-rule)] last:border-0 even:bg-app-background/60">
                               {row.map((cell, ci) => (
-                                <td key={ci} className={`whitespace-nowrap px-2.5 py-1 ${cell === null ? "text-app-rose" : "text-app-charcoal"}`}>
+                                <td key={ci} className={`whitespace-nowrap px-2.5 py-1 ${cell === null ? "text-app-rose" : "text-[var(--m-ink)]"}`}>
                                   {cell === null ? "NULL" : String(cell)}
                                 </td>
                               ))}
@@ -127,8 +127,8 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
               );
             })()}
 
-            <section className="mt-3 rounded-xl border border-app-border p-4">
-              <h3 className="font-lp-body text-[13px] font-semibold text-app-charcoal">Audit trail</h3>
+            <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
+              <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Audit trail</h3>
               <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1.5 font-lp-mono text-[11.5px] sm:grid-cols-2">
                 {[
                   ["Assigned", fmt(state.data.assignedAt)],
@@ -140,9 +140,9 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
                   ["Generation version", state.data.generationVersion ?? "—"],
                   ["Grading version", state.data.gradingVersion ?? "—"],
                 ].map(([k, v]) => (
-                  <div key={String(k)} className="flex justify-between gap-3 border-b border-app-border py-1">
+                  <div key={String(k)} className="flex justify-between gap-3 border-b border-[var(--m-rule)] py-1">
                     <dt className="text-app-muted">{k}</dt>
-                    <dd className="text-right text-app-charcoal">{String(v)}</dd>
+                    <dd className="text-right text-[var(--m-ink)]">{String(v)}</dd>
                   </div>
                 ))}
               </dl>

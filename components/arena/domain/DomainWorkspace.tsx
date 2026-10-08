@@ -80,7 +80,7 @@ export function DomainWorkspace() {
     <div className="mx-auto max-w-3xl">
       {data && (
         <div className="mb-5">
-          <h2 className="font-lp-display text-[24px] font-bold text-app-charcoal">{data.role.label} Workstation</h2>
+          <h2 className="font-lp-display text-[24px] font-bold text-[var(--m-ink)]">{data.role.label} Workstation</h2>
           <p className="mt-1 font-lp-body text-[13px] text-app-muted">
             One real work task a day. Each day&apos;s task uses a different {data.role.parentSkill.toLowerCase()} skill and tool — every skill comes up once before any repeats.
           </p>
@@ -91,7 +91,7 @@ export function DomainWorkspace() {
                 <span
                   key={p.key}
                   title={p.enabled ? undefined : p.disabledReason ?? "Coming soon"}
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-lp-body text-[12px] ${p.enabled ? (p.verifiedCount > 0 ? "border-app-success/30 bg-app-success-container text-app-success" : servedThisCycle ? "border-app-border bg-white text-app-charcoal" : "border-app-border bg-white text-app-muted") : "border-dashed border-app-border text-app-muted"}`}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-lp-body text-[12px] ${p.enabled ? (p.verifiedCount > 0 ? "border-app-success/30 bg-app-success-container text-app-success" : servedThisCycle ? "border-[var(--m-rule)] bg-white text-[var(--m-ink)]" : "border-[var(--m-rule)] bg-white text-app-muted") : "border-dashed border-[var(--m-rule)] text-app-muted"}`}
                 >
                   {!p.enabled ? <Lock size={11} /> : p.verifiedCount > 0 ? <CheckCircle2 size={12} /> : null}
                   {p.name}
@@ -104,8 +104,8 @@ export function DomainWorkspace() {
       )}
 
       {error && (
-        <div className="rounded-2xl border border-app-border bg-white px-6 py-10 text-center">
-          <p className="font-lp-body text-[13.5px] text-app-charcoal">{error.message}</p>
+        <div className="rounded-2xl border border-[var(--m-rule)] bg-white px-6 py-10 text-center">
+          <p className="font-lp-body text-[13.5px] text-[var(--m-ink)]">{error.message}</p>
           {error.retryable && (
             <button type="button" onClick={() => (data?.state === "ready" ? start() : load())} disabled={starting} className="mt-4 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white disabled:opacity-60">
               Try again
@@ -115,13 +115,13 @@ export function DomainWorkspace() {
       )}
 
       {!error && data?.state === "not_started" && (
-        <div className="rounded-2xl border border-app-border bg-white p-6">
+        <div className="rounded-2xl border border-[var(--m-rule)] bg-white p-6">
           {data.statedRole && (
             <p className="font-lp-body text-[13px] text-app-muted">
-              Your target role is <span className="font-semibold text-app-charcoal">{data.statedRole}</span>. A workstation for it is on the way.
+              Your target role is <span className="font-semibold text-[var(--m-ink)]">{data.statedRole}</span>. A workstation for it is on the way.
             </p>
           )}
-          <p className="mt-2 font-lp-body text-[14px] text-app-charcoal">
+          <p className="mt-2 font-lp-body text-[14px] text-[var(--m-ink)]">
             The {data.role.label} workstation is live: a new task every day from a stakeholder at a company, using the real tools of the job, graded automatically.
           </p>
           <button type="button" onClick={start} disabled={starting} className="mt-5 flex items-center gap-1.5 rounded-lg bg-app-charcoal px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white disabled:opacity-60">
@@ -177,10 +177,10 @@ export function DomainWorkspace() {
       )}
 
       {!error && data?.state === "cooldown" && (
-        <div className="rounded-2xl border border-app-border bg-white px-6 py-10 text-center">
+        <div className="rounded-2xl border border-[var(--m-rule)] bg-white px-6 py-10 text-center">
           <Clock size={26} className="mx-auto text-app-blue" />
           <p className="mt-3 font-lp-body text-[13.5px] text-app-muted">Task verified. Your next task arrives in</p>
-          <p className="mt-1 font-lp-display text-[40px] font-bold text-app-charcoal">
+          <p className="mt-1 font-lp-display text-[40px] font-bold text-[var(--m-ink)]">
             <Countdown target={data.nextAvailableAt} onDone={load} />
           </p>
           <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">A new task unlocks 24 hours after you complete the previous one.</p>
@@ -188,7 +188,7 @@ export function DomainWorkspace() {
       )}
 
       {!error && data?.state === "unavailable" && (
-        <div className="rounded-2xl border border-app-border bg-white px-6 py-10 text-center font-lp-body text-[13.5px] text-app-muted">No skill areas are enabled for this role yet.</div>
+        <div className="rounded-2xl border border-[var(--m-rule)] bg-white px-6 py-10 text-center font-lp-body text-[13.5px] text-app-muted">No skill areas are enabled for this role yet.</div>
       )}
 
       {open && data?.state === "active" && (

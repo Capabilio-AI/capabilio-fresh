@@ -14,11 +14,11 @@ export default async function StreamChallengesPage() {
 
   return (
     <div>
-      <Link href="/arena/challenges" className="inline-flex items-center gap-1.5 font-lp-body text-[13px] text-app-muted hover:text-app-charcoal">
+      <Link href="/arena/challenges" className="inline-flex items-center gap-1.5 font-lp-body text-[13px] text-app-muted hover:text-[var(--m-ink)]">
         <ArrowLeft size={14} />
         Challenges
       </Link>
-      <h1 className="mt-2 font-lp-display text-[26px] font-semibold text-app-charcoal">Stream Challenges</h1>
+      <h1 className="mt-2 font-lp-display text-[26px] font-bold text-[var(--m-ink)]">Stream Challenges</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">A fresh batch of 8 every Monday, from your own branch curriculum.</p>
       <div className="pt-6">
         <TrackChallengesBoard track="stream" />

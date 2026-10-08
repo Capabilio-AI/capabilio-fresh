@@ -15,7 +15,7 @@ export default async function RoadmapTemplatesAdminPage() {
   if (!(await isPlatformAdmin(service, user.id))) notFound();
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Roadmap templates</h1>
+      <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Roadmap templates</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Topic trees for each career. A tree reaches students only after it is reviewed and published; every topic must use an active skill from the taxonomy.</p>
       <div className="pt-6"><RoadmapTemplatesAdmin initial={await listTemplates(service)} /></div>
     </div>

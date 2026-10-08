@@ -1,3 +1,4 @@
+import { MetroScope } from "@/components/metro/MetroScope";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -28,6 +29,7 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
   const data = await getPortfolioData(service, profile.id);
 
   return (
+    <MetroScope>
     <div className="min-h-screen bg-app-background px-4 py-10 sm:px-8">
       <div className="mx-auto max-w-4xl">
         <p className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">Capabilio AI · Verified portfolio</p>
@@ -52,5 +54,6 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
         </div>
       </div>
     </div>
+    </MetroScope>
   );
 }

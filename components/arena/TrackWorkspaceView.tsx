@@ -45,7 +45,7 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
 
   if (!state.scopeKey) {
     return (
-      <div className="rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
+      <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
         <p className="font-lp-body text-[13.5px] text-app-muted">{emptyHint}</p>
       </div>
     );
@@ -66,13 +66,13 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-8 text-center">
-        <h2 className="font-lp-display text-[28px] font-bold text-app-charcoal">Stream Challenges</h2>
+        <h2 className="font-lp-display text-[28px] font-bold text-[var(--m-ink)]">Stream Challenges</h2>
         <p className="mt-1 font-lp-body text-[13px] text-app-muted">{state.scopeLabel}</p>
       </div>
 
       {state.challenges.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
-          <p className="font-lp-body text-[13.5px] text-app-charcoal">No challenges configured yet for {state.scopeLabel}.</p>
+        <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
+          <p className="font-lp-body text-[13.5px] text-[var(--m-ink)]">No challenges configured yet for {state.scopeLabel}.</p>
           <p className="mt-1 font-lp-body text-[13px] text-app-muted">New ones are added after review. Meanwhile you can try the Domain track.</p>
           <Link href="/arena/challenges/domain" className="mt-4 inline-block font-lp-body text-[13px] font-semibold text-app-orange hover:underline">
             Browse Domain challenges
@@ -82,7 +82,7 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
         <>
           {startError && <p role="alert" className="mb-4 text-center font-lp-body text-[13px] text-app-rose">{startError}</p>}
           {(state.shortfall ?? 0) > 0 && (
-            <p className="mb-4 rounded-lg border border-app-border bg-white px-4 py-2.5 text-center font-lp-body text-[12.5px] text-app-muted">
+            <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 text-center font-lp-body text-[12.5px] text-app-muted">
               Only {state.challenges.length} challenge{state.challenges.length === 1 ? " is" : "s are"} published for {state.scopeLabel} so far — more are added after review.
             </p>
           )}
@@ -107,15 +107,15 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
                 <div className="flex items-center justify-between gap-2">
                   <span className={`font-lp-mono text-[12px] font-bold uppercase tracking-wide ${palette.accent}`}>{`>_ ${c.difficulty}`}</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal/70">
+                    <span className="flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-[var(--m-ink)]/70">
                       <Clock size={11} />
                       {c.time_limit_minutes}m
                     </span>
                     <span className={`rounded-full bg-white px-3 py-1 font-lp-body text-[12px] font-bold ${palette.accent}`}>+{pointsForDifficulty(c.difficulty)} Pts</span>
                   </div>
                 </div>
-                <p className="mt-6 font-lp-display text-[20px] font-bold leading-snug text-app-charcoal">{c.title}</p>
-                <p className="mt-2 font-lp-body text-[13.5px] leading-relaxed text-app-charcoal/65">{WORKSPACE_HINT[c.kind] ?? WORKSPACE_HINT.code}</p>
+                <p className="mt-6 font-lp-display text-[20px] font-bold leading-snug text-[var(--m-ink)]">{c.title}</p>
+                <p className="mt-2 font-lp-body text-[13.5px] leading-relaxed text-[var(--m-ink)]/65">{WORKSPACE_HINT[c.kind] ?? WORKSPACE_HINT.code}</p>
                 <span className={`mt-auto flex items-center gap-1.5 pt-6 font-lp-body text-[14px] font-bold ${c.solved ? "text-app-success" : palette.accent}`}>
                   {c.solved ? (
                     <>

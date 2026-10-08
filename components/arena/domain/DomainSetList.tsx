@@ -22,12 +22,12 @@ export function DomainSetList({ items }: { items: DomainSetItem[] }) {
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       {items.map((item) => (
-        <article key={item.id} className="flex flex-col rounded-3xl border border-app-border bg-white p-6">
+        <article key={item.id} className="flex flex-col rounded-3xl border border-[var(--m-rule)] bg-white p-6">
           <div className="flex items-center justify-between gap-2">
             <span className="font-lp-mono text-[12px] font-bold uppercase tracking-wide text-app-blue">{`>_ ${item.difficulty}`}</span>
             <div className="flex items-center gap-1.5">
               {item.estMinutes != null && (
-                <span className="flex items-center gap-1 rounded-full bg-app-border/50 px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal/70">
+                <span className="flex items-center gap-1 rounded-full bg-app-border/50 px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-[var(--m-ink)]/70">
                   <Clock size={11} />
                   {item.estMinutes}m
                 </span>
@@ -35,12 +35,12 @@ export function DomainSetList({ items }: { items: DomainSetItem[] }) {
               <span className="rounded-full bg-app-blue-container px-3 py-1 font-lp-body text-[12px] font-bold text-app-blue">+{item.eloAvailable} ELO</span>
             </div>
           </div>
-          <h3 className="mt-5 font-lp-display text-[18px] font-bold leading-snug text-app-charcoal">{item.title}</h3>
+          <h3 className="mt-5 font-lp-display text-[18px] font-bold leading-snug text-[var(--m-ink)]">{item.title}</h3>
           <p className="mt-2 font-lp-body text-[13px] leading-relaxed text-app-muted">{item.why}</p>
           {item.skills.length > 0 && (
             <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Skills tested">
               {item.skills.map((skill) => (
-                <li key={skill.id} className="rounded-full border border-app-border px-2.5 py-0.5 font-lp-body text-[11.5px] text-app-charcoal/80">
+                <li key={skill.id} className="rounded-full border border-[var(--m-rule)] px-2.5 py-0.5 font-lp-body text-[11.5px] text-[var(--m-ink)]/80">
                   {skill.name}
                 </li>
               ))}

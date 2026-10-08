@@ -20,12 +20,14 @@ describe("buildGraph: honest node states", () => {
     expect(nodeOf(flagged, "windows")).toMatchObject({ status: "NEEDS_CHECK" });
     expect(nodeOf(flagged, "windows").needsCheck).toMatch(/Check this score/);
   });
-  it("marks a topic locked while a prerequisite is pending, and unlocks it once the prerequisite is done", () => {
+  it("marks a topic locked while a prerequisite is pending, and a self mark cannot unlock or complete it", () => {
     expect(nodeOf(g, "joins")).toMatchObject({ locked: false }); // sql is at target
     expect(nodeOf(g, "windows")).toMatchObject({ locked: true, status: "LOCKED", prerequisites: ["joins"] });
-    const done = buildGraph(makeContext({ userStates: new Map([["joins", { status: "DONE" as const, reason: null }]]) }));
-    expect(nodeOf(done, "windows").locked).toBe(false);
-    expect(nodeOf(done, "joins")).toMatchObject({ status: "DONE", userState: "DONE" });
+    const learning = buildGraph(makeContext({ userStates: new Map([["joins", { status: "LEARNING" as const, reason: null }]]) }));
+    expect(nodeOf(learning, "windows").locked).toBe(true);
+    expect(nodeOf(learning, "joins")).toMatchObject({ status: "LEARNING", userState: "LEARNING" });
+    const skipped = buildGraph(makeContext({ userStates: new Map([["joins", { status: "SKIPPED" as const, reason: "covered in class" }]]) }));
+    expect(nodeOf(skipped, "windows").locked).toBe(false);
   });
   it("rolls stages and groups up from their topics, with evidence coverage", () => {
     expect(nodeOf(g, "stage-a")).toMatchObject({ topics: 2, assessedTopics: 1, evidenceCoverage: 50 });

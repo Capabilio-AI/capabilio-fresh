@@ -8,9 +8,9 @@ const COPY = {
 export function ComingSoon({ tab }: { tab: keyof typeof COPY }) {
   const { icon: Icon, title, body } = COPY[tab];
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-app-border bg-white px-8 py-16 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[var(--m-rule)] bg-white px-8 py-16 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-app-orange-container text-app-orange"><Icon size={20} aria-hidden="true" /></span>
-      <h2 className="font-lp-display text-[17px] font-semibold text-app-charcoal">{title}</h2>
+      <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{title}</h2>
       <p className="max-w-md font-lp-body text-[13px] leading-relaxed text-app-muted">{body}</p>
     </div>
   );

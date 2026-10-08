@@ -2,6 +2,7 @@ import { consistencyFlags } from "./consistency";
 import { classifyCoverage, subjectPriorities } from "./coverage";
 import { layoutRoadmap } from "./layout";
 import { rollUp, type Importance } from "./rollup";
+import { buildSyllabus } from "./syllabus-map";
 import { isPrerequisitePending, nodeStatus } from "./status";
 import type { GraphContext, GraphEdge, GraphNode, Resource, RoadmapGraph, TemplateNodeRow } from "./graph-types";
 
@@ -147,6 +148,7 @@ export function buildGraph(ctx: GraphContext): RoadmapGraph {
     },
     nodes, edges, bounds: layout.bounds,
     subjects: courses ? subjectPriorities(courses, topics.map((t) => ({ key: t.key, title: t.title, skillId: t.skillId!, importance: t.importance as Importance, target: t.target!, level: d.level.get(t.key) ?? null })), pos, ctx.inferredThreshold) : [],
+    syllabus: courses ? buildSyllabus(courses, topics.map((t) => ({ key: t.key, title: t.title, skillId: t.skillId!, target: t.target!, level: d.level.get(t.key) ?? null })), pos, ctx.inferredThreshold) : null,
     overlay: { inferredShown: true, inferredThreshold: ctx.inferredThreshold }, tiers: ["OFFICIAL", "INFERRED"],
   };
 }

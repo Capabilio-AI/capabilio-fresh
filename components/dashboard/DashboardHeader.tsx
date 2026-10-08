@@ -1,52 +1,31 @@
 import { GraduationCap, Layers, School } from "lucide-react";
 import type { DashboardData } from "@/lib/dashboard/data";
-import { scoreTier, TIER_CONTAINER, TIER_LABEL } from "@/components/dashboard/tier";
+import { scoreTier, TIER_LABEL } from "@/components/dashboard/tier";
+
+const CHIP = "flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[12px] font-bold text-white";
 
 export function DashboardHeader({ data }: { data: DashboardData }) {
-  const yearLabel = data.yearLabel;
   const tier = scoreTier(data.overall.percentage);
-
   return (
-    <div className="flex flex-col gap-4 pb-5 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 className="font-lp-display text-[26px] font-semibold tracking-tight text-app-charcoal sm:text-[32px]">
-          {data.fullName ?? "Student"}
+    <header className="mb-4 flex flex-col gap-5 rounded-2xl bg-[var(--m-ink)] p-5 text-white sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="min-w-0">
+        <h1 className="flex items-center gap-3 font-lp-display text-[28px] font-bold leading-tight sm:text-[34px]">
+          <svg width="44" height="14" viewBox="0 0 44 14" aria-hidden className="shrink-0"><path d="M3 7h38" stroke="#fff" strokeWidth="4" strokeLinecap="round" /><circle cx="3" cy="7" r="3" className="fill-[var(--m-ink)]" stroke="#fff" strokeWidth="2.5" /><circle cx="22" cy="7" r="3" className="fill-[var(--m-ink)]" stroke="#fff" strokeWidth="2.5" /><circle cx="41" cy="7" r="3" className="fill-[var(--m-ink)]" stroke="#fff" strokeWidth="2.5" /></svg>
+          <span className="min-w-0 break-words">{data.fullName ?? "Student"}</span>
         </h1>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {data.collegeName && (
-            <span className="flex items-center gap-1.5 rounded-full border border-app-border bg-white px-3 py-1 font-lp-mono text-[11px] text-app-muted">
-              <School size={12} />
-              {data.collegeName}
-            </span>
-          )}
-          {data.branch && (
-            <span className="flex items-center gap-1.5 rounded-full border border-app-border bg-white px-3 py-1 font-lp-mono text-[11px] text-app-muted">
-              <Layers size={12} />
-              {data.branch}
-            </span>
-          )}
-          {yearLabel && (
-            <span className="flex items-center gap-1.5 rounded-full border border-app-border bg-white px-3 py-1 font-lp-mono text-[11px] text-app-muted">
-              <GraduationCap size={12} />
-              {yearLabel}
-            </span>
-          )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {data.collegeName && <span className={CHIP}><School size={13} aria-hidden />{data.collegeName}</span>}
+          {data.branch && <span className={CHIP}><Layers size={13} aria-hidden />{data.branch}</span>}
+          {data.yearLabel && <span className={CHIP}><GraduationCap size={13} aria-hidden />{data.yearLabel}</span>}
         </div>
       </div>
-
-      <div className={`flex shrink-0 items-center gap-4 rounded-xl border border-app-border bg-white px-5 py-3`}>
-        <div className="text-right">
-          <p className="font-lp-display text-[26px] font-semibold leading-none text-app-charcoal">
-            {data.overall.percentage}%
-          </p>
-          <p className="mt-1 font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">
-            Diagnostic score · {data.overall.correct}/{data.overall.total}
-          </p>
+      <div className="flex shrink-0 items-center gap-4 rounded-xl bg-white px-5 py-3 text-[var(--m-ink)]">
+        <div>
+          <p className="font-lp-display text-[34px] font-bold leading-none">{data.overall.percentage}%</p>
+          <p className="mt-1 text-[12px] font-bold text-[var(--m-muted)]">Diagnostic score</p>
         </div>
-        <span className={`rounded-full px-2.5 py-1 font-lp-mono text-[11px] font-semibold ${TIER_CONTAINER[tier]}`}>
-          {TIER_LABEL[tier]}
-        </span>
+        <span className="rounded-full bg-[var(--m-ground)] px-3 py-1 text-[12px] font-bold">{TIER_LABEL[tier]}</span>
       </div>
-    </div>
+    </header>
   );
 }

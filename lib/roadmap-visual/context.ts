@@ -101,7 +101,8 @@ export async function loadGraphContext(service: Service, userId: string, which: 
   const userStates = new Map<string, { status: Exclude<UserNodeState, null>; reason: string | null }>();
   for (const r of ((userStateRows.data ?? []) as { node_id: string; status: "LEARNING" | "DONE" | "SKIPPED"; skip_reason: string | null }[])) {
     const key = keyOf.get(r.node_id);
-    if (key) userStates.set(key, { status: r.status, reason: r.skip_reason });
+    // marks saved before "Done" was removed count as Learning: only evidence completes a topic
+    if (key) userStates.set(key, { status: r.status === "DONE" ? "LEARNING" : r.status, reason: r.skip_reason });
   }
 
   return {

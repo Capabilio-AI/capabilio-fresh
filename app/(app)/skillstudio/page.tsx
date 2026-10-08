@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { getGuidePaths } from "@/lib/guide-path/read";
+import { AreaHero } from "@/components/metro/AreaHero";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { GuidePathPanel } from "@/components/dashboard/GuidePathPanel";
 
@@ -18,11 +19,7 @@ export default async function SkillStudioMyPathPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">SkillStudio</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Your personalized learning path, foundations, courses, and certifications.</p>
-      <div className="mt-4">
-        <SkillStudioSubNav />
-      </div>
+      <AreaHero tone="tint" title="SkillStudio" intro="Your personalized learning path, foundations, courses, and certifications." nav={<SkillStudioSubNav />} />
 
       <div className="pt-6">
         {top ? (

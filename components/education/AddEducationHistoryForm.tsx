@@ -7,7 +7,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR + 6 - 1980 + 1 }, (_, i) => CURRENT_YEAR + 5 - i);
 
 const INPUT =
-  "w-full rounded-lg border border-app-border bg-white px-3.5 py-2.5 font-lp-body text-[13px] text-app-charcoal placeholder:text-app-muted focus:border-app-blue focus:outline-none focus:ring-2 focus:ring-app-blue/25";
+  "w-full rounded-lg border border-[var(--m-rule)] bg-white px-3.5 py-2.5 font-lp-body text-[13px] text-[var(--m-ink)] placeholder:text-app-muted focus:border-app-blue focus:outline-none focus:ring-2 focus:ring-app-blue/25";
 
 export function AddEducationHistoryForm({
   membershipId,
@@ -67,13 +67,13 @@ export function AddEducationHistoryForm({
   }
 
   return (
-    <div className="rounded-xl border border-app-border bg-white p-5">
-      <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">
+    <div className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
+      <h2 className="font-lp-display text-[15px] font-bold text-[var(--m-ink)]">
         {membershipId ? "Edit education" : "Add education"}
       </h2>
       <div className="mt-3 flex flex-col gap-3">
         <div>
-          <label className="mb-1 block font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">
+          <label className="mb-1 block text-[12px] font-bold tracking-wide text-app-muted">
             School
           </label>
           <input
@@ -84,7 +84,7 @@ export function AddEducationHistoryForm({
           />
         </div>
         <div>
-          <label className="mb-1 block font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">
+          <label className="mb-1 block text-[12px] font-bold tracking-wide text-app-muted">
             Degree
           </label>
           <input
@@ -95,7 +95,7 @@ export function AddEducationHistoryForm({
           />
         </div>
         <div>
-          <label className="mb-1 block font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">
+          <label className="mb-1 block text-[12px] font-bold tracking-wide text-app-muted">
             Field of study
           </label>
           <input
@@ -107,7 +107,7 @@ export function AddEducationHistoryForm({
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">
+            <label className="mb-1 block text-[12px] font-bold tracking-wide text-app-muted">
               Start year
             </label>
             <select value={startYear} onChange={(e) => setStartYear(e.target.value)} className={INPUT}>
@@ -120,7 +120,7 @@ export function AddEducationHistoryForm({
             </select>
           </div>
           <div>
-            <label className="mb-1 block font-lp-mono text-[10.5px] uppercase tracking-wide text-app-muted">
+            <label className="mb-1 block text-[12px] font-bold tracking-wide text-app-muted">
               End year (or expected)
             </label>
             <select

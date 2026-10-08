@@ -33,7 +33,7 @@ export default async function LaunchpadPage() {
   if (!unlocked) {
     return (
       <div>
-        <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Launchpad</h1>
+        <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Launchpad</h1>
         <p className="mt-1 font-lp-body text-[13px] text-app-muted">Jobs, internships, competitions, and referrals.</p>
         <StudentPlacementOffers userId={user.id} />
 
@@ -59,7 +59,7 @@ export default async function LaunchpadPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Launchpad</h1>
+      <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Launchpad</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Jobs, internships, competitions, and referrals.</p>
       <StudentPlacementOffers userId={user.id} />
 

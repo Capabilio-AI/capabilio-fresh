@@ -1,84 +1,63 @@
 import type { Metadata } from "next";
-import { Clock } from "lucide-react";
+import Link from "next/link";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
-import Link from "next/link";
+import { AreaHero } from "@/components/metro/AreaHero";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getOrgContext } from "@/lib/org/context";
 import { loadStudentProjects } from "@/lib/org/loaders";
 import { Pill, formatDateTime } from "@/components/org/ui";
-import { MOCK_ARENA_PROJECTS } from "@/lib/mock/arena";
+import { loadCareerResources } from "@/lib/roadmap-visual/career-resources";
+import { ResourceGallery } from "@/components/roadmap/visual/ResourceGallery";
 
-export const metadata: Metadata = { title: "Projects — Arena — Capabilio AI" };
-
-const DIFFICULTY_COLOR: Record<string, string> = {
-  Beginner: "bg-app-success-container text-app-success",
-  Intermediate: "bg-app-warning-container text-app-warning",
-  Advanced: "bg-app-attention-container text-app-attention",
-};
+export const metadata: Metadata = { title: "Projects | Arena | Capabilio AI" };
 
 export default async function ArenaProjectsPage() {
   const { supabase, user } = await requireAuthedUser();
+  const service = createServiceClient();
   const ctx = await getOrgContext(supabase, user.id);
-  const facultyProjects = ctx && ctx.kind === "student" ? await loadStudentProjects(createServiceClient(), ctx) : [];
+  const [facultyProjects, careers] = await Promise.all([
+    ctx && ctx.kind === "student" ? loadStudentProjects(service, ctx) : Promise.resolve([]),
+    loadCareerResources(service, user.id),
+  ]);
+  const withProjects = careers.filter((c) => c.projects.length > 0);
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Arena</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Timed challenges, projects, and competitions.</p>
-      <div className="mt-4">
-        <ArenaSubNav />
-      </div>
+      <AreaHero tone="dark" title="Projects" intro="Real projects for the career you chose. Open one for the steps, the skills it adds and what to show." nav={<ArenaSubNav />} />
 
-      <div className="pt-6">
+      <div className="flex flex-col gap-10 pt-6">
+        {withProjects.map((c) => (
+          <section key={c.which} aria-labelledby={`pj-${c.which}`}>
+            <h2 id={`pj-${c.which}`} className="mb-1 font-lp-display text-[24px] font-bold text-[var(--m-ink)]">{c.which === "primary" ? c.careerName : `${c.careerName} (Plan B)`}</h2>
+            <p className="mb-4 font-lp-body text-[14px] text-app-muted">{c.projects.length} {c.projects.length === 1 ? "project" : "projects"} from your roadmap. Finish one and add it to your portfolio as proof.</p>
+            <ResourceGallery resources={c.projects} career={c.which} emptyText="No projects yet." />
+          </section>
+        ))}
+
+        {withProjects.length === 0 && (
+          <div className="rounded-xl border border-dashed border-[var(--m-off)] bg-white px-6 py-12 text-center">
+            <p className="font-lp-body text-[14px] text-app-muted">Projects appear here once you choose a career with a roadmap.</p>
+            <Link href="/dashboard/roadmap" className="mt-4 inline-block rounded-lg bg-[var(--m-ink)] px-4 py-2 text-[13px] font-bold text-white">Open your roadmap</Link>
+          </div>
+        )}
+
         {facultyProjects.length > 0 && (
-          <section className="mb-8" aria-label="Projects from your faculty">
-            <h2 className="mb-3 font-lp-body text-[15px] font-semibold text-app-charcoal">From your faculty</h2>
-            <ul className="flex flex-col gap-3">
+          <section aria-labelledby="pj-faculty">
+            <h2 id="pj-faculty" className="mb-4 font-lp-display text-[24px] font-bold text-[var(--m-ink)]">From your faculty</h2>
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {facultyProjects.map((p) => (
                 <li key={p.id}>
-                  <Link href={`/arena/projects/${p.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-app-border bg-white p-4 hover:bg-black/[0.02]">
-                    <div>
-                      <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{p.title}</p>
-                      <p className="font-lp-mono text-[11px] text-app-muted">Due {formatDateTime(p.deadline_at)}</p>
-                    </div>
-                    {p.myGroup ? <Pill tone="ok">{p.myGroup.group.name} · {p.myGroup.group.status}</Pill> : <Pill tone={p.status === "open" ? "warn" : "neutral"}>{p.status === "open" ? "Not in a group" : p.status}</Pill>}
+                  <Link href={`/arena/projects/${p.id}`} className="flex h-full flex-col gap-2.5 rounded-xl border border-[var(--m-rule)] bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[var(--m-ink)] hover:shadow-[0_8px_20px_-8px_rgba(20,20,20,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+                    <span className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{p.title}</span>
+                    <span className="text-[13px] text-app-muted">Due {formatDateTime(p.deadline_at)}</span>
+                    <span className="mt-auto pt-1">{p.myGroup ? <Pill tone="ok">{p.myGroup.group.name} · {p.myGroup.group.status}</Pill> : <Pill tone={p.status === "open" ? "warn" : "neutral"}>{p.status === "open" ? "Not in a group" : p.status}</Pill>}</span>
                   </Link>
                 </li>
               ))}
             </ul>
           </section>
         )}
-        <div className="mb-4 rounded-lg border border-dashed border-app-border bg-white px-4 py-3 font-lp-body text-[12.5px] text-app-muted">
-          Project catalog is in development — these are sample scopes. Completed work still counts once you log it
-          in your Vault.
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MOCK_ARENA_PROJECTS.map((project) => (
-            <div key={project.id} className="flex flex-col gap-3 rounded-xl border border-app-border bg-white p-5">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-lp-body text-[14.5px] font-semibold text-app-charcoal">{project.title}</h3>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 font-lp-mono text-[10.5px] font-semibold ${DIFFICULTY_COLOR[project.difficulty]}`}
-                >
-                  {project.difficulty}
-                </span>
-              </div>
-              <p className="font-lp-body text-[12.5px] leading-relaxed text-app-muted">{project.summary}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {project.skills.map((s) => (
-                  <span key={s} className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10.5px] text-app-muted">
-                    {s}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-auto flex items-center gap-1.5 font-lp-mono text-[11px] text-app-muted">
-                <Clock size={12} />
-                ~{project.estimatedHours}h
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

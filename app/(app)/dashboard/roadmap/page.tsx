@@ -24,7 +24,7 @@ export default async function RoadmapPage({ searchParams }: { searchParams: Prom
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Roadmap</h1>
+        <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Roadmap</h1>
         {canChoose && (
           <PlanBDialog autoOpen={!planB.intent.planBKind} mainCareer={planB.intent.primary?.name ?? null} careers={planB.careers.filter((c) => c.id !== planB.intent.primary?.id)} triggerLabel={planB.intent.planBKind ? "Decide Plan B" : "Plan B"} />
         )}

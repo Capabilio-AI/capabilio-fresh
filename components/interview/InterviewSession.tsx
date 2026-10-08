@@ -65,7 +65,7 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
 
   if (phase === "starting") {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-app-border bg-white p-6 font-lp-body text-[13px] text-app-muted">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--m-rule)] bg-white p-6 font-lp-body text-[13px] text-app-muted">
         <Loader2 size={16} className="animate-spin" />
         Preparing your interview…
       </div>
@@ -74,7 +74,7 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
 
   if (phase === "error") {
     return (
-      <div className="flex flex-col items-start gap-3 rounded-xl border border-app-border bg-white p-6">
+      <div className="flex flex-col items-start gap-3 rounded-xl border border-[var(--m-rule)] bg-white p-6">
         <p className="font-lp-body text-[13px] text-app-rose">Something went wrong. Try again.</p>
         <button type="button" onClick={onClose} className="rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white">
           Close
@@ -85,11 +85,11 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
 
   if (phase === "done" && result) {
     return (
-      <div className="rounded-xl border border-app-border bg-white p-6">
+      <div className="rounded-xl border border-[var(--m-rule)] bg-white p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={18} className="text-app-success" />
-            <p className="font-lp-body text-[15px] font-semibold text-app-charcoal">Session complete — {result.overallScore}/100</p>
+            <p className="font-lp-body text-[15px] font-semibold text-[var(--m-ink)]">Session complete — {result.overallScore}/100</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-1.5 text-app-muted hover:bg-app-background">
             <X size={16} />
@@ -101,7 +101,7 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
             {Object.entries(result.skillScores).map(([skill, score]) => (
               <div key={skill} className="rounded-lg bg-app-background px-3 py-2">
                 <p className="font-lp-mono text-[10.5px] text-app-muted">{skill}</p>
-                <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{score}/100</p>
+                <p className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">{score}/100</p>
               </div>
             ))}
           </div>
@@ -109,10 +109,10 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
 
         {result.strengths.length > 0 && (
           <div className="mt-4">
-            <p className="font-lp-body text-[12.5px] font-semibold text-app-charcoal">Strengths</p>
+            <p className="font-lp-body text-[12.5px] font-semibold text-[var(--m-ink)]">Strengths</p>
             <ul className="mt-1 flex flex-col gap-1">
               {result.strengths.map((s, i) => (
-                <li key={i} className="font-lp-body text-[13px] text-app-charcoal">
+                <li key={i} className="font-lp-body text-[13px] text-[var(--m-ink)]">
                   · {s}
                 </li>
               ))}
@@ -122,10 +122,10 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
 
         {result.improvements.length > 0 && (
           <div className="mt-4">
-            <p className="font-lp-body text-[12.5px] font-semibold text-app-charcoal">To improve</p>
+            <p className="font-lp-body text-[12.5px] font-semibold text-[var(--m-ink)]">To improve</p>
             <ul className="mt-1 flex flex-col gap-1">
               {result.improvements.map((s, i) => (
-                <li key={i} className="font-lp-body text-[13px] text-app-charcoal">
+                <li key={i} className="font-lp-body text-[13px] text-[var(--m-ink)]">
                   · {s}
                 </li>
               ))}
@@ -137,7 +137,7 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
   }
 
   return (
-    <div className="rounded-xl border border-app-border bg-white p-6">
+    <div className="rounded-xl border border-[var(--m-rule)] bg-white p-6">
       <div className="flex items-center justify-between gap-3">
         <p className="font-lp-mono text-[11px] text-app-muted">
           Question {index + 1} of {questions.length}
@@ -146,14 +146,14 @@ export function InterviewSession({ mode, onClose }: { mode: InterviewMode; onClo
           <X size={16} />
         </button>
       </div>
-      <p className="mt-2 font-lp-body text-[15px] font-semibold text-app-charcoal">{questions[index]}</p>
+      <p className="mt-2 font-lp-body text-[15px] font-semibold text-[var(--m-ink)]">{questions[index]}</p>
       <textarea
         value={answers[index] ?? ""}
         onChange={(e) => setAnswers((a) => a.map((x, i) => (i === index ? e.target.value : x)))}
         rows={5}
         placeholder="Type your answer…"
         disabled={phase === "scoring"}
-        className="mt-3 w-full rounded-lg border border-app-border p-3 font-lp-body text-[13.5px] text-app-charcoal disabled:opacity-60"
+        className="mt-3 w-full rounded-lg border border-[var(--m-rule)] p-3 font-lp-body text-[13.5px] text-[var(--m-ink)] disabled:opacity-60"
       />
       <button
         type="button"

@@ -39,7 +39,7 @@ export function TrackChallengesBoard({ track }: { track: "stream" | "domain" }) 
 
   return (
     <div>
-      <div className="flex gap-1 rounded-lg border border-app-border bg-white p-1">
+      <div className="flex gap-1 rounded-lg border border-[var(--m-rule)] bg-white p-1">
         <TabButton active={tab === "workspace"} onClick={() => setTab("workspace")} icon={Briefcase} label="Workspace" />
         <TabButton active={tab === "leaderboard"} onClick={() => setTab("leaderboard")} icon={Trophy} label="Leaderboard" />
         <TabButton active={tab === "streak"} onClick={() => setTab("streak")} icon={Flame} label="Streak" />

@@ -48,7 +48,7 @@ export async function loadResourcePool(service: Service, ctx: { skillIds: string
     make.set(`CERTIFICATION:${c.id}`, { id: c.id, kind: "CERTIFICATION", title: c.name, provider: c.provider, url: safeUrl(c.url), type: null, tier: "PREMIUM", difficulty: c.difficulty, hours: null, cost: c.cost, note: c.duration, description: c.eligibility ? `Eligibility: ${c.eligibility}` : null, evidence: [], skills: [] });
   for (const p of (projects ?? []) as { id: string; title: string; description: string; difficulty: string; expected_evidence: string[] | null; source: string; status: string; institution_id: string | null; for_student_id: string | null }[]) {
     // a student is only offered live general projects, their own college's, and recommendations made for them
-    const ok = (p.status === "ACTIVE" && (p.source === "CAPABILIO" || p.source === "MENTOR" || (p.source === "COLLEGE" && p.institution_id === ctx.institutionId))) || (p.status === "RECOMMENDATION" && p.for_student_id === ctx.studentId);
+    const ok = (p.status === "ACTIVE" && (p.source === "CAPABILIO" || p.source === "AI_CAREER" || p.source === "MENTOR" || (p.source === "COLLEGE" && p.institution_id === ctx.institutionId))) || (p.status === "RECOMMENDATION" && p.for_student_id === ctx.studentId);
     if (ok) make.set(`PROJECT:${p.id}`, { id: p.id, kind: "PROJECT", title: p.title, provider: null, url: "/arena/projects", type: null, tier: "FREE", difficulty: p.difficulty, hours: null, cost: null, note: p.description.slice(0, 160), description: p.description, evidence: p.expected_evidence ?? [], skills: [] });
   }
   for (const a of (arena ?? []) as { id: string; title: string; difficulty: string; track: string }[])

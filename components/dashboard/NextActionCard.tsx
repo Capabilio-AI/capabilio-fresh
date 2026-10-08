@@ -17,7 +17,7 @@ export function NextActionCard({ action }: { action: NextAction | null }) {
     <div className="overflow-hidden rounded-2xl border border-app-charcoal bg-app-charcoal p-6 text-white sm:p-7">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-orange">
+          <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-[var(--m-soft)]">
             <Target size={14} />
             Next best action
           </div>
@@ -43,7 +43,7 @@ export function NextActionCard({ action }: { action: NextAction | null }) {
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
           <Link
             href="/skillstudio"
-            className="flex items-center justify-center gap-2 rounded-lg bg-app-orange px-5 py-3 font-lp-body text-[13.5px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+            className="flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 font-lp-body text-[13.5px] font-bold text-[var(--m-ink)] transition-transform hover:-translate-y-0.5"
           >
             Start learning
             <ArrowRight size={15} />

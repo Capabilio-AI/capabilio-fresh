@@ -17,7 +17,7 @@ export default async function DirectionSettingsPage() {
   if (!direction) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Career direction</h1>
+        <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Career direction</h1>
         <p className="mt-2 font-lp-body text-[13px] text-app-muted">
           No student program is on your account yet. Add your college in{" "}
           <Link href="/dashboard/vault" className="text-app-blue hover:underline">

@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getOrgContext } from "@/lib/org/context";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { loadStudentMaterials } from "@/lib/org/loaders";
+import { AreaHero } from "@/components/metro/AreaHero";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { EmptyState, Pill } from "@/components/org/ui";
 
@@ -18,11 +19,7 @@ export default async function SkillStudioMaterialsPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">SkillStudio</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Your personalized learning path, foundations, courses, and certifications.</p>
-      <div className="mt-4">
-        <SkillStudioSubNav />
-      </div>
+      <AreaHero tone="tint" title="SkillStudio" intro="Your personalized learning path, foundations, courses, and certifications." nav={<SkillStudioSubNav />} />
 
       <div className="pt-6">
         <p className="mb-3 font-lp-body text-[13px] text-app-muted">

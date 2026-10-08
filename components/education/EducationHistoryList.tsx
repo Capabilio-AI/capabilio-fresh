@@ -19,7 +19,7 @@ export function EducationHistoryList({ entries }: { entries: EducationEntry[] })
 
   if (entries.length === 0 && !addingNew) {
     return (
-      <div className="rounded-xl border border-dashed border-app-border bg-white p-6 text-center">
+      <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white p-6 text-center">
         <p className="font-lp-body text-[13px] text-app-muted">No educational history on record yet.</p>
         <button
           type="button"
@@ -52,7 +52,7 @@ export function EducationHistoryList({ entries }: { entries: EducationEntry[] })
         <button
           type="button"
           onClick={() => setAddingNew(true)}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-app-border bg-white py-3 font-lp-mono text-[12px] font-semibold text-app-muted hover:text-app-charcoal"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--m-rule)] bg-white py-3 font-lp-mono text-[12px] font-semibold text-app-muted hover:text-[var(--m-ink)]"
         >
           <Plus size={14} />
           Add another institution

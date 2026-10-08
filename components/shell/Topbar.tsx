@@ -4,58 +4,29 @@ import { Bell, MessageCircle, Search, Settings } from "lucide-react";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { AccountMenu } from "@/components/shell/AccountMenu";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
+import { DockButton } from "@/components/shell/DockButton";
 import { UnreadBadge } from "@/components/messages/UnreadBadge";
-
-function firstName(fullName: string | null, email: string): string {
-  if (fullName) return fullName.trim().split(/\s+/)[0];
-  return email.split("@")[0];
-}
 
 export function Topbar({ viewer }: { viewer: ViewerSummary }) {
   return (
-    <header className="sticky top-0 z-20 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5">
-          <Image
-            src="/logo-mark.jpg"
-            alt=""
-            width={26}
-            height={26}
-            className="h-[26px] w-[26px] rounded object-cover"
-          />
-          <span className="hidden font-lp-display text-[15px] font-semibold tracking-tight text-app-charcoal sm:inline">
-            Capabilio <span className="text-app-orange">AI</span>
-          </span>
+    <header className="sticky top-0 z-30 bg-[var(--m-ground)]">
+      <div className="mx-auto flex h-[64px] max-w-[1400px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <Link href="/dashboard" aria-label="Capabilio AI, home" className="flex shrink-0 items-center">
+          <Image src="/brand/capabilio-logo.png" alt="Capabilio AI" width={1130} height={234} priority className="h-[42px] w-auto sm:h-[48px]" />
         </Link>
 
-        <div className="min-w-0 flex-1">
-          <p className="hidden truncate font-lp-body text-[14px] font-medium text-app-charcoal md:block">
-            Welcome back, {firstName(viewer.fullName, viewer.email)}
-          </p>
-        </div>
-
+        <div className="min-w-0 flex-1" />
         <GlobalSearch />
-        <Link href="/pulse/search" aria-label="Search" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-app-charcoal hover:bg-black/5 md:hidden"><Search size={18} /></Link>
+        <Link href="/pulse/search" aria-label="Search" className="glass flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--m-ink)] md:hidden"><Search size={17} /></Link>
+        <div className="min-w-0 flex-1" />
 
-        <Link href="/pulse/messages" aria-label="Messages" className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-app-charcoal hover:bg-black/5">
-          <MessageCircle size={18} />
-          <UnreadBadge className="absolute -right-0.5 -top-0.5 h-[18px]" />
-        </Link>
-        <Link
-          href="/notifications"
-          aria-label="Notifications"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-app-charcoal hover:bg-black/5"
-        >
-          <Bell size={18} />
-        </Link>
-        <Link
-          href="/settings"
-          aria-label="Settings"
-          className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-app-charcoal hover:bg-black/5 sm:flex"
-        >
-          <Settings size={18} />
-        </Link>
-        <AccountMenu viewer={viewer} />
+        <div className="glass flex shrink-0 items-center gap-0.5 rounded-full p-1">
+          <DockButton href="/pulse/messages" label="Messages" badge={<UnreadBadge className="absolute -right-2.5 -top-2 h-[18px]" />}><MessageCircle size={18} strokeWidth={2.2} /></DockButton>
+          <DockButton href="/notifications" label="Alerts"><Bell size={18} strokeWidth={2.2} /></DockButton>
+          <DockButton href="/settings" label="Settings"><Settings size={18} strokeWidth={2.2} /></DockButton>
+          <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
+          <AccountMenu viewer={viewer} />
+        </div>
       </div>
     </header>
   );

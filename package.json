@@ -11,7 +11,8 @@
     "test:live": "LIVE_DB=1 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run",
     "typecheck": "tsc --noEmit",
     "arena:content": "node --env-file=.env.local --import tsx scripts/arena-content.mts",
-    "roadmap:content": "node --env-file=.env.local --import tsx scripts/roadmap-content.mts"
+    "roadmap:content": "node --env-file=.env.local --import tsx scripts/roadmap-content.mts",
+    "ai:check": "node --env-file=.env.local --import tsx scripts/check-bedrock.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -4,12 +4,12 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { normalizeTags } from "@/lib/pulse/post-schema";
 
-export const FIELD = "w-full rounded-xl border border-app-border bg-app-background px-3.5 py-2.5 font-lp-body text-[13.5px] text-app-charcoal placeholder:text-app-muted focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20";
+export const FIELD = "w-full rounded-xl border border-[var(--m-rule)] bg-app-background px-3.5 py-2.5 font-lp-body text-[13.5px] text-[var(--m-ink)] placeholder:text-app-muted focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20";
 
 export function Labelled({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block font-lp-body text-[12px] font-semibold text-app-charcoal">{label}{hint && <span className="ml-1.5 font-normal text-app-muted">{hint}</span>}</label>
+      <label htmlFor={id} className="mb-1 block font-lp-body text-[12px] font-semibold text-[var(--m-ink)]">{label}{hint && <span className="ml-1.5 font-normal text-app-muted">{hint}</span>}</label>
       {children}
     </div>
   );
@@ -24,11 +24,11 @@ export function TagInput({ id, value, onChange, max, placeholder }: { id: string
     setText("");
   };
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-app-border bg-app-background px-2.5 py-2 focus-within:border-app-orange focus-within:ring-2 focus-within:ring-app-orange/20">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--m-rule)] bg-app-background px-2.5 py-2 focus-within:border-app-orange focus-within:ring-2 focus-within:ring-app-orange/20">
       {value.map((t) => (
-        <span key={t} className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 font-lp-body text-[12px] text-app-charcoal ring-1 ring-app-border">
+        <span key={t} className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 font-lp-body text-[12px] text-[var(--m-ink)] ring-1 ring-app-border">
           {t}
-          <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} aria-label={`Remove ${t}`} className="text-app-muted hover:text-app-charcoal"><X size={11} /></button>
+          <button type="button" onClick={() => onChange(value.filter((x) => x !== t))} aria-label={`Remove ${t}`} className="text-app-muted hover:text-[var(--m-ink)]"><X size={11} /></button>
         </span>
       ))}
       {value.length < max && (

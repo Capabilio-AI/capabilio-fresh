@@ -48,12 +48,12 @@ export function StoriesTray({ me }: { me: { name: string | null; avatarUrl: stri
   }
 
   return (
-    <section aria-label="Stories" className="rounded-2xl border border-app-border bg-white p-4">
+    <section aria-label="Stories" className="rounded-2xl border border-[var(--m-rule)] bg-white p-4">
       <ul className="flex gap-4 overflow-x-auto pb-1">
         <li className="relative shrink-0">
           <button type="button" onClick={() => (mine >= 0 ? setOpen(mine) : setComposing(true))} className="flex w-[68px] flex-col items-center gap-1.5 focus-visible:outline-none">
             <Avatar person={me} size="lg" ring={mine >= 0 ? "seen" : "none"} />
-            <span className="w-full truncate text-center font-lp-body text-[11.5px] text-app-charcoal">Your story</span>
+            <span className="w-full truncate text-center font-lp-body text-[11.5px] text-[var(--m-ink)]">Your story</span>
           </button>
           <button type="button" aria-label="Add to your story" onClick={() => setComposing(true)} className="absolute right-0 top-[48px] flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-app-orange text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40"><Plus size={13} aria-hidden="true" /></button>
         </li>
@@ -61,7 +61,7 @@ export function StoriesTray({ me }: { me: { name: string | null; avatarUrl: stri
           <li key={g.user.id} className="shrink-0">
             <button type="button" onClick={() => setOpen(i)} className="flex w-[68px] flex-col items-center gap-1.5 focus-visible:outline-none">
               <Avatar person={g.user} size="lg" ring={g.hasUnviewed ? "unseen" : "seen"} />
-              <span className="w-full truncate text-center font-lp-body text-[11.5px] text-app-charcoal">{g.user.name?.split(" ")[0] ?? "Someone"}</span>
+              <span className="w-full truncate text-center font-lp-body text-[11.5px] text-[var(--m-ink)]">{g.user.name?.split(" ")[0] ?? "Someone"}</span>
             </button>
           </li>
         ))}

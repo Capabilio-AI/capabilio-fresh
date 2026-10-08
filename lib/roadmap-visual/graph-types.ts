@@ -3,6 +3,7 @@ import type { CurriculumCourse, NodeCoverage, SubjectPriority, Tier } from "./co
 import type { Box } from "./layout";
 import type { Importance } from "./rollup";
 import type { NodeStatus, UserNodeState } from "./status";
+import type { SubjectNode } from "./syllabus-map";
 
 export type Stage = "FOUNDATION" | "CORE" | "SPECIALIZATION" | "JOB_READY";
 
@@ -149,6 +150,8 @@ export interface RoadmapGraph {
   edges: GraphEdge[];
   bounds: Box;
   subjects: SubjectPriority[];
+  /** every subject of the student's syllabus in teaching order, with how far evidence has proven the career topics it teaches; null without a published syllabus */
+  syllabus: SubjectNode[] | null;
   /** at least one topic has a coverage state of UNKNOWN or the curriculum is missing: the panel explains */
   overlay: { inferredShown: boolean; inferredThreshold: number };
   tiers: Tier[];

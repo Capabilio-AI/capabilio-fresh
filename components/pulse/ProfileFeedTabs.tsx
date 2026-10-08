@@ -19,9 +19,9 @@ export function ProfileFeedTabs({ userId, viewer }: { userId: string; viewer: { 
   const [kind, setKind] = useState<PostKind | "all">("all");
   return (
     <div className="flex flex-col gap-4">
-      <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-app-border px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Post types">
+      <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-[var(--m-rule)] px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Post types">
         {TABS.map((t) => (
-          <button key={t.key} type="button" role="tab" aria-selected={kind === t.key} onClick={() => setKind(t.key)} className={clsx("relative shrink-0 px-3.5 py-3 font-lp-body text-[13.5px] font-medium", kind === t.key ? "text-app-charcoal" : "text-app-muted hover:text-app-charcoal")}>
+          <button key={t.key} type="button" role="tab" aria-selected={kind === t.key} onClick={() => setKind(t.key)} className={clsx("relative shrink-0 px-3.5 py-3 font-lp-body text-[13.5px] font-medium", kind === t.key ? "text-[var(--m-ink)]" : "text-app-muted hover:text-[var(--m-ink)]")}>
             {t.label}
             {kind === t.key && <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-app-orange" />}
           </button>

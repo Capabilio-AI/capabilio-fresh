@@ -37,29 +37,29 @@ export function ChallengeStreak({ track }: { track: "stream" | "domain" }) {
     <div className="mx-auto max-w-md">
       <div className="text-center">
         <Flame size={28} className="mx-auto text-app-orange" />
-        <h2 className="mt-2 font-lp-display text-[22px] font-bold text-app-charcoal">{TRACK_LABEL[track]} Streak</h2>
+        <h2 className="mt-2 font-lp-display text-[22px] font-bold text-[var(--m-ink)]">{TRACK_LABEL[track]} Streak</h2>
         <p className="mt-1 font-lp-body text-[13px] text-app-muted">One completed challenge per week keeps it alive.</p>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-app-border bg-white p-5 text-center">
+        <div className="rounded-xl border border-[var(--m-rule)] bg-white p-5 text-center">
           <Flame size={18} className="mx-auto text-app-orange" />
-          <p className="mt-2 font-lp-display text-[28px] font-bold text-app-charcoal">{stats.currentStreak}</p>
+          <p className="mt-2 font-lp-display text-[28px] font-bold text-[var(--m-ink)]">{stats.currentStreak}</p>
           <p className="font-lp-mono text-[10.5px] text-app-muted">Current streak</p>
         </div>
-        <div className="rounded-xl border border-app-border bg-white p-5 text-center">
+        <div className="rounded-xl border border-[var(--m-rule)] bg-white p-5 text-center">
           <Trophy size={18} className="mx-auto text-app-orange" />
-          <p className="mt-2 font-lp-display text-[28px] font-bold text-app-charcoal">{stats.longestStreak}</p>
+          <p className="mt-2 font-lp-display text-[28px] font-bold text-[var(--m-ink)]">{stats.longestStreak}</p>
           <p className="font-lp-mono text-[10.5px] text-app-muted">Longest streak</p>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between rounded-xl border border-app-border bg-white px-5 py-3">
-        <span className="flex items-center gap-1.5 font-lp-body text-[13px] text-app-charcoal">
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--m-rule)] bg-white px-5 py-3">
+        <span className="flex items-center gap-1.5 font-lp-body text-[13px] text-[var(--m-ink)]">
           <Target size={14} className="text-app-muted" />
           {stats.tasksCompleted} completed
         </span>
-        <span className="font-lp-mono text-[12.5px] font-semibold text-app-charcoal">
+        <span className="font-lp-mono text-[12.5px] font-semibold text-[var(--m-ink)]">
           {stats.points} {POINTS_LABEL[track]}
         </span>
       </div>

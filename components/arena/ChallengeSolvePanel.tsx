@@ -79,13 +79,13 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
 
   if (result) {
     return (
-      <div className="rounded-xl border border-app-border bg-white p-6 text-center">
+      <div className="rounded-xl border border-[var(--m-rule)] bg-white p-6 text-center">
         {result.isCorrect ? <CheckCircle2 size={28} className="mx-auto text-app-success" /> : <XCircle size={28} className="mx-auto text-app-attention" />}
-        <p className="mt-3 font-lp-display text-[18px] font-semibold text-app-charcoal">{result.isCorrect ? "Correct!" : "Not quite"}</p>
+        <p className="mt-3 font-lp-display text-[18px] font-bold text-[var(--m-ink)]">{result.isCorrect ? "Correct!" : "Not quite"}</p>
         {result.isCorrect && <p className="mt-1 font-lp-mono text-[12px] text-app-muted">+{result.pointsEarned} Pts</p>}
         <div className="mt-5 flex justify-center gap-2">
           {!result.isCorrect && (
-            <button type="button" onClick={() => setResult(null)} className="rounded-lg border border-app-border px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-app-charcoal">
+            <button type="button" onClick={() => setResult(null)} className="rounded-lg border border-[var(--m-rule)] px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)]">
               Try again
             </button>
           )}
@@ -98,21 +98,21 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
   }
 
   return (
-    <div className="rounded-xl border border-app-border bg-white p-6">
+    <div className="rounded-xl border border-[var(--m-rule)] bg-white p-6">
       <div className="flex items-center gap-2">
         <span className={`w-fit rounded-full px-2 py-0.5 font-lp-mono text-[10px] font-semibold ${DIFFICULTY_CLASS[challenge.difficulty]}`}>{challenge.difficulty}</span>
         <span className="font-lp-mono text-[10.5px] text-app-muted">{challenge.category}</span>
-        <span className="ml-auto flex items-center gap-1 font-lp-mono text-[11.5px] font-semibold text-app-charcoal">
+        <span className="ml-auto flex items-center gap-1 font-lp-mono text-[11.5px] font-semibold text-[var(--m-ink)]">
           <Countdown target={expiresAt} onDone={onDone} />
         </span>
       </div>
-      <h2 className="mt-2 font-lp-display text-[18px] font-semibold text-app-charcoal">{challenge.title}</h2>
+      <h2 className="mt-2 font-lp-display text-[18px] font-bold text-[var(--m-ink)]">{challenge.title}</h2>
       <p className="mt-2 font-lp-body text-[13px] leading-relaxed text-app-muted">{challenge.scenario}</p>
-      <p className="mt-2 font-lp-body text-[13px] font-medium text-app-charcoal">{challenge.objective}</p>
+      <p className="mt-2 font-lp-body text-[13px] font-medium text-[var(--m-ink)]">{challenge.objective}</p>
 
       {isNumeric ? (
         <>
-          <label className="mt-5 block font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-muted" htmlFor="working">
+          <label className="mt-5 block text-[12.5px] font-bold text-app-muted" htmlFor="working">
             Your working
           </label>
           <textarea
@@ -121,19 +121,19 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
             onChange={(e) => setWorking(e.target.value)}
             rows={8}
             placeholder="Write the formulas and steps you used…"
-            className="mt-1.5 w-full resize-y rounded-lg border border-app-border bg-app-background px-4 py-3 font-lp-mono text-[13px] leading-relaxed text-app-charcoal focus:outline-none focus:ring-2 focus:ring-app-charcoal/20"
+            className="mt-1.5 w-full resize-y rounded-lg border border-[var(--m-rule)] bg-app-background px-4 py-3 font-lp-mono text-[13px] leading-relaxed text-[var(--m-ink)] focus:outline-none focus:ring-2 focus:ring-app-charcoal/20"
           />
-          <label className="mt-4 block font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-muted" htmlFor="answer">
+          <label className="mt-4 block text-[12.5px] font-bold text-app-muted" htmlFor="answer">
             Final answer
           </label>
-          <div className="mt-1.5 flex w-full max-w-xs items-center rounded-lg border border-app-border focus-within:ring-2 focus-within:ring-app-charcoal/20">
+          <div className="mt-1.5 flex w-full max-w-xs items-center rounded-lg border border-[var(--m-rule)] focus-within:ring-2 focus-within:ring-app-charcoal/20">
             <input
               id="answer"
               inputMode="decimal"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="e.g. 12.5"
-              className="w-full rounded-l-lg px-4 py-2.5 font-lp-mono text-[14px] text-app-charcoal focus:outline-none"
+              className="w-full rounded-l-lg px-4 py-2.5 font-lp-mono text-[14px] text-[var(--m-ink)] focus:outline-none"
             />
             {challenge.answer_unit && <span className="shrink-0 px-3 font-lp-mono text-[13px] font-semibold text-app-muted">{challenge.answer_unit}</span>}
           </div>
@@ -146,12 +146,12 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
             onChange={(e) => setCode(e.target.value)}
             spellCheck={false}
             rows={10}
-            className="mt-4 w-full resize-none rounded-lg border border-app-border bg-app-charcoal px-4 py-3 font-lp-mono text-[13px] leading-relaxed text-white focus:outline-none"
+            className="mt-4 w-full resize-none rounded-lg border border-[var(--m-rule)] bg-app-charcoal px-4 py-3 font-lp-mono text-[13px] leading-relaxed text-white focus:outline-none"
           />
           {output && (
-            <div className="mt-3 rounded-lg border border-app-border bg-app-background px-4 py-3 font-lp-mono text-[12.5px]">
+            <div className="mt-3 rounded-lg border border-[var(--m-rule)] bg-app-background px-4 py-3 font-lp-mono text-[12.5px]">
               <p className="text-app-muted">Output:</p>
-              <pre className="mt-1 whitespace-pre-wrap text-app-charcoal">{output.stdout || "(no output)"}</pre>
+              <pre className="mt-1 whitespace-pre-wrap text-[var(--m-ink)]">{output.stdout || "(no output)"}</pre>
               {output.stderr && <pre className="mt-1 whitespace-pre-wrap text-app-attention">{output.stderr}</pre>}
             </div>
           )}
@@ -162,7 +162,7 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
 
       <div className="mt-4 flex gap-2">
         {!isNumeric && (
-          <button type="button" onClick={handleRun} disabled={running} className="rounded-lg border border-app-border px-4 py-2 font-lp-body text-[13px] font-semibold text-app-charcoal disabled:opacity-60">
+          <button type="button" onClick={handleRun} disabled={running} className="rounded-lg border border-[var(--m-rule)] px-4 py-2 font-lp-body text-[13px] font-semibold text-[var(--m-ink)] disabled:opacity-60">
             {running ? "Running…" : "Run"}
           </button>
         )}

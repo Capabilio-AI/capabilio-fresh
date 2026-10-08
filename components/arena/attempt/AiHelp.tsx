@@ -34,19 +34,19 @@ export function AiHelp({ attemptId, initialUsed, max, penalty, finished }: Props
 
   const left = max - used;
   return (
-    <section aria-label="AI helper" className="rounded-xl border border-app-border bg-app-background p-3">
-      <h3 className="flex items-center gap-1.5 font-lp-body text-[13px] font-semibold text-app-charcoal"><Sparkles size={13} /> {finished ? "Understand what went wrong" : "Stuck? Ask the AI tutor"}</h3>
+    <section aria-label="AI helper" className="rounded-xl border border-[var(--m-rule)] bg-app-background p-3">
+      <h3 className="flex items-center gap-1.5 font-lp-body text-[13px] font-semibold text-[var(--m-ink)]"><Sparkles size={13} /> {finished ? "Understand what went wrong" : "Stuck? Ask the AI tutor"}</h3>
       <p className="mt-0.5 font-lp-body text-[12px] text-app-muted">
         It explains concepts but never gives the answer, and it doesn&apos;t grade your work.
         {!finished && ` Each question lowers your score by ${penalty}.`} {left} of {max} left.
       </p>
       {replies.map((r, i) => (
-        <p key={i} className="mt-2 rounded-lg bg-white px-3 py-2 font-lp-body text-[13px] leading-relaxed text-app-charcoal">{r}</p>
+        <p key={i} className="mt-2 rounded-lg bg-white px-3 py-2 font-lp-body text-[13px] leading-relaxed text-[var(--m-ink)]">{r}</p>
       ))}
       {left > 0 && (
         <div className="mt-2 flex gap-2">
           <label htmlFor={`ai-q-${attemptId}`} className="sr-only">Your question</label>
-          <input id={`ai-q-${attemptId}`} value={question} maxLength={300} onChange={(e) => setQuestion(e.target.value)} placeholder={finished ? "Optional: what confused you?" : "What are you unsure about?"} className="min-w-0 flex-1 rounded-lg border border-app-border bg-white px-3 py-1.5 font-lp-body text-[13px]" />
+          <input id={`ai-q-${attemptId}`} value={question} maxLength={300} onChange={(e) => setQuestion(e.target.value)} placeholder={finished ? "Optional: what confused you?" : "What are you unsure about?"} className="min-w-0 flex-1 rounded-lg border border-[var(--m-rule)] bg-white px-3 py-1.5 font-lp-body text-[13px]" />
           <button type="button" onClick={ask} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-app-charcoal px-3.5 py-1.5 font-lp-body text-[12.5px] font-semibold text-white disabled:opacity-60">
             {busy && <Loader2 size={12} className="animate-spin" />} Explain
           </button>

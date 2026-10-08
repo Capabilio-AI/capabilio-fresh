@@ -17,7 +17,7 @@ export default async function PulseAdminPage() {
   const [applications, reports] = await Promise.all([listApplications(service, "pending"), loadReports(service, "open")]);
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Pulse moderation</h1>
+      <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Pulse moderation</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Approve mentors and handle reports from Pulse. Nothing about a mentor is public until you approve it.</p>
       <div className="pt-6"><PulseAdminPanel applications={applications} reports={reports} /></div>
     </div>

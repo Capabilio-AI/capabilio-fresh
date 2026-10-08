@@ -10,11 +10,11 @@ import { EMPTY_DRAFT, FIELD, Labelled, TagInput, draftBody, draftReady, type Dra
 const MAX_DOC = 10 * 1024 * 1024;
 const MAX_IMAGE = 5 * 1024 * 1024;
 
-const KINDS: Record<Kind, { label: string; icon: typeof Send; heading: string; submit: string; accent: string; chip: string; docHint: string }> = {
-  post: { label: "Post", icon: Send, heading: "Share an update", submit: "Post", accent: "border-l-app-charcoal", chip: "border-app-charcoal bg-app-charcoal text-white", docHint: "Attach a PDF" },
-  project: { label: "Project", icon: Sparkles, heading: "Show what you're building", submit: "Share project", accent: "border-l-app-blue", chip: "border-app-blue bg-app-blue-container text-app-blue", docHint: "Attach report or slides (PDF)" },
-  question: { label: "Question", icon: HelpCircle, heading: "Ask the network", submit: "Ask question", accent: "border-l-app-warning", chip: "border-app-warning bg-app-warning-container text-app-warning", docHint: "Attach a PDF for context" },
-  achievement: { label: "Achievement", icon: Award, heading: "Share an achievement", submit: "Share achievement", accent: "border-l-app-success", chip: "border-app-success bg-app-success-container text-app-success", docHint: "Attach the certificate (PDF)" },
+const KINDS: Record<Kind, { label: string; icon: typeof Send; heading: string; submit: string; chip: string; docHint: string }> = {
+  post: { label: "Post", icon: Send, heading: "Share an update", submit: "Post", chip: "border-app-charcoal bg-app-charcoal text-white", docHint: "Attach a PDF" },
+  project: { label: "Project", icon: Sparkles, heading: "Show what you're building", submit: "Share project", chip: "border-app-blue bg-app-blue-container text-app-blue", docHint: "Attach report or slides (PDF)" },
+  question: { label: "Question", icon: HelpCircle, heading: "Ask the network", submit: "Ask question", chip: "border-app-warning bg-app-warning-container text-app-warning", docHint: "Attach a PDF for context" },
+  achievement: { label: "Achievement", icon: Award, heading: "Share an achievement", submit: "Share achievement", chip: "border-app-success bg-app-success-container text-app-success", docHint: "Attach the certificate (PDF)" },
 };
 
 interface Picked {
@@ -84,7 +84,7 @@ export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placehol
   }
 
   return (
-    <section aria-label="Create a post" className={clsx("rounded-2xl border border-l-4 border-app-border bg-white p-4", k.accent)}>
+    <section aria-label="Create a post" className="rounded-3xl border border-[var(--m-rule)] bg-white p-4 sm:p-5">
       <div className="flex gap-3">
         <Avatar person={me} size="md" />
         <div className="min-w-0 flex-1">
@@ -92,13 +92,13 @@ export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placehol
             {(Object.keys(KINDS) as Kind[]).map((key) => {
               const Icon = KINDS[key].icon;
               return (
-                <button key={key} type="button" onClick={() => setKind(key)} aria-pressed={kind === key} className={clsx("flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-lp-body text-[12px] font-semibold transition-colors", kind === key ? KINDS[key].chip : "border-app-border text-app-muted hover:text-app-charcoal")}>
+                <button key={key} type="button" onClick={() => setKind(key)} aria-pressed={kind === key} className={clsx("flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-lp-body text-[12px] font-semibold transition-colors", kind === key ? KINDS[key].chip : "border-[var(--m-rule)] text-app-muted hover:text-[var(--m-ink)]")}>
                   <Icon size={12} aria-hidden="true" /> {KINDS[key].label}
                 </button>
               );
             })}
           </div>
-          <h2 className="mt-3 font-lp-display text-[15px] font-semibold text-app-charcoal">{k.heading}</h2>
+          <h2 className="mt-3 font-lp-display text-[15px] font-bold text-[var(--m-ink)]">{k.heading}</h2>
 
           <div className="mt-3 flex flex-col gap-3">
             {kind === "post" && (
@@ -115,7 +115,7 @@ export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placehol
                   <Labelled id="pj-demo" label="Live demo"><input id="pj-demo" type="url" value={draft.demoUrl} onChange={(e) => set("demoUrl", e.target.value)} placeholder="https://" className={FIELD} /></Labelled>
                 </div>
                 <fieldset className="flex items-center gap-4"><legend className="sr-only">Status</legend>
-                  {(["building", "shipped"] as const).map((s) => <label key={s} className="flex items-center gap-1.5 font-lp-body text-[13px] text-app-charcoal"><input type="radio" name="pj-status" checked={draft.status === s} onChange={() => set("status", s)} /> {s === "building" ? "Still building" : "Shipped"}</label>)}
+                  {(["building", "shipped"] as const).map((s) => <label key={s} className="flex items-center gap-1.5 font-lp-body text-[13px] text-[var(--m-ink)]"><input type="radio" name="pj-status" checked={draft.status === s} onChange={() => set("status", s)} /> {s === "building" ? "Still building" : "Shipped"}</label>)}
                 </fieldset>
               </>
             )}
@@ -147,23 +147,23 @@ export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placehol
               {image?.preview && (
                 <div className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-                  <img src={image.preview} alt="Attached photo" className="max-h-32 rounded-xl border border-app-border" />
+                  <img src={image.preview} alt="Attached photo" className="max-h-32 rounded-xl border border-[var(--m-rule)]" />
                   <button type="button" onClick={() => pickImage(null)} aria-label="Remove photo" className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white"><X size={12} /></button>
                 </div>
               )}
               {doc && (
-                <div className="flex items-center gap-2 rounded-xl border border-app-border bg-app-background px-3 py-2">
+                <div className="flex items-center gap-2 rounded-xl border border-[var(--m-rule)] bg-app-background px-3 py-2">
                   <FileText size={16} className="text-app-rose" aria-hidden="true" />
-                  <span className="max-w-[14rem] truncate font-lp-body text-[12.5px] text-app-charcoal">{doc.file.name}</span>
-                  <button type="button" onClick={() => setDoc(null)} aria-label="Remove document" className="text-app-muted hover:text-app-charcoal"><X size={13} /></button>
+                  <span className="max-w-[14rem] truncate font-lp-body text-[12.5px] text-[var(--m-ink)]">{doc.file.name}</span>
+                  <button type="button" onClick={() => setDoc(null)} aria-label="Remove document" className="text-app-muted hover:text-[var(--m-ink)]"><X size={13} /></button>
                 </div>
               )}
             </div>
           )}
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-app-border pt-3">
-            <button type="button" onClick={() => imageInput.current?.click()} className="flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-muted hover:text-app-charcoal"><ImagePlus size={13} aria-hidden="true" /> Photo</button>
-            <button type="button" onClick={() => docInput.current?.click()} className="flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-muted hover:text-app-charcoal"><FileText size={13} aria-hidden="true" /> {k.docHint}</button>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--m-rule)] pt-3">
+            <button type="button" onClick={() => imageInput.current?.click()} className="flex items-center gap-1.5 rounded-full border border-[var(--m-rule)] px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-muted hover:text-[var(--m-ink)]"><ImagePlus size={13} aria-hidden="true" /> Photo</button>
+            <button type="button" onClick={() => docInput.current?.click()} className="flex items-center gap-1.5 rounded-full border border-[var(--m-rule)] px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-muted hover:text-[var(--m-ink)]"><FileText size={13} aria-hidden="true" /> {k.docHint}</button>
             <input ref={imageInput} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Photo" onChange={(e) => { pickImage(e.target.files?.[0] ?? null); e.target.value = ""; }} />
             <input ref={docInput} type="file" accept="application/pdf,.pdf" className="sr-only" aria-label="PDF document" onChange={(e) => { pickDoc(e.target.files?.[0] ?? null); e.target.value = ""; }} />
             <button type="button" onClick={submit} disabled={busy || !draftReady(kind, draft)} className="ml-auto flex items-center gap-2 rounded-full bg-app-charcoal px-5 py-2 font-lp-body text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">

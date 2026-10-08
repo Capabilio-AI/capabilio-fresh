@@ -90,7 +90,7 @@ export function TopicPanel({ nodeKey, career, careerId, onClose, onChanged, onSe
     };
   }, [nodeKey, career, reload]);
 
-  const mark = async (status: "LEARNING" | "DONE" | "SKIPPED" | null, why?: string) => {
+  const mark = async (status: "LEARNING" | "SKIPPED" | null, why?: string) => {
     setBusy(true);
     setError(null);
     const r = await send("PUT", "/api/roadmap/node-state", { nodeKey, careerId, status, ...(why ? { reason: why } : {}) });
@@ -113,8 +113,7 @@ export function TopicPanel({ nodeKey, career, careerId, onClose, onChanged, onSe
           {topic && e && (
             <div role="group" aria-label="Mark this topic" className="flex overflow-hidden rounded-md border border-app-border">
               <button type="button" disabled={busy} aria-pressed={e.userState === "LEARNING"} onClick={() => mark(e.userState === "LEARNING" ? null : "LEARNING")} className={seg(e.userState === "LEARNING")}>Learning</button>
-              <button type="button" disabled={busy} aria-pressed={e.userState === "DONE"} onClick={() => mark(e.userState === "DONE" ? null : "DONE")} className={`${seg(e.userState === "DONE")} border-x border-app-border`}>Done</button>
-              <button type="button" disabled={busy} aria-pressed={e.userState === "SKIPPED"} onClick={() => (e.userState === "SKIPPED" ? mark(null) : setSkipping(true))} className={seg(e.userState === "SKIPPED")}>Skip</button>
+              <button type="button" disabled={busy} aria-pressed={e.userState === "SKIPPED"} onClick={() => (e.userState === "SKIPPED" ? mark(null) : setSkipping(true))} className={`${seg(e.userState === "SKIPPED")} border-l border-app-border`}>Skip</button>
             </div>
           )}
           <button type="button" onClick={onClose} aria-label="Close details" className="rounded-md border border-app-border px-2.5 py-1.5 text-app-charcoal hover:bg-app-background focus-visible:outline-2 focus-visible:outline-app-blue">✕</button>
@@ -146,7 +145,7 @@ export function TopicPanel({ nodeKey, career, careerId, onClose, onChanged, onSe
   );
 }
 
-function Body({ e, busy, mark, skipping, setSkipping, reason, setReason, error, onSelect }: { e: NodeExplanation; busy: boolean; mark: (s: "LEARNING" | "DONE" | "SKIPPED" | null, why?: string) => void; skipping: boolean; setSkipping: (b: boolean) => void; reason: string; setReason: (s: string) => void; error: string | null; onSelect: (k: string) => void }) {
+function Body({ e, busy, mark, skipping, setSkipping, reason, setReason, error, onSelect }: { e: NodeExplanation; busy: boolean; mark: (s: "LEARNING" | "SKIPPED" | null, why?: string) => void; skipping: boolean; setSkipping: (b: boolean) => void; reason: string; setReason: (s: string) => void; error: string | null; onSelect: (k: string) => void }) {
   const meta = STATUS_META[e.status];
   const topic = e.type === "TOPIC";
   const btn = (active: boolean) => `rounded-md border px-3 py-1.5 font-lp-body text-[12.5px] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-app-blue ${active ? "border-app-charcoal bg-app-charcoal text-white" : "border-app-border bg-white text-app-charcoal hover:border-app-charcoal"}`;
@@ -156,7 +155,7 @@ function Body({ e, busy, mark, skipping, setSkipping, reason, setReason, error, 
       {topic && (
         <div>
           <p className="mb-1.5"><span className={`inline-block rounded-full px-2 py-0.5 font-lp-mono text-[10.5px] uppercase ${meta.chip}`}><span aria-hidden>{meta.glyph} </span>{meta.label}</span></p>
-          {e.userState && <p className="font-lp-body text-[11.5px] text-app-muted">Your mark never changes your verified score; it only tells your roadmap where you are.{e.skipReason ? ` Skipped because: ${e.skipReason}` : ""}</p>}
+          {e.status !== "TARGET_MET" && <p className="font-lp-body text-[12px] text-app-muted">This topic is complete only when your work proves it: pass Arena challenges or build a project for it. Marking it Learning is just a note and never counts as done.{e.skipReason ? ` Skipped because: ${e.skipReason}` : ""}</p>}
           {skipping && (
             <form onSubmit={(ev) => { ev.preventDefault(); void mark("SKIPPED", reason.trim()); }} className="mt-2 space-y-1.5">
               <label className="block font-lp-body text-[12.5px] text-app-charcoal" htmlFor="skip-reason">Why are you skipping this?</label>

@@ -27,7 +27,7 @@ export function DomainHistory() {
   return (
     <div>
       <div className="text-center">
-        <h2 className="font-lp-display text-[22px] font-bold text-app-charcoal">Domain History</h2>
+        <h2 className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Domain History</h2>
         <p className="mt-1 font-lp-body text-[13px] text-app-muted">Every verified work ticket, most recent first.</p>
       </div>
 
@@ -36,24 +36,24 @@ export function DomainHistory() {
           <ThinkingOrb state="searching" size={64} theme="light" />
         </div>
       ) : completions.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-app-border bg-white px-6 py-16 text-center">
+        <div className="mt-6 rounded-xl border border-[var(--m-rule)] bg-white px-6 py-16 text-center">
           <Clock size={28} className="mx-auto text-app-attention" />
           <p className="mt-3 font-lp-body text-[13.5px] text-app-muted">No tickets completed yet — finish a Domain ticket to see it here.</p>
         </div>
       ) : (
         <div className="mt-6 flex flex-col gap-2">
           {completions.map((c) => (
-            <div key={c.id} className="flex items-center justify-between rounded-xl border border-app-border bg-white px-5 py-4">
+            <div key={c.id} className="flex items-center justify-between rounded-xl border border-[var(--m-rule)] bg-white px-5 py-4">
               <div className="flex items-center gap-3">
                 <CheckCircle2 size={18} className="shrink-0 text-app-success" />
                 <div>
-                  <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">{c.challenge?.title ?? "Deleted ticket"}</p>
+                  <p className="font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)]">{c.challenge?.title ?? "Deleted ticket"}</p>
                   <p className="mt-0.5 font-lp-mono text-[11px] text-app-muted">
                     {[c.challenge?.company, c.areaName, new Date(c.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })].filter(Boolean).join(" · ")}
                   </p>
                 </div>
               </div>
-              <span className="rounded-full bg-app-background px-3 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">+{c.ratingDelta} ELO{c.ratingAfter !== null ? ` · ${c.ratingAfter}` : ""}</span>
+              <span className="rounded-full bg-app-background px-3 py-1 font-lp-mono text-[11px] font-semibold text-[var(--m-ink)]">+{c.ratingDelta} ELO{c.ratingAfter !== null ? ` · ${c.ratingAfter}` : ""}</span>
             </div>
           ))}
         </div>

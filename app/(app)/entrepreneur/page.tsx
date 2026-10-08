@@ -14,7 +14,7 @@ const RESOURCES = [
 export default function EntrepreneurPage() {
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Entrepreneurship resources</h1>
+      <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Entrepreneurship resources</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
         A starting list of organisations that support early-stage founders in India. This is information only.
       </p>

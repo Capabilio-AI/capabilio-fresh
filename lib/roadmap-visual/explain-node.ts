@@ -30,7 +30,7 @@ export interface NodeExplanation {
   importance: string;
   stage: string;
   status: NodeStatus;
-  userState: "LEARNING" | "DONE" | "SKIPPED" | null;
+  userState: "LEARNING" | "SKIPPED" | null;
   skipReason: string | null;
   whyThisCareer: string;
   /** topics only */

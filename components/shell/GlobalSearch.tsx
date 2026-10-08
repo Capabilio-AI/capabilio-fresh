@@ -85,9 +85,9 @@ export function GlobalSearch() {
   const empty = results && items.length === 0 && !loading;
 
   return (
-    <div ref={box} className="relative hidden w-full max-w-sm md:block">
-      <div className={clsx("flex items-center rounded-full border bg-app-background px-3.5 transition-shadow", open ? "border-app-orange ring-2 ring-app-orange/20" : "border-app-border")}>
-        <Search size={15} className="shrink-0 text-app-muted" aria-hidden="true" />
+    <div ref={box} className="relative hidden w-full max-w-[460px] md:block">
+      <div className={clsx("glass flex h-10 items-center rounded-full pl-1 pr-3.5 transition-[box-shadow,border-color] duration-200 motion-reduce:transition-none", open ? "!border-[#ff5701] shadow-[0_0_0_4px_rgba(255,87,1,0.18),0_12px_32px_-14px_rgba(20,20,20,0.35)]" : "hover:shadow-[0_14px_34px_-14px_rgba(20,20,20,0.4)]")}>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#141414] text-white"><Search size={14} strokeWidth={2.4} aria-hidden="true" /></span>
         <input
           role="combobox"
           aria-expanded={showPanel}
@@ -100,15 +100,15 @@ export function GlobalSearch() {
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Search people and colleges…"
-          className="w-full bg-transparent py-2 pl-2.5 pr-1 font-lp-body text-[13px] text-app-charcoal placeholder:text-app-muted focus:outline-none"
+          placeholder="Search people and colleges"
+          className="w-full bg-transparent py-1.5 pl-2.5 pr-1 font-lp-body text-[14px] font-bold text-[#141414] placeholder:font-normal placeholder:text-[#5c5c55] focus:outline-none"
         />
         {loading && <Loader2 size={14} className="shrink-0 animate-spin text-app-muted" aria-label="Searching" />}
         {q && !loading && <button type="button" aria-label="Clear search" onClick={() => setQ("")} className="shrink-0 rounded-full p-1 text-app-muted hover:text-app-charcoal"><X size={14} /></button>}
       </div>
 
       {showPanel && (
-        <div id={`${id}-list`} role="listbox" className="absolute left-0 right-0 top-full z-30 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-app-border bg-white p-2 shadow-xl">
+        <div id={`${id}-list`} role="listbox" className="glass absolute left-0 right-0 top-full z-40 mt-3 max-h-[70vh] overflow-y-auto rounded-3xl !bg-white/92 p-2 shadow-[0_28px_60px_-20px_rgba(20,20,20,0.5)]">
           {error && <p role="alert" className="px-3 py-3 font-lp-body text-[12.5px] text-app-rose">Search isn&apos;t working right now. Try again in a moment.</p>}
           {empty && <p className="px-3 py-4 font-lp-body text-[13px] text-app-muted">No people or colleges match “{term}”.</p>}
           {results && results.people.length > 0 && (

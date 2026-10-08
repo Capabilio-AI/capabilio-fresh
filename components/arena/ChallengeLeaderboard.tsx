@@ -48,11 +48,11 @@ export function ChallengeLeaderboard() {
     <div>
       <div className="text-center">
         <Trophy size={28} className="mx-auto text-app-orange" />
-        <h2 className="mt-2 font-lp-display text-[22px] font-bold text-app-charcoal">Challenge Leaderboard</h2>
+        <h2 className="mt-2 font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Challenge Leaderboard</h2>
         <p className="mt-1 font-lp-body text-[13px] text-app-muted">Complete weekly challenges to climb the ranks.</p>
       </div>
 
-      <div className="mx-auto mt-5 flex w-fit gap-1 rounded-lg border border-app-border bg-white p-1">
+      <div className="mx-auto mt-5 flex w-fit gap-1 rounded-lg border border-[var(--m-rule)] bg-white p-1">
         <button
           type="button"
           onClick={() => selectScope("global")}
@@ -82,14 +82,14 @@ export function ChallengeLeaderboard() {
               <PodiumEntry key={e!.userId} entry={e!} />
             ))}
           </div>
-          <div className="mt-6 flex flex-col divide-y divide-app-border rounded-xl border border-app-border bg-white">
+          <div className="mt-6 flex flex-col divide-y divide-app-border rounded-xl border border-[var(--m-rule)] bg-white">
             {entries.slice(3).map((e) => (
               <div key={e.userId} className={`flex items-center justify-between px-4 py-3 ${e.isViewer ? "bg-app-orange-container/40" : ""}`}>
                 <div className="flex items-center gap-3">
                   <span className="w-8 font-lp-mono text-[12px] text-app-muted">#{e.rank}</span>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-app-background font-lp-mono text-[11px] font-semibold text-app-charcoal">{initialsOf(e.name)}</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-app-background font-lp-mono text-[11px] font-semibold text-[var(--m-ink)]">{initialsOf(e.name)}</span>
                   <div>
-                    <span className="font-lp-body text-[13px] font-medium text-app-charcoal">
+                    <span className="font-lp-body text-[13px] font-medium text-[var(--m-ink)]">
                       {e.isViewer ? "You" : (e.name ?? "Student")}
                     </span>
                     {e.branch && <span className="ml-1.5 rounded-full bg-app-background px-1.5 py-0.5 font-lp-mono text-[9.5px] text-app-muted">{e.branch}</span>}
@@ -114,13 +114,13 @@ function PodiumEntry({ entry }: { entry: Entry }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
       <span
-        className={`flex items-center justify-center rounded-full font-lp-mono font-semibold text-app-charcoal ${
+        className={`flex items-center justify-center rounded-full font-lp-mono font-semibold text-[var(--m-ink)] ${
           isFirst ? "h-20 w-20 border-2 border-app-orange bg-app-orange-container text-[18px]" : "h-16 w-16 bg-app-background text-[15px]"
         }`}
       >
         {initialsOf(entry.name)}
       </span>
-      <p className="font-lp-body text-[13px] font-semibold text-app-charcoal">{entry.isViewer ? "You" : (entry.name ?? "Student")}</p>
+      <p className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">{entry.isViewer ? "You" : (entry.name ?? "Student")}</p>
       {entry.branch && <span className="rounded-full bg-app-background px-2 py-0.5 font-lp-mono text-[9.5px] text-app-muted">{entry.branch}</span>}
       <span className="font-lp-display text-[18px] font-bold text-app-orange">{entry.points} pts</span>
     </div>

@@ -6,6 +6,9 @@ import { MentorWidget } from "@/components/mentor/MentorWidget";
 import { CallOverlay } from "@/components/messages/CallOverlay";
 import { CallProvider } from "@/components/messages/CallProvider";
 import { MessagingProvider } from "@/components/messages/MessagingProvider";
+import "@/components/metro/metro.css";
+import { metroFontVars } from "@/components/metro/font";
+import { AreaMain } from "@/components/shell/AreaMain";
 import { DirectionProvider } from "@/components/direction/DirectionContext";
 
 export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; banner?: ReactNode; children: ReactNode }) {
@@ -13,13 +16,13 @@ export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; 
     <DirectionProvider isJobTrack={viewer.direction?.track === "job"} launchpadOpen={viewer.direction?.launchpadOpen ?? false}>
       <MessagingProvider userId={viewer.id}>
       <CallProvider>
-      <div className="min-h-screen bg-app-background">
+      <div className={`metro ${metroFontVars} min-h-screen bg-[var(--m-ground)]`}>
         <Topbar viewer={viewer} />
         <HeaderNav launchpadOpen={viewer.direction?.launchpadOpen ?? false} />
-        <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+        <AreaMain>
           {banner}
           {children}
-        </main>
+        </AreaMain>
         <MentorWidget />
       </div>
         <CallOverlay />

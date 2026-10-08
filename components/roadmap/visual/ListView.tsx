@@ -1,6 +1,7 @@
 "use client";
 
 import type { GraphNode } from "@/lib/roadmap-visual/graph-types";
+import { StationMark } from "./StationMark";
 import { COVERAGE_LABEL, STAGE_LABEL, STATUS_META } from "./meta";
 
 /** The accessible, mobile-first view of the same roadmap: stages as an accordion, topics as buttons. */
@@ -15,7 +16,7 @@ export function ListView({ nodes, selected, onSelect, matches }: { nodes: GraphN
         return (
           <details key={s.key} open={i === 0 || Boolean(matches) || items.some(({ t }) => t.key === selected)} className="rounded-xl border border-app-border bg-white">
             <summary className="cursor-pointer list-none px-4 py-3">
-              <span className="font-lp-mono text-[10px] uppercase text-app-muted">{STAGE_LABEL[s.stage]}</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide text-app-muted">{STAGE_LABEL[s.stage]}</span>
               <span className="block font-lp-display text-[15px] font-semibold text-app-charcoal">{s.title}</span>
               <span className="font-lp-body text-[12px] text-app-muted">{s.assessedTopics}/{s.topics} assessed{s.progress !== null ? ` · ${s.progress}% of target` : ""}</span>
             </summary>
@@ -26,7 +27,7 @@ export function ListView({ nodes, selected, onSelect, matches }: { nodes: GraphN
                 return (
                   <li key={t.key}>
                     <button type="button" onClick={() => onSelect(t.key)} aria-pressed={selected === t.key} className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left font-lp-body text-[13px] focus-visible:outline-2 focus-visible:outline-app-blue ${m.box} ${selected === t.key ? "ring-2 ring-app-blue" : ""}`}>
-                      <span aria-hidden className="w-4 text-center">{kind ? (kind === "Project" ? "▣" : "★") : m.glyph}</span>
+                      <StationMark status={t.status} resource={kind === "Project" ? "PROJECT" : kind ? "CERTIFICATION" : null} size={20} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{t.title}</span>
                         <span className="block text-[11px] text-app-muted">{group} · {kind ?? m.label}{t.level !== null ? ` · ${t.level}/${t.target}` : ""}{t.coverage && t.coverage.state !== "UNKNOWN" ? ` · ${COVERAGE_LABEL[t.coverage.state]}` : ""}</span>

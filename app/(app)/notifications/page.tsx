@@ -55,7 +55,7 @@ export default async function NotificationsPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Notifications</h1>
+      <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Notifications</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
         What&apos;s worth your attention right now — computed from your current profile, not a static feed.
       </p>

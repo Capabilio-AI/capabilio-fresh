@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getPortfolioData } from "@/lib/portfolio/data";
-import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
+import { PageHead } from "@/components/dashboard/PageHead";
 import { PortfolioBody } from "@/components/portfolio/PortfolioBody";
 import { ShareLinkCard } from "@/components/portfolio/ShareLinkCard";
 import { getPortfolioShareUrl } from "./actions";
@@ -26,13 +26,9 @@ export default async function PortfolioPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Portfolio</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">What you&apos;ve demonstrated, not what you&apos;ve claimed. Built automatically from verified work.</p>
-      <div className="mt-4 print:hidden">
-        <DashboardSubNav />
-      </div>
+      <PageHead title="Portfolio" intro="What you've demonstrated, not what you've claimed. Built automatically from verified work." />
 
-      <div className="flex flex-col gap-5 pt-6">
+      <div className="flex flex-col gap-5 pt-4">
         <div className="print:hidden">
           <ShareLinkCard initialUrl={shareUrl} initialIsPublic={shareRow?.portfolio_public ?? false} />
         </div>

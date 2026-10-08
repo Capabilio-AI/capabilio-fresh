@@ -7,14 +7,14 @@ import type { PostMeta } from "@/lib/pulse/post-schema";
 function Text({ text, className = "" }: { text: string; className?: string }) {
   if (!text) return null;
   return (
-    <p className={`whitespace-pre-wrap break-words font-lp-body text-[14px] leading-relaxed text-app-charcoal ${className}`}>
+    <p className={`whitespace-pre-wrap break-words font-lp-body text-[14px] leading-relaxed text-[var(--m-ink)] ${className}`}>
       {splitTags(text).map((part, i) => part.tag ? <Link key={i} href={`/pulse?tag=${part.tag}`} className="font-medium text-app-blue hover:underline">{part.text}</Link> : <span key={i}>{part.text}</span>)}
     </p>
   );
 }
 
-const chip = "rounded-full border border-app-border px-2.5 py-0.5 font-lp-body text-[11.5px] text-app-muted";
-const linkBtn = "inline-flex items-center gap-1.5 rounded-full border border-app-border px-3 py-1.5 font-lp-body text-[12px] font-medium text-app-charcoal hover:bg-app-background";
+const chip = "rounded-full border border-[var(--m-rule)] px-2.5 py-0.5 font-lp-body text-[11.5px] text-app-muted";
+const linkBtn = "inline-flex items-center gap-1.5 rounded-full border border-[var(--m-rule)] px-3 py-1.5 font-lp-body text-[12px] font-medium text-[var(--m-ink)] hover:bg-app-background";
 const safe = (url: string) => /^https?:\/\//i.test(url);
 
 export function sizeLabel(bytes: number): string {
@@ -23,10 +23,10 @@ export function sizeLabel(bytes: number): string {
 
 export function AttachmentCard({ file }: { file: PulseAttachment }) {
   return (
-    <a href={file.url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 rounded-xl border border-app-border bg-app-background px-4 py-3 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40">
+    <a href={file.url} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--m-rule)] bg-app-background px-4 py-3 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-app-rose-container text-app-rose"><FileText size={18} aria-hidden="true" /></span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-lp-body text-[13px] font-semibold text-app-charcoal">{file.name}</span>
+        <span className="block truncate font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">{file.name}</span>
         <span className="block font-lp-mono text-[10.5px] text-app-muted">PDF{file.size ? ` · ${sizeLabel(file.size)}` : ""}</span>
       </span>
       <span className="flex items-center gap-1 font-lp-body text-[12px] font-medium text-app-blue">Open <ExternalLink size={12} aria-hidden="true" /></span>
@@ -40,7 +40,7 @@ export function PostBody({ kind, content, meta }: { kind: string; content: strin
     return (
       <div className="mt-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-lp-display text-[17px] font-semibold text-app-charcoal">{meta.title}</h3>
+          <h3 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{meta.title}</h3>
           <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-lp-body text-[11px] font-semibold ${meta.status === "shipped" ? "bg-app-success-container text-app-success" : "bg-app-warning-container text-app-warning"}`}>
             {meta.status === "shipped" ? <CheckCircle2 size={11} aria-hidden="true" /> : <Hammer size={11} aria-hidden="true" />} {meta.status === "shipped" ? "Shipped" : "Building"}
           </span>
@@ -59,7 +59,7 @@ export function PostBody({ kind, content, meta }: { kind: string; content: strin
   if (meta?.kind === "question") {
     return (
       <div className="mt-3">
-        <h3 className="font-lp-display text-[18px] font-semibold leading-snug text-app-charcoal">{meta.title}</h3>
+        <h3 className="font-lp-display text-[18px] font-bold leading-snug text-[var(--m-ink)]">{meta.title}</h3>
         <Text text={content} className="mt-2" />
         {meta.tags.length > 0 && <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Topics">{meta.tags.map((t) => <li key={t} className={`${chip} bg-app-warning-container/50 text-app-warning`}><Link href={`/pulse?tag=${encodeURIComponent(t)}`}>{t}</Link></li>)}</ul>}
       </div>
@@ -70,7 +70,7 @@ export function PostBody({ kind, content, meta }: { kind: string; content: strin
       <div className="mt-3 flex gap-3 rounded-xl bg-app-success-container/40 p-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-app-success text-white"><Award size={20} aria-hidden="true" /></span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-lp-display text-[17px] font-semibold text-app-charcoal">{meta.title}</h3>
+          <h3 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{meta.title}</h3>
           {(meta.issuer || meta.achievedOn) && (
             <p className="mt-0.5 flex flex-wrap items-center gap-x-3 font-lp-body text-[12.5px] text-app-muted">
               {meta.issuer && <span>{meta.issuer}</span>}

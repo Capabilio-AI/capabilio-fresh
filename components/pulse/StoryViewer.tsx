@@ -134,7 +134,7 @@ export function StoryViewer({ groups, startAt, onClose, onViewed, onDeleted }: {
             // eslint-disable-next-line @next/next/no-img-element -- short-lived signed storage URL
             <img src={story.imageUrl} alt={story.body ?? "Story photo"} className="max-h-full max-w-full object-contain" draggable={false} />
           ) : story.kind === "text" ? (
-            <p className="px-8 text-center font-lp-display text-[26px] font-semibold leading-snug" style={{ color: themeInk(story.theme) }}>{story.body}</p>
+            <p className="px-8 text-center font-lp-display text-[26px] font-bold leading-snug" style={{ color: themeInk(story.theme) }}>{story.body}</p>
           ) : (
             <p className="px-8 text-center font-lp-body text-[13px] text-white/70">This photo is no longer available.</p>
           )}
@@ -149,7 +149,7 @@ export function StoryViewer({ groups, startAt, onClose, onViewed, onDeleted }: {
         {viewers !== null && (
           <div className="absolute inset-x-0 bottom-0 z-20 max-h-[60%] overflow-y-auto rounded-t-2xl bg-white p-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-lp-display text-[15px] font-semibold text-app-charcoal">{viewers.length} {viewers.length === 1 ? "view" : "views"}</h3>
+              <h3 className="font-lp-display text-[15px] font-bold text-[var(--m-ink)]">{viewers.length} {viewers.length === 1 ? "view" : "views"}</h3>
               <button type="button" onClick={() => setViewers(null)} aria-label="Close viewers" className="rounded-full p-1.5 text-app-muted hover:bg-app-background"><X size={16} /></button>
             </div>
             {viewers.length === 0 ? <p className="mt-3 font-lp-body text-[13px] text-app-muted">No one has seen this yet.</p> : (
@@ -157,7 +157,7 @@ export function StoryViewer({ groups, startAt, onClose, onViewed, onDeleted }: {
                 {viewers.map((v) => (
                   <li key={v.id} className="flex items-center gap-2.5">
                     <Avatar person={v} size="sm" />
-                    <div className="min-w-0"><p className="truncate font-lp-body text-[13px] font-medium text-app-charcoal">{v.name ?? "Someone"}</p><p className="truncate font-lp-mono text-[10.5px] text-app-muted">{v.headline ?? ""}</p></div>
+                    <div className="min-w-0"><p className="truncate font-lp-body text-[13px] font-medium text-[var(--m-ink)]">{v.name ?? "Someone"}</p><p className="truncate font-lp-mono text-[10.5px] text-app-muted">{v.headline ?? ""}</p></div>
                     <span className="ml-auto shrink-0 font-lp-mono text-[10.5px] text-app-muted">{relativeTime(v.viewedAt)}</span>
                   </li>
                 ))}

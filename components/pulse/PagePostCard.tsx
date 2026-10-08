@@ -25,7 +25,7 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
   }
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-app-border bg-white">
+    <article className="overflow-hidden rounded-2xl border border-[var(--m-rule)] bg-white">
       {page.coverImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- college-supplied image, arbitrary origin
         <img src={page.coverImageUrl} alt="" loading="lazy" className="h-40 w-full object-cover" />
@@ -42,7 +42,7 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
             )}
           </Link>
           <div className="min-w-0 flex-1">
-            <Link href={`/o/${page.orgSlug}`} className="block truncate font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{page.orgName}</Link>
+            <Link href={`/o/${page.orgSlug}`} className="block truncate font-lp-body text-[14px] font-semibold text-[var(--m-ink)] hover:underline">{page.orgName}</Link>
             <p className="font-lp-body text-[12px] text-app-muted">College page · {relativeTime(page.publishedAt)}</p>
           </div>
           <span className={clsx("flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 font-lp-body text-[11px] font-semibold", isEvent ? "bg-app-blue-container text-app-blue" : "bg-app-orange-container text-app-orange")}>
@@ -50,8 +50,8 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
           </span>
         </header>
 
-        <h3 className="mt-3 font-lp-display text-[17px] font-semibold text-app-charcoal">{page.title}</h3>
-        <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap font-lp-body text-[13.5px] leading-relaxed text-app-charcoal">{page.body}</p>
+        <h3 className="mt-3 font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{page.title}</h3>
+        <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap font-lp-body text-[13.5px] leading-relaxed text-[var(--m-ink)]">{page.body}</p>
 
         {isEvent && (page.eventStartsAt || page.eventLocation) && (
           <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-lp-body text-[12.5px] text-app-muted">
@@ -60,8 +60,8 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
           </ul>
         )}
 
-        <footer className="mt-4 flex items-center gap-4 border-t border-app-border pt-3">
-          <button type="button" onClick={toggle} aria-pressed={liked} className={clsx("flex items-center gap-1.5 font-lp-body text-[13px]", liked ? "text-app-rose" : "text-app-muted hover:text-app-charcoal")}>
+        <footer className="mt-4 flex items-center gap-4 border-t border-[var(--m-rule)] pt-3">
+          <button type="button" onClick={toggle} aria-pressed={liked} className={clsx("flex items-center gap-1.5 font-lp-body text-[13px]", liked ? "text-app-rose" : "text-app-muted hover:text-[var(--m-ink)]")}>
             <Heart size={16} className={liked ? "fill-current" : ""} aria-hidden="true" /> {count}<span className="sr-only"> likes</span>
           </button>
           <Link href={`/o/${page.orgSlug}`} className="ml-auto flex items-center gap-1 font-lp-body text-[12.5px] font-medium text-app-blue hover:underline">View page <ExternalLink size={11} aria-hidden="true" /></Link>

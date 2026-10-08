@@ -85,7 +85,7 @@ export const ExtrasSpec = z.object({
 });
 
 /** Original project briefs and real certifications, each tied to the skills they build. Certification links must load; nothing is overwritten that a person edited (matched by title / link). */
-export async function importCareerExtras(service: Service, raw: unknown, check: (url: string) => Promise<boolean> = linkWorks): Promise<ResourceReport> {
+export async function importCareerExtras(service: Service, raw: unknown, check: (url: string) => Promise<boolean> = linkWorks, source: "CAPABILIO" | "AI_CAREER" = "CAPABILIO"): Promise<ResourceReport> {
   const report: ResourceReport = { inserted: 0, updated: 0, errors: [] };
   const parsed = ExtrasSpec.safeParse(raw);
   if (!parsed.success) return { ...report, errors: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`) };
@@ -97,10 +97,10 @@ export async function importCareerExtras(service: Service, raw: unknown, check: 
   if (report.errors.length) return report;
   const db = untyped(service);
   for (const p of projects) {
-    const { data: found } = await db.from("project_catalog").select("id").eq("title", p.title).eq("source", "CAPABILIO").maybeSingle();
+    const { data: found } = await db.from("project_catalog").select("id").eq("title", p.title).eq("source", source).maybeSingle();
     let id = (found as { id: string } | null)?.id;
     if (!id) {
-      const { data, error } = await db.from("project_catalog").insert({ title: p.title, description: p.description, difficulty: p.difficulty, expected_evidence: p.evidence, source: "CAPABILIO", status: "ACTIVE" }).select("id").single();
+      const { data, error } = await db.from("project_catalog").insert({ title: p.title, description: p.description, difficulty: p.difficulty, expected_evidence: p.evidence, source, status: "ACTIVE" }).select("id").single();
       if (error) { report.errors.push(`${p.title}: ${error.message}`); continue; }
       id = (data as { id: string }).id;
       report.inserted += 1;

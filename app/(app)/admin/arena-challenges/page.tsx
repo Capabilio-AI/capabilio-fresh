@@ -16,7 +16,7 @@ export default async function ArenaChallengesAdminPage() {
   if (!(await isPlatformAdmin(service, user.id))) notFound();
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Arena challenges</h1>
+      <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Arena challenges</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Author, validate and publish challenges. Nothing reaches students until it is validated and published.</p>
       <div className="flex flex-col gap-10 pt-6">
         <RuntimeSettingsPanel initial={await loadRuntimeAdmin(service)} />

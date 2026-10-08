@@ -17,8 +17,8 @@ const SET_CAREER_HREF = "/dashboard/roadmap";
 
 function Notice({ title, body, cta }: { title: string; body: string; cta?: { href: string; label: string }[] }) {
   return (
-    <div className="rounded-xl border border-dashed border-app-border bg-white px-6 py-12 text-center">
-      <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{title}</p>
+    <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-12 text-center">
+      <p className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">{title}</p>
       <p className="mx-auto mt-1 max-w-md font-lp-body text-[13px] text-app-muted">{body}</p>
       <div className="mt-4 flex flex-wrap justify-center gap-4">
         {(cta ?? []).map((c) => (
@@ -42,7 +42,7 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
   if (params.sample === "1") {
     body = (
       <>
-        <p className="mb-4 rounded-lg border border-app-border bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
+        <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
           Sample track: Data Analyst. This is not tied to your target career.
         </p>
         <TrackChallengesBoard track="domain" />
@@ -71,26 +71,26 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
       <>
         <div className="mb-5 flex flex-wrap items-center gap-2 font-lp-body text-[13px]">
           <span className="text-app-muted">Your target:</span>
-          <Link href="/arena/challenges/domain" className={`rounded-full px-3 py-1 font-semibold ${view.which === "primary" ? "bg-app-blue-container text-app-blue" : "border border-app-border text-app-muted"}`}>
+          <Link href="/arena/challenges/domain" className={`rounded-full px-3 py-1 font-semibold ${view.which === "primary" ? "bg-app-blue-container text-app-blue" : "border border-[var(--m-rule)] text-app-muted"}`}>
             {view.primary}
           </Link>
           {view.planB ? (
-            <Link href="?career=plan-b" className={`rounded-full px-3 py-1 font-semibold ${view.which === "plan-b" ? "bg-app-blue-container text-app-blue" : "border border-app-border text-app-muted"}`}>
+            <Link href="?career=plan-b" className={`rounded-full px-3 py-1 font-semibold ${view.which === "plan-b" ? "bg-app-blue-container text-app-blue" : "border border-[var(--m-rule)] text-app-muted"}`}>
               Plan B: {view.planB}
             </Link>
           ) : (
-            <Link href={SET_CAREER_HREF} className="text-app-muted hover:text-app-charcoal">
+            <Link href={SET_CAREER_HREF} className="text-app-muted hover:text-[var(--m-ink)]">
               + Add Plan B
             </Link>
           )}
-          <Link href={SET_CAREER_HREF} className="ml-auto text-app-muted hover:text-app-charcoal">
+          <Link href={SET_CAREER_HREF} className="ml-auto text-app-muted hover:text-[var(--m-ink)]">
             change
           </Link>
         </div>
         {view.items.length > 0 ? (
           <>
             {view.shortfall > 0 && (
-              <p className="mb-4 rounded-lg border border-app-border bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
+              <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
                 Only {view.items.length} challenge{view.items.length === 1 ? " is" : "s are"} published for {view.career.name} so far.
               </p>
             )}
@@ -111,11 +111,11 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
 
   return (
     <div>
-      <Link href="/arena/challenges" className="inline-flex items-center gap-1.5 font-lp-body text-[13px] text-app-muted hover:text-app-charcoal">
+      <Link href="/arena/challenges" className="inline-flex items-center gap-1.5 font-lp-body text-[13px] text-app-muted hover:text-[var(--m-ink)]">
         <ArrowLeft size={14} />
         Challenges
       </Link>
-      <h1 className="mt-2 font-lp-display text-[26px] font-semibold text-app-charcoal">Domain Challenges</h1>
+      <h1 className="mt-2 font-lp-display text-[26px] font-bold text-[var(--m-ink)]">Domain Challenges</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Work tickets for your target career role.</p>
       <div className="pt-6">{body}</div>
     </div>

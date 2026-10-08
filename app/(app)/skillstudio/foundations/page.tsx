@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { matchCareersForStudent } from "@/lib/career/match";
+import { AreaHero } from "@/components/metro/AreaHero";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { MOCK_FOUNDATIONS } from "@/lib/mock/skillstudio";
 import { CatalogGrid } from "@/components/skillstudio/CatalogGrid";
@@ -15,11 +16,7 @@ export default async function FoundationsPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">SkillStudio</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Your personalized learning path, foundations, courses, and certifications.</p>
-      <div className="mt-4">
-        <SkillStudioSubNav />
-      </div>
+      <AreaHero tone="tint" title="SkillStudio" intro="Your personalized learning path, foundations, courses, and certifications." nav={<SkillStudioSubNav />} />
       <div className="pt-6">
         <CatalogGrid
           items={MOCK_FOUNDATIONS.map((f) => ({

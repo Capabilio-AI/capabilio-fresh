@@ -14,7 +14,7 @@ interface SidebarData {
   pages: SuggestedPage[];
 }
 
-const CARD = "rounded-2xl border border-app-border bg-white p-5";
+const CARD = "rounded-2xl border border-[var(--m-rule)] bg-white p-5";
 
 /** Follows or unfollows a college page. */
 function PageFollow({ page }: { page: SuggestedPage }) {
@@ -29,7 +29,7 @@ function PageFollow({ page }: { page: SuggestedPage }) {
     if (!res?.ok) setFollowing(!next);
   }
   return (
-    <button type="button" onClick={toggle} disabled={busy} aria-pressed={following} className={following ? "rounded-full border border-app-border px-3 py-1 font-lp-body text-[12px] font-semibold text-app-charcoal" : "rounded-full bg-app-charcoal px-3 py-1 font-lp-body text-[12px] font-semibold text-white"}>
+    <button type="button" onClick={toggle} disabled={busy} aria-pressed={following} className={following ? "rounded-full border border-[var(--m-rule)] px-3 py-1 font-lp-body text-[12px] font-semibold text-[var(--m-ink)]" : "rounded-full bg-app-charcoal px-3 py-1 font-lp-body text-[12px] font-semibold text-white"}>
       {following ? "Following" : "Follow"}
     </button>
   );
@@ -50,13 +50,13 @@ export function PulseSidebar() {
   return (
     <aside aria-label="Trending and suggestions" className="flex flex-col gap-4">
       <section className={CARD}>
-        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-semibold text-app-charcoal"><Hash size={15} className="text-app-orange" aria-hidden="true" /> Trending this week</h2>
+        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><Hash size={15} className="text-app-orange" aria-hidden="true" /> Trending this week</h2>
         {data === null && !failed ? <div className="mt-4 h-20 animate-pulse rounded-lg bg-app-background" /> : data && data.trending.length > 0 ? (
           <ul className="mt-3 flex flex-col">
             {data.trending.map((t) => (
               <li key={t.tag}>
                 <Link href={`/pulse?tag=${t.tag}`} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-app-background">
-                  <span className="font-lp-body text-[13.5px] font-medium text-app-charcoal">#{t.tag}</span>
+                  <span className="font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">#{t.tag}</span>
                   <span className="font-lp-mono text-[11px] text-app-muted">{t.posts} {t.posts === 1 ? "post" : "posts"}</span>
                 </Link>
               </li>
@@ -69,11 +69,11 @@ export function PulseSidebar() {
 
       {data && data.pages.length > 0 && (
         <section className={CARD} aria-label="College pages">
-          <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-semibold text-app-charcoal"><Building2 size={15} className="text-app-orange" aria-hidden="true" /> Your college</h2>
+          <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><Building2 size={15} className="text-app-orange" aria-hidden="true" /> Your college</h2>
           <ul className="mt-3 flex flex-col gap-3">
             {data.pages.map((p) => (
               <li key={p.slug} className="flex items-center gap-3">
-                <Link href={`/o/${p.slug}`} className="min-w-0 flex-1 truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>
+                <Link href={`/o/${p.slug}`} className="min-w-0 flex-1 truncate font-lp-body text-[13px] font-semibold text-[var(--m-ink)] hover:underline">{p.name}</Link>
                 <PageFollow page={p} />
               </li>
             ))}
@@ -83,14 +83,14 @@ export function PulseSidebar() {
       )}
 
       <section className={CARD}>
-        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-semibold text-app-charcoal"><UserPlus size={15} className="text-app-orange" aria-hidden="true" /> People to follow</h2>
+        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><UserPlus size={15} className="text-app-orange" aria-hidden="true" /> People to follow</h2>
         {data === null && !failed ? <div className="mt-4 h-28 animate-pulse rounded-lg bg-app-background" /> : data && data.suggestions.length > 0 ? (
           <ul className="mt-3 flex flex-col gap-4">
             {data.suggestions.map((p) => (
               <li key={p.id} className="flex items-start gap-3">
                 <Link href={`/pulse/u/${p.id}`}><Avatar person={p} size="sm" /></Link>
                 <div className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-1.5"><Link href={`/pulse/u/${p.id}`} className="truncate font-lp-body text-[13px] font-semibold text-app-charcoal hover:underline">{p.name}</Link>{p.isMentor && <MentorBadge />}</span>
+                  <span className="flex flex-wrap items-center gap-1.5"><Link href={`/pulse/u/${p.id}`} className="truncate font-lp-body text-[13px] font-semibold text-[var(--m-ink)] hover:underline">{p.name}</Link>{p.isMentor && <MentorBadge />}</span>
                   {p.tagline && <p className="truncate font-lp-body text-[12px] font-medium text-app-blue">{p.tagline}</p>}
                   <p className="truncate font-lp-body text-[11.5px] text-app-muted">{p.headline ?? p.reason}</p>
                   {p.headline && <p className="truncate font-lp-body text-[11px] text-app-muted/80">{p.reason}</p>}

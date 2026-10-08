@@ -17,7 +17,7 @@ describe("diffNodes", () => {
   it("reports a drop and a status-only change", () => {
     const down = diffNodes(memoOf(after), before);
     expect(down.some((c) => c.kind === "LEVEL_DOWN" && c.title === "SQL")).toBe(true);
-    const marked = buildGraph(makeContext({ userStates: new Map([["joins", { status: "DONE" as const, reason: null }]]) }, { "s-sql": ev(40) })).nodes;
+    const marked = buildGraph(makeContext({ userStates: new Map([["joins", { status: "LEARNING" as const, reason: null }]]) }, { "s-sql": ev(40) })).nodes;
     expect(diffNodes(memoOf(before), marked).map((c) => [c.title, c.kind])).toContainEqual(["Joins", "STATUS"]);
   });
 });

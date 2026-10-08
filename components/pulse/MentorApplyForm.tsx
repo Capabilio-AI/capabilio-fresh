@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { MyMentorProfile } from "@/lib/pulse/mentors";
 
-const FIELD = "mt-1 w-full rounded-lg border border-app-border bg-app-background px-3 py-2 font-lp-body text-[13.5px] focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20";
+const FIELD = "mt-1 w-full rounded-lg border border-[var(--m-rule)] bg-app-background px-3 py-2 font-lp-body text-[13.5px] focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20";
 
 /** Apply to be a mentor, or edit your profile. Changes to the public text go back to Capabilio for review. */
 export function MentorApplyForm({ mine, onSaved }: { mine: MyMentorProfile | null; onSaved: () => void }) {
@@ -44,25 +44,25 @@ export function MentorApplyForm({ mine, onSaved }: { mine: MyMentorProfile | nul
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label htmlFor="m-headline" className="font-lp-body text-[12px] font-medium text-app-charcoal">Headline</label>
+        <label htmlFor="m-headline" className="font-lp-body text-[12px] font-medium text-[var(--m-ink)]">Headline</label>
         <input id="m-headline" className={FIELD} value={headline} onChange={(e) => setHeadline(e.target.value.slice(0, 120))} placeholder="e.g. SDE II at a product company, ex-startup" />
       </div>
       <div>
-        <label htmlFor="m-bio" className="font-lp-body text-[12px] font-medium text-app-charcoal">How can you help students?</label>
+        <label htmlFor="m-bio" className="font-lp-body text-[12px] font-medium text-[var(--m-ink)]">How can you help students?</label>
         <textarea id="m-bio" rows={4} className={`${FIELD} resize-none`} value={bio} onChange={(e) => setBio(e.target.value.slice(0, 800))} placeholder="What you've done, what you can advise on, what you'd like to see from the people who reach out." />
         <p className="mt-0.5 text-right font-lp-mono text-[10.5px] text-app-muted">{bio.length}/800</p>
       </div>
       <div>
-        <label htmlFor="m-expertise" className="font-lp-body text-[12px] font-medium text-app-charcoal">Expertise (up to 8, separated by commas)</label>
+        <label htmlFor="m-expertise" className="font-lp-body text-[12px] font-medium text-[var(--m-ink)]">Expertise (up to 8, separated by commas)</label>
         <input id="m-expertise" className={FIELD} value={expertise} onChange={(e) => setExpertise(e.target.value)} placeholder="System Design, Java, Interview Prep" />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div><label htmlFor="m-company" className="font-lp-body text-[12px] font-medium text-app-charcoal">Company</label><input id="m-company" className={FIELD} value={company} onChange={(e) => setCompany(e.target.value.slice(0, 120))} /></div>
-        <div><label htmlFor="m-role" className="font-lp-body text-[12px] font-medium text-app-charcoal">Role</label><input id="m-role" className={FIELD} value={roleTitle} onChange={(e) => setRoleTitle(e.target.value.slice(0, 120))} /></div>
-        <div><label htmlFor="m-years" className="font-lp-body text-[12px] font-medium text-app-charcoal">Years of experience</label><input id="m-years" type="number" min={0} max={60} className={FIELD} value={years} onChange={(e) => setYears(e.target.value)} /></div>
+        <div><label htmlFor="m-company" className="font-lp-body text-[12px] font-medium text-[var(--m-ink)]">Company</label><input id="m-company" className={FIELD} value={company} onChange={(e) => setCompany(e.target.value.slice(0, 120))} /></div>
+        <div><label htmlFor="m-role" className="font-lp-body text-[12px] font-medium text-[var(--m-ink)]">Role</label><input id="m-role" className={FIELD} value={roleTitle} onChange={(e) => setRoleTitle(e.target.value.slice(0, 120))} /></div>
+        <div><label htmlFor="m-years" className="font-lp-body text-[12px] font-medium text-[var(--m-ink)]">Years of experience</label><input id="m-years" type="number" min={0} max={60} className={FIELD} value={years} onChange={(e) => setYears(e.target.value)} /></div>
       </div>
       <div>
-        <label htmlFor="m-avail" className="font-lp-body text-[12px] font-medium text-app-charcoal">Availability (optional)</label>
+        <label htmlFor="m-avail" className="font-lp-body text-[12px] font-medium text-[var(--m-ink)]">Availability (optional)</label>
         <input id="m-avail" className={FIELD} value={availability} onChange={(e) => setAvailability(e.target.value.slice(0, 200))} placeholder="e.g. Weekends, a few hours a month" />
       </div>
       {message && <p role={message.ok ? "status" : "alert"} className={`font-lp-body text-[12.5px] ${message.ok ? "text-app-success" : "text-app-rose"}`}>{message.text}</p>}

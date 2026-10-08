@@ -6,6 +6,7 @@ import { resolveStreamScope } from "@/lib/arena-challenges/resolve-scope";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
+import { AreaHero } from "@/components/metro/AreaHero";
 
 export const metadata: Metadata = {
   title: "Challenges — Arena — Capabilio AI",
@@ -24,13 +25,9 @@ export default async function ArenaChallengesPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Arena</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Two separate tracks — pick one. Each has its own leaderboard, streak, and history.</p>
-      <div className="mt-4">
-        <ArenaSubNav />
-      </div>
+      <AreaHero tone="dark" title="Arena" intro="Two separate tracks — pick one. Each has its own leaderboard, streak, and history." nav={<ArenaSubNav />} />
 
-      <div className="grid grid-cols-1 gap-6 pt-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 pt-5 lg:grid-cols-2">
         <TrackCard
           href="/arena/challenges/stream"
           icon={GraduationCap}
@@ -96,7 +93,7 @@ function TrackCard({
     <div className="flex flex-col gap-2.5">
     <Link
       href={href}
-      className={`group flex flex-col gap-6 rounded-[28px] border border-app-border bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_48px_-24px_rgba(0,0,0,0.25)] ${a.ring}`}
+      className={`group flex flex-col gap-6 rounded-[28px] border border-[var(--m-rule)] bg-white p-8 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_48px_-24px_rgba(0,0,0,0.25)] ${a.ring}`}
     >
       <div className="flex items-start justify-between">
         <span className={`flex h-14 w-14 items-center justify-center rounded-2xl ${a.chip}`}>
@@ -106,11 +103,11 @@ function TrackCard({
       </div>
 
       <div>
-        <h2 className="font-serif text-[26px] font-bold leading-tight text-app-charcoal">{title}</h2>
+        <h2 className="font-serif text-[26px] font-bold leading-tight text-[var(--m-ink)]">{title}</h2>
         <p className="mt-2.5 font-lp-body text-[14.5px] leading-relaxed text-app-muted">{description}</p>
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-3 border-t border-app-border pt-5">
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-[var(--m-rule)] pt-5">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-lp-body text-[13px] text-app-muted">
           <span className="flex items-center gap-1.5">
             <FileText size={15} strokeWidth={1.75} />
@@ -132,7 +129,7 @@ function TrackCard({
     </Link>
     <p className="px-2 font-lp-body text-[12.5px] text-app-muted">
       {context.text} ·{" "}
-      <Link href={context.href} className="font-semibold text-app-charcoal hover:underline">
+      <Link href={context.href} className="font-semibold text-[var(--m-ink)] hover:underline">
         {context.label}
       </Link>
     </p>

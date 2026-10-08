@@ -32,25 +32,25 @@ export function PulseAdminPanel({ applications, reports }: { applications: Mento
       {error && <p role="alert" className="font-lp-body text-[12.5px] text-app-rose">{error}</p>}
 
       <section aria-label="Mentor applications">
-        <h2 className="font-lp-display text-[17px] font-semibold text-app-charcoal">Mentor applications ({applications.length})</h2>
+        <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Mentor applications ({applications.length})</h2>
         {applications.length === 0 ? <p className="mt-3 font-lp-body text-[13px] text-app-muted">No applications waiting.</p> : (
           <ul className="mt-3 flex flex-col gap-4">
             {applications.map((a) => (
-              <li key={a.id} className="rounded-2xl border border-app-border bg-white p-5">
+              <li key={a.id} className="rounded-2xl border border-[var(--m-rule)] bg-white p-5">
                 <div className="flex items-start gap-3">
                   <Avatar person={a} size="md" />
                   <div className="min-w-0 flex-1">
-                    <Link href={`/pulse/u/${a.id}`} className="font-lp-body text-[14px] font-semibold text-app-charcoal hover:underline">{a.name}</Link>
+                    <Link href={`/pulse/u/${a.id}`} className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)] hover:underline">{a.name}</Link>
                     <p className="font-lp-body text-[12px] text-app-muted">{a.headline ?? "No college on record"} · submitted {relativeTime(a.submittedAt)} ago</p>
                   </div>
                 </div>
-                <p className="mt-3 font-lp-body text-[13.5px] font-medium text-app-charcoal">{a.application.headline}</p>
-                <p className="mt-1 whitespace-pre-wrap font-lp-body text-[13px] text-app-charcoal">{a.application.bio}</p>
+                <p className="mt-3 font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">{a.application.headline}</p>
+                <p className="mt-1 whitespace-pre-wrap font-lp-body text-[13px] text-[var(--m-ink)]">{a.application.bio}</p>
                 <p className="mt-2 font-lp-body text-[12px] text-app-muted">{[a.application.roleTitle, a.application.company].filter(Boolean).join(" at ")}{a.application.yearsExperience != null ? ` · ${a.application.yearsExperience} years` : ""} · {a.application.expertise.join(", ")}</p>
-                <input value={notes[a.id] ?? ""} onChange={(e) => setNotes((n) => ({ ...n, [a.id]: e.target.value.slice(0, 500) }))} placeholder="Note to the applicant (shown if rejected)" aria-label={`Note for ${a.name}`} className="mt-3 w-full rounded-lg border border-app-border bg-app-background px-3 py-2 font-lp-body text-[13px]" />
+                <input value={notes[a.id] ?? ""} onChange={(e) => setNotes((n) => ({ ...n, [a.id]: e.target.value.slice(0, 500) }))} placeholder="Note to the applicant (shown if rejected)" aria-label={`Note for ${a.name}`} className="mt-3 w-full rounded-lg border border-[var(--m-rule)] bg-app-background px-3 py-2 font-lp-body text-[13px]" />
                 <div className="mt-3 flex gap-2">
                   <button type="button" disabled={busy !== null} onClick={() => call(a.id, `/api/pulse-admin/mentors/${a.id}`, { decision: "approve", note: notes[a.id] || undefined })} className={`${BTN} flex items-center gap-1.5 bg-app-charcoal text-white`}><Check size={13} aria-hidden="true" /> Approve</button>
-                  <button type="button" disabled={busy !== null} onClick={() => call(a.id, `/api/pulse-admin/mentors/${a.id}`, { decision: "reject", note: notes[a.id] || undefined })} className={`${BTN} flex items-center gap-1.5 border border-app-border bg-white text-app-charcoal`}><X size={13} aria-hidden="true" /> Reject</button>
+                  <button type="button" disabled={busy !== null} onClick={() => call(a.id, `/api/pulse-admin/mentors/${a.id}`, { decision: "reject", note: notes[a.id] || undefined })} className={`${BTN} flex items-center gap-1.5 border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}><X size={13} aria-hidden="true" /> Reject</button>
                 </div>
               </li>
             ))}
@@ -59,18 +59,18 @@ export function PulseAdminPanel({ applications, reports }: { applications: Mento
       </section>
 
       <section aria-label="Reports">
-        <h2 className="font-lp-display text-[17px] font-semibold text-app-charcoal">Open reports ({reports.length})</h2>
+        <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Open reports ({reports.length})</h2>
         {reports.length === 0 ? <p className="mt-3 font-lp-body text-[13px] text-app-muted">No open reports.</p> : (
           <ul className="mt-3 flex flex-col gap-3">
             {reports.map((r) => (
-              <li key={r.id} className="rounded-2xl border border-app-border bg-white p-4">
-                <p className="font-lp-body text-[13px] text-app-charcoal"><span className="font-semibold capitalize">{r.targetType.replace("_", " ")}</span> reported for <span className="font-semibold">{r.reason}</span> by {r.reporter} · {relativeTime(r.createdAt)} ago</p>
-                {r.excerpt && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-app-background px-3 py-2 font-lp-body text-[13px] text-app-charcoal">{r.excerpt}</p>}
+              <li key={r.id} className="rounded-2xl border border-[var(--m-rule)] bg-white p-4">
+                <p className="font-lp-body text-[13px] text-[var(--m-ink)]"><span className="font-semibold capitalize">{r.targetType.replace("_", " ")}</span> reported for <span className="font-semibold">{r.reason}</span> by {r.reporter} · {relativeTime(r.createdAt)} ago</p>
+                {r.excerpt && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-app-background px-3 py-2 font-lp-body text-[13px] text-[var(--m-ink)]">{r.excerpt}</p>}
                 {r.details && <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">“{r.details}”</p>}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {r.profileId && <Link href={`/pulse/u/${r.profileId}`} className={`${BTN} border border-app-border text-app-charcoal`}>Open profile</Link>}
+                  {r.profileId && <Link href={`/pulse/u/${r.profileId}`} className={`${BTN} border border-[var(--m-rule)] text-[var(--m-ink)]`}>Open profile</Link>}
                   <button type="button" disabled={busy !== null} onClick={() => call(r.id, `/api/pulse-admin/reports/${r.id}`, { status: "reviewed" })} className={`${BTN} bg-app-charcoal text-white`}>Mark reviewed</button>
-                  <button type="button" disabled={busy !== null} onClick={() => call(r.id, `/api/pulse-admin/reports/${r.id}`, { status: "dismissed" })} className={`${BTN} border border-app-border text-app-muted`}>Dismiss</button>
+                  <button type="button" disabled={busy !== null} onClick={() => call(r.id, `/api/pulse-admin/reports/${r.id}`, { status: "dismissed" })} className={`${BTN} border border-[var(--m-rule)] text-app-muted`}>Dismiss</button>
                 </div>
               </li>
             ))}

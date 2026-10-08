@@ -44,6 +44,16 @@ const TYPE_LABEL: Record<ItemType, string> = {
   other: "Other",
 };
 
+const SECTION_ORDER: ItemType[] = ["certificate", "project", "resume", "link", "other"];
+const SECTION_TITLE: Record<ItemType, string> = { certificate: "Certifications", project: "Projects", resume: "Resumes", link: "Links", other: "Other documents" };
+const SECTION_INTRO: Record<ItemType, string> = {
+  certificate: "Courses and credentials you have earned. Uploaded files are checked.",
+  project: "Things you have built, with a repository or demo link.",
+  resume: "The versions of your resume you share with recruiters.",
+  link: "Profiles and pages that show your work.",
+  other: "Supporting files that back up your record.",
+};
+
 const INPUT =
   "w-full rounded-lg border border-lp-border-hairline bg-lp-surface-card px-3.5 py-2.5 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25";
 
@@ -82,14 +92,13 @@ export function VaultTab() {
     <div>
       <CodeDnaCard />
 
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Vault</h2>
+      <div className="mb-5 flex justify-end">
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1.5 rounded-full bg-lp-accent-indigo px-3.5 py-1.5 font-lp-mono text-lp-label-sm font-semibold text-lp-surface-card shadow-sm transition-transform hover:scale-105"
+          className="flex items-center gap-1.5 rounded-full bg-[var(--m-ink)] px-4 py-2 text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
         >
-          <Plus size={14} />
+          <Plus size={14} aria-hidden />
           Add item
         </button>
       </div>
@@ -97,56 +106,40 @@ export function VaultTab() {
       {showForm && <AddItemForm onAdded={addItem} onCancel={() => setShowForm(false)} />}
 
       {items.length === 0 ? (
-        <EmptyState message="Nothing in your vault yet — add a certificate, project, or link to start building your portfolio." />
+        <EmptyState message="Nothing here yet. Add a certificate, project, resume or link to start building your portfolio." />
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {items.map((item) => {
-            const Icon = TYPE_ICON[item.item_type];
-            return (
-              <div key={item.id} className="rounded-xl border border-lp-border-hairline bg-lp-surface-card p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lp-surface-subtle text-lp-text-muted">
-                      <Icon size={15} />
-                    </span>
-                    <div>
-                      <p className="flex items-center gap-1 font-lp-body text-lp-body-sm font-medium text-lp-text-ink">
-                        {item.title}
-                        {item.verified && (
-                          <span title="Uploaded file verified" className="flex items-center text-lp-success">
-                            <BadgeCheck size={13} />
-                          </span>
-                        )}
-                      </p>
-                      <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">{TYPE_LABEL[item.item_type]}</p>
+        <div className="flex flex-col gap-8">
+          {SECTION_ORDER.filter((type) => items.some((i) => i.item_type === type)).map((type) => (
+            <section key={type} aria-labelledby={`vault-${type}`}>
+              <h2 id={`vault-${type}`} className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">{SECTION_TITLE[type]}</h2>
+              <p className="mb-3 mt-0.5 font-lp-body text-[13.5px] text-app-muted">{SECTION_INTRO[type]}</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {items.filter((i) => i.item_type === type).map((item) => {
+                  const Icon = TYPE_ICON[item.item_type];
+                  return (
+                    <div key={item.id} className="rounded-xl border border-[var(--m-rule)] bg-white p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--m-ground)] text-[var(--m-ink)]"><Icon size={15} aria-hidden /></span>
+                          <p className="flex items-center gap-1 font-lp-body text-[14px] font-bold text-[var(--m-ink)]">
+                            {item.title}
+                            {item.verified && <span title="Uploaded file verified" className="flex items-center text-[#0d7a45]"><BadgeCheck size={14} aria-hidden /></span>}
+                          </p>
+                        </div>
+                        <button type="button" onClick={() => removeItem(item.id)} aria-label={`Delete ${item.title}`} className="text-[var(--m-muted)] transition-colors hover:text-[#ba1a1a]"><Trash2 size={15} aria-hidden /></button>
+                      </div>
+                      {item.description && <p className="mt-2 font-lp-body text-[13px] text-app-muted">{item.description}</p>}
+                      {(item.url ?? item.fileUrl) && (
+                        <a href={item.url ?? item.fileUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-1 text-[12.5px] font-bold text-[var(--m-accent-ink)] hover:underline">
+                          <ExternalLink size={12} aria-hidden />{item.fileUrl ? "View certificate" : "View"}
+                        </a>
+                      )}
                     </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.id)}
-                    aria-label="Delete item"
-                    className="text-lp-text-muted transition-colors hover:text-lp-error"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-                {item.description && (
-                  <p className="mt-2 font-lp-body text-lp-body-sm text-lp-text-muted">{item.description}</p>
-                )}
-                {(item.url ?? item.fileUrl) && (
-                  <a
-                    href={item.url ?? item.fileUrl ?? undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 flex items-center gap-1 font-lp-mono text-lp-label-sm text-lp-accent-indigo hover:underline"
-                  >
-                    <ExternalLink size={12} />
-                    {item.fileUrl ? "View certificate" : "View"}
-                  </a>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
+            </section>
+          ))}
         </div>
       )}
     </div>

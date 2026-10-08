@@ -9,8 +9,8 @@ export const NodeStateBody = z
   .object({
     nodeKey: z.string().regex(/^[a-z0-9][a-z0-9-]{1,80}$/),
     careerId: z.string().uuid(),
-    /** null clears the student's mark */
-    status: z.enum(["LEARNING", "DONE", "SKIPPED"]).nullable(),
+    /** null clears the student's mark. A topic cannot be marked done: only evidence completes it. */
+    status: z.enum(["LEARNING", "SKIPPED"]).nullable(),
     reason: z.string().trim().min(3).max(300).optional(),
   })
   .strict()

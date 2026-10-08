@@ -65,7 +65,7 @@ export default async function CodeDnaDetailPage() {
 
       <div className="mt-3 flex items-center gap-2">
         <Building2 size={20} className="text-app-charcoal" />
-        <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Code DNA</h1>
+        <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Code DNA</h1>
       </div>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
         A summary of publicly available GitHub evidence — engineering activity, technology usage, and provenance

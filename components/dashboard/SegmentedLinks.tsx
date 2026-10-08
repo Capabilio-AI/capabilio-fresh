@@ -21,7 +21,7 @@ export function SegmentedLinks({ label, segments }: { label: string; segments: S
           aria-current={s.active ? "page" : undefined}
           className={clsx(
             "flex items-center gap-2 rounded-lg px-4 py-2 font-lp-body text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40",
-            s.active ? "bg-app-charcoal text-white" : "text-app-muted hover:bg-app-background hover:text-app-charcoal"
+            s.active ? "bg-[var(--m-ink)] font-bold text-white" : "font-bold text-[var(--m-muted)] hover:bg-[var(--m-ground)] hover:text-[var(--m-ink)]"
           )}
         >
           {s.label}

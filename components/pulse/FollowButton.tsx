@@ -42,7 +42,7 @@ export function FollowButton({ userId, initialFollowing, compact = false, onChan
         className={clsx(
           "inline-flex items-center gap-1.5 rounded-full font-lp-body font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40 disabled:opacity-70",
           compact ? "px-3 py-1 text-[12px]" : "px-4 py-2 text-[13px]",
-          following ? "border border-app-border bg-white text-app-charcoal hover:bg-app-background" : "bg-app-charcoal text-white hover:bg-black"
+          following ? "border border-[var(--m-rule)] bg-white text-[var(--m-ink)] hover:bg-app-background" : "bg-app-charcoal text-white hover:bg-black"
         )}
       >
         {busy ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : following ? <Check size={13} aria-hidden="true" /> : <UserPlus size={13} aria-hidden="true" />}

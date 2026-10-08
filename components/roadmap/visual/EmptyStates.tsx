@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChooseCareerDialog } from "@/components/direction/ChooseCareerDialog";
+import { BuildingRoadmap } from "./BuildingRoadmap";
 import type { GraphUnavailable } from "@/lib/roadmap-visual/graph-types";
 
 const COPY = (r: GraphUnavailable): { title: string; body: string; cta?: { href: string; label: string; picker?: boolean } } => {
@@ -12,7 +13,9 @@ const COPY = (r: GraphUnavailable): { title: string; body: string; cta?: { href:
   }
 };
 
-export function RoadmapEmpty({ reason }: { reason: GraphUnavailable }) {
+export function RoadmapEmpty({ reason, which, onReady }: { reason: GraphUnavailable; which: "primary" | "plan-b"; onReady: () => void }) {
+  // a career with no roadmap yet is built on demand, not left empty
+  if (reason.state === "NO_TEMPLATE") return <BuildingRoadmap career={which} careerName={reason.career.name} onReady={onReady} />;
   const c = COPY(reason);
   return (
     <div className="rounded-xl border border-dashed border-app-border bg-white px-6 py-10 text-center">

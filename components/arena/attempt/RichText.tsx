@@ -26,9 +26,9 @@ export function RichText({ source }: { source: string }) {
     flush();
     if (!line.trim()) continue;
     const h = line.match(/^(#{1,3}) (.*)$/);
-    if (h) blocks.push(<h3 key={blocks.length} className="mt-3 font-lp-display text-[14px] font-semibold text-app-charcoal first:mt-0">{inline(h[2])}</h3>);
+    if (h) blocks.push(<h3 key={blocks.length} className="mt-3 font-lp-display text-[14px] font-semibold text-[var(--m-ink)] first:mt-0">{inline(h[2])}</h3>);
     else blocks.push(<p key={blocks.length}>{inline(line)}</p>);
   }
   flush();
-  return <div className="space-y-2 font-lp-body text-[13.5px] leading-relaxed text-app-charcoal/85">{blocks}</div>;
+  return <div className="space-y-2 font-lp-body text-[13.5px] leading-relaxed text-[var(--m-ink)]/85">{blocks}</div>;
 }

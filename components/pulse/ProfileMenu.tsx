@@ -22,10 +22,10 @@ export function ProfileMenu({ userId, name }: { userId: string; name: string }) 
 
   return (
     <div className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-label="More options" aria-expanded={open} className="rounded-full border border-app-border bg-white p-2 text-app-muted hover:text-app-charcoal"><MoreHorizontal size={16} /></button>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-label="More options" aria-expanded={open} className="rounded-full border border-[var(--m-rule)] bg-white p-2 text-app-muted hover:text-[var(--m-ink)]"><MoreHorizontal size={16} /></button>
       {open && (
-        <div className="absolute right-0 z-10 mt-1 w-48 overflow-hidden rounded-xl border border-app-border bg-white py-1 shadow-lg">
-          <button type="button" onClick={() => { setOpen(false); setReporting(true); }} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-app-charcoal hover:bg-app-background"><Flag size={13} aria-hidden="true" /> Report profile</button>
+        <div className="absolute right-0 z-10 mt-1 w-48 overflow-hidden rounded-xl border border-[var(--m-rule)] bg-white py-1 shadow-lg">
+          <button type="button" onClick={() => { setOpen(false); setReporting(true); }} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-[var(--m-ink)] hover:bg-app-background"><Flag size={13} aria-hidden="true" /> Report profile</button>
           <button type="button" onClick={block} className="flex w-full items-center gap-2 px-3 py-2 text-left font-lp-body text-[13px] text-app-rose hover:bg-app-background"><Ban size={13} aria-hidden="true" /> Block {name}</button>
         </div>
       )}

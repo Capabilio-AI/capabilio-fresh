@@ -29,8 +29,8 @@ export function CapabilityCard({ skills }: { skills: SkillRow[] }) {
 
   if (dimensions.length === 0) {
     return (
-      <div className="flex h-full flex-col rounded-xl border border-app-border bg-white p-5">
-        <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-blue">
+      <div className="flex h-full flex-col rounded-xl border border-[var(--m-rule)] bg-white p-5">
+        <div className="flex items-center gap-2 text-[13px] font-bold text-[var(--m-muted)]">
           <Gauge size={14} />
           Capability
         </div>
@@ -44,13 +44,13 @@ export function CapabilityCard({ skills }: { skills: SkillRow[] }) {
   const overall = overallCapabilityScore(skills);
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-app-border bg-white p-5">
+    <div className="flex h-full flex-col rounded-xl border border-[var(--m-rule)] bg-white p-5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-blue">
+        <div className="flex items-center gap-2 text-[13px] font-bold text-[var(--m-muted)]">
           <Gauge size={14} />
           Capability
         </div>
-        <span className="font-lp-display text-[20px] font-semibold text-app-charcoal">{overall}</span>
+        <span className="font-lp-display text-[28px] font-bold text-[var(--m-ink)]">{overall}%</span>
       </div>
       <p className="mt-1 font-lp-body text-[12px] text-app-muted">From your diagnostic assessment — updates as Arena and projects add evidence.</p>
 
@@ -58,11 +58,11 @@ export function CapabilityCard({ skills }: { skills: SkillRow[] }) {
         {dimensions.map((d) => (
           <div key={d.domain}>
             <div className="flex items-center justify-between font-lp-body text-[12.5px]">
-              <span className="truncate text-app-charcoal">{d.domain}</span>
-              <span className="font-lp-mono text-[11px] text-app-muted">{d.score}</span>
+              <span className="truncate font-bold text-[var(--m-ink)]">{d.domain}</span>
+              <span className="text-[13px] font-bold text-[var(--m-ink)]">{d.score}%</span>
             </div>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-app-background">
-              <div className="h-full rounded-full bg-app-blue" style={{ width: `${d.score}%` }} />
+            <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[var(--m-ground)]">
+              <div className="h-full rounded-full bg-[var(--m-ink)]" style={{ width: `${d.score}%` }} />
             </div>
           </div>
         ))}

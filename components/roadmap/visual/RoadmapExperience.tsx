@@ -12,17 +12,20 @@ import { RoadmapHeader } from "./RoadmapHeader";
 import { RoadmapEmpty } from "./EmptyStates";
 import { CheckBanner } from "./CheckBanner";
 import { WhatChanged } from "./WhatChanged";
+import { SyllabusMap } from "./SyllabusMap";
 import { SubjectsPanel } from "./SubjectsPanel";
-import { ProjectsStrip } from "./ProjectsStrip";
+import { Drawer } from "@/components/metro/Drawer";
 import { STATUS_META } from "./meta";
+import { StationMark } from "./StationMark";
+import "@/components/metro/metro.css";
 import { useRoadmapGraph, type CareerSlot } from "./useRoadmapGraph";
 
-type View = "map" | "list";
+type View = "map" | "list" | "college";
 type Filter = "all" | "attention" | "unassessed" | "done" | "syllabus";
-const FILTERS: { id: Filter; label: string }[] = [{ id: "all", label: "All topics" }, { id: "attention", label: "Needs attention" }, { id: "unassessed", label: "Not assessed" }, { id: "done", label: "Done / target met" }, { id: "syllabus", label: "In my syllabus" }];
+const FILTERS: { id: Filter; label: string }[] = [{ id: "all", label: "All topics" }, { id: "attention", label: "Needs attention" }, { id: "unassessed", label: "Not assessed" }, { id: "done", label: "Proven (target met)" }, { id: "syllabus", label: "In my syllabus" }];
 
 const matchesFilter = (n: GraphNode, f: Filter) =>
-  f === "all" || (f === "attention" ? ["NOT_STARTED", "NEEDS_CHECK", "LEARNING"].includes(n.status) : f === "unassessed" ? n.status === "NOT_ASSESSED" : f === "done" ? ["DONE", "TARGET_MET"].includes(n.status) : (n.coverage?.courses ?? 0) > 0);
+  f === "all" || (f === "attention" ? ["NOT_STARTED", "NEEDS_CHECK", "LEARNING"].includes(n.status) : f === "unassessed" ? n.status === "NOT_ASSESSED" : f === "done" ? n.status === "TARGET_MET" : (n.coverage?.courses ?? 0) > 0);
 
 export function RoadmapExperience({ initial, initialCareer }: { initial: GraphResponse; initialCareer: CareerSlot }) {
   const router = useRouter();
@@ -50,13 +53,13 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
 
   const handlers = useMemo<CanvasHandlers>(() => ({ selected, onSelect: select, matches }), [selected, select, matches]);
 
-  if (!data.ok) return <RoadmapEmpty reason={data.reason} />;
+  if (!data.ok) return <div><RoadmapEmpty reason={data.reason} which={which} onReady={() => void refresh()} /></div>;
   const g = data.graph;
   const counts = g.nodes.filter((n) => n.type === "TOPIC").reduce<Record<string, number>>((a, n) => ({ ...a, [n.status]: (a[n.status] ?? 0) + 1 }), {});
   const open = selected && g.nodes.some((n) => n.key === selected) ? selected : null;
   const openNode = g.nodes.find((n) => n.key === open) ?? null;
   const tab = (v: View, label: string) => (
-    <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 font-lp-body text-[12.5px] ${view === v ? "bg-app-charcoal text-white" : "text-app-charcoal hover:bg-app-background"}`}>{label}</button>
+    <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 font-lp-body text-[12.5px] ${view === v ? "bg-[var(--m-ink)] font-bold text-white" : "text-[var(--m-ink)] hover:bg-[var(--m-ground)]"}`}>{label}</button>
   );
 
   return (
@@ -68,7 +71,7 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
       {g.header.assessedTopics < g.header.totalTopics && <CheckBanner career={data.which} assessedTopics={g.header.assessedTopics} />}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" aria-label="View" className="flex gap-1 rounded-lg border border-app-border bg-white p-1">{[tab("map", "Map"), tab("list", "List")]}</div>
+        <div role="tablist" aria-label="View" className="flex gap-1 rounded-lg border border-app-border bg-white p-1">{[tab("map", "Career map"), tab("list", "List"), ...(g.syllabus ? [tab("college", "College subjects")] : [])]}</div>
         <label className="sr-only" htmlFor="rm-search">Search topics</label>
         <input id="rm-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search topics" className="min-w-0 flex-1 rounded-md border border-app-border bg-white px-3 py-1.5 font-lp-body text-[13px] sm:max-w-xs" />
         <label className="sr-only" htmlFor="rm-filter">Filter topics</label>
@@ -76,12 +79,10 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
         {matches && <p role="status" className="font-lp-body text-[12px] text-app-muted">{matches.size === 0 && filter === "syllabus" && g.header.curriculum.analysed === false ? "Your syllabus is still being analysed, so nothing is matched yet." : `${matches.size} matching`}</p>}
       </div>
 
-      <ul aria-label="Legend" className="flex flex-wrap gap-x-3 gap-y-1 font-lp-body text-[11.5px] text-app-muted">
-        {(Object.keys(STATUS_META) as (keyof typeof STATUS_META)[]).filter((s) => counts[s]).map((s) => <li key={s}><span aria-hidden>{STATUS_META[s].glyph}</span> {STATUS_META[s].label} ({counts[s]})</li>)}
-        <li><span aria-hidden>●●</span> syllabus coverage (strong / partial)</li>
+      <ul aria-label="Legend" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 font-lp-body text-[12px] text-app-muted">
+        {(Object.keys(STATUS_META) as (keyof typeof STATUS_META)[]).filter((s) => counts[s]).map((s) => <li key={s} className="flex items-center gap-1.5"><StationMark status={s} size={16} /> {STATUS_META[s].label} ({counts[s]})</li>)}
+        <li><span aria-hidden className="font-mono">●● ●○</span> syllabus coverage (strong / partial)</li>
       </ul>
-
-      <ProjectsStrip nodes={g.nodes} careerName={g.career.name} onOpen={select} />
 
       <div className="min-w-0">
         {view === "map" && (
@@ -91,32 +92,18 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
           </>
         )}
         {view === "list" && <ListView nodes={g.nodes} selected={open} onSelect={select} matches={matches} />}
+        {view === "college" && g.syllabus && <SyllabusMap syllabus={g.syllabus} careerName={g.career.name} onOpenTopic={select} />}
       </div>
       {open && (
         <Drawer onClose={() => select(null)}>
           {openNode?.resource ? (
-            <ExtraPanel node={openNode} onClose={() => select(null)} />
+            <ExtraPanel key={openNode.key} resource={openNode.resource} career={data.which} onClose={() => select(null)} />
           ) : (
             <TopicPanel key={`${data.which}:${open}`} nodeKey={open} career={data.which} careerId={g.career.id} onClose={() => select(null)} onChanged={() => void refresh()} onSelect={select} />
           )}
         </Drawer>
       )}
       <SubjectsPanel subjects={g.subjects} state={g.header.curriculum.state} />
-    </div>
-  );
-}
-
-/** A slide-in popup over the map, like the topic popup of a learning map: dims the page, closes with Escape or a click outside. */
-function Drawer({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Details">
-      <button type="button" aria-label="Close details" onClick={onClose} className="absolute inset-0 cursor-default bg-black/40" />
-      <div className="relative h-full w-full max-w-[560px] overflow-hidden bg-white shadow-2xl">{children}</div>
     </div>
   );
 }

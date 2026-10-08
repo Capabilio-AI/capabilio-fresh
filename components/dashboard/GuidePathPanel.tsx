@@ -29,7 +29,7 @@ export function GuidePathPanel({ careerRole, initial }: { careerRole: string; in
 
   if (!path) {
     return (
-      <div className="rounded-xl border border-dashed border-app-border bg-white p-8 text-center">
+      <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white p-8 text-center">
         <Sparkles size={20} className="mx-auto text-app-orange" />
         <p className="mt-3 font-lp-body text-[13.5px] text-app-muted">
           Generate a phased learning plan for {careerRole}, sequenced against your actual skill gaps.
@@ -49,9 +49,9 @@ export function GuidePathPanel({ careerRole, initial }: { careerRole: string; in
   }
 
   return (
-    <div className="rounded-xl border border-app-border bg-white p-5">
+    <div className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-orange">
+        <div className="flex items-center gap-2 text-[12.5px] font-bold text-app-orange">
           <Milestone size={14} />
           Guide path · v{path.version}
         </div>
@@ -66,26 +66,26 @@ export function GuidePathPanel({ careerRole, initial }: { careerRole: string; in
       </div>
       <div className="mt-4 flex flex-col gap-4">
         {path.phases.map((phase, i) => (
-          <div key={phase.skill} className="flex gap-4 border-l-2 border-app-border pl-4">
+          <div key={phase.skill} className="flex gap-4 border-l-2 border-[var(--m-rule)] pl-4">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-lp-mono text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">
+                <span className="text-[12.5px] font-bold text-app-muted">
                   {phase.phaseLabel}
                 </span>
-                <span className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">{phase.skill}</span>
+                <span className="font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)]">{phase.skill}</span>
                 <span className="font-lp-mono text-[11px] text-app-muted">
                   {phase.currentScore ?? 0} → {phase.targetScore}
                 </span>
               </div>
               <p className="mt-1.5 font-lp-body text-[13px] leading-relaxed text-app-muted">{phase.why}</p>
               {phase.projects.length > 0 && (
-                <p className="mt-1.5 font-lp-body text-[12.5px] text-app-charcoal">
+                <p className="mt-1.5 font-lp-body text-[12.5px] text-[var(--m-ink)]">
                   <span className="text-app-muted">Projects: </span>
                   {phase.projects.join(", ")}
                 </p>
               )}
               {phase.milestones.length > 0 && (
-                <p className="mt-1 font-lp-body text-[12.5px] text-app-charcoal">
+                <p className="mt-1 font-lp-body text-[12.5px] text-[var(--m-ink)]">
                   <span className="text-app-muted">Milestones: </span>
                   {phase.milestones.join(", ")}
                 </p>

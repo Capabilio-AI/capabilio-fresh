@@ -57,7 +57,7 @@ export function EducationEntryCard({
   if (mode === "verify") {
     return (
       <div className="rounded-xl border border-app-blue/30 bg-app-blue-container/40 p-5">
-        <p className="font-lp-display text-[15px] font-semibold text-app-charcoal">
+        <p className="font-lp-display text-[15px] font-bold text-[var(--m-ink)]">
           Verify {entry.institutionName}
         </p>
         <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">
@@ -78,14 +78,14 @@ export function EducationEntryCard({
   }
 
   return (
-    <div className="rounded-xl border border-app-border bg-white p-5">
+    <div className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-app-orange-container text-app-orange">
             <Building2 size={22} />
           </span>
           <div className="min-w-0">
-            <h2 className="flex items-center gap-1.5 font-lp-display text-[16px] font-semibold text-app-charcoal">
+            <h2 className="flex items-center gap-1.5 font-lp-display text-[16px] font-bold text-[var(--m-ink)]">
               {entry.institutionName}
               {entry.hasVerifiedCertificate && (
                 <span title="Verified with an uploaded certificate" className="text-app-success">
@@ -108,7 +108,7 @@ export function EducationEntryCard({
         <button
           type="button"
           onClick={onEdit}
-          className="flex shrink-0 items-center gap-1 rounded-lg border border-app-border px-3 py-1.5 font-lp-mono text-[11px] text-app-muted hover:text-app-charcoal"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-[var(--m-rule)] px-3 py-1.5 font-lp-mono text-[11px] text-app-muted hover:text-[var(--m-ink)]"
         >
           <Pencil size={12} />
           Edit
@@ -116,7 +116,7 @@ export function EducationEntryCard({
       </div>
 
       {!entry.hasVerifiedCertificate && (
-        <div className="mt-4 flex justify-end border-t border-app-border pt-4">
+        <div className="mt-4 flex justify-end border-t border-[var(--m-rule)] pt-4">
           <button
             type="button"
             onClick={onVerify}

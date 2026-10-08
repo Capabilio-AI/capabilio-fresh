@@ -35,7 +35,7 @@ export function InterviewTabs() {
 
   return (
     <div>
-      <div className="-mx-4 overflow-x-auto border-b border-app-border px-4 sm:mx-0 sm:px-0">
+      <div className="-mx-4 overflow-x-auto border-b border-[var(--m-rule)] px-4 sm:mx-0 sm:px-0">
         <div className="flex gap-1 whitespace-nowrap">
           {TABS.map((tab) => (
             <button
@@ -44,7 +44,7 @@ export function InterviewTabs() {
               onClick={() => setActive(tab)}
               className={clsx(
                 "relative px-3.5 py-3 font-lp-body text-[13.5px] font-medium transition-colors",
-                active === tab ? "text-app-charcoal" : "text-app-muted hover:text-app-charcoal"
+                active === tab ? "text-[var(--m-ink)]" : "text-app-muted hover:text-[var(--m-ink)]"
               )}
             >
               {tab}
@@ -79,12 +79,12 @@ function SessionEntry({ tab }: { tab: keyof typeof SESSION_TABS }) {
   }
 
   return (
-    <div className="flex flex-col items-start gap-3 rounded-xl border border-app-border bg-white p-6">
+    <div className="flex flex-col items-start gap-3 rounded-xl border border-[var(--m-rule)] bg-white p-6">
       <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-app-orange-container text-app-orange">
         <Icon size={18} />
       </span>
       <div>
-        <h3 className="font-lp-body text-[15px] font-semibold text-app-charcoal">{tab} practice</h3>
+        <h3 className="font-lp-body text-[15px] font-semibold text-[var(--m-ink)]">{tab} practice</h3>
         <p className="mt-1 max-w-md font-lp-body text-[13px] leading-relaxed text-app-muted">{description}</p>
       </div>
       <button
@@ -103,7 +103,7 @@ function SessionEntry({ tab }: { tab: keyof typeof SESSION_TABS }) {
 
 function EmptyState({ icon: Icon, message }: { icon: typeof History; message: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
       <Icon size={20} className="text-app-muted" />
       <p className="font-lp-body text-[13.5px] text-app-muted">{message}</p>
     </div>

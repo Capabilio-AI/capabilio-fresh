@@ -100,7 +100,7 @@ describe("the roadmap for a student with a career and a syllabus", () => {
 });
 
 describe("the student's own marks and semester", () => {
-  it("saves Learning/Done/Skipped (a skip needs a reason), and clears a mark", async () => {
+  it("saves Learning/Skipped (a skip needs a reason), and clears a mark", async () => {
     const g = await ready();
     const target = g.nodes.find((n) => n.skill?.name === "SQL Joins")!;
     const body = { nodeKey: target.key, careerId: careerIds["data-analyst"] };
@@ -113,10 +113,10 @@ describe("the student's own marks and semester", () => {
     expect((await ready()).nodes.find((n) => n.key === target.key)!.userState).toBeNull();
   });
   it("refuses a node that does not exist, a group, or a roadmap that is not published", async () => {
-    await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: "nope-nope", careerId: careerIds["data-analyst"], status: "DONE" }))).rejects.toBeInstanceOf(NodeStateError);
+    await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: "nope-nope", careerId: careerIds["data-analyst"], status: "LEARNING" }))).rejects.toBeInstanceOf(NodeStateError);
     const group = (await ready()).nodes.find((n) => n.type === "GROUP")!;
-    await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: group.key, careerId: careerIds["data-analyst"], status: "DONE" }))).rejects.toMatchObject({ status: 400 });
-    await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: group.key, careerId: careerIds["product-designer"], status: "DONE" }))).rejects.toMatchObject({ status: 404 });
+    await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: group.key, careerId: careerIds["data-analyst"], status: "LEARNING" }))).rejects.toMatchObject({ status: 400 });
+    await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: group.key, careerId: careerIds["product-designer"], status: "LEARNING" }))).rejects.toMatchObject({ status: 404 });
   });
   it("shows an estimated semester until the student confirms it", async () => {
     expect((await ready()).header.position).toMatchObject({ year: 3, semesterEstimated: true });

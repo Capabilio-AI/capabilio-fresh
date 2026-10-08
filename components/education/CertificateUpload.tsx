@@ -66,10 +66,10 @@ export function CertificateUpload({
   }
 
   return (
-    <div className="rounded-xl border border-app-border bg-white p-5">
+    <div className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
       <div className="flex items-center gap-2">
-        <Upload size={16} className="text-app-charcoal" />
-        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">{heading}</h2>
+        <Upload size={16} className="text-[var(--m-ink)]" />
+        <h2 className="font-lp-display text-[15px] font-bold text-[var(--m-ink)]">{heading}</h2>
       </div>
       <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">{description}</p>
 
@@ -79,13 +79,13 @@ export function CertificateUpload({
           type="file"
           accept="application/pdf,image/png,image/jpeg"
           onChange={handleFileChange}
-          className="font-lp-body text-[13px] text-app-charcoal file:mr-3 file:rounded-lg file:border-0 file:bg-app-background file:px-3 file:py-1.5 file:font-lp-body file:text-[12.5px] file:text-app-charcoal"
+          className="font-lp-body text-[13px] text-[var(--m-ink)] file:mr-3 file:rounded-lg file:border-0 file:bg-app-background file:px-3 file:py-1.5 file:font-lp-body file:text-[12.5px] file:text-[var(--m-ink)]"
         />
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Certificate title (e.g. Bonafide certificate, AWS Cloud Practitioner)"
-          className="w-full rounded-lg border border-app-border bg-white px-3.5 py-2.5 font-lp-body text-[13px] text-app-charcoal placeholder:text-app-muted focus:border-app-blue focus:outline-none focus:ring-2 focus:ring-app-blue/25"
+          className="w-full rounded-lg border border-[var(--m-rule)] bg-white px-3.5 py-2.5 font-lp-body text-[13px] text-[var(--m-ink)] placeholder:text-app-muted focus:border-app-blue focus:outline-none focus:ring-2 focus:ring-app-blue/25"
         />
         {error && <p className="font-lp-body text-[12.5px] text-app-warning">{error}</p>}
         {success && (
@@ -108,7 +108,7 @@ export function CertificateUpload({
             <button
               type="button"
               onClick={onSkip}
-              className="font-lp-mono text-[11.5px] text-app-muted hover:text-app-charcoal"
+              className="font-lp-mono text-[11.5px] text-app-muted hover:text-[var(--m-ink)]"
             >
               Skip for now
             </button>

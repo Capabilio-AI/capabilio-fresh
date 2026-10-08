@@ -1,0 +1,92 @@
+/*
+ * Capabilio design tokens. `.metro` is the universal palette (the logo's ink, orange and warm white). Each area of the app overrides the base
+ * tokens with its own palette through `data-area`, then the derived aliases below are re-computed for it. Every area keeps the same type,
+ * radii and glass, so they read as one product with different rooms.
+ */
+.metro {
+  --m-ink: #141414;
+  --m-ground: #f5f6f1;
+  --m-sheet: #ffffff;
+  --m-rule: #e1e1da;
+  --m-muted: #5c5c55;
+  --m-soft: #bdbdb2;
+  --m-off: #9a9a8e;
+  --m-accent: #ff5701;
+  --m-accent-ink: #c2410c;
+  --m-accent-soft: #ffebdf;
+}
+[data-area="arena"] { --m-ink: #1d0b0e; --m-ground: #f8f0f0; --m-rule: #e8d4d6; --m-muted: #6a5558; --m-soft: #dcbcc0; --m-off: #a58b8f; --m-accent: #d4202c; --m-accent-ink: #b4141f; --m-accent-soft: #fde8ea; }
+[data-area="studio"] { --m-ink: #0a2417; --m-ground: #eef5f0; --m-rule: #cfe0d5; --m-muted: #4c6355; --m-soft: #acccba; --m-off: #86a090; --m-accent: #0d7a45; --m-accent-ink: #0d7a45; --m-accent-soft: #e2f4ea; }
+[data-area="pulse"] { --m-ink: #052a2e; --m-ground: #edf6f6; --m-rule: #cfe3e4; --m-muted: #476467; --m-soft: #a6cbce; --m-off: #84a3a6; --m-accent: #00929b; --m-accent-ink: #00727a; --m-accent-soft: #dff3f4; }
+[data-area="roadmap"] { --m-ink: #0b1b33; --m-ground: #eef2f7; --m-rule: #cfd7e3; --m-muted: #4d5d77; --m-soft: #a9b8d1; --m-off: #8795ab; --m-accent: #0b5cad; --m-accent-ink: #0b5cad; --m-accent-soft: #e3eefb; }
+
+/* Derived aliases: the older components read app-* and lp-*; point them at whichever palette is active on this element. */
+.metro, [data-area] {
+  --app-charcoal: var(--m-ink);
+  --app-background: var(--m-ground);
+  --app-card: var(--m-sheet);
+  --app-border: var(--m-rule);
+  --app-muted: var(--m-muted);
+  --app-blue: var(--m-accent-ink);
+  --app-blue-container: var(--m-accent-soft);
+  --app-orange: var(--m-accent);
+  --app-orange-container: var(--m-accent-soft);
+  --lp-background: var(--m-ground);
+  --lp-surface: var(--m-ground);
+  --lp-surface-subtle: var(--m-ground);
+  --lp-surface-card: var(--m-sheet);
+  --lp-surface-container-low: var(--m-ground);
+  --lp-border-hairline: var(--m-rule);
+  --lp-border-strong: var(--m-off);
+  --lp-text-ink: var(--m-ink);
+  --lp-text-muted: var(--m-muted);
+  --lp-accent-indigo: var(--m-accent-ink);
+  --lp-accent-ochre: #b45309;
+
+  --font-lp-display: var(--font-metro-display), Georgia, "Times New Roman", serif;
+  --font-lp-body: var(--font-metro), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-metro), ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--m-ink);
+  scrollbar-color: var(--m-off) transparent;
+}
+.metro ::selection { background: var(--m-accent); color: #fff; }
+.metro :focus-visible { outline: 3px solid var(--m-accent-ink); outline-offset: 2px; }
+
+.metro-station { transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); }
+.metro-node:hover .metro-station { transform: scale(1.14); }
+.metro-node:hover .metro-label { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+
+@keyframes metro-pulse {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.metro-pulse { animation: metro-pulse 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite; transform-origin: center; transform-box: fill-box; }
+@media (prefers-reduced-motion: reduce) { .metro-pulse { animation: none; opacity: 0.35; } }
+
+/* Frosted-glass approximation (web, not Apple's material): blur + saturation, a lit top edge, and a solid fallback. */
+.glass {
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0.4));
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 -1px 0 rgb(255 255 255 / 0.3), 0 12px 32px -14px rgb(20 20 20 / 0.3);
+}
+.glass-thumb {
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(20 20 20 / 0.12), 0 6px 14px -6px rgb(20 20 20 / 0.28);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+/* Glass on a dark band. */
+.glass-dark {
+  background: rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgb(255 255 255 / 0.18);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22);
+}
+@media (prefers-reduced-transparency: reduce) { .glass-dark { background: #2a2a2a; backdrop-filter: none; -webkit-backdrop-filter: none; } }
+/* Pulse: the selected item takes the area accent instead of a white thumb. */
+[data-area="pulse"] .glass-thumb { background: var(--m-accent-soft); box-shadow: inset 0 0 0 1.5px var(--m-accent); }

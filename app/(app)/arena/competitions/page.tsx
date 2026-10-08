@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Calendar, Users } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
+import { AreaHero } from "@/components/metro/AreaHero";
 import { MOCK_COMPETITIONS } from "@/lib/mock/arena";
 
 export const metadata: Metadata = { title: "Competitions — Arena — Capabilio AI" };
@@ -11,14 +12,10 @@ export default async function ArenaCompetitionsPage() {
 
   return (
     <div>
-      <h1 className="font-lp-display text-[26px] font-semibold text-app-charcoal">Arena</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Timed challenges, projects, and competitions.</p>
-      <div className="mt-4">
-        <ArenaSubNav />
-      </div>
+      <AreaHero tone="dark" title="Arena" intro="Timed challenges, projects, and competitions." nav={<ArenaSubNav />} />
 
-      <div className="pt-6">
-        <div className="mb-4 rounded-lg border border-dashed border-app-border bg-white px-4 py-3 font-lp-body text-[12.5px] text-app-muted">
+      <div className="pt-5">
+        <div className="mb-4 rounded-lg border border-dashed border-[var(--m-rule)] bg-white px-4 py-3 font-lp-body text-[12.5px] text-app-muted">
           Live competitions are in development — this preview shows the format.
         </div>
         {MOCK_COMPETITIONS.length === 0 ? (
@@ -28,14 +25,14 @@ export default async function ArenaCompetitionsPage() {
             {MOCK_COMPETITIONS.map((c) => (
               <div
                 key={c.id}
-                className="flex flex-col gap-3 rounded-xl border border-app-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-xl border border-[var(--m-rule)] bg-white p-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <h3 className="font-lp-body text-[14.5px] font-semibold text-app-charcoal">{c.title}</h3>
+                  <h3 className="font-lp-body text-[14.5px] font-semibold text-[var(--m-ink)]">{c.title}</h3>
                   <p className="mt-0.5 font-lp-mono text-[11px] text-app-muted">{c.organizer}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {c.skills.map((s) => (
-                      <span key={s} className="rounded-full border border-app-border px-2 py-0.5 font-lp-mono text-[10.5px] text-app-muted">
+                      <span key={s} className="rounded-full border border-[var(--m-rule)] px-2 py-0.5 font-lp-mono text-[10.5px] text-app-muted">
                         {s}
                       </span>
                     ))}

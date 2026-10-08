@@ -47,7 +47,7 @@ export function MentorChat({ openingMessage }: { openingMessage: string }) {
   }
 
   return (
-    <div className="flex h-[min(560px,70vh)] flex-col rounded-xl border border-app-border bg-white">
+    <div className="flex h-[min(560px,70vh)] flex-col rounded-3xl border border-[#e1e1da] bg-white shadow-[0_24px_60px_-20px_rgba(20,20,20,0.45)]">
       <div className="flex-1 overflow-y-auto p-5">
         <div className="flex flex-col gap-4">
           {messages.map((m, i) => (
@@ -55,8 +55,8 @@ export function MentorChat({ openingMessage }: { openingMessage: string }) {
               <div
                 className={`max-w-[85%] rounded-xl px-4 py-2.5 font-lp-body text-[13.5px] leading-relaxed ${
                   m.role === "user"
-                    ? "bg-app-charcoal text-white"
-                    : "border border-app-border bg-app-orange-container text-app-charcoal"
+                    ? "bg-[#141414] text-white"
+                    : "border border-[#e1e1da] bg-[#ffebdf] text-[#141414]"
                 }`}
               >
                 {m.content}
@@ -88,14 +88,14 @@ export function MentorChat({ openingMessage }: { openingMessage: string }) {
           placeholder="Ask your AI Mentor…"
           rows={1}
           disabled={sending}
-          className="max-h-28 flex-1 resize-none rounded-lg border border-app-border bg-app-background px-3.5 py-2.5 font-lp-body text-[13px] text-app-charcoal placeholder:text-app-muted focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20 disabled:opacity-60"
+          className="max-h-28 flex-1 resize-none rounded-lg border border-app-border bg-app-background px-3.5 py-2.5 font-lp-body text-[13px] text-app-charcoal placeholder:text-app-muted focus:border-[#ff5701] focus:outline-none focus:ring-2 focus:ring-[#ff5701]/25 disabled:opacity-60"
         />
         <button
           type="button"
           onClick={send}
           disabled={sending || draft.trim().length === 0}
           aria-label="Send message"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-app-orange text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#141414] text-[#ff5701] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>

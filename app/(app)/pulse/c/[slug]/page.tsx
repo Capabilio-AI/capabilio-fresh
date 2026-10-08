@@ -22,7 +22,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <Link href="/pulse?tab=communities" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-app-charcoal"><ArrowLeft size={13} aria-hidden="true" /> Communities</Link>
+      <Link href="/pulse?tab=communities" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-[var(--m-ink)]"><ArrowLeft size={13} aria-hidden="true" /> Communities</Link>
       <CommunityHeader community={found.summary} />
       <PulseFeed
         key={`${slug}-${found.access.member}`}

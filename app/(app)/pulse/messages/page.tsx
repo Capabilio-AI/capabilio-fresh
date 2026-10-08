@@ -28,8 +28,8 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   return (
     <div>
       <div className="mb-3 flex items-center gap-3">
-        <Link href="/pulse" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-app-charcoal"><ArrowLeft size={13} aria-hidden="true" /> Pulse</Link>
-        <h1 className="font-lp-display text-[20px] font-semibold text-app-charcoal">Messages</h1>
+        <Link href="/pulse" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-[var(--m-ink)]"><ArrowLeft size={13} aria-hidden="true" /> Pulse</Link>
+        <h1 className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">Messages</h1>
       </div>
       <MessagesApp me={user.id} initialId={c && UUID.test(c) ? c : null} startWith={startWith} />
     </div>
