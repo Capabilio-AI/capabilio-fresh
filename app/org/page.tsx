@@ -59,24 +59,26 @@ export default async function OrgHomePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="o-serif text-[30px] leading-[1.1] text-app-charcoal md:text-[36px]">{firstName ? `Welcome back, ${firstName}` : ctx.institutionName}</h1>
-          <p className="mt-1.5 text-[13.5px] text-app-muted">
-            {today} · {alerts.length === 0 ? "Nothing needs you right now." : `${alerts.length} ${alerts.length === 1 ? "item needs" : "items need"} your attention.`}
+      <section className="ws-hero p-6 md:p-8" aria-label="College snapshot">
+        <span aria-hidden className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full border-[26px] border-[#e0a30c]/45" />
+        <span aria-hidden className="pointer-events-none absolute right-40 top-28 hidden h-3.5 w-3.5 rounded-full bg-[#e0a30c] md:block" />
+        <div className="relative">
+          <p className="text-[13px] font-semibold text-[#fff]/65">
+            {today} · {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
           </p>
+          <h1 className="o-serif mt-2 max-w-3xl text-[30px] leading-[1.08] text-[#fff] md:text-[42px]">{ctx.institutionName}</h1>
+          <p className="mt-2 text-[14px] text-[#fff]/75">{alerts.length === 0 ? "Nothing needs you right now." : `${alerts.length} ${alerts.length === 1 ? "item needs" : "items need"} your attention.`}</p>
         </div>
-      </header>
-
-      <dl className="o-card grid grid-cols-2 divide-app-border md:grid-cols-4 md:divide-x" aria-label="College snapshot">
-        {kpiCards.map((k, i) => (
-          <Link key={k.label} href={k.href} className={`group block p-4 transition-colors hover:bg-app-orange-container md:p-5 ${i > 1 ? "border-t border-app-border md:border-t-0" : ""} ${i % 2 === 1 ? "border-l border-app-border md:border-l-0" : ""}`}>
-            <dt className="text-[12.5px] font-semibold text-app-muted">{k.label}</dt>
-            <dd className={`mt-1.5 text-[30px] font-extrabold leading-none tracking-[-0.03em] ${k.tone}`}>{k.value}</dd>
-            <dd className="mt-1.5 text-[12px] text-app-muted">{k.sub}</dd>
-          </Link>
-        ))}
-      </dl>
+        <dl className="relative mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {kpiCards.map((k) => (
+            <Link key={k.label} href={k.href} className="glass-dark block rounded-2xl p-4 transition-colors hover:bg-[#fff]/20">
+              <dt className="text-[12.5px] font-semibold text-[#fff]/70">{k.label}</dt>
+              <dd className="mt-1.5 text-[32px] font-extrabold leading-none tracking-[-0.03em] text-[#fff]">{k.value}</dd>
+              <dd className="mt-1.5 text-[12px] text-[#fff]/65">{k.sub}</dd>
+            </Link>
+          ))}
+        </dl>
+      </section>
 
       {showSetup && (
         <section className="o-card p-5" aria-label="Set up your college page">
@@ -88,7 +90,7 @@ export default async function OrgHomePage() {
               </p>
             </div>
             <span className="h-2 w-44 overflow-hidden rounded-full bg-white/[0.08]" role="img" aria-label={`${doneCount} of ${steps.length} steps done`}>
-              <span className="block h-full rounded-full bg-app-orange" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+              <span className="block h-full rounded-full" style={{ width: `${(doneCount / steps.length) * 100}%`, background: "var(--o-gradient)" }} />
             </span>
           </div>
           <ul className="mt-4 grid grid-cols-1 gap-x-8 md:grid-cols-2">
@@ -96,7 +98,7 @@ export default async function OrgHomePage() {
               <li key={s.label} className="border-t border-app-border first:border-t-0 md:[&:nth-child(2)]:border-t-0">
                 <Link href={s.href} className="flex items-start gap-3 rounded-lg px-1 py-3 hover:bg-white/[0.04]">
                   <span
-                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded ${s.done ? "bg-app-success text-[#fff]" : "border-[1.5px] border-[var(--ws-rule-strong,#c4cce6)] text-transparent"}`}
+                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded ${s.done ? "bg-app-success text-[#fff]" : "border-[1.5px] border-[var(--m-soft,#d9cba3)] text-transparent"}`}
                     aria-hidden="true"
                   >
                     <Check size={13} strokeWidth={3} />
