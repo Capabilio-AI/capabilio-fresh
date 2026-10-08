@@ -62,7 +62,7 @@ function Station({ n, color, h, next }: { n: GraphNode; color: string; h: Canvas
 }
 
 /** The whole roadmap as a line map: stages are interchanges on the trunk, each domain is a coloured line, each topic a station on it. */
-export function RoadmapCanvas({ graph, handlers }: { graph: RoadmapGraph; handlers: CanvasHandlers }) {
+export function RoadmapCanvas({ graph, handlers, caption, countLabel = "assessed", label = "Career roadmap as a line map" }: { graph: Pick<RoadmapGraph, "nodes" | "edges" | "bounds">; handlers: CanvasHandlers; caption?: (n: GraphNode) => string; countLabel?: string; label?: string }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const { bounds } = graph;
@@ -101,7 +101,7 @@ export function RoadmapCanvas({ graph, handlers }: { graph: RoadmapGraph; handle
   });
 
   return (
-    <div ref={wrap} className="w-full overflow-x-hidden rounded-xl border border-[var(--m-rule)] bg-white py-4" role="region" aria-label="Career roadmap as a line map. Tab moves between stations; Enter opens one.">
+    <div ref={wrap} className="w-full overflow-x-hidden rounded-xl border border-[var(--m-rule)] bg-white py-4" role="region" aria-label={`${label}. Tab moves between stations; Enter opens one.`}>
       <div className="mx-auto" style={{ width: W * scale, height: H * scale }}>
         <div className="relative" style={{ width: W, height: H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
           <svg width={W} height={H} className="absolute left-0 top-0" aria-hidden>{paths}</svg>
@@ -114,13 +114,13 @@ export function RoadmapCanvas({ graph, handlers }: { graph: RoadmapGraph; handle
               <button key={n.key} type="button" style={style} onClick={() => handlers.onSelect(n.key)} aria-pressed={sel} className={`absolute flex flex-col items-center justify-center rounded-xl border-[4px] border-[var(--m-ink)] bg-white px-3 text-center ${sel ? "shadow-[0_0_0_3px_#0b5cad]" : ""}`}>
                 <span className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--m-muted)]">{STAGE_LABEL[n.stage]}</span>
                 <span className="line-clamp-2 text-[16px] font-bold leading-tight text-[var(--m-ink)]">{n.title}</span>
-                {n.topics > 0 && <span className="font-mono text-[10.5px] text-[var(--m-muted)]">{n.assessedTopics}/{n.topics} assessed</span>}
+                {n.topics > 0 && <span className="font-mono text-[10.5px] text-[var(--m-muted)]">{n.assessedTopics}/{n.topics} {countLabel}</span>}
               </button>
             ) : (
               <button key={n.key} type="button" style={style} onClick={() => handlers.onSelect(n.key)} aria-pressed={sel} className={`absolute flex flex-col justify-center rounded-2xl px-4 text-center text-white ${sel ? "shadow-[0_0_0_3px_#0b1b33]" : ""}`}>
                 <span style={{ background: colorOf(n) }} className="absolute inset-0 -z-0 rounded-2xl" />
                 <span className="relative line-clamp-2 text-[14.5px] font-bold leading-tight">{n.title}</span>
-                {n.topics > 0 && <span className="relative font-mono text-[10.5px] opacity-90">{n.assessedTopics}/{n.topics} assessed</span>}
+                {n.topics > 0 && <span className="relative font-mono text-[10.5px] opacity-90">{n.assessedTopics}/{n.topics} {countLabel}</span>}
               </button>
             );
           })}

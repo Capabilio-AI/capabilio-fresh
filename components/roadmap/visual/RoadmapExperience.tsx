@@ -14,6 +14,7 @@ import { CheckBanner } from "./CheckBanner";
 import { WhatChanged } from "./WhatChanged";
 import { SyllabusMap } from "./SyllabusMap";
 import { SubjectsPanel } from "./SubjectsPanel";
+import { SubjectsTree } from "./SubjectsTree";
 import { Drawer } from "@/components/metro/Drawer";
 import { STATUS_META } from "./meta";
 import { StationMark } from "./StationMark";
@@ -103,7 +104,7 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
           )}
         </Drawer>
       )}
-      <SubjectsPanel subjects={g.subjects} state={g.header.curriculum.state} />
+      {g.syllabus && g.syllabus.some((x) => x.topics.length > 0) ? <SubjectsTree syllabus={g.syllabus} careerName={g.career.name} onOpenTopic={select} /> : <SubjectsPanel subjects={g.subjects} state={g.header.curriculum.state} />}
     </div>
   );
 }
