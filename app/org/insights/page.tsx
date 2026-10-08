@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { orgPageContext } from "@/lib/org/page";
 import { GOAL_KEYS, MIN_COHORT, loadInsights } from "@/lib/org/insights";
-import { EmptyState, PageHeader, Panel, Stat } from "@/components/org/ui";
+import { EmptyState, PageHeader } from "@/components/org/ui";
+import { Fact, GroupTitle, Meter, StackBar } from "@/components/org/widgets";
 
 export const metadata: Metadata = { title: "Insights — Capabilio AI" };
 
+const GOAL_COLOR: Record<(typeof GOAL_KEYS)[number], string> = { job: "var(--app-success)", higher_studies: "var(--app-blue)", entrepreneur: "#e0a30c", not_sure: "#a39770", unset: "#d9cba3" };
 const GOAL_LABEL: Record<(typeof GOAL_KEYS)[number], string> = {
   job: "Job",
   higher_studies: "Higher studies",
@@ -25,85 +27,77 @@ export default async function InsightsPage() {
         subtitle={`Aggregates only. No individual student's work, grades or answers are shown here, and any group under ${MIN_COHORT} students is hidden. Every number is counted from real records.`}
       />
 
-      <Panel title="Career intent by cohort">
+      <section aria-label="Career intent by cohort">
+        <GroupTitle count={cohorts.length}>Career intent by cohort</GroupTitle>
         {cohorts.length === 0 ? (
           <EmptyState title="No active students yet" body="Cohorts appear when students who signed up with your institution's name are active." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left font-lp-body text-[13px]">
-              <thead>
-                <tr className="border-b border-app-border font-lp-mono text-[11px] uppercase text-app-muted">
-                  <th className="py-2 pr-3">Branch</th>
-                  <th className="py-2 pr-3">Class of</th>
-                  <th className="py-2 pr-3">Students</th>
-                  {GOAL_KEYS.map((g) => (
-                    <th key={g} className="py-2 pr-3">{GOAL_LABEL[g]}</th>
-                  ))}
-                  <th className="py-2">In a project group</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cohorts.map((c) => (
-                  <tr key={`${c.branch}-${c.endYear}`} className="border-b border-app-border/60 text-app-charcoal">
-                    <td className="py-2 pr-3">{c.branch}</td>
-                    <td className="py-2 pr-3">{c.endYear ?? "—"}</td>
-                    <td className="py-2 pr-3">{c.size}</td>
-                    {c.goals ? (
-                      <>
-                        {GOAL_KEYS.map((g) => (
-                          <td key={g} className="py-2 pr-3">{c.goals![g]}</td>
-                        ))}
-                        <td className="py-2">{c.projectParticipation === null ? "—" : `${Math.round(c.projectParticipation * 100)}%`}</td>
-                      </>
-                    ) : (
-                      <td colSpan={GOAL_KEYS.length + 1} className="py-2 text-app-muted">
-                        Fewer than {MIN_COHORT} students — breakdown hidden to protect privacy.
-                      </td>
+          <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {cohorts.map((c) => (
+              <li key={`${c.branch}-${c.endYear}`} className="o-card p-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="truncate text-[14.5px] font-bold text-app-charcoal">{c.branch}</p>
+                  <p className="shrink-0 text-[12.5px] text-app-muted">
+                    Class of {c.endYear ?? "—"} · {c.size} students
+                  </p>
+                </div>
+                {c.goals ? (
+                  <div className="mt-3 flex flex-col gap-3">
+                    <StackBar total={c.size} parts={GOAL_KEYS.filter((g) => c.goals![g] > 0).map((g) => ({ key: g, label: GOAL_LABEL[g], value: c.goals![g], color: GOAL_COLOR[g] }))} />
+                    {c.projectParticipation !== null && (
+                      <div>
+                        <div className="mb-1 flex justify-between text-[12px] text-app-muted">
+                          <span>In a project group</span>
+                          <span className="font-bold text-app-charcoal">{Math.round(c.projectParticipation * 100)}%</span>
+                        </div>
+                        <Meter value={Math.round(c.projectParticipation * 100)} max={100} label="In a project group" />
+                      </div>
                     )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-[12.5px] text-app-muted">Fewer than {MIN_COHORT} students, so the breakdown is hidden to protect privacy.</p>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
-      </Panel>
+      </section>
 
-      <Panel title="Projects & materials">
+      <section aria-label="Projects and materials">
+        <GroupTitle>Projects and materials</GroupTitle>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Projects posted" value={projects.projects} />
-          <Stat label="Groups formed" value={projects.groups} />
-          <Stat label="Submitted" value={pct(projects.submitted, projects.groups)} hint={`${projects.submitted} of ${projects.groups} groups`} />
-          <Stat label="Graded" value={pct(projects.graded, projects.groups)} hint={`${projects.graded} of ${projects.groups} groups`} />
+          <Fact label="Projects posted" value={projects.projects} />
+          <Fact label="Groups formed" value={projects.groups} />
+          <Fact label="Submitted" value={pct(projects.submitted, projects.groups)} hint={`${projects.submitted} of ${projects.groups} groups`} />
+          <Fact label="Graded" value={pct(projects.graded, projects.groups)} hint={`${projects.graded} of ${projects.groups} groups`} tone="text-app-success" />
         </div>
-        <div className="mt-5">
-          <h3 className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">Grade distribution</h3>
+        <div className="o-card mt-3 p-4">
+          <h3 className="text-[13px] font-bold text-app-charcoal">Grade distribution</h3>
           {projects.gradeDistribution ? (
             <ul className="mt-2 flex flex-wrap gap-2">
               {Object.entries(projects.gradeDistribution).map(([grade, count]) => (
-                <li key={grade} className="rounded-full border border-app-border px-3 py-1 font-lp-body text-[12.5px] text-app-charcoal">
-                  {grade}: {count}
+                <li key={grade} className="rounded-full border border-app-border px-3 py-1 text-[12.5px] text-app-charcoal">
+                  {grade}: <b>{count}</b>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">Shown once at least {MIN_COHORT} groups have been graded.</p>
+            <p className="mt-1 text-[12.5px] text-app-muted">Shown once at least {MIN_COHORT} groups have been graded.</p>
           )}
-        </div>
-        <div className="mt-5">
-          <h3 className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">Materials published by branch</h3>
+          <h3 className="mt-4 text-[13px] font-bold text-app-charcoal">Materials published by branch</h3>
           {projects.materialsByBranch.length === 0 ? (
-            <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">No materials published yet. (Reading activity isn&apos;t tracked, so no engagement figure is shown.)</p>
+            <p className="mt-1 text-[12.5px] text-app-muted">No materials published yet. (Reading activity isn&apos;t tracked, so no engagement figure is shown.)</p>
           ) : (
             <ul className="mt-2 flex flex-wrap gap-2">
               {projects.materialsByBranch.map((m) => (
-                <li key={m.branch} className="rounded-full border border-app-border px-3 py-1 font-lp-body text-[12.5px] text-app-charcoal">
-                  {m.branch}: {m.count}
+                <li key={m.branch} className="rounded-full border border-app-border px-3 py-1 text-[12.5px] text-app-charcoal">
+                  {m.branch}: <b>{m.count}</b>
                 </li>
               ))}
             </ul>
           )}
         </div>
-      </Panel>
+      </section>
     </div>
   );
 }

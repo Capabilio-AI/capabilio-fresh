@@ -4,7 +4,8 @@ import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { VISIT_STATUS } from "@/lib/org/visits";
 import { JsonForm } from "@/components/org/JsonForm";
-import { Collapsible, EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Pill } from "@/components/org/ui";
+import { GroupTitle, Initial } from "@/components/org/widgets";
 
 export const metadata: Metadata = { title: "Company visits — Capabilio AI" };
 
@@ -34,6 +35,14 @@ export default async function PlacementsPage() {
     return { registered: mine.length, review: mine.filter((a) => a.status === "submitted").length, selected: mine.filter((a) => a.status === "accepted").length };
   };
 
+  const today = new Date().toISOString().slice(0, 10);
+  const isDone = (d: VisitRow) => d.drive_status === "completed" || d.drive_status === "cancelled" || (d.drive_date !== null && d.drive_date < today && d.drive_status !== "registration_open");
+  const lanes = [
+    { title: "Needs your review", items: visits.filter((d) => !isDone(d) && countFor(d.id).review > 0) },
+    { title: "Upcoming and open", items: visits.filter((d) => !isDone(d) && countFor(d.id).review === 0) },
+    { title: "Finished", items: visits.filter(isDone) },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -60,38 +69,51 @@ export default async function PlacementsPage() {
           ]}
         />
       </Collapsible>
-      <Panel title="Your company visits">
-        {visits.length === 0 ? (
-          <EmptyState title="No company visits yet" body="When a company confirms it will visit your campus, record it here. Final-year students then see it in Launchpad and can register." />
-        ) : (
-          <ul className="divide-y divide-app-border">
-            {visits.map((d) => {
-              const c = countFor(d.id);
-              const st = VISIT_STATUS[d.drive_status] ?? VISIT_STATUS.registration_open;
-              return (
-                <li key={d.id}>
-                  <Link href={`/org/placements/${d.id}`} className="flex flex-wrap items-center justify-between gap-3 py-3.5 hover:bg-white/[0.03]">
-                    <div className="min-w-0">
-                      <p className="truncate text-[14px] font-bold text-app-charcoal">
-                        {d.company} <span className="font-medium text-app-muted">· {d.role}</span>
-                      </p>
-                      <p className="text-[11.5px] text-app-muted">
-                        {d.drive_date ? new Date(d.drive_date).toLocaleDateString("en-IN", { dateStyle: "medium" }) : "Date not set"}
-                        {d.location ? ` · ${d.location}` : ""}
-                        {d.ctc_offered ? ` · ${d.ctc_offered}` : ""} · {c.registered} registered · {c.selected} selected
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {c.review > 0 && <Pill tone="warn">{c.review} to review</Pill>}
-                      <Pill tone={st.tone}>{st.label}</Pill>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Panel>
+      {visits.length === 0 ? (
+        <EmptyState title="No company visits yet" body="When a company confirms it will visit your campus, record it here. Final-year students then see it in Launchpad and can register." />
+      ) : (
+        lanes.map((lane) =>
+          lane.items.length === 0 ? null : (
+            <section key={lane.title} aria-label={lane.title}>
+              <GroupTitle count={lane.items.length}>{lane.title}</GroupTitle>
+              <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {lane.items.map((d) => {
+                  const c = countFor(d.id);
+                  const st = VISIT_STATUS[d.drive_status] ?? VISIT_STATUS.registration_open;
+                  const date = d.drive_date ? new Date(d.drive_date) : null;
+                  return (
+                    <li key={d.id}>
+                      <Link href={`/org/placements/${d.id}`} className="o-card block p-4">
+                        <div className="flex items-start gap-3">
+                          <Initial text={d.company} size={42} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[14.5px] font-bold text-app-charcoal">{d.company}</p>
+                            <p className="truncate text-[12.5px] text-app-muted">{d.role}</p>
+                          </div>
+                          <Pill tone={st.tone}>{st.label}</Pill>
+                        </div>
+                        <p className="mt-2.5 text-[12.5px] text-app-muted">
+                          {date ? date.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }) : "Date not set"}
+                          {d.location ? ` · ${d.location}` : ""}
+                          {d.ctc_offered ? ` · ${d.ctc_offered}` : ""}
+                        </p>
+                        <ol className="mt-3 grid grid-cols-3 divide-x divide-app-border rounded-xl bg-white/[0.04] text-center" aria-label="Pipeline">
+                          {[{ label: "Registered", n: c.registered }, { label: "To review", n: c.review }, { label: "Selected", n: c.selected }].map((x) => (
+                            <li key={x.label} className="py-2">
+                              <p className={`text-[17px] font-extrabold leading-none ${x.label === "To review" && x.n > 0 ? "text-app-warning" : "text-app-charcoal"}`}>{x.n}</p>
+                              <p className="mt-1 text-[11.5px] text-app-muted">{x.label}</p>
+                            </li>
+                          ))}
+                        </ol>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )
+        )
+      )}
     </div>
   );
 }

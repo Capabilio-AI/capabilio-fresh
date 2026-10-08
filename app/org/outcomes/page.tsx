@@ -4,7 +4,8 @@ import { orgPageContext } from "@/lib/org/page";
 import { loadOutcomes } from "@/lib/org/outcomes";
 import { MIN_COHORT } from "@/lib/org/insights";
 import { JsonForm } from "@/components/org/JsonForm";
-import { Collapsible, EmptyState, PageHeader, Panel, Pill, Stat } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Pill } from "@/components/org/ui";
+import { Fact, GroupTitle, Initial, Meter } from "@/components/org/widgets";
 
 export const metadata: Metadata = { title: "Outcomes — Capabilio AI" };
 
@@ -45,86 +46,81 @@ export default async function OutcomesPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Students placed" value={stats.placed} />
-        <Stat label="Companies" value={stats.companies} />
-        <Stat label="Average CTC" value={stats.ctc ? `${stats.ctc.average} LPA` : "—"} hint={stats.ctc ? `median ${stats.ctc.median} · highest ${stats.ctc.highest}` : `shown at ${MIN_COHORT}+ offers with a CTC`} />
-        <Stat label="Company visits" value={driveCount} />
+        <Fact label="Students placed" value={stats.placed} tone="text-app-success" />
+        <Fact label="Companies" value={stats.companies} />
+        <Fact label="Average CTC" value={stats.ctc ? `${stats.ctc.average} LPA` : "—"} hint={stats.ctc ? `median ${stats.ctc.median} · highest ${stats.ctc.highest}` : `shown at ${MIN_COHORT}+ offers with a CTC`} />
+        <Fact label="Company visits" value={driveCount} />
       </div>
 
-      <Panel title="Placement funnel (company visits)">
-        <ul className="flex flex-col gap-2">
-          {stages.map((s) => (
-            <li key={s.label} className="flex items-center gap-3">
-              <span className="w-44 shrink-0 font-lp-body text-[13px] text-app-charcoal">{s.label}</span>
-              <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/[0.04]">
-                <span className="block h-full rounded-full bg-app-orange" style={{ width: `${(s.value / top) * 100}%` }} />
-              </span>
-              <span className="w-10 text-right font-lp-mono text-[12px] text-app-charcoal">{s.value}</span>
+      <section aria-label="Placement funnel">
+        <GroupTitle>From registration to offer</GroupTitle>
+        <ol className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {stages.map((s, i) => (
+            <li key={s.label} className="o-card p-4">
+              <p className="text-[12.5px] font-semibold text-app-muted">{s.label}</p>
+              <p className="mt-1 text-[28px] font-extrabold leading-none tracking-[-0.03em] text-app-charcoal">{s.value}</p>
+              <div className="mt-3">
+                <Meter value={s.value} max={top} label={s.label} tone={i === stages.length - 1 ? "ok" : "gold"} />
+              </div>
+              <p className="mt-1.5 text-[12px] text-app-muted">{i === 0 ? "Start of the funnel" : stages[i - 1].value > 0 ? `${Math.round((s.value / stages[i - 1].value) * 100)}% of the step before` : "—"}</p>
             </li>
           ))}
-        </ul>
-      </Panel>
+        </ol>
+      </section>
 
-      <Panel title="By branch">
+      <section aria-label="By branch">
+        <GroupTitle>By branch</GroupTitle>
         {stats.byBranch.length === 0 ? (
-          <p className="font-lp-body text-[12.5px] text-app-muted">No confirmed placements yet.</p>
+          <p className="text-[12.5px] text-app-muted">No confirmed placements yet.</p>
         ) : (
-          <ul className="flex flex-wrap gap-2">
+          <ul className="o-card ws-rows overflow-hidden">
             {stats.byBranch.map((b) => (
-              <li key={b.branch} className="rounded-full border border-app-border px-3 py-1 font-lp-body text-[12.5px] text-app-charcoal">
-                {b.branch}: {b.count ?? `fewer than ${MIN_COHORT}`}
+              <li key={b.branch} className="flex items-center gap-3 px-4 py-3">
+                <span className="w-56 shrink-0 truncate text-[13.5px] font-semibold text-app-charcoal">{b.branch}</span>
+                <span className="flex-1">
+                  {b.count !== null && b.count !== undefined ? <Meter value={b.count} max={Math.max(1, ...stats.byBranch.map((x) => x.count ?? 0))} label={b.branch} tone="ok" /> : <span className="text-[12px] text-app-muted">Fewer than {MIN_COHORT}, hidden for privacy</span>}
+                </span>
+                <span className="w-8 text-right text-[13px] font-bold text-app-charcoal">{b.count ?? "–"}</span>
               </li>
             ))}
           </ul>
         )}
-      </Panel>
+      </section>
 
-      <Panel title="Confirmed placements">
+      <section aria-label="Confirmed placements">
+        <GroupTitle count={placements.length}>Confirmed placements</GroupTitle>
         {placements.length === 0 ? (
           <EmptyState title="No confirmed placements" body="Select an applicant on a drive and confirm the placement, or record an off-campus offer below." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left font-lp-body text-[13px]">
-              <thead>
-                <tr className="border-b border-app-border font-lp-mono text-[11px] uppercase text-app-muted">
-                  <th className="py-2 pr-3">Student</th>
-                  <th className="py-2 pr-3">Branch</th>
-                  <th className="py-2 pr-3">Company</th>
-                  <th className="py-2 pr-3">Role</th>
-                  <th className="py-2 pr-3">CTC (LPA)</th>
-                  <th className="py-2 pr-3">Student&apos;s answer</th>
-                  <th className="py-2 pr-3">Letter</th>
-                  <th className="py-2">Public wall</th>
-                </tr>
-              </thead>
-              <tbody>
-                {placements.map((p) => (
-                  <tr key={p.id} className="border-b border-app-border/60 text-app-charcoal">
-                    <td className="py-2 pr-3 font-medium">{p.studentName}</td>
-                    <td className="py-2 pr-3">{p.branch ?? "—"}</td>
-                    <td className="py-2 pr-3">{p.company}</td>
-                    <td className="py-2 pr-3">{p.roleTitle}</td>
-                    <td className="py-2 pr-3">{p.ctcLpa ?? "—"}</td>
-                    <td className="py-2 pr-3">
-                      <Pill tone={p.studentResponse === "accepted" ? "ok" : p.studentResponse === "declined" ? "neutral" : "warn"}>{p.studentResponse === "accepted" ? "Accepted" : p.studentResponse === "declined" ? "Declined" : "Waiting"}</Pill>
-                    </td>
-                    <td className="py-2 pr-3">
-                      {p.hasLetter ? (
-                        <a href={`/api/offer-letter/${p.id}`} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">
-                          Open
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="py-2">{p.showOnWall ? <Pill tone="ok">Student agreed</Pill> : <Pill>Not shown</Pill>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="o-card ws-rows overflow-hidden">
+            {placements.map((p) => (
+              <li key={p.id} className="grid grid-cols-[42px_minmax(0,1fr)] items-center gap-3 px-4 py-3 md:grid-cols-[42px_minmax(0,1.3fr)_minmax(0,1fr)_auto]">
+                <Initial text={p.company} size={42} />
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-semibold text-app-charcoal">{p.studentName}</p>
+                  <p className="truncate text-[12.5px] text-app-muted">{p.branch ?? "Branch not set"}</p>
+                </div>
+                <div className="hidden min-w-0 md:block">
+                  <p className="truncate text-[13.5px] font-semibold text-app-charcoal">{p.company}</p>
+                  <p className="truncate text-[12.5px] text-app-muted">
+                    {p.roleTitle}
+                    {p.ctcLpa ? ` · ${p.ctcLpa} LPA` : ""}
+                  </p>
+                </div>
+                <div className="col-span-2 flex flex-wrap items-center gap-1.5 md:col-span-1 md:justify-end">
+                  <Pill tone={p.studentResponse === "accepted" ? "ok" : p.studentResponse === "declined" ? "neutral" : "warn"}>{p.studentResponse === "accepted" ? "Accepted" : p.studentResponse === "declined" ? "Declined" : "Waiting"}</Pill>
+                  {p.showOnWall && <Pill tone="ok">On wall</Pill>}
+                  {p.hasLetter && (
+                    <a href={`/api/offer-letter/${p.id}`} target="_blank" rel="noopener noreferrer" className="text-[12.5px] font-semibold text-app-orange hover:underline">
+                      Letter
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
-      </Panel>
+      </section>
 
       <Collapsible title="Record an off-campus offer">
         <p className="mb-3 font-lp-body text-[12.5px] text-app-muted">For a placement that didn&apos;t come through one of your drives. It counts only because you confirm it here.</p>

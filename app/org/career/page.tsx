@@ -3,7 +3,8 @@ import Link from "next/link";
 import { orgPageContext } from "@/lib/org/page";
 import { GOAL_KEYS } from "@/lib/org/insights";
 import { isGoalKey, loadCareerIntent } from "@/lib/org/career-intent";
-import { EmptyState, PageHeader, Panel, Pill, Stat } from "@/components/org/ui";
+import { EmptyState, PageHeader, Pill } from "@/components/org/ui";
+import { GroupTitle, Initial, Pager, StackBar } from "@/components/org/widgets";
 
 export const metadata: Metadata = { title: "Career intent — Capabilio AI" };
 
@@ -14,18 +15,24 @@ const GOAL_LABEL: Record<(typeof GOAL_KEYS)[number], string> = {
   not_sure: "Not decided",
   unset: "Not answered",
 };
+const GOAL_COLOR: Record<(typeof GOAL_KEYS)[number], string> = { job: "var(--app-success)", higher_studies: "var(--app-blue)", entrepreneur: "#e0a30c", not_sure: "#a39770", unset: "#d9cba3" };
 const GOAL_TONE = { job: "ok", higher_studies: "info", entrepreneur: "warn", not_sure: "neutral", unset: "neutral" } as const;
 
-export default async function CareerIntentPage({ searchParams }: { searchParams: Promise<{ goal?: string; branch?: string; year?: string }> }) {
+export default async function CareerIntentPage({ searchParams }: { searchParams: Promise<{ goal?: string; branch?: string; year?: string; page?: string }> }) {
   const { ctx, service } = await orgPageContext("postPlacement");
   const sp = await searchParams;
   const goal = isGoalKey(sp.goal) ? sp.goal : undefined;
   const endYear = sp.year && /^\d{4}$/.test(sp.year) ? Number(sp.year) : undefined;
   const { rows, counts, total, branches, years, truncated } = await loadCareerIntent(service, ctx.institutionId, { goal, branch: sp.branch || undefined, endYear });
 
-  const href = (g?: string) => {
+  const page = sp.page && /^\d{1,4}$/.test(sp.page) ? Number(sp.page) : 1;
+  const pageCount = Math.max(1, Math.ceil(rows.length / 25));
+  const current = Math.min(page, pageCount);
+  const shown = rows.slice((current - 1) * 25, current * 25);
+  const href = (g?: string, p?: number) => {
     const q = new URLSearchParams();
     if (g) q.set("goal", g);
+    if (p && p > 1) q.set("page", String(p));
     if (sp.branch) q.set("branch", sp.branch);
     if (sp.year) q.set("year", sp.year);
     const s = q.toString();
@@ -39,17 +46,17 @@ export default async function CareerIntentPage({ searchParams }: { searchParams:
         subtitle="What each student told Capabilio they plan to do after college. Use it to invite companies for the placement-focused students and to support the rest. Visible to your placement cell and admin only — never to companies."
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        {GOAL_KEYS.map((g) => (
-          <Link key={g} href={href(goal === g ? undefined : g)} aria-current={goal === g} className={goal === g ? "rounded-xl ring-2 ring-app-orange" : ""}>
-            <Stat label={GOAL_LABEL[g]} value={counts[g]} hint={total ? `${Math.round((counts[g] / total) * 100)}% of ${total}` : undefined} />
-          </Link>
-        ))}
-      </div>
+      <section className="o-card p-5" aria-label="Career intent split">
+        <GroupTitle>{total.toLocaleString("en-IN")} students, by what they plan next</GroupTitle>
+        <StackBar
+          total={total}
+          parts={GOAL_KEYS.map((g) => ({ key: g, label: GOAL_LABEL[g], value: counts[g], color: GOAL_COLOR[g], href: href(goal === g ? undefined : g), active: goal === g }))}
+        />
+      </section>
 
       <form method="get" className="flex flex-wrap items-end gap-3" aria-label="Filters">
         {goal && <input type="hidden" name="goal" value={goal} />}
-        <label className="flex flex-col gap-1 font-lp-mono text-[11px] uppercase text-app-muted">
+        <label className="flex flex-col gap-1 text-[12px] font-semibold text-app-muted">
           Branch
           <select name="branch" defaultValue={sp.branch ?? ""} className="o-input">
             <option value="">All</option>
@@ -58,7 +65,7 @@ export default async function CareerIntentPage({ searchParams }: { searchParams:
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 font-lp-mono text-[11px] uppercase text-app-muted">
+        <label className="flex flex-col gap-1 text-[12px] font-semibold text-app-muted">
           Class of
           <select name="year" defaultValue={sp.year ?? ""} className="o-input">
             <option value="">All</option>
@@ -73,35 +80,32 @@ export default async function CareerIntentPage({ searchParams }: { searchParams:
         )}
       </form>
 
-      <Panel title={`${rows.length} student${rows.length === 1 ? "" : "s"}${goal ? ` · ${GOAL_LABEL[goal]}` : ""}`}>
+      <section aria-label="Students">
+        <GroupTitle count={rows.length}>{goal ? GOAL_LABEL[goal] : "All students"}</GroupTitle>
         {rows.length === 0 ? (
           <EmptyState title="No students match" body="Students appear once they sign up with your institution's name and are active." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left font-lp-body text-[13px]">
-              <thead>
-                <tr className="border-b border-app-border font-lp-mono text-[11px] uppercase text-app-muted">
-                  <th className="py-2 pr-3">Name</th>
-                  <th className="py-2 pr-3">Branch</th>
-                  <th className="py-2 pr-3">Class of</th>
-                  <th className="py-2">Career intent</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.userId} className="border-b border-app-border/60 text-app-charcoal">
-                    <td className="py-2 pr-3 font-medium">{r.name}</td>
-                    <td className="py-2 pr-3">{r.branch ?? "—"}</td>
-                    <td className="py-2 pr-3">{r.endYear ?? "—"}</td>
-                    <td className="py-2"><Pill tone={GOAL_TONE[r.goal]}>{GOAL_LABEL[r.goal]}</Pill></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <ul className="o-card ws-rows overflow-hidden">
+              {shown.map((r) => (
+                <li key={r.userId} className="flex items-center gap-3 px-4 py-3">
+                  <Initial text={r.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-semibold text-app-charcoal">{r.name}</p>
+                    <p className="truncate text-[12.5px] text-app-muted">
+                      {r.branch ?? "Branch not set"}
+                      {r.endYear ? ` · Class of ${r.endYear}` : ""}
+                    </p>
+                  </div>
+                  <Pill tone={GOAL_TONE[r.goal]}>{GOAL_LABEL[r.goal]}</Pill>
+                </li>
+              ))}
+            </ul>
+            <Pager page={current} pageCount={pageCount} hrefFor={(n) => href(goal, n)} />
+          </>
         )}
-        {truncated && <p className="mt-3 font-lp-body text-[12px] text-app-muted">Showing the first 1000 students. Narrow the filters to see others.</p>}
-      </Panel>
+        {truncated && <p className="mt-3 text-[12px] text-app-muted">Showing the first 1000 students. Narrow the filters to see others.</p>}
+      </section>
     </div>
   );
 }

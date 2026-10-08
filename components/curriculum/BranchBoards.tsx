@@ -8,6 +8,7 @@ import type { ImportListItem } from "@/lib/curriculum/admin-data";
 import type { BranchBoard } from "@/lib/curriculum/cohorts";
 import { COURSE_GROUPS, GROUP_LABEL } from "@/lib/curriculum/composition";
 import { Pill } from "@/components/org/ui";
+import { Meter, StageTrack } from "@/components/org/widgets";
 import { StatusPill } from "./bits";
 import { api } from "./api";
 import { AddRegulation } from "./AddRegulation";
@@ -50,6 +51,7 @@ export function BranchBoards({ boards }: { boards: BranchBoard[] }) {
             </div>
             <StudentLinkStatus board={b} />
           </header>
+          {b.students > 0 && <CoverageMeter board={b} />}
 
           {b.imports.length === 0 ? (
             <p className="rounded-lg border border-dashed border-app-border px-3 py-3 font-lp-body text-[12.5px] text-app-muted">
@@ -68,6 +70,20 @@ export function BranchBoards({ boards }: { boards: BranchBoard[] }) {
       <ConfirmDialog open={removing !== null} title={`Delete this ${removing?.branch ?? ""} curriculum?`} confirmLabel="Delete" danger busy={busy} onCancel={() => setRemoving(null)} onConfirm={remove}>
         It disappears from your list. Nothing has been published, so students are not affected.
       </ConfirmDialog>
+    </div>
+  );
+}
+
+/** How many of the branch's students will get a published college curriculum in their roadmap. */
+function CoverageMeter({ board }: { board: BranchBoard }) {
+  const covered = board.publishedRegulations.length === 0 ? 0 : board.students - board.withoutPublished;
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between text-[12.5px]">
+        <span className="font-semibold text-app-charcoal">{covered} of {board.students} students on a published curriculum</span>
+        <span className="text-app-muted">{Math.round((covered / Math.max(1, board.students)) * 100)}%</span>
+      </div>
+      <Meter value={covered} max={board.students} label="Students on a published curriculum" tone={covered === board.students ? "ok" : "gold"} />
     </div>
   );
 }
@@ -102,6 +118,16 @@ function RegulationRow({ item, board, onRemove }: { item: ImportListItem; board:
         {!frozen && <button type="button" aria-label={`Delete ${item.branch}${item.regulation ? ` ${item.regulation}` : ""}`} className="text-app-muted hover:text-app-charcoal" onClick={onRemove}><Trash2 size={14} aria-hidden="true" /></button>}
       </div>
 
+      <div className="mt-3">
+        <StageTrack
+          steps={[
+            { label: "Uploaded", done: s.courses > 0 },
+            { label: "Reviewed", done: s.courses > 0 && s.mappingsNeedingReview === 0 },
+            { label: "Skills confirmed", done: s.confirmedMappings > 0 },
+            { label: "Published", done: item.status === "PUBLISHED" },
+          ]}
+        />
+      </div>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <dt className="o-eyebrow">{s.courses} {s.courses === 1 ? "entry" : "entries"} in the syllabus</dt>
