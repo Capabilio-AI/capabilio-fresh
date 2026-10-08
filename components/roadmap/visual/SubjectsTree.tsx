@@ -36,7 +36,6 @@ export function SubjectsTree({ syllabus, careerName, onOpenTopic }: { syllabus: 
       <div className="hidden lg:block">
         <RoadmapCanvas graph={tree} handlers={handlers} countLabel="proven" label="College subjects mapped to career topics" caption={(n) => n.description || "Semester"} />
       </div>
-      <p className="font-lp-body text-[13px] text-app-muted lg:hidden">Open the College subjects tab for the list view of your semesters on a phone or small window.</p>
       {tree.untracked > 0 && <p className="font-lp-body text-[12.5px] text-app-muted">{tree.untracked} other {tree.untracked === 1 ? "subject is" : "subjects are"} part of your degree but teach none of this career&apos;s topics, so {tree.untracked === 1 ? "it isn't" : "they aren't"} drawn.</p>}
     </section>
   );
