@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { loadHome } from "@/lib/org/home";
 import { buildSetupChecklist } from "@/lib/org/setup";
@@ -55,125 +55,55 @@ export default async function OrgHomePage() {
     runsPlacements && { label: "Placed", value: kpis.placed, sub: "Confirmed by your team", href: "/org/outcomes", tone: "text-app-success" },
   ].filter(Boolean) as { label: string; value: number; sub: string; href: string; tone: string }[];
 
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+
   return (
-    <div className="flex flex-col gap-7">
-      <header>
-        <p className="o-eyebrow">{firstName ? `Welcome back, ${firstName}` : ctx.institutionName}</p>
-        <h1 className="o-serif mt-2 text-[46px] leading-[0.98] text-app-charcoal">
-          What needs your <span className="text-app-orange">attention</span> now?
-        </h1>
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="o-serif text-[30px] leading-[1.1] text-app-charcoal md:text-[36px]">{firstName ? `Welcome back, ${firstName}` : ctx.institutionName}</h1>
+          <p className="mt-1.5 text-[13.5px] text-app-muted">
+            {today} · {alerts.length === 0 ? "Nothing needs you right now." : `${alerts.length} ${alerts.length === 1 ? "item needs" : "items need"} your attention.`}
+          </p>
+        </div>
       </header>
 
-      {alerts.length > 0 && (
-        <ul className="flex flex-col gap-2" aria-label="Needs attention">
-          {alerts.map((a) => (
-            <li key={a.label}>
-              <Link href={a.href} className={`flex items-center gap-3.5 rounded-2xl border px-4 py-3.5 transition-colors hover:brightness-110 ${ALERT[a.tone].bar}`}>
-                <span className={`h-2 w-2 shrink-0 rounded-full ${ALERT[a.tone].dot}`} aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-bold text-app-charcoal">{a.label}</span>
-                  <span className="block text-[12px] text-app-muted">{a.sub}</span>
-                </span>
-                <ChevronRight size={16} className="shrink-0 text-app-muted" aria-hidden="true" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {kpiCards.map((k) => (
-          <Link key={k.label} href={k.href} className="o-card block min-h-[112px] p-4">
-            <p className="o-eyebrow">{k.label}</p>
-            <p className={`mt-3 text-[34px] font-black leading-none tracking-[-0.04em] ${k.tone}`}>{k.value}</p>
-            <p className="mt-2 text-[11.5px] text-app-muted">{k.sub}</p>
+      <dl className="o-card grid grid-cols-2 divide-app-border md:grid-cols-4 md:divide-x" aria-label="College snapshot">
+        {kpiCards.map((k, i) => (
+          <Link key={k.label} href={k.href} className={`group block p-4 transition-colors hover:bg-app-orange-container md:p-5 ${i > 1 ? "border-t border-app-border md:border-t-0" : ""} ${i % 2 === 1 ? "border-l border-app-border md:border-l-0" : ""}`}>
+            <dt className="text-[12.5px] font-semibold text-app-muted">{k.label}</dt>
+            <dd className={`mt-1.5 text-[30px] font-extrabold leading-none tracking-[-0.03em] ${k.tone}`}>{k.value}</dd>
+            <dd className="mt-1.5 text-[12px] text-app-muted">{k.sub}</dd>
           </Link>
         ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {canManage && (
-          <section className="o-card p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[13px] font-extrabold text-app-charcoal">Grading queue</h2>
-              <Link href="/org/projects" className="text-[11.5px] font-bold text-app-orange hover:underline">
-                All projects
-              </Link>
-            </div>
-            {queue.length === 0 ? (
-              <EmptyState title="Nothing to grade" body="When a group submits its work it shows up here for your review." />
-            ) : (
-              <ul>
-                {queue.map((q, i) => (
-                  <li key={q.groupId} className={i === 0 ? "" : "border-t border-app-border"}>
-                    <Link href={`/org/projects/${q.projectId}`} className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-3.5">
-                      <span className="grid h-10 w-10 place-items-center rounded-[14px] border border-app-border bg-white/[0.05] text-[14px] font-black text-app-orange">{q.groupName.charAt(0).toUpperCase()}</span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-bold text-app-charcoal">{q.groupName}</span>
-                        <span className="block truncate text-[11.5px] text-app-muted">{q.projectTitle}</span>
-                      </span>
-                      <Pill tone="warn">Review</Pill>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
-
-        <section className="o-card p-5">
-          <h2 className="mb-3 text-[13px] font-extrabold text-app-charcoal">Coming up</h2>
-          {upcoming.length === 0 ? (
-            <EmptyState title="Nothing scheduled" body="Events, project deadlines and drive apply-by dates in the next two weeks appear here." />
-          ) : (
-            <ul>
-              {upcoming.map((u, i) => (
-                <li key={`${u.kind}-${u.title}-${u.at}`} className={i === 0 ? "" : "border-t border-app-border"}>
-                  <Link href={u.href} className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-3.5">
-                    <span className="grid h-10 w-10 place-items-center rounded-[14px] border border-app-border bg-white/[0.05] text-app-muted">
-                      <CalendarDays size={16} aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[13px] font-bold text-app-charcoal">{u.title}</span>
-                      <span className="block truncate text-[11.5px] text-app-muted">
-                        {u.detail} · {formatDateTime(u.at)}
-                      </span>
-                    </span>
-                    <Pill tone={KIND_TONE[u.kind]}>{u.kind}</Pill>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+      </dl>
 
       {showSetup && (
         <section className="o-card p-5" aria-label="Set up your college page">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-[15px] font-extrabold text-app-charcoal">Set up your college</h2>
-              <p className="mt-0.5 text-[12.5px] text-app-muted">
+              <h2 className="text-[16px] font-bold text-app-charcoal">Set up your college</h2>
+              <p className="mt-0.5 text-[13px] text-app-muted">
                 {doneCount} of {steps.length} done. Each step is checked against what is actually in your account.
               </p>
             </div>
-            <span className="h-1.5 w-40 overflow-hidden rounded-full bg-white/[0.07]" role="img" aria-label={`${doneCount} of ${steps.length} steps done`}>
-              <span className="block h-full rounded-full" style={{ width: `${(doneCount / steps.length) * 100}%`, background: "var(--o-gradient)" }} />
+            <span className="h-2 w-44 overflow-hidden rounded-full bg-white/[0.08]" role="img" aria-label={`${doneCount} of ${steps.length} steps done`}>
+              <span className="block h-full rounded-full bg-app-orange" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
             </span>
           </div>
-          <ul className="mt-4 grid grid-cols-1 gap-x-8 gap-y-1 md:grid-cols-2">
+          <ul className="mt-4 grid grid-cols-1 gap-x-8 md:grid-cols-2">
             {steps.map((s) => (
-              <li key={s.label}>
-                <Link href={s.href} className="flex items-start gap-3 rounded-xl px-2 py-2.5 hover:bg-white/[0.04]">
+              <li key={s.label} className="border-t border-app-border first:border-t-0 md:[&:nth-child(2)]:border-t-0">
+                <Link href={s.href} className="flex items-start gap-3 rounded-lg px-1 py-3 hover:bg-white/[0.04]">
                   <span
-                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md text-[11px] ${s.done ? "bg-app-success-container text-app-success" : "border border-app-border text-transparent"}`}
+                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded ${s.done ? "bg-app-success text-[#fff]" : "border-[1.5px] border-[var(--ws-rule-strong,#c4cce6)] text-transparent"}`}
                     aria-hidden="true"
                   >
-                    <Check size={12} strokeWidth={3} />
+                    <Check size={13} strokeWidth={3} />
                   </span>
                   <span>
-                    <span className={`block text-[13px] font-semibold ${s.done ? "text-app-muted line-through" : "text-app-charcoal"}`}>{s.label}</span>
-                    {!s.done && <span className="block text-[11.5px] text-app-muted">{s.hint}</span>}
+                    <span className={`block text-[13.5px] font-semibold ${s.done ? "text-app-muted line-through" : "text-app-charcoal"}`}>{s.label}</span>
+                    {!s.done && <span className="block text-[12.5px] text-app-muted">{s.hint}</span>}
                   </span>
                 </Link>
               </li>
@@ -181,6 +111,91 @@ export default async function OrgHomePage() {
           </ul>
         </section>
       )}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="flex flex-col gap-6">
+          <section aria-label="Needs attention">
+            <h2 className="mb-2.5 text-[15px] font-bold text-app-charcoal">Needs attention</h2>
+            {alerts.length === 0 ? (
+              <EmptyState title="All clear" body="Pending approvals, ungraded work and drives needing action show up here." />
+            ) : (
+              <ul className="o-card ws-rows overflow-hidden">
+                {alerts.map((a) => (
+                  <li key={a.label}>
+                    <Link href={a.href} className="flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-white/[0.035]">
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${ALERT[a.tone].dot}`} aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14px] font-semibold text-app-charcoal">{a.label}</span>
+                        <span className="block text-[12.5px] text-app-muted">{a.sub}</span>
+                      </span>
+                      <ChevronRight size={16} className="shrink-0 text-app-muted" aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {canManage && (
+            <section aria-label="Grading queue">
+              <div className="mb-2.5 flex items-center justify-between">
+                <h2 className="text-[15px] font-bold text-app-charcoal">Grading queue</h2>
+                <Link href="/org/projects" className="text-[12.5px] font-semibold text-app-orange hover:underline">
+                  All projects
+                </Link>
+              </div>
+              {queue.length === 0 ? (
+                <EmptyState title="Nothing to grade" body="When a group submits its work it shows up here for your review." />
+              ) : (
+                <ul className="o-card ws-rows overflow-hidden">
+                  {queue.map((q) => (
+                    <li key={q.groupId}>
+                      <Link href={`/org/projects/${q.projectId}`} className="grid grid-cols-[36px_1fr_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.035]">
+                        <span className="grid h-9 w-9 place-items-center rounded-lg bg-app-orange-container text-[14px] font-extrabold text-app-orange">{q.groupName.charAt(0).toUpperCase()}</span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[13.5px] font-semibold text-app-charcoal">{q.groupName}</span>
+                          <span className="block truncate text-[12.5px] text-app-muted">{q.projectTitle}</span>
+                        </span>
+                        <Pill tone="warn">Review</Pill>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+        </div>
+
+        <section aria-label="Coming up">
+          <h2 className="mb-2.5 text-[15px] font-bold text-app-charcoal">Coming up</h2>
+          {upcoming.length === 0 ? (
+            <EmptyState title="Nothing scheduled" body="Events, project deadlines and drive apply-by dates in the next two weeks appear here." />
+          ) : (
+            <ul className="o-card ws-rows overflow-hidden">
+              {upcoming.map((u) => {
+                const at = new Date(u.at);
+                return (
+                  <li key={`${u.kind}-${u.title}-${u.at}`}>
+                    <Link href={u.href} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.035]">
+                      <span className="ws-date" aria-hidden="true">
+                        <b>{at.toLocaleDateString("en-IN", { day: "2-digit" })}</b>
+                        <span>{at.toLocaleDateString("en-IN", { month: "short" })}</span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13.5px] font-semibold text-app-charcoal">{u.title}</span>
+                        <span className="block truncate text-[12.5px] text-app-muted">
+                          {u.detail} · {formatDateTime(u.at)}
+                        </span>
+                      </span>
+                      <Pill tone={KIND_TONE[u.kind]}>{u.kind}</Pill>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

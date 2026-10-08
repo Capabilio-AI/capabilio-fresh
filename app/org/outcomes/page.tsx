@@ -37,7 +37,7 @@ export default async function OutcomesPage() {
         subtitle="Only placements confirmed by your team are counted — there is no self-reporting. Averages and per-branch counts are hidden until there are at least 5 records, so no single student's offer can be inferred."
         action={
           placements.length > 0 && (
-            <a href="/api/org/outcomes/export" className="inline-flex items-center gap-1.5 rounded-lg border border-app-border bg-white px-3 py-2 font-lp-body text-[13px] font-medium text-app-charcoal hover:bg-white/5">
+            <a href="/api/org/outcomes/export" className="inline-flex items-center gap-1.5 rounded-lg border border-app-border bg-[var(--o-pop)] px-3 py-2 font-lp-body text-[13px] font-medium text-app-charcoal hover:bg-white/5">
               <Download size={14} /> Export CSV
             </a>
           )

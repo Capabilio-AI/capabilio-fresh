@@ -87,7 +87,7 @@ export function ChatPanel({ channelId, channelName, initial, myUserId }: { chann
                   <p className="mb-1 text-[11px] text-app-muted">
                     <span className="font-bold text-app-charcoal">{mine ? "You" : m.authorName}</span> · {timeAgo(m.createdAt)}
                   </p>
-                  <p className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed ${mine ? "text-[#23170a]" : "bg-white/[0.07] text-app-charcoal"}`} style={mine ? { background: "var(--o-gradient)" } : undefined}>
+                  <p className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed ${mine ? "text-[var(--o-ink-on-gold)]" : "bg-white/[0.07] text-app-charcoal"}`} style={mine ? { background: "var(--o-gradient)" } : undefined}>
                     {m.body}
                   </p>
                 </li>

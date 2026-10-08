@@ -95,7 +95,7 @@ export function PostComposer({ orgName, logoUrl }: { orgName: string; logoUrl: s
               <div className="relative mt-3">
                 {/* eslint-disable-next-line @next/next/no-img-element -- our own storage URL */}
                 <img src={image} alt="Attached" className="max-h-64 w-full rounded-xl border border-app-border object-cover" />
-                <button type="button" onClick={() => setImage(null)} className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white" aria-label="Remove photo">
+                <button type="button" onClick={() => setImage(null)} className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-[#fff]" aria-label="Remove photo">
                   <X size={14} />
                 </button>
               </div>

@@ -36,7 +36,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
                     {c.isPrivate ? <Lock size={14} aria-hidden="true" /> : <Hash size={14} aria-hidden="true" />}
                     <span className="min-w-0 flex-1 truncate">{c.name}</span>
                     {c.unread > 0 && !active && (
-                      <span className="rounded-full px-1.5 py-0.5 text-[10.5px] font-black text-[#23170a]" style={{ background: "var(--o-gradient)" }} aria-label={`${c.unread} unread`}>
+                      <span className="rounded-full px-1.5 py-0.5 text-[10.5px] font-black text-[var(--o-ink-on-gold)]" style={{ background: "var(--o-gradient)" }} aria-label={`${c.unread} unread`}>
                         {c.unread}
                       </span>
                     )}

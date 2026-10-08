@@ -21,7 +21,7 @@ export async function StudentPlacementOffers({ userId }: { userId: string }) {
   if (placements.length === 0) return null;
 
   return (
-    <section className="mt-6 rounded-xl border border-app-border bg-white p-5" aria-label="Your placement">
+    <section className="mt-6 rounded-xl border border-app-border bg-[var(--o-pop,#fff)] p-5" aria-label="Your placement">
       <h2 className="font-lp-body text-[15px] font-semibold text-app-charcoal">Congratulations — your offer was released</h2>
       <ul className="mt-3 flex flex-col gap-5">
         {placements.map((p) => (

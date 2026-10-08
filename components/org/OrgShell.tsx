@@ -4,23 +4,25 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BadgeCheck, BarChart3, BookOpen, Briefcase, ExternalLink, FolderKanban, GraduationCap, LayoutDashboard, LogOut, Megaphone, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
-import clsx from "clsx";
+import { BadgeCheck, BarChart3, BookOpen, Briefcase, ExternalLink, FolderKanban, GraduationCap, LayoutDashboard, LogOut, Megaphone, MessagesSquare, School, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
 import { signOut } from "@/components/login/auth";
 import type { OrgNavGroup } from "@/lib/org/nav";
 
 const ICONS: Record<string, LucideIcon> = {
   "/org": LayoutDashboard,
+  "/org/college": School,
   "/org/posts": Megaphone,
   "/org/students": Users,
   "/org/materials": BookOpen,
   "/org/projects": FolderKanban,
   "/org/placements": Briefcase,
   "/org/members": UserCheck,
+  "/org/team": UserCheck,
   "/org/curriculum": GraduationCap,
   "/org/career": Target,
   "/org/insights": BarChart3,
   "/org/outcomes": Trophy,
+  "/org/chat": MessagesSquare,
 };
 
 function isActive(pathname: string, href: string): boolean {
@@ -57,48 +59,42 @@ export function OrgShell({
 
   return (
     <div className="md:flex">
-      <aside className="border-b border-app-border md:sticky md:top-0 md:h-screen md:w-[246px] md:shrink-0 md:overflow-y-auto md:border-b-0 md:border-r">
-        <div className="flex items-center gap-2.5 px-5 py-5">
-          <Image src="/logo-mark.jpg" alt="" width={28} height={28} className="h-7 w-7 rounded-lg object-cover" />
-          <span className="text-[15px] font-extrabold tracking-tight text-app-charcoal">
-            Capabilio <span className="text-app-orange">AI</span>
+      <aside className="ws-rail md:sticky md:top-0 md:flex md:h-screen md:w-[256px] md:shrink-0 md:flex-col md:overflow-y-auto">
+        <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-4 md:px-5 md:pb-4 md:pt-5">
+          <span className="rounded-lg bg-white px-2.5 py-1.5">
+            <Image src="/brand/capabilio-logo.png" alt="Capabilio AI" width={1130} height={234} priority className="h-[22px] w-auto" />
+          </span>
+          <span className="o-logo-tile h-9 w-9 shrink-0 rounded-lg text-[13px] md:hidden" aria-hidden="true">
+            {initialsOf(institutionName)}
           </span>
         </div>
 
-        <div className="mx-4 mb-4 rounded-2xl border border-app-border bg-white/[0.03] p-3">
-          <div className="flex items-center gap-2.5">
-            <span className="o-logo-tile h-10 w-10 shrink-0 rounded-xl text-[14px]">{initialsOf(institutionName)}</span>
+        <div className="mx-4 mb-4 hidden rounded-xl bg-white/10 p-3 md:block">
+          <div className="flex items-center gap-3">
+            <span className="o-logo-tile h-10 w-10 shrink-0 rounded-lg text-[14px]">{initialsOf(institutionName)}</span>
             <div className="min-w-0">
-              <p className="line-clamp-2 text-[12.5px] font-bold leading-tight text-app-charcoal">{institutionName}</p>
-              <p className="mt-0.5 truncate text-[11px] text-app-muted">{roleLabel}</p>
+              <p className="line-clamp-2 text-[13px] font-bold leading-tight text-white">{institutionName}</p>
+              <p className="mt-0.5 truncate text-[12px] text-white/65">{roleLabel}</p>
             </div>
           </div>
-          <p className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-app-success">
-            <BadgeCheck size={13} aria-hidden="true" /> Approved by Capabilio
+          <p className="mt-2.5 flex items-center gap-1.5 text-[12px] font-semibold text-[#7be0b4]">
+            <BadgeCheck size={14} aria-hidden="true" /> Approved by Capabilio
           </p>
         </div>
 
-        <nav aria-label="Organisation" className="px-3 pb-4">
+        <nav aria-label="Organisation" className="px-3 pb-4 md:flex-1">
           <div className="flex gap-4 overflow-x-auto md:flex-col md:gap-5 md:overflow-visible">
             {groups.map((group) => (
               <div key={group.label} className="shrink-0">
-                <p className="o-eyebrow mb-1.5 hidden px-3 md:block">{group.label}</p>
-                <ul className="flex gap-1 md:flex-col">
+                <p className="ws-rail-label mb-1 hidden px-3 md:block">{group.label}</p>
+                <ul className="flex gap-1 md:flex-col md:gap-0.5">
                   {group.items.map((item) => {
                     const active = isActive(pathname, item.href);
                     const Icon = ICONS[item.href] ?? LayoutDashboard;
                     return (
                       <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          aria-current={active ? "page" : undefined}
-                          className={clsx(
-                            "flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors",
-                            active ? "text-[#23170a] shadow-[0_6px_20px_rgba(220,139,24,0.22)]" : "text-app-muted hover:bg-white/5 hover:text-app-charcoal"
-                          )}
-                          style={active ? { background: "var(--o-gradient)" } : undefined}
-                        >
-                          <Icon size={16} strokeWidth={2.2} aria-hidden="true" />
+                        <Link href={item.href} aria-current={active ? "page" : undefined} className="ws-rail-link">
+                          <Icon size={16} strokeWidth={2.1} aria-hidden="true" />
                           {item.label}
                         </Link>
                       </li>
@@ -110,18 +106,20 @@ export function OrgShell({
           </div>
         </nav>
 
-        <div className="mt-auto hidden border-t border-app-border p-3 md:block">
-          <Link href={publicHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px] font-semibold text-app-muted hover:bg-white/5 hover:text-app-charcoal">
+        <div className="hidden border-t border-white/15 p-3 md:block">
+          <Link href={publicHref} target="_blank" rel="noopener noreferrer" className="ws-rail-link">
             <ExternalLink size={15} aria-hidden="true" /> Preview public page
           </Link>
-          <button type="button" onClick={doSignOut} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px] font-semibold text-app-muted hover:bg-white/5 hover:text-app-charcoal">
+          <button type="button" onClick={doSignOut} className="ws-rail-link w-full">
             <LogOut size={15} aria-hidden="true" /> Sign out
           </button>
         </div>
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="mx-auto max-w-[1120px] px-4 py-8 sm:px-8 md:py-10">{children}</div>
+        <div className="mx-auto max-w-[1120px] px-4 py-7 sm:px-8 md:py-10">
+          <div className="ws-page">{children}</div>
+        </div>
       </div>
     </div>
   );

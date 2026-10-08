@@ -182,7 +182,7 @@ export function MemberActions({
       )}
       {editing && (
         <div className="fixed inset-0 z-30 grid place-items-center overflow-y-auto bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={`Edit access for ${name}`}>
-          <div className="o-card my-8 w-full max-w-xl !bg-[#14110c] p-5">
+          <div className="o-card my-8 w-full max-w-xl !bg-[var(--o-pop,#14110c)] p-5">
             <h3 className="text-[15px] font-extrabold text-app-charcoal">Access for {name}</h3>
             <div className="mt-4">
               <PermissionPicker role={role} value={value} onChange={setValue} grantable={grantable} />

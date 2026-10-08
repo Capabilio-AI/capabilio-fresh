@@ -47,7 +47,7 @@ export function NewChannelForm({ people }: { people: { userId: string; name: str
       </button>
       {open && (
         <div className="fixed inset-0 z-30 grid place-items-center overflow-y-auto bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="New channel">
-          <form onSubmit={submit} className="o-card my-8 w-full max-w-md !bg-[#14110c] p-5" noValidate>
+          <form onSubmit={submit} className="o-card my-8 w-full max-w-md !bg-[var(--o-pop,#14110c)] p-5" noValidate>
             <h3 className="text-[15px] font-extrabold text-app-charcoal">New channel</h3>
             <label className="mt-4 block text-[11.5px] font-bold text-app-muted">
               Name *

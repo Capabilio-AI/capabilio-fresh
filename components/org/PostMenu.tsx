@@ -39,7 +39,7 @@ export function PostMenu({ postId, status, body }: { postId: string; status: Sta
         <MoreHorizontal size={18} />
       </button>
       {open && (
-        <div className="absolute right-0 top-9 z-10 w-44 rounded-xl border border-app-border bg-[#17140f] p-1 shadow-xl" role="menu">
+        <div className="absolute right-0 top-9 z-10 w-44 rounded-xl border border-app-border bg-[var(--o-pop,#17140f)] p-1 shadow-xl" role="menu">
           <button role="menuitem" className="block w-full rounded-lg px-3 py-2 text-left text-[12.5px] hover:bg-white/10" onClick={() => { setEditing(true); setOpen(false); }}>
             Edit text
           </button>
@@ -53,7 +53,7 @@ export function PostMenu({ postId, status, body }: { postId: string; status: Sta
       )}
       {editing && (
         <div className="fixed inset-0 z-30 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Edit post">
-          <div className="o-card w-full max-w-lg !bg-[#14110c] p-5">
+          <div className="o-card w-full max-w-lg !bg-[var(--o-pop,#14110c)] p-5">
             <h3 className="text-[14px] font-extrabold text-app-charcoal">Edit post</h3>
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} maxLength={5000} className="o-input mt-3" />
             {error && (
@@ -73,7 +73,7 @@ export function PostMenu({ postId, status, body }: { postId: string; status: Sta
         </div>
       )}
       {error && !editing && (
-        <p role="alert" className="absolute right-0 top-9 z-10 w-56 rounded-lg bg-[#17140f] p-2 text-[11.5px] text-app-rose">
+        <p role="alert" className="absolute right-0 top-9 z-10 w-56 rounded-lg bg-[var(--o-pop,#17140f)] p-2 text-[11.5px] text-app-rose">
           {error}
         </p>
       )}

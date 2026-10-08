@@ -5,7 +5,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="o-serif text-[38px] leading-[1.02] text-app-charcoal">{title}</h1>
+        <h1 className="o-serif text-[30px] leading-[1.1] text-app-charcoal md:text-[34px]">{title}</h1>
         {subtitle && <p className="mt-2 max-w-2xl font-lp-body text-[13px] leading-relaxed text-app-muted">{subtitle}</p>}
       </div>
       {action}
@@ -39,8 +39,10 @@ const PILL = {
   bad: "bg-app-rose-container text-app-rose",
 } as const;
 
+/** Printed-stamp look in the staff workspace (`.ws-stamp`); a plain pill on the dark public page. */
+
 export function Pill({ children, tone = "neutral" }: { children: ReactNode; tone?: keyof typeof PILL }) {
-  return <span className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 font-lp-body text-[10.5px] font-extrabold ${PILL[tone]}`}>{children}</span>;
+  return <span className={`ws-stamp inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 font-lp-body text-[10.5px] font-extrabold ${PILL[tone]}`}>{children}</span>;
 }
 
 export function Stat({ label, value, hint, tone = "text-app-charcoal" }: { label: string; value: ReactNode; hint?: string; tone?: string }) {

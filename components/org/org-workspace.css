@@ -1,0 +1,258 @@
+/*
+ * College workspace (/org) — "record book" world.
+ * Who: principals, HODs, TPOs and faculty at a desk, in daylight, for long sessions → light ground.
+ * Palette: Indian ink-blue (the rail owns the colour), cool paper, a margin-rule red for attention,
+ * pale ruling-blue hairlines. Type: Public Sans, tabular figures. Signature move: the red margin rule
+ * down the content column and timetable-style date blocks.
+ *
+ * Applied as `.org-theme.org-ws`; the public college page (/o) keeps the dark `.org-theme` look.
+ * `--color-white` is the ink, so every legacy `bg-white/[.05]` or `hover:bg-white/10` tints with ink on paper.
+ */
+.org-theme.org-ws {
+  --ws-paper: #f3f5fa;
+  --ws-surface: #ffffff;
+  --ws-ink: #141a3b;
+  --ws-primary: #2631ad;
+  --ws-primary-strong: #1b2488;
+  --ws-rail: #161d6b;
+  --ws-rule: #dde2f0;
+  --ws-rule-strong: #c4cce6;
+  --ws-margin: #d6293e;
+
+  --app-background: var(--ws-paper);
+  --app-card: var(--ws-surface);
+  --app-charcoal: var(--ws-ink);
+  --app-muted: #566082;
+  --app-border: var(--ws-rule);
+  --app-orange: var(--ws-primary);
+  --app-orange-container: rgba(38, 49, 173, 0.09);
+  --app-blue: #08779c;
+  --app-blue-container: rgba(8, 119, 156, 0.1);
+  --app-success: #0c7650;
+  --app-success-container: rgba(12, 118, 80, 0.1);
+  --app-warning: #9a5a05;
+  --app-warning-container: rgba(154, 90, 5, 0.11);
+  --app-rose: #c3213a;
+  --app-rose-container: rgba(195, 33, 58, 0.09);
+  --color-white: var(--ws-ink);
+  --font-lp-body: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-lp-display: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --o-gold: var(--ws-primary);
+  --o-gradient: var(--ws-primary);
+  --o-ink-on-gold: #ffffff;
+  --o-line-strong: var(--ws-rule-strong);
+  --o-pop: var(--ws-surface);
+
+  background: var(--ws-paper);
+  color: var(--ws-ink);
+  color-scheme: light;
+  font-variant-numeric: tabular-nums;
+}
+.org-theme.org-ws * {
+  scrollbar-color: var(--ws-rule-strong) transparent;
+}
+.org-theme.org-ws ::selection {
+  background: rgba(38, 49, 173, 0.18);
+}
+
+/* headings: weight and size, no italic serif */
+.org-theme.org-ws .o-serif {
+  font-family: var(--font-lp-body);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.org-theme.org-ws .o-eyebrow {
+  font-family: var(--font-lp-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--app-muted);
+}
+
+.org-theme.org-ws .o-card {
+  border-radius: 12px;
+  border-color: var(--ws-rule);
+  background: var(--ws-surface);
+  box-shadow: 0 1px 2px rgba(20, 26, 59, 0.05), 0 6px 18px -10px rgba(20, 26, 59, 0.12);
+}
+.org-theme.org-ws a.o-card:hover,
+.org-theme.org-ws .o-lift:hover {
+  border-color: var(--ws-rule-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(20, 26, 59, 0.06), 0 14px 28px -14px rgba(20, 26, 59, 0.22);
+}
+
+.org-theme.org-ws .o-btn {
+  border-radius: 8px;
+  padding: 9px 16px;
+  background: var(--ws-primary);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(20, 26, 59, 0.2);
+}
+.org-theme.org-ws .o-btn:hover:not(:disabled) {
+  background: var(--ws-primary-strong);
+  filter: none;
+}
+.org-theme.org-ws .o-btn-ghost,
+.org-theme.org-ws .o-btn-danger {
+  border-radius: 8px;
+  background: var(--ws-surface);
+  border-color: var(--ws-rule-strong);
+  color: var(--ws-ink);
+}
+.org-theme.org-ws .o-btn-ghost:hover:not(:disabled) {
+  background: var(--ws-paper);
+}
+.org-theme.org-ws .o-btn-danger {
+  color: var(--app-rose);
+  border-color: rgba(195, 33, 58, 0.35);
+}
+.org-theme.org-ws .o-btn-danger:hover:not(:disabled) {
+  background: var(--app-rose-container);
+}
+
+.org-theme.org-ws .o-input {
+  border-radius: 8px;
+  background: var(--ws-surface);
+  border-color: var(--ws-rule-strong);
+  color: var(--ws-ink);
+}
+.org-theme.org-ws .o-input::placeholder {
+  color: rgba(86, 96, 130, 0.7);
+}
+.org-theme.org-ws .o-input:focus {
+  border-color: var(--ws-primary);
+  box-shadow: 0 0 0 3px rgba(38, 49, 173, 0.16);
+}
+.org-theme.org-ws select.o-input option {
+  background: #fff;
+  color: var(--ws-ink);
+}
+.org-theme.org-ws a:focus-visible,
+.org-theme.org-ws button:focus-visible {
+  outline: 2px solid var(--ws-primary);
+  outline-offset: 2px;
+}
+
+/* cover / logo tile (also used by the college page header) */
+.org-theme.org-ws .o-cover {
+  background: linear-gradient(180deg, #1d2680, #141b66);
+}
+.org-theme.org-ws .o-logo-tile {
+  background: var(--ws-primary);
+  color: #fff;
+  box-shadow: 0 0 0 3px #fff, 0 6px 16px rgba(20, 26, 59, 0.2);
+}
+
+/* ---- shell ---- */
+.org-ws .ws-rail {
+  background: var(--ws-rail);
+  color: rgba(255, 255, 255, 0.92);
+}
+.org-ws .ws-rail-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.52);
+}
+.org-ws .ws-rail-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.78);
+  transition: background 0.15s, color 0.15s;
+}
+.org-ws .ws-rail-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.org-ws .ws-rail-link[aria-current="page"] {
+  background: #fff;
+  color: var(--ws-rail);
+  font-weight: 700;
+}
+.org-ws .ws-rail a:focus-visible,
+.org-ws .ws-rail button:focus-visible {
+  outline-color: #fff;
+}
+
+/* the margin rule: one hairline of red down the content column, like a record-book page */
+.org-ws .ws-page {
+  position: relative;
+  padding-left: 26px;
+}
+.org-ws .ws-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(180deg, var(--ws-margin), rgba(214, 41, 62, 0.25) 70%, transparent);
+}
+@media (max-width: 640px) {
+  .org-ws .ws-page {
+    padding-left: 16px;
+  }
+}
+
+/* stamp: status marks are printed, not pill-shaped */
+.org-ws .ws-stamp {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+/* ruled list rows: pale blue rules between records */
+.org-ws .ws-rows > li + li {
+  border-top: 1px solid var(--ws-rule);
+}
+
+/* timetable date block */
+.org-ws .ws-date {
+  display: grid;
+  width: 44px;
+  flex-shrink: 0;
+  justify-items: center;
+  border: 1px solid var(--ws-rule-strong);
+  border-radius: 8px;
+  background: var(--ws-paper);
+  padding: 4px 0 5px;
+  line-height: 1;
+}
+.org-ws .ws-date b {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ws-ink);
+}
+.org-ws .ws-date span {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .org-theme.org-ws * {
+    transition: none !important;
+  }
+}
