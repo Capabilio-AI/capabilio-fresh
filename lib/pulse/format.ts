@@ -46,7 +46,7 @@ export function splitTags(text: string): { text: string; tag?: string }[] {
 export const escapeLike = (s: string): string => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 const LEGACY = /^\[(Project|Question|Achievement)\]\s*/;
-export type PostKind = "post" | "project" | "question" | "achievement";
+export type PostKind = "post" | "project" | "question" | "achievement" | "opportunity" | "resource";
 /** Posts written before the kind column carried their type as a text prefix. */
 export function legacyKind(content: string): { kind: PostKind; content: string } {
   const m = LEGACY.exec(content);

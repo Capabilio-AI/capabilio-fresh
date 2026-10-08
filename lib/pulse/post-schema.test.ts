@@ -51,3 +51,26 @@ describe("normalizeTags", () => {
     expect(normalizeTags(["#SQL", "sql", "Machine Learning", "a b c"], 3)).toEqual(["sql", "machine-learning", "a-b-c"]);
   });
 });
+
+describe("networking post kinds", () => {
+  it("an opportunity needs a title and cleans its skills and apply link", () => {
+    expect(PostInputSchema.safeParse({ kind: "opportunity", content: "no title" }).success).toBe(false);
+    const r = PostInputSchema.parse({ kind: "opportunity", title: "Frontend intern", opportunityType: "internship", company: "Acme", applyUrl: "", skills: ["#React", "react", "Type Script"] });
+    expect(r.kind === "opportunity" && r.applyUrl).toBeUndefined();
+    expect(r.kind === "opportunity" && r.skills).toEqual(["react", "type-script"]);
+    expect(PostInputSchema.safeParse({ kind: "opportunity", title: "Frontend intern", applyUrl: "javascript:alert(1)" }).success).toBe(false);
+  });
+  it("a resource must carry a real http(s) link", () => {
+    expect(PostInputSchema.safeParse({ kind: "resource", title: "Great SQL guide" }).success).toBe(false);
+    expect(PostInputSchema.safeParse({ kind: "resource", title: "Great SQL guide", url: "javascript:alert(1)" }).success).toBe(false);
+    expect(PostInputSchema.safeParse({ kind: "resource", title: "Great SQL guide", url: "https://example.com/sql" }).success).toBe(true);
+  });
+  it("round-trips through their stored form and feeds trending tags", () => {
+    const row = toRowFields(PostInputSchema.parse({ kind: "opportunity", title: "Data analyst referral", company: "Acme", skills: ["sql"], content: "Happy to refer #data folks" }));
+    expect(row.kind).toBe("opportunity");
+    expect(readMeta("opportunity", row.meta)).toMatchObject({ kind: "opportunity", title: "Data analyst referral", opportunityType: "job", company: "Acme", skills: ["sql"] });
+    expect(row.tags).toEqual(expect.arrayContaining(["sql", "data"]));
+    const res = toRowFields(PostInputSchema.parse({ kind: "resource", title: "SQL guide", url: "https://example.com/sql", tags: ["sql"] }));
+    expect(readMeta("resource", res.meta)).toEqual({ kind: "resource", title: "SQL guide", url: "https://example.com/sql", tags: ["sql"] });
+  });
+});

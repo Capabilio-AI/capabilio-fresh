@@ -1,34 +1,24 @@
 /**
- * Who may send a message to whom, PURE. Messaging is consent-based: a first message is a request the other person accepts,
- * unless they already follow the sender. While a request is pending the requester gets one message, so a request cannot become spam.
+ * Who may send a message to whom, PURE. Anyone who is not blocked can message anyone: the message lands straight in the
+ * inbox, so people actually receive what is sent to them. Safety is block and report, not a gate on the first message.
+ * Older conversations that were created as requests open up on the next message; one the recipient declined stays closed
+ * to the person who sent it.
  */
 export type ConversationStatus = "pending" | "accepted" | "declined";
 
 export interface ConversationState {
   status: ConversationStatus;
   requestedBy: string;
-  /** messages the requester has already sent in this conversation */
-  requesterMessages: number;
 }
 
 export type SendDecision = { allow: true; status: ConversationStatus } | { allow: false; message: string };
 
-export const REQUEST_MESSAGE_LIMIT = 1;
-
-export function decideSend(input: { me: string; blocked: boolean; recipientFollowsMe: boolean; conversation: ConversationState | null }): SendDecision {
-  const { me, blocked, recipientFollowsMe, conversation } = input;
+export function decideSend(input: { me: string; blocked: boolean; conversation: ConversationState | null }): SendDecision {
+  const { me, blocked, conversation } = input;
   if (blocked) return { allow: false, message: "You can't message this person." };
-  if (!conversation) return { allow: true, status: recipientFollowsMe ? "accepted" : "pending" };
-
-  const iRequested = conversation.requestedBy === me;
-  if (conversation.status === "accepted") return { allow: true, status: "accepted" };
-  if (conversation.status === "pending") {
-    if (!iRequested) return { allow: false, message: "Accept or decline their request to reply." };
-    if (conversation.requesterMessages >= REQUEST_MESSAGE_LIMIT) return { allow: false, message: "Your request is waiting. You can send more once they accept." };
-    return { allow: true, status: "pending" };
-  }
-  // declined: the person who declined may still choose to write, which reopens it; the requester may not
-  return iRequested ? { allow: false, message: "This person isn't accepting messages from you." } : { allow: true, status: "accepted" };
+  // declined: the person who declined may still write, which reopens it; the one who was declined may not
+  if (conversation?.status === "declined" && conversation.requestedBy === me) return { allow: false, message: "This person isn't accepting messages from you." };
+  return { allow: true, status: "accepted" };
 }
 
 /** Pure. The shape of a conversation row from one person's side. */

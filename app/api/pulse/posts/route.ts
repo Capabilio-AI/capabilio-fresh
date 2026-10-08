@@ -9,7 +9,7 @@ import { ownsMedia } from "@/lib/pulse/media";
 import { PostInputSchema, toRowFields } from "@/lib/pulse/post-schema";
 import { getRankedFeed } from "@/lib/pulse/ranked-feed";
 
-const KINDS = ["post", "project", "question", "achievement"] as const;
+const KINDS = ["post", "project", "question", "achievement", "opportunity", "resource"] as const;
 const QuerySchema = z.object({
   mode: z.enum(["for_you", "following", "trending", "user", "tag", "mentors"]).default("for_you"),
   userId: z.string().uuid().optional(),

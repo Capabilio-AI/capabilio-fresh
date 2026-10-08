@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Award, CalendarDays, CheckCircle2, ExternalLink, FileText, Code2, Hammer, Link2 } from "lucide-react";
+import { Award, Building2, CalendarDays, CheckCircle2, ExternalLink, FileText, Code2, Hammer, Link2, MapPin } from "lucide-react";
 import type { PulseAttachment } from "@/lib/pulse/data";
 import { splitTags } from "@/lib/pulse/format";
 import type { PostMeta } from "@/lib/pulse/post-schema";
@@ -34,7 +34,7 @@ export function AttachmentCard({ file }: { file: PulseAttachment }) {
   );
 }
 
-/** The body of a post, laid out for what it is: a project, a question, an achievement, or an update. */
+/** The body of a post, laid out for what it is: an opportunity, a resource, a question, an achievement, or an update. */
 export function PostBody({ kind, content, meta }: { kind: string; content: string; meta: PostMeta | null }) {
   if (meta?.kind === "project") {
     return (
@@ -53,6 +53,42 @@ export function PostBody({ kind, content, meta }: { kind: string; content: strin
             {meta.demoUrl && safe(meta.demoUrl) && <a href={meta.demoUrl} target="_blank" rel="noopener noreferrer" className={linkBtn}><ExternalLink size={13} aria-hidden="true" /> Live demo</a>}
           </div>
         )}
+      </div>
+    );
+  }
+  if (meta?.kind === "opportunity") {
+    const label = { job: "Job", internship: "Internship", referral: "Referral", freelance: "Freelance" }[meta.opportunityType];
+    return (
+      <div className="mt-3 rounded-xl bg-app-blue-container/40 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{meta.title}</h3>
+          <span className="rounded-full bg-app-blue-container px-2 py-0.5 font-lp-body text-[11px] font-semibold text-app-blue">{label}</span>
+        </div>
+        {(meta.company || meta.location) && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-lp-body text-[12.5px] text-app-muted">
+            {meta.company && <span className="flex items-center gap-1"><Building2 size={12} aria-hidden="true" /> {meta.company}</span>}
+            {meta.location && <span className="flex items-center gap-1"><MapPin size={12} aria-hidden="true" /> {meta.location}</span>}
+          </p>
+        )}
+        <Text text={content} className="mt-2" />
+        {meta.skills.length > 0 && <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Skills">{meta.skills.map((t) => <li key={t} className={`${chip} bg-white text-app-blue`}><Link href={`/pulse?tag=${encodeURIComponent(t)}`}>{t}</Link></li>)}</ul>}
+        {meta.applyUrl && safe(meta.applyUrl) && <a href={meta.applyUrl} target="_blank" rel="noopener noreferrer nofollow" className={`${linkBtn} mt-3 bg-white`}><ExternalLink size={13} aria-hidden="true" /> Apply</a>}
+      </div>
+    );
+  }
+  if (meta?.kind === "resource") {
+    return (
+      <div className="mt-3">
+        <a href={safe(meta.url) ? meta.url : undefined} target="_blank" rel="noopener noreferrer nofollow" className="flex items-center gap-3 rounded-xl border border-[var(--m-rule)] bg-app-background px-4 py-3 hover:bg-white">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-app-success-container text-app-success"><Link2 size={18} aria-hidden="true" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-lp-display text-[15px] font-bold text-[var(--m-ink)]">{meta.title}</span>
+            <span className="block truncate font-lp-mono text-[10.5px] text-app-muted">{meta.url.replace(/^https?:\/\//, "")}</span>
+          </span>
+          <ExternalLink size={14} className="shrink-0 text-app-blue" aria-hidden="true" />
+        </a>
+        <Text text={content} className="mt-2" />
+        {meta.tags.length > 0 && <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Topics">{meta.tags.map((t) => <li key={t} className={`${chip} bg-app-success-container/50 text-app-success`}><Link href={`/pulse?tag=${encodeURIComponent(t)}`}>{t}</Link></li>)}</ul>}
       </div>
     );
   }

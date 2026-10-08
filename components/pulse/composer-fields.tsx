@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { normalizeTags } from "@/lib/pulse/post-schema";
+import { normalizeTags, type OpportunityType } from "@/lib/pulse/post-schema";
 
 export const FIELD = "w-full rounded-xl border border-[var(--m-rule)] bg-app-background px-3.5 py-2.5 font-lp-body text-[13.5px] text-[var(--m-ink)] placeholder:text-app-muted focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20";
 
@@ -62,16 +62,23 @@ export interface Draft {
   issuer: string;
   achievedOn: string;
   proofUrl: string;
+  opportunityType: OpportunityType;
+  company: string;
+  location: string;
+  applyUrl: string;
+  skills: string[];
+  resourceUrl: string;
 }
-export const EMPTY_DRAFT: Draft = { content: "", title: "", stack: [], repoUrl: "", demoUrl: "", status: "building", tags: [], issuer: "", achievedOn: "", proofUrl: "" };
+export const EMPTY_DRAFT: Draft = { content: "", title: "", stack: [], repoUrl: "", demoUrl: "", status: "building", tags: [], issuer: "", achievedOn: "", proofUrl: "", opportunityType: "job", company: "", location: "", applyUrl: "", skills: [], resourceUrl: "" };
 
-export type Kind = "post" | "project" | "question" | "achievement";
+export type Kind = "post" | "project" | "question" | "achievement" | "opportunity" | "resource";
 
 /** Whether the draft has what that kind of post needs (the server checks the same minimums). */
 export function draftReady(kind: Kind, d: Draft): boolean {
   if (kind === "post") return d.content.trim().length >= 1;
   if (kind === "project") return d.title.trim().length >= 3 && d.content.trim().length >= 10;
   if (kind === "question") return d.title.trim().length >= 10;
+  if (kind === "resource") return d.title.trim().length >= 3 && /^https?:\/\/\S+/i.test(d.resourceUrl.trim());
   return d.title.trim().length >= 3;
 }
 
@@ -81,5 +88,7 @@ export function draftBody(kind: Kind, d: Draft): Record<string, unknown> {
   if (kind === "post") return { kind, content: d.content.trim() };
   if (kind === "project") return { kind, title: d.title.trim(), content: d.content.trim(), stack: d.stack, repoUrl: opt(d.repoUrl), demoUrl: opt(d.demoUrl), status: d.status };
   if (kind === "question") return { kind, title: d.title.trim(), content: d.content.trim(), tags: d.tags };
+  if (kind === "opportunity") return { kind, title: d.title.trim(), content: d.content.trim(), opportunityType: d.opportunityType, company: opt(d.company), location: opt(d.location), applyUrl: opt(d.applyUrl), skills: d.skills };
+  if (kind === "resource") return { kind, title: d.title.trim(), content: d.content.trim(), url: d.resourceUrl.trim(), tags: d.tags };
   return { kind, title: d.title.trim(), content: d.content.trim(), issuer: opt(d.issuer), achievedOn: opt(d.achievedOn), proofUrl: opt(d.proofUrl) };
 }

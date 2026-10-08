@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import type { OrgContext } from "./context";
 import { untyped } from "./db";
+import { signAttachments, type AttachmentColumns, type ChatAttachment } from "@/lib/pulse/chat-attachment";
 
 export interface ChatChannel {
   id: string;
@@ -17,6 +18,7 @@ export interface ChatMessage {
   authorName: string;
   body: string;
   createdAt: string;
+  attachment: ChatAttachment | null;
 }
 
 export const GENERAL_CHANNEL = "General";
@@ -76,14 +78,15 @@ export async function canAccessChannel(service: SupabaseClient<Database>, ctx: O
 
 export async function loadMessages(service: SupabaseClient<Database>, channelId: string, after?: string): Promise<ChatMessage[]> {
   const db = untyped(service);
-  let q = db.from("org_chat_messages").select("id, author_user_id, body, created_at").eq("channel_id", channelId);
+  let q = db.from("org_chat_messages").select("id, author_user_id, body, created_at, attachment_path, attachment_name, attachment_size, attachment_mime").eq("channel_id", channelId);
   q = after ? q.gt("created_at", after).order("created_at", { ascending: true }).limit(MESSAGE_PAGE) : q.order("created_at", { ascending: false }).limit(MESSAGE_PAGE);
-  const rows = ((await q).data ?? []) as { id: string; author_user_id: string | null; body: string; created_at: string }[];
+  const rows = ((await q).data ?? []) as ({ id: string; author_user_id: string | null; body: string; created_at: string } & AttachmentColumns)[];
   const ordered = after ? rows : rows.reverse();
   const ids = [...new Set(ordered.map((r) => r.author_user_id).filter((x): x is string => Boolean(x)))];
   const { data: profiles } = ids.length ? await service.from("profiles").select("id, full_name, email").in("id", ids) : { data: [] };
   const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? p.email]));
-  return ordered.map((r) => ({ id: r.id, authorId: r.author_user_id, authorName: r.author_user_id ? (names.get(r.author_user_id) ?? "Team member") : "Former member", body: r.body, createdAt: r.created_at }));
+  const files = await signAttachments(service, ordered);
+  return ordered.map((r, i) => ({ id: r.id, authorId: r.author_user_id, authorName: r.author_user_id ? (names.get(r.author_user_id) ?? "Team member") : "Former member", body: r.body, createdAt: r.created_at, attachment: files[i] }));
 }
 
 export async function markRead(service: SupabaseClient<Database>, ctx: OrgContext, channelId: string): Promise<void> {

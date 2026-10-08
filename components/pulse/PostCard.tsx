@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Award, Ban, Flag, Flame, Heart, HelpCircle, Loader2, MessageCircle, MoreHorizontal, Send, Sparkles, Target, Trash2, Users } from "lucide-react";
+import { Award, Ban, BookmarkPlus, Briefcase, Flag, Flame, Heart, HelpCircle, Loader2, MessageCircle, MoreHorizontal, Send, Sparkles, Target, Trash2, Users } from "lucide-react";
 import clsx from "clsx";
 import type { PulseComment, PulsePost } from "@/lib/pulse/data";
 import { relativeTime, type PostKind } from "@/lib/pulse/format";
@@ -16,6 +16,8 @@ const KIND: Record<PostKind, { label: string; icon: typeof Send; bar: string; ch
   project: { label: "Project", icon: Sparkles, bar: "bg-app-blue", chip: "bg-app-blue-container text-app-blue" },
   question: { label: "Question", icon: HelpCircle, bar: "bg-app-warning", chip: "bg-app-warning-container text-app-warning" },
   achievement: { label: "Achievement", icon: Award, bar: "bg-app-success", chip: "bg-app-success-container text-app-success" },
+  opportunity: { label: "Opportunity", icon: Briefcase, bar: "bg-app-blue", chip: "bg-app-blue-container text-app-blue" },
+  resource: { label: "Resource", icon: BookmarkPlus, bar: "bg-app-success", chip: "bg-app-success-container text-app-success" },
 };
 
 /** Why a post is in the feed, with an icon that matches the reason. */
@@ -30,6 +32,8 @@ const REPLY: Record<PostKind, { noun: string; placeholder: string }> = {
   project: { noun: "comments", placeholder: "Give feedback or ask about it…" },
   question: { noun: "answers", placeholder: "Write an answer…" },
   achievement: { noun: "comments", placeholder: "Congratulate them…" },
+  opportunity: { noun: "comments", placeholder: "Ask a question or say you're interested…" },
+  resource: { noun: "comments", placeholder: "Add your take or a related link…" },
 };
 
 interface PostCardProps {

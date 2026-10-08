@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const form = await request.formData().catch(() => null);
   const file = form?.get("file");
   const purpose = String(form?.get("purpose") ?? "");
-  if (!(file instanceof File) || (purpose !== "story" && purpose !== "post" && purpose !== "doc")) return NextResponse.json({ error: "Choose a file." }, { status: 400 });
+  if (!(file instanceof File) || (purpose !== "story" && purpose !== "post" && purpose !== "doc" && purpose !== "chat")) return NextResponse.json({ error: "Choose a file." }, { status: 400 });
   const result = await uploadImage(createServiceClient(), auth.userId, purpose as Purpose, file);
-  return result.ok ? NextResponse.json({ ok: true, path: result.path, name: file.name.slice(0, 200), size: file.size }, { status: 201 }) : NextResponse.json({ error: result.message }, { status: result.status });
+  return result.ok ? NextResponse.json({ ok: true, path: result.path, mime: result.mime, name: file.name.slice(0, 200), size: file.size }, { status: 201 }) : NextResponse.json({ error: result.message }, { status: result.status });
 }

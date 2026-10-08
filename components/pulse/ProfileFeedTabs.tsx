@@ -8,7 +8,8 @@ import { PulseFeed } from "./PulseFeed";
 
 const TABS: { key: PostKind | "all"; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "project", label: "Projects" },
+  { key: "opportunity", label: "Opportunities" },
+  { key: "resource", label: "Resources" },
   { key: "achievement", label: "Achievements" },
   { key: "question", label: "Questions" },
   { key: "post", label: "Posts" },

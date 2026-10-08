@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { blockedWith } from "./graph";
 import { decideSend, pairOf, previewOf, sideOf, type ConversationStatus } from "./message-rules";
+import { attachmentColumns, attachmentIsOwn, attachmentPreview, signAttachments, type AttachmentColumns, type AttachmentInput, type ChatAttachment } from "./chat-attachment";
 import { loadPeople, type PersonSummary } from "./people";
 
 type Service = SupabaseClient<Database>;
@@ -19,6 +20,8 @@ export interface MessageItem {
   deleted: boolean;
   /** "call" is the line left in the conversation by a voice or video call */
   kind: "text" | "call";
+  /** a photo or file shared in the message */
+  attachment: ChatAttachment | null;
 }
 export interface ConversationItem {
   id: string;
@@ -46,7 +49,7 @@ interface ConvoRow {
   last_message_preview: string | null;
   last_sender_id: string | null;
 }
-interface MessageRow {
+interface MessageRow extends Partial<AttachmentColumns> {
   id: string;
   sender_id: string;
   body: string;
@@ -56,7 +59,8 @@ interface MessageRow {
 }
 const CONVO_COLUMNS = "id, user_lo, user_hi, requested_by, status, last_message_at, last_message_preview, last_sender_id";
 
-export const toMessage = (m: MessageRow): MessageItem => ({ id: m.id, senderId: m.sender_id, body: m.deleted_at ? "" : m.body, createdAt: m.created_at, deleted: Boolean(m.deleted_at), kind: m.kind ?? "text" });
+export const toMessage = (m: MessageRow, attachment: ChatAttachment | null = null): MessageItem => ({ id: m.id, senderId: m.sender_id, body: m.deleted_at ? "" : m.body, createdAt: m.created_at, deleted: Boolean(m.deleted_at), kind: m.kind ?? "text", attachment: m.deleted_at ? null : attachment });
+const MESSAGE_COLUMNS = "id, sender_id, body, created_at, deleted_at, kind, attachment_path, attachment_name, attachment_size, attachment_mime";
 
 /** Tells the people involved, over each one's private channel. A delivery failure never fails the write: clients also refresh on focus. */
 export async function notify(service: Service, userIds: string[], event: string, payload: Record<string, unknown>): Promise<void> {
@@ -84,28 +88,20 @@ async function ownConversation(service: Service, me: string, id: string): Promis
 
 export type SendResult = { ok: true; conversationId: string; status: ConversationStatus; message: MessageItem } | { ok: false; status: number; message: string };
 
-export async function sendMessage(service: Service, me: string, otherId: string, rawBody: string, attempt = 0): Promise<SendResult> {
+export async function sendMessage(service: Service, me: string, otherId: string, rawBody: string, attachment?: AttachmentInput, attempt = 0): Promise<SendResult> {
   const body = rawBody.trim();
-  if (body.length < 1 || body.length > MAX_BODY) return { ok: false, status: 400, message: `Write a message of up to ${MAX_BODY} characters.` };
+  if (body.length > MAX_BODY || (body.length < 1 && !attachment)) return { ok: false, status: 400, message: `Write a message of up to ${MAX_BODY} characters, or attach a file.` };
+  if (attachment && !attachmentIsOwn(me, attachment)) return { ok: false, status: 400, message: "Upload the file again and retry." };
   if (otherId === me) return { ok: false, status: 400, message: "You can't message yourself." };
   const db = untyped(service);
-  const [{ data: other }, blocked, { data: edge }, convo] = await Promise.all([
+  const [{ data: other }, blocked, convo] = await Promise.all([
     service.from("profiles").select("id").eq("id", otherId).maybeSingle(),
     blockedWith(service, me),
-    db.from("follows").select("follower_id").eq("follower_id", otherId).eq("followee_id", me).maybeSingle(),
     findConversation(service, me, otherId),
   ]);
   if (!other) return { ok: false, status: 404, message: "That person doesn't exist." };
 
-  let requesterMessages = 0;
-  if (convo && convo.status === "pending" && convo.requested_by === me) {
-    const { count } = await db.from("dm_messages").select("id", { count: "exact", head: true }).eq("conversation_id", convo.id).eq("sender_id", me);
-    requesterMessages = count ?? 0;
-  }
-  const decision = decideSend({
-    me, blocked: blocked.has(otherId), recipientFollowsMe: Boolean(edge),
-    conversation: convo ? { status: convo.status, requestedBy: convo.requested_by, requesterMessages } : null,
-  });
+  const decision = decideSend({ me, blocked: blocked.has(otherId), conversation: convo ? { status: convo.status, requestedBy: convo.requested_by } : null });
   if (!decision.allow) return { ok: false, status: 403, message: decision.message };
 
   let conversationId = convo?.id;
@@ -114,17 +110,18 @@ export async function sendMessage(service: Service, me: string, otherId: string,
     const { data: created, error } = await db.from("dm_conversations").insert({ user_lo: lo, user_hi: hi, requested_by: me, status: decision.status }).select("id").single();
     if (error || !created) {
       // two people starting at once: the other insert won; decide again against it
-      if (attempt === 0 && (await findConversation(service, me, otherId))) return sendMessage(service, me, otherId, rawBody, 1);
+      if (attempt === 0 && (await findConversation(service, me, otherId))) return sendMessage(service, me, otherId, rawBody, attachment, 1);
       return { ok: false, status: 500, message: "Couldn't send. Please try again." };
     }
     conversationId = (created as { id: string }).id;
   }
 
-  const { data: row, error: insertError } = await db.from("dm_messages").insert({ conversation_id: conversationId, sender_id: me, body }).select("id, sender_id, body, created_at, deleted_at, kind").single();
+  const { data: row, error: insertError } = await db.from("dm_messages").insert({ conversation_id: conversationId, sender_id: me, body, ...attachmentColumns(attachment) }).select(MESSAGE_COLUMNS).single();
   if (insertError || !row) return { ok: false, status: 500, message: "Couldn't send. Please try again." };
-  const message = toMessage(row as MessageRow);
+  const [signed] = await signAttachments(service, [row as MessageRow]);
+  const message = toMessage(row as MessageRow, signed);
   await Promise.all([
-    db.from("dm_conversations").update({ status: decision.status, last_message_at: message.createdAt, last_message_preview: previewOf(body), last_sender_id: me }).eq("id", conversationId),
+    db.from("dm_conversations").update({ status: decision.status, last_message_at: message.createdAt, last_message_preview: body ? previewOf(body) : attachment ? attachmentPreview(attachment) : "", last_sender_id: me }).eq("id", conversationId),
     db.from("dm_reads").upsert({ conversation_id: conversationId, user_id: me, last_read_at: message.createdAt }, { onConflict: "conversation_id,user_id" }),
   ]);
   await notify(service, [me, otherId], "message", { conversationId, status: decision.status, message });
@@ -181,7 +178,7 @@ export async function loadThread(service: Service, me: string, conversationId: s
   const row = await ownConversation(service, me, conversationId);
   if (!row || (await blockedWith(service, me)).has(row.other)) return null;
   const db = untyped(service);
-  let q = db.from("dm_messages").select("id, sender_id, body, created_at, deleted_at, kind").eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(THREAD_PAGE + 1);
+  let q = db.from("dm_messages").select(MESSAGE_COLUMNS).eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(THREAD_PAGE + 1);
   if (before) q = q.lt("created_at", before);
   const [{ data }, { data: theirRead }, list] = await Promise.all([
     q,
@@ -192,9 +189,10 @@ export async function loadThread(service: Service, me: string, conversationId: s
   const page = rows.slice(0, THREAD_PAGE);
   const conversation = list.find((c) => c.id === conversationId);
   if (!conversation) return null;
+  const signed = await signAttachments(service, page);
   return {
     conversation,
-    messages: page.map(toMessage).reverse(),
+    messages: page.map((m, i) => toMessage(m, signed[i])).reverse(),
     otherReadAt: (theirRead as { last_read_at: string } | null)?.last_read_at ?? null,
     nextCursor: rows.length > THREAD_PAGE ? page[page.length - 1].created_at : null,
   };

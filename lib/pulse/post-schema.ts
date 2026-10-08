@@ -7,6 +7,9 @@ import { hashtagsOf, type PostKind } from "./format";
  */
 export const MAX_DOC_BYTES = 10 * 1024 * 1024;
 
+export const OPPORTUNITY_TYPES = ["job", "internship", "referral", "freelance"] as const;
+export type OpportunityType = (typeof OPPORTUNITY_TYPES)[number];
+
 const httpUrl = z.string().trim().max(500).url().refine((u) => /^https?:\/\//i.test(u), "Use a full http(s) link.");
 const optionalUrl = httpUrl.optional().or(z.literal("").transform(() => undefined));
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal("").transform(() => undefined));
@@ -47,13 +50,38 @@ export const PostInputSchema = z.discriminatedUnion("kind", [
       ...media,
     })
     .strict(),
+  z
+    .object({
+      kind: z.literal("opportunity"),
+      title: z.string().trim().min(3).max(120),
+      opportunityType: z.enum(OPPORTUNITY_TYPES).default("job"),
+      company: optionalText(100),
+      location: optionalText(100),
+      applyUrl: optionalUrl,
+      skills: tagList(6),
+      content: z.string().trim().max(3000).default(""),
+      ...media,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("resource"),
+      title: z.string().trim().min(3).max(120),
+      url: httpUrl,
+      tags: tagList(5),
+      content: z.string().trim().max(1000).default(""),
+      ...media,
+    })
+    .strict(),
 ]);
 export type PostInput = z.infer<typeof PostInputSchema>;
 
 export type PostMeta =
   | { kind: "project"; title: string; stack: string[]; repoUrl?: string; demoUrl?: string; status: "building" | "shipped" }
   | { kind: "question"; title: string; tags: string[] }
-  | { kind: "achievement"; title: string; issuer?: string; achievedOn?: string; proofUrl?: string };
+  | { kind: "achievement"; title: string; issuer?: string; achievedOn?: string; proofUrl?: string }
+  | { kind: "opportunity"; title: string; opportunityType: OpportunityType; company?: string; location?: string; applyUrl?: string; skills: string[] }
+  | { kind: "resource"; title: string; url: string; tags: string[] };
 
 export interface PostRowFields {
   content: string;
@@ -82,6 +110,10 @@ export function toRowFields(input: PostInput): PostRowFields {
       return { content: input.content, kind: "question", meta: compact({ title: input.title, tags: input.tags }), tags: withTags(`${input.title} ${input.content}`, input.tags), ...files };
     case "achievement":
       return { content: input.content, kind: "achievement", meta: compact({ title: input.title, issuer: input.issuer, achievedOn: input.achievedOn, proofUrl: input.proofUrl }), tags: withTags(`${input.title} ${input.content}`), ...files };
+    case "opportunity":
+      return { content: input.content, kind: "opportunity", meta: compact({ title: input.title, opportunityType: input.opportunityType, company: input.company, location: input.location, applyUrl: input.applyUrl, skills: input.skills }), tags: withTags(`${input.title} ${input.content}`, input.skills), ...files };
+    case "resource":
+      return { content: input.content, kind: "resource", meta: compact({ title: input.title, url: input.url, tags: input.tags }), tags: withTags(`${input.title} ${input.content}`, input.tags), ...files };
   }
 }
 
@@ -97,8 +129,10 @@ export function readMeta(kind: PostKind, meta: unknown): PostMeta | null {
   if (kind === "project") return { kind, title, stack: strs(m.stack), repoUrl: str(m.repoUrl), demoUrl: str(m.demoUrl), status: m.status === "shipped" ? "shipped" : "building" };
   if (kind === "question") return { kind, title, tags: strs(m.tags) };
   if (kind === "achievement") return { kind, title, issuer: str(m.issuer), achievedOn: str(m.achievedOn), proofUrl: str(m.proofUrl) };
+  if (kind === "opportunity") return { kind, title, opportunityType: (OPPORTUNITY_TYPES as readonly string[]).includes(m.opportunityType as string) ? (m.opportunityType as OpportunityType) : "job", company: str(m.company), location: str(m.location), applyUrl: str(m.applyUrl), skills: strs(m.skills) };
+  if (kind === "resource") return str(m.url) ? { kind, title, url: str(m.url) as string, tags: strs(m.tags) } : null;
   return null;
 }
 
 /** Every tag a post carries in its structured fields, for trending. */
-export const metaTags = (meta: PostMeta | null): string[] => (meta?.kind === "project" ? meta.stack : meta?.kind === "question" ? meta.tags : []);
+export const metaTags = (meta: PostMeta | null): string[] => (meta?.kind === "project" ? meta.stack : meta?.kind === "opportunity" ? meta.skills : meta?.kind === "question" || meta?.kind === "resource" ? meta.tags : []);

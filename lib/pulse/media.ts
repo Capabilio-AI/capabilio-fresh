@@ -8,10 +8,21 @@ export const BUCKET = "pulse-media";
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_DOC_BYTES = 10 * 1024 * 1024;
 export const SIGNED_URL_SECONDS = 3600;
-export type Purpose = "story" | "post" | "doc";
+export type Purpose = "story" | "post" | "doc" | "chat";
 export type ImageMime = "image/png" | "image/jpeg" | "image/webp";
-export type MediaMime = ImageMime | "application/pdf";
-const EXT: Record<MediaMime, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf" };
+const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+export type MediaMime = ImageMime | "application/pdf" | typeof DOCX | typeof XLSX | typeof PPTX;
+const EXT: Record<MediaMime, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf", [DOCX]: "docx", [XLSX]: "xlsx", [PPTX]: "pptx" };
+const OFFICE_BY_EXT: Record<string, MediaMime> = { docx: DOCX, xlsx: XLSX, pptx: PPTX };
+
+/** Word, Excel and PowerPoint files are zip containers: the bytes must start with "PK" and the name must carry the matching extension. */
+export function sniffOffice(b: Uint8Array, fileName: string): MediaMime | null {
+  const zip = b.length >= 4 && b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04;
+  const ext = fileName.toLowerCase().split(".").pop() ?? "";
+  return zip ? (OFFICE_BY_EXT[ext] ?? null) : null;
+}
 
 /** The real type of an image from its first bytes — the browser-supplied content type is never trusted. */
 export function sniffImage(b: Uint8Array): ImageMime | null {
@@ -31,22 +42,23 @@ export function ownsMedia(userId: string, purpose: Purpose, path: string): boole
   return path.startsWith(`${userId}/${purpose}/`) && !path.includes("..") && path.length <= 300;
 }
 
-export type UploadResult = { ok: true; path: string } | { ok: false; status: number; message: string };
+export type UploadResult = { ok: true; path: string; mime?: MediaMime } | { ok: false; status: number; message: string };
 
 export async function uploadImage(service: Service, userId: string, purpose: Purpose, file: File): Promise<UploadResult> {
   if (file.size === 0) return { ok: false, status: 400, message: "That file is empty." };
   const isDoc = purpose === "doc";
-  if (file.size > (isDoc ? MAX_DOC_BYTES : MAX_IMAGE_BYTES)) return { ok: false, status: 413, message: isDoc ? "Documents must be under 10 MB." : "Images must be under 5 MB." };
+  const isChat = purpose === "chat";
+  if (file.size > (isDoc || isChat ? MAX_DOC_BYTES : MAX_IMAGE_BYTES)) return { ok: false, status: 413, message: isDoc || isChat ? "Files must be under 10 MB." : "Images must be under 5 MB." };
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const mime: MediaMime | null = isDoc ? (sniffPdf(bytes) ? "application/pdf" : null) : sniffImage(bytes);
-  if (!mime) return { ok: false, status: 415, message: isDoc ? "Upload a PDF document." : "Use a PNG, JPEG or WebP image." };
+  const mime: MediaMime | null = isChat ? (sniffImage(bytes) ?? (sniffPdf(bytes) ? "application/pdf" : sniffOffice(bytes, file.name))) : isDoc ? (sniffPdf(bytes) ? "application/pdf" : null) : sniffImage(bytes);
+  if (!mime) return { ok: false, status: 415, message: isChat ? "Share a photo (PNG, JPEG, WebP), a PDF, or a Word, Excel or PowerPoint file." : isDoc ? "Upload a PDF document." : "Use a PNG, JPEG or WebP image." };
   const path = `${userId}/${purpose}/${randomUUID()}.${EXT[mime]}`;
   const { error } = await service.storage.from(BUCKET).upload(path, bytes, { contentType: mime, upsert: false });
   if (error) {
     console.error("[pulse-media] upload failed:", error.message);
     return { ok: false, status: 500, message: "Couldn't upload the file. Please try again." };
   }
-  return { ok: true, path };
+  return { ok: true, path, mime };
 }
 
 /** path -> short-lived signed URL, for every path in one call. */
