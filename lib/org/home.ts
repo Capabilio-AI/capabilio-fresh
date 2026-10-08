@@ -98,7 +98,7 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
   const queue = awaiting.slice(0, 6).map((g) => ({ groupId: g.id, projectId: g.project_id, groupName: g.name, projectTitle: projectTitle.get(g.project_id) ?? "Project" }));
 
   const upcoming: UpcomingItem[] = [
-    ...events.map((e): UpcomingItem => ({ kind: "event", title: e.title, at: e.event_starts_at!, detail: e.event_location ?? "Event", href: "/org/posts" })),
+    ...events.map((e): UpcomingItem => ({ kind: "event", title: e.title, at: e.event_starts_at!, detail: e.event_location ?? "Event", href: "/org/college" })),
     ...openProjects
       .filter((p) => p.deadline_at <= horizonIso && p.deadline_at >= nowIso)
       .map((p): UpcomingItem => ({ kind: "project", title: p.title, at: p.deadline_at, detail: "Project deadline", href: `/org/projects/${p.id}` })),

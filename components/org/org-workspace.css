@@ -42,6 +42,7 @@
   --o-ink-on-gold: #1e1707;
   --o-line-strong: var(--m-soft);
   --o-pop: #ffffff;
+  --o-ring: var(--m-ground);
 
   /* soft gold light behind the page, so the glass has something to refract */
   background:
@@ -248,4 +249,12 @@
   .org-theme.org-ws * {
     transition: none !important;
   }
+}
+
+/* college page */
+.org-theme.org-ws .o-stat {
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.52));
+}
+.org-theme.org-ws .o-date {
+  background: var(--m-accent-soft);
 }

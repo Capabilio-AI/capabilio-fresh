@@ -78,6 +78,7 @@ export const PlacementSchema = z
 export const PostSchema = z
   .object({
     type: z.enum(["event", "announcement"]),
+    category: z.enum(["announcement", "event", "fest", "poster", "achievement", "admissions"]).optional(),
     // a LinkedIn-style post has no title: the server derives one from the text when none is given
     title: optionalText(200),
     body: z.string().trim().min(1).max(5000),

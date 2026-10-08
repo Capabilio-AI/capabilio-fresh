@@ -12,7 +12,7 @@ function StatStrip({ cells }: { cells: { label: string; value: string; tone: str
   return (
     <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[18px] border border-app-border bg-app-border md:grid-cols-4">
       {cells.map((c) => (
-        <div key={c.label} className="px-4 py-5" style={{ backgroundColor: "#100e0b", backgroundImage: "linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.025))" }}>
+        <div key={c.label} className="o-stat px-4 py-5">
           <p className={`text-[32px] font-black leading-none tracking-[-0.04em] ${c.tone}`}>{c.value}</p>
           <p className="o-eyebrow mt-2">{c.label}</p>
         </div>
@@ -91,7 +91,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
   const { upcoming, past } = splitEvents(posts);
   const bio = org.profile?.bio;
   const card = (p: PublicPost) => (
-    <PostCard key={p.id} post={p} slug={org.slug} orgName={org.name} logoUrl={org.profile?.logo_url ?? null} manage={manageablePostIds?.has(p.id) ?? false} />
+    <PostCard key={p.id} post={p} slug={org.slug} orgName={org.name} logoUrl={org.profile?.logo_url ?? null} verified={org.verified} manage={manageablePostIds?.has(p.id) ?? false} />
   );
 
   const editForm = canEditPage && (
@@ -118,7 +118,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
   return (
     <>
       <CollegeHeader org={org} signedIn={signedIn} tab={tab} basePath={basePath} canEditPage={canEditPage} workspace={workspace} />
-      <main className="mx-auto grid max-w-[1120px] grid-cols-1 gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[1fr_320px]">
+      <main className={`grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px] ${workspace ? "py-6" : "mx-auto max-w-[1120px] px-4 py-8 sm:px-8"}`}>
         <div className="flex min-w-0 flex-col gap-6">
           {editForm}
 
@@ -133,6 +133,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
                 ]}
               />
               {canPost && <PostComposer orgName={org.name} logoUrl={org.profile?.logo_url ?? null} />}
+              {posts.length > 0 && <h2 className="text-[15px] font-bold text-app-charcoal">{canPost ? "Your posts" : "Posts"}</h2>}
               {posts.length === 0 ? (
                 <EmptyState title="No posts yet" body={canPost ? "Share your first update — an announcement, a photo or an event." : "Published events and announcements from this college appear here."} />
               ) : (

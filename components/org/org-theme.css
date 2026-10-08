@@ -193,3 +193,35 @@
     transition: none !important;
   }
 }
+
+/* date block on dated posts (both themes) */
+.org-theme .o-date {
+  display: grid;
+  width: 52px;
+  flex-shrink: 0;
+  justify-items: center;
+  border-radius: 14px;
+  background: var(--app-orange-container);
+  padding: 7px 0 8px;
+  line-height: 1;
+}
+.org-theme .o-date b {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--app-charcoal);
+}
+.org-theme .o-date span {
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-orange);
+}
+
+/* stat cells: dark on the public page; the workspace overrides to glass */
+.org-theme .o-stat {
+  background-color: #100e0b;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025));
+}

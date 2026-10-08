@@ -48,7 +48,7 @@ export function CollegeHeader({
 
   return (
     <>
-      <div className="o-cover h-[200px] md:h-[280px]">
+      <div className={`o-cover h-[200px] md:h-[280px] ${workspace ? "rounded-[28px]" : ""}`}>
         {cover && (
           // eslint-disable-next-line @next/next/no-img-element -- picture uploaded to our own storage bucket
           <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
@@ -59,19 +59,19 @@ export function CollegeHeader({
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b0a08] via-[#0b0a08]/30 to-transparent" />
         {canEditPage && (
           <div className="absolute right-4 top-4 z-10">
-            <ImageUploadButton kind="cover" label="Change cover image" className="o-btn-ghost !bg-black/50 backdrop-blur">
+            <ImageUploadButton kind="cover" label="Change cover image" className="o-btn-ghost !bg-black/50 !text-[#fff] backdrop-blur">
               <Camera size={14} aria-hidden="true" /> {cover ? "Change cover" : "Add cover"}
             </ImageUploadButton>
           </div>
         )}
       </div>
 
-      <div className="mx-auto max-w-[1120px] px-4 sm:px-8">
-        <header className="relative z-10 -mt-12 flex flex-wrap items-end gap-x-6 gap-y-4 md:-mt-16">
-          <div className="relative shrink-0">
+      <div className={workspace ? "" : "mx-auto max-w-[1120px] px-4 sm:px-8"}>
+        <header className={`relative z-10 flex flex-wrap items-end gap-x-6 gap-y-4 ${workspace ? "mt-5 px-1" : "-mt-12 md:-mt-16"}`}>
+          <div className={`relative shrink-0 ${workspace ? "-mt-14 self-start md:-mt-20" : ""}`}>
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element -- picture uploaded to our own storage bucket
-              <img src={logo} alt={`${org.name} logo`} className="h-24 w-24 rounded-[28px] bg-[#14110c] object-cover shadow-[0_0_0_4px_#0b0a08] md:h-32 md:w-32 md:rounded-[34px]" />
+              <img src={logo} alt={`${org.name} logo`} className="h-24 w-24 rounded-[28px] bg-[#14110c] object-cover shadow-[0_0_0_4px_var(--o-ring,#0b0a08)] md:h-32 md:w-32 md:rounded-[34px]" />
             ) : (
               <span className="o-logo-tile h-24 w-24 rounded-[28px] text-[34px] md:h-32 md:w-32 md:rounded-[34px] md:text-[44px]" aria-hidden="true">
                 {initialsOf(org.name)}
@@ -79,7 +79,7 @@ export function CollegeHeader({
             )}
             {canEditPage && (
               <span className="absolute -bottom-2 -right-2">
-                <ImageUploadButton kind="logo" label="Change logo" className="o-btn-ghost !rounded-full !bg-[#1a160f] !p-2">
+                <ImageUploadButton kind="logo" label="Change logo" className="o-btn-ghost !rounded-full !bg-[#1a160f] !p-2 !text-[#fff]">
                   <Camera size={14} aria-hidden="true" />
                 </ImageUploadButton>
               </span>

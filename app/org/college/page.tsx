@@ -35,7 +35,7 @@ export default async function OrgCollegePage({ searchParams }: { searchParams: P
   }
 
   return (
-    <div className="-mx-4 -my-8 sm:-mx-8 md:-my-10">
+    <div>
       <CollegeProfileView
         org={org}
         facts={facts}
