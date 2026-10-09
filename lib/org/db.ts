@@ -44,11 +44,15 @@ export interface MaterialRow {
   institution_id: string;
   subject_id: string | null;
   author_membership_id: string;
-  type: "notes" | "pdf" | "link";
+  type: "notes" | "pdf" | "link" | "file";
   title: string;
   description: string | null;
   body: string | null;
   url: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  file_size: number | null;
+  file_mime: string | null;
   branch: string;
   year: number;
   published_at: string;

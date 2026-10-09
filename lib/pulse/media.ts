@@ -8,7 +8,7 @@ export const BUCKET = "pulse-media";
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_DOC_BYTES = 10 * 1024 * 1024;
 export const SIGNED_URL_SECONDS = 3600;
-export type Purpose = "story" | "post" | "doc" | "chat";
+export type Purpose = "story" | "post" | "doc" | "chat" | "material";
 export type ImageMime = "image/png" | "image/jpeg" | "image/webp";
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -47,11 +47,11 @@ export type UploadResult = { ok: true; path: string; mime?: MediaMime } | { ok: 
 export async function uploadImage(service: Service, userId: string, purpose: Purpose, file: File): Promise<UploadResult> {
   if (file.size === 0) return { ok: false, status: 400, message: "That file is empty." };
   const isDoc = purpose === "doc";
-  const isChat = purpose === "chat";
+  const isChat = purpose === "chat" || purpose === "material";
   if (file.size > (isDoc || isChat ? MAX_DOC_BYTES : MAX_IMAGE_BYTES)) return { ok: false, status: 413, message: isDoc || isChat ? "Files must be under 10 MB." : "Images must be under 5 MB." };
   const bytes = new Uint8Array(await file.arrayBuffer());
   const mime: MediaMime | null = isChat ? (sniffImage(bytes) ?? (sniffPdf(bytes) ? "application/pdf" : sniffOffice(bytes, file.name))) : isDoc ? (sniffPdf(bytes) ? "application/pdf" : null) : sniffImage(bytes);
-  if (!mime) return { ok: false, status: 415, message: isChat ? "Share a photo (PNG, JPEG, WebP), a PDF, or a Word, Excel or PowerPoint file." : isDoc ? "Upload a PDF document." : "Use a PNG, JPEG or WebP image." };
+  if (!mime) return { ok: false, status: 415, message: isChat ? "Upload a PDF, a Word, Excel or PowerPoint file, or a PNG, JPEG or WebP image." : isDoc ? "Upload a PDF document." : "Use a PNG, JPEG or WebP image." };
   const path = `${userId}/${purpose}/${randomUUID()}.${EXT[mime]}`;
   const { error } = await service.storage.from(BUCKET).upload(path, bytes, { contentType: mime, upsert: false });
   if (error) {

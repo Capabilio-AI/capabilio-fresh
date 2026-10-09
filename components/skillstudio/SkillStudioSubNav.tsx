@@ -5,8 +5,6 @@ import { UnderlineTabs } from "@/components/metro/UnderlineTabs";
 
 const TABS = [
   { label: "My Path", href: "/skillstudio" },
-  { label: "Foundations", href: "/skillstudio/foundations" },
-  { label: "Courses", href: "/skillstudio/courses" },
   { label: "Materials", href: "/skillstudio/materials" },
   { label: "Certifications", href: "/skillstudio/certifications" },
 ];

@@ -4,7 +4,8 @@ import { scoreTier, TIER_LABEL } from "@/components/dashboard/tier";
 
 const CHIP = "flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[12px] font-bold text-white";
 
-export function DashboardHeader({ data }: { data: DashboardData }) {
+/** hideScore: the Overview already shows the live ELO, so the header doesn't repeat it. */
+export function DashboardHeader({ data, hideScore = false }: { data: DashboardData; hideScore?: boolean }) {
   const tier = scoreTier(data.overall.percentage);
   return (
     <header className="mb-4 flex flex-col gap-5 rounded-2xl bg-[var(--m-ink)] p-5 text-white sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -19,13 +20,15 @@ export function DashboardHeader({ data }: { data: DashboardData }) {
           {data.yearLabel && <span className={CHIP}><GraduationCap size={13} aria-hidden />{data.yearLabel}</span>}
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-4 rounded-xl bg-white px-5 py-3 text-[var(--m-ink)]">
-        <div>
-          <p className="font-lp-display text-[34px] font-bold leading-none">{data.overall.percentage}%</p>
-          <p className="mt-1 text-[12px] font-bold text-[var(--m-muted)]">Diagnostic score</p>
+      {!hideScore && (
+        <div className="flex shrink-0 items-center gap-4 rounded-xl bg-white px-5 py-3 text-[var(--m-ink)]">
+          <div>
+            <p className="font-lp-display text-[34px] font-bold leading-none">{data.overall.percentage}%</p>
+            <p className="mt-1 text-[12px] font-bold text-[var(--m-muted)]">Diagnostic score</p>
+          </div>
+          <span className="rounded-full bg-[var(--m-ground)] px-3 py-1 text-[12px] font-bold">{TIER_LABEL[tier]}</span>
         </div>
-        <span className="rounded-full bg-[var(--m-ground)] px-3 py-1 text-[12px] font-bold">{TIER_LABEL[tier]}</span>
-      </div>
+      )}
     </header>
   );
 }

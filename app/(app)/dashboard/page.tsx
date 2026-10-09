@@ -88,7 +88,7 @@ export default async function DashboardPage() {
           explanation={explainRecommendation(topMatch, statedInterest)}
         />
       )}
-      <DashboardHeader data={data} />
+      <DashboardHeader data={data} hideScore={Boolean(overview)} />
       {rollNotice && <div className="pb-2"><RollNumberBanner notice={rollNotice} /></div>}
       {askPlanB && (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white p-4">

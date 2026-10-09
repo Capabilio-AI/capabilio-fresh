@@ -3,14 +3,15 @@ import { orgPageContext } from "@/lib/org/page";
 import { staffBranchScope } from "@/lib/org/branch-scope";
 import { listMaterialsForStaff, listSubjects } from "@/lib/org/loaders";
 import { JsonForm } from "@/components/org/JsonForm";
+import { MaterialFileForm } from "@/components/org/MaterialFileForm";
 import { ExternalLink, FileText, Link2, StickyNote, type LucideIcon } from "lucide-react";
 import { Collapsible, EmptyState, PageHeader } from "@/components/org/ui";
 import { GroupTitle, Segmented } from "@/components/org/widgets";
 
 export const metadata: Metadata = { title: "Course materials — Capabilio AI" };
 
-const TYPE_ICON: Record<string, LucideIcon> = { link: Link2, pdf: FileText, notes: StickyNote };
-const TYPE_LABEL: Record<string, string> = { link: "Links", pdf: "PDFs", notes: "Notes" };
+const TYPE_ICON: Record<string, LucideIcon> = { link: Link2, pdf: FileText, notes: StickyNote, file: FileText };
+const TYPE_LABEL: Record<string, string> = { file: "Files", link: "Links", pdf: "PDFs", notes: "Notes" };
 
 export default async function MaterialsPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
   const sp = await searchParams;
@@ -28,9 +29,12 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Course materials"
-        subtitle={scope ? `Share notes or links with ${scope} students of a year. Only students of ${scope} in that year see them, in SkillStudio. Files are shared as links.` : "Share notes or links with students of a branch and year. Students see only their own branch and year, in SkillStudio. Files are shared as links."}
+        subtitle={scope ? `Share notes or links with ${scope} students of a year. Only students of ${scope} in that year see them, in SkillStudio.` : "Share notes or links with students of a branch and year. Students see only their own branch and year, in SkillStudio. Upload a file or share a link."}
       />
-      <Collapsible title="Add material">
+      <Collapsible title="Upload a file">
+        <MaterialFileForm subjects={subjects.map((s) => ({ value: s.id, label: s.label }))} scoped={Boolean(scope)} />
+      </Collapsible>
+      <Collapsible title="Add a link or notes">
         <JsonForm
           action="/api/org/materials"
           submitLabel="Publish material"

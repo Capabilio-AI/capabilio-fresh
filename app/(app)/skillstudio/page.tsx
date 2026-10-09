@@ -5,24 +5,32 @@ import { getGuidePaths } from "@/lib/guide-path/read";
 import { AreaHero } from "@/components/metro/AreaHero";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { GuidePathPanel } from "@/components/dashboard/GuidePathPanel";
+import { ModuleCards } from "@/components/skillstudio/ModuleCards";
+import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
+import { loadModules } from "@/lib/skillstudio/modules";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = { title: "My Path — SkillStudio — Capabilio AI" };
 
 export default async function SkillStudioMyPathPage() {
   const { supabase, user } = await requireAuthedUser();
 
-  const [careerMatches, guidePaths] = await Promise.all([
+  const [careerMatches, guidePaths, modules] = await Promise.all([
     matchCareersForStudent(supabase, user.id),
     getGuidePaths(supabase, user.id),
+    loadModules(createServiceClient(), user.id),
   ]);
   const top = careerMatches[0] ?? null;
 
   return (
     <div>
-      <AreaHero tone="tint" title="SkillStudio" intro="Your personalized learning path, foundations, courses, and certifications." nav={<SkillStudioSubNav />} />
+      <AreaHero tone="tint" title="SkillStudio" intro="Everything for your chosen career: the modules to learn and the certifications to earn." nav={<SkillStudioSubNav />} />
 
       <div className="pt-6">
-        {top ? (
+        <LiveRefresh />
+        {modules && modules.modules.length > 0 ? (
+          <ModuleCards view={modules} />
+        ) : top ? (
           <>
             <p className="mb-3 font-lp-body text-[13px] text-app-muted">
               Sequenced for <span className="font-semibold text-app-charcoal">{top.careerRole}</span> — your top
