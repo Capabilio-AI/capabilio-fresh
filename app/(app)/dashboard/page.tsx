@@ -14,13 +14,6 @@ import { CareerDirectionCard } from "@/components/dashboard/CareerDirectionCard"
 import { CapabilityCard } from "@/components/dashboard/CapabilityCard";
 import { NextActionCard } from "@/components/dashboard/NextActionCard";
 import { AssessmentResults } from "@/components/dashboard/AssessmentResults";
-import {
-  CurrentProjectCard,
-  MentorInsightCard,
-  ProofPortfolioPreview,
-  SkillGapsPreviewCard,
-} from "@/components/dashboard/SecondaryCards";
-import { JourneyTimeline } from "@/components/dashboard/JourneyTimeline";
 import { TrackPanel } from "@/components/direction/TrackPanel";
 import { RollNumberBanner } from "@/components/direction/RollNumberBanner";
 import { loadRollNumberNotice } from "@/lib/org/roll-number";
@@ -28,8 +21,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { PlanBDialog } from "@/components/direction/PlanBDialog";
-import { ProfileEloCard, ProfileSkills } from "@/components/assess/result/ProfileViews";
-import { CommonProgress } from "@/components/assess/result/CommonProgress";
+import { OverviewHub } from "@/components/dashboard/OverviewHub";
+import { buildOverview } from "@/lib/dashboard/overview";
 import { getCareerProfile } from "@/lib/assess/career-profile";
 import { OnboardingGate } from "@/components/assess/OnboardingGate";
 import { studentGate } from "@/lib/assess/gate";
@@ -77,7 +70,7 @@ export default async function DashboardPage() {
 
   const service = createServiceClient();
   const [rollNotice, direction, careerProfile] = await Promise.all([loadRollNumberNotice(service, user.id), getStudentDirection(service, user.id), getCareerProfile(service as unknown as Db, user.id)]);
-  const hasProfile = careerProfile.unlocked && careerProfile.elo !== null;
+  const overview = buildOverview(careerProfile);
   // Plan B is asked once, in 3-1, and never again after one is saved.
   const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;
   const askPlanB = planBAsk && !planBAsk.intent.planBKind ? planBAsk : null;
@@ -112,25 +105,18 @@ export default async function DashboardPage() {
       <DashboardSubNav />
 
       <div className="flex flex-col gap-5 pt-6">
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1fr]">
-          <CareerDirectionCard match={topMatch} />
-          {hasProfile ? <ProfileEloCard initial={careerProfile} /> : <CapabilityCard skills={skills} />}
-        </div>
-
-        <NextActionCard action={nextAction} />
-
-        {hasProfile && <ProfileSkills initial={careerProfile} />}
-
-        {hasProfile && careerProfile.common ? <CommonProgress bars={careerProfile.common} /> : <AssessmentResults data={data} />}
-
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <SkillGapsPreviewCard match={topMatch} />
-          <CurrentProjectCard />
-          <MentorInsightCard action={nextAction} />
-          <ProofPortfolioPreview items={vaultItems} />
-        </div>
-
-        <JourneyTimeline year={data.academicYear} />
+        {overview ? (
+          <OverviewHub o={overview} vaultCount={vaultItems.length} yearLabel={data.yearLabel} />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1fr]">
+              <CareerDirectionCard match={topMatch} />
+              <CapabilityCard skills={skills} />
+            </div>
+            <NextActionCard action={nextAction} />
+            <AssessmentResults data={data} />
+          </>
+        )}
       </div>
     </div>
   );
