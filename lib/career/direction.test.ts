@@ -47,10 +47,10 @@ describe("higher studies check-in", () => {
 });
 
 describe("year confirmation", () => {
-  it("required when never confirmed, when years are missing, and after 180 days", () => {
-    expect(needsYearConfirmation(row({ year_confirmed_at: null }), NOW)).toBe(true);
+  it("only required when years are missing, never re-asked once saved at signup", () => {
+    expect(needsYearConfirmation(row({ year_confirmed_at: null }), NOW)).toBe(false);
     expect(needsYearConfirmation(row({ start_year: null }), NOW)).toBe(true);
-    expect(needsYearConfirmation(row({ year_confirmed_at: daysAgo(181) }), NOW)).toBe(true);
+    expect(needsYearConfirmation(row({ year_confirmed_at: daysAgo(181) }), NOW)).toBe(false);
     expect(needsYearConfirmation(row({ year_confirmed_at: daysAgo(10) }), NOW)).toBe(false);
   });
 });

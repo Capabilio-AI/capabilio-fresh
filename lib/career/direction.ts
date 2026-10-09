@@ -94,10 +94,9 @@ const daysSince = (iso: string, now: Date) => (now.getTime() - new Date(iso).get
 const latest = (...isos: (string | null)[]) =>
   isos.filter((v): v is string => Boolean(v)).sort().at(-1) ?? null;
 
-/** Years missing entirely, or never confirmed / not re-confirmed within YEAR_RECONFIRM_DAYS. */
-export function needsYearConfirmation(d: StudentDirection, now: Date = new Date()): boolean {
-  if (d.startYear == null || d.endYear == null) return true;
-  return d.yearConfirmedAt == null || daysSince(d.yearConfirmedAt, now) >= YEAR_RECONFIRM_DAYS;
+/** Years are asked once, at signup. Only a student with no years on file is asked again; a saved value is never re-confirmed. */
+export function needsYearConfirmation(d: StudentDirection, _now?: Date): boolean {
+  return d.startYear == null || d.endYear == null;
 }
 
 /** Goal-state prompt: trigger met, goal unset/"not sure", and not shown/changed in the last 14 days. */
