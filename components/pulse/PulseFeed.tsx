@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, X } from "lucide-react";
 import type { FeedItem, FeedPage, PulseComment, PulsePost } from "@/lib/pulse/data";
@@ -54,6 +55,11 @@ function feedUrl(view: FeedView, before: string | null): string {
 }
 
 /** The feed for one view (For You, Following, a #tag, mentors, a community, or one person), with stories and the composer where they belong. */
+import { GRAPH_CHANGED, POSTED, announce, onAnnounce } from "@/lib/pulse/live";
+
+const POLL_MS = 60_000;
+const itemId = (it: FeedItem | undefined) => (it ? (it.type === "post" ? it.post.id : it.page.id) : null);
+
 export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: string } & AvatarPerson }) {
   const [items, setItems] = useState<FeedItem[] | null>(null);
   const [role, setRole] = useState<string | null>(null);
@@ -64,8 +70,35 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
   const posts = items;
   const key = JSON.stringify(view);
 
+  const router = useRouter();
   const [tick, setTick] = useState(0);
   const load = useCallback(() => setTick((t) => t + 1), []);
+  const [fresh, setFresh] = useState<(FeedPage & { role?: string | null }) | null>(null);
+  const topId = useRef<string | null>(null);
+  useEffect(() => { topId.current = itemId(items?.[0]); }, [items]);
+
+  // a follow or unfollow anywhere on the page changes whose posts belong here
+  useEffect(() => onAnnounce(GRAPH_CHANGED, load), [load]);
+  // your own new post: show it, and update the counts on your profile card
+  const posted = useCallback(() => { setFresh(null); load(); announce(POSTED); router.refresh(); }, [load, router]);
+
+  // look for newer posts every minute and whenever you return to the tab; offer them rather than shuffling the list under your thumb
+  useEffect(() => {
+    const k = JSON.parse(key) as FeedView;
+    if (k.mode === "tag" || k.mode === "user") return;
+    const check = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const res = await fetch(feedUrl(k, null));
+        if (!res.ok) return;
+        const data = (await res.json()) as FeedPage & { role?: string | null };
+        if (topId.current !== null && itemId(data.items[0]) !== null && itemId(data.items[0]) !== topId.current) setFresh(data);
+      } catch { /* a missed check is retried on the next tick */ }
+    };
+    const timer = setInterval(check, POLL_MS);
+    document.addEventListener("visibilitychange", check);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", check); };
+  }, [key]);
   useEffect(() => {
     let live = true;
     fetch(feedUrl(JSON.parse(key) as FeedView, null))
@@ -73,6 +106,7 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
       .then((data) => {
         if (!live) return;
         setError(null);
+        setFresh(null);
         setItems(data.items);
         setRole(data.role ?? null);
         setCursor(data.nextCursor);
@@ -116,6 +150,9 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
 
   return (
     <div className="flex flex-col gap-4">
+      {fresh && (
+        <button type="button" onClick={() => { setItems(fresh.items); setCursor(fresh.nextCursor); setRole(fresh.role ?? null); setFresh(null); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="sticky top-28 z-10 mx-auto rounded-full bg-[var(--m-ink)] px-4 py-2 font-lp-body text-[13px] font-bold text-white shadow-lg">New posts · tap to show</button>
+      )}
       {view.mode === "tag" && (
         <div className="flex items-center justify-between rounded-2xl border border-[var(--m-rule)] bg-white px-5 py-3">
           <p className="font-lp-body text-[14px] text-[var(--m-ink)]">Posts tagged <span className="font-semibold text-app-blue">#{view.tag}</span></p>
@@ -129,7 +166,7 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
         </div>
       )}
       {home && <StoriesTray me={viewer} />}
-      {home && <Composer me={viewer} onPosted={load} />}
+      {home && <Composer me={viewer} onPosted={posted} />}
       {view.mode === "community" && view.canPost && <Composer me={viewer} onPosted={load} endpoint={communityBase(view)} placeholder="Start a conversation in this community…" />}
       {view.mode === "community" && !view.canPost && <p className="rounded-2xl border border-dashed border-[var(--m-rule)] bg-white px-5 py-3 text-center font-lp-body text-[12.5px] text-app-muted">Join this community to post.</p>}
 

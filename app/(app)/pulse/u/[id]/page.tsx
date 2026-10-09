@@ -13,6 +13,7 @@ import { Avatar } from "@/components/pulse/Avatar";
 import { FollowButton } from "@/components/pulse/FollowButton";
 import { MentorBadge } from "@/components/pulse/MentorBadge";
 import { ProfileFeedTabs } from "@/components/pulse/ProfileFeedTabs";
+import { ProfileStats } from "@/components/pulse/ProfileStats";
 import { ProfileMenu } from "@/components/pulse/ProfileMenu";
 
 export const metadata: Metadata = { title: "Profile — Pulse — Capabilio AI" };
@@ -56,14 +57,11 @@ export default async function PulseProfilePage({ params }: { params: Promise<{ i
             <Avatar person={person} size="xl" />
             <div className="min-w-0 flex-1">
               <h1 className="flex flex-wrap items-center gap-2.5 font-lp-display text-[24px] font-bold text-[var(--m-ink)]">{name}{person.isMentor && <MentorBadge />}</h1>
-              <p className="mt-1 font-lp-body text-[14px] font-medium text-[var(--m-ink)]">{person.headline ?? "Capabilio member"}</p>
+              {person.tagline && <p className="mt-1 font-lp-body text-[14px] font-medium text-app-blue">{person.tagline}</p>}
+              <p className={`${person.tagline ? "mt-0.5" : "mt-1"} font-lp-body text-[14px] font-medium text-[var(--m-ink)]`}>{person.headline ?? "Capabilio member"}</p>
               {person.detail && <p className="mt-0.5 font-lp-body text-[12.5px] text-app-muted">{person.detail}</p>}
               {!hidden && (
-                <dl className="mt-4 flex gap-6">
-                  {([["Posts", counts.posts], ["Followers", counts.followers], ["Following", counts.following]] as const).map(([label, n]) => (
-                    <div key={label}><dd className="font-lp-display text-[18px] font-bold text-[var(--m-ink)]">{n}</dd><dt className="font-lp-body text-[11.5px] text-app-muted">{label}</dt></div>
-                  ))}
-                </dl>
+                <ProfileStats userId={id} name={name} counts={counts} inline />
               )}
             </div>
             {isMe ? (

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Hash, Newspaper, UserPlus } from "lucide-react";
 import type { Suggestion, TrendingTag } from "@/lib/pulse/sidebar";
 import type { NewsItem } from "@/lib/pulse/news";
+import { GRAPH_CHANGED, onAnnounce } from "@/lib/pulse/live";
 import { Avatar } from "./Avatar";
 import { FollowButton } from "./FollowButton";
 import { MentorBadge } from "./MentorBadge";
@@ -22,13 +23,19 @@ export function PulseSidebar() {
   const [failed, setFailed] = useState(false);
   const [news, setNews] = useState<{ role: string | null; items: NewsItem[] } | null>(null);
 
-  useEffect(() => {
+  const loadSidebar = useCallback(() => {
     fetch("/api/pulse/sidebar")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad"))))
-      .then((d: SidebarData) => setData(d))
+      .then((d: SidebarData) => { setData(d); setFailed(false); })
       .catch(() => setFailed(true));
-    fetch("/api/pulse/news").then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad")))).then((d: { role: string | null; items: NewsItem[] }) => setNews(d)).catch(() => setNews({ role: null, items: [] }));
   }, []);
+
+  useEffect(() => {
+    loadSidebar();
+    fetch("/api/pulse/news").then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad")))).then((d: { role: string | null; items: NewsItem[] }) => setNews(d)).catch(() => setNews({ role: null, items: [] }));
+    // someone was followed or unfollowed anywhere on the page: the suggestions change, so re-read them
+    return onAnnounce(GRAPH_CHANGED, loadSidebar);
+  }, [loadSidebar]);
 
   return (
     <aside aria-label="Trending and suggestions" className="flex flex-col gap-4">

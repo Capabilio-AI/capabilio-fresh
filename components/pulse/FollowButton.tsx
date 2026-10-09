@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Loader2, UserPlus } from "lucide-react";
 import clsx from "clsx";
+import { GRAPH_CHANGED, announce } from "@/lib/pulse/live";
 
 /** Optimistic follow toggle that rolls back (and says so) when the server refuses. */
 export function FollowButton({ userId, initialFollowing, compact = false, onChange }: { userId: string; initialFollowing: boolean; compact?: boolean; onChange?: (following: boolean) => void }) {
+  const router = useRouter();
   const [following, setFollowing] = useState(initialFollowing);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +27,8 @@ export function FollowButton({ userId, initialFollowing, compact = false, onChan
         return;
       }
       onChange?.(next);
+      announce(GRAPH_CHANGED); // the feed, suggestions and counts re-read
+      router.refresh();
     } catch {
       setFollowing(!next);
       setError("Couldn't reach the server.");

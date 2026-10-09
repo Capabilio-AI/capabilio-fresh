@@ -10,6 +10,7 @@ import { MentorsHub } from "@/components/pulse/MentorsHub";
 import { PulseFeed, type FeedView } from "@/components/pulse/PulseFeed";
 import { PulseNav, type PulseTab } from "@/components/pulse/PulseNav";
 import { PulseSidebar } from "@/components/pulse/PulseSidebar";
+import { ProfileStats } from "@/components/pulse/ProfileStats";
 
 export const metadata: Metadata = { title: "Pulse | Capabilio AI", description: "Your network on Capabilio: what peers and mentors are building." };
 
@@ -39,11 +40,7 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
               {me.tagline && <span className="mt-0.5 font-lp-body text-[12.5px] font-medium text-app-blue">{me.tagline}</span>}
               <span className="mt-0.5 font-lp-body text-[12px] text-app-muted">{me.headline ?? "Student"}</span>
             </Link>
-            <dl className="mt-4 grid grid-cols-3 gap-1 border-t border-[var(--m-rule)] pt-4 text-center">
-              {([["Posts", counts.posts], ["Followers", counts.followers], ["Following", counts.following]] as const).map(([label, n]) => (
-                <div key={label}><dd className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">{n}</dd><dt className="font-lp-body text-[10.5px] text-app-muted">{label}</dt></div>
-              ))}
-            </dl>
+            <ProfileStats userId={user.id} name={me.name ?? "You"} counts={counts} />
           </section>
           <PulseNav active={tab} variant="rail" />
         </div>
