@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "arena:content": "node --env-file=.env.local --import tsx scripts/arena-content.mts",
     "roadmap:content": "node --env-file=.env.local --import tsx scripts/roadmap-content.mts",
-    "ai:check": "node --env-file=.env.local --import tsx scripts/check-bedrock.mts"
+    "ai:check": "node --env-file=.env.local --import tsx scripts/check-bedrock.mts",
+    "assess:pool": "node --env-file=.env.local --import tsx scripts/assess-pool.mts",
+    "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

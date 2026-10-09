@@ -8,12 +8,17 @@ import { getStudentDirection } from "@/lib/career/direction";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { PLAN_B_LABEL } from "@/lib/careers/plan-b-labels";
 import { PlanBDialog } from "@/components/direction/PlanBDialog";
+import { OnboardingGate } from "@/components/assess/OnboardingGate";
+import { studentGate } from "@/lib/assess/gate";
+import type { Db } from "@/lib/assess/db";
 import { RoadmapExperience } from "@/components/roadmap/visual/RoadmapExperience";
 
 export const metadata: Metadata = { title: "Roadmap — Capabilio AI" };
 
 export default async function RoadmapPage({ searchParams }: { searchParams: Promise<{ career?: string; tab?: string; version?: string }> }) {
   const { user } = await requireAuthedUser();
+  const gate = await studentGate(createServiceClient() as unknown as Db, user.id);
+  if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="your roadmap and career path" />;
   const sp = await searchParams;
   if (sp.tab || sp.version) redirect("/dashboard/roadmap"); // the old plan view is folded into the one map
   const career = sp.career === "plan-b" ? "plan-b" : "primary";

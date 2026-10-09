@@ -5,6 +5,7 @@ import { validateIntent, type IntentState } from "./intent-rules";
 import { PLAN_B_CLOSED_MESSAGE, isPlanBOpen } from "./plan-b";
 import { isPlanBKind, validatePlanB, type PlanBKind } from "./plan-b-rules";
 import { untyped } from "@/lib/org/db";
+import { track } from "@/lib/assess/db";
 
 type Service = SupabaseClient<Database>;
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; status: number; message: string };
@@ -102,7 +103,11 @@ export async function saveCareerIntent(service: Service, userId: string, body: {
   };
   // Plan B can be added or changed in 3-1 only; clearing it, or leaving it as is, is always allowed.
   if (next.secondaryCareerId && next.secondaryCareerId !== now.secondaryCareerId && !(await isPlanBOpen(service, userId))) return fail(403, PLAN_B_CLOSED_MESSAGE);
-  return write(service, userId, next);
+  const saved = await write(service, userId, next);
+  if (saved.ok && next.primaryCareerId && next.primaryCareerId !== now.primaryCareerId) {
+    await track(untyped(service), userId, now.primaryCareerId ? "career_goal_changed" : "career_goal_selected", { from: now.primaryCareerId, to: next.primaryCareerId });
+  }
+  return saved;
 }
 
 type Suggest = (goalText: string, careers: CareerOption[]) => Promise<{ key: string; confidence: number }[]>;

@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { getCareerIntent, saveCareerIntent } from "@/lib/careers/intent";
 import { IntentBodySchema } from "@/lib/careers/intent-rules";
 import { parseBody, respond } from "@/lib/careers/route";
+import { warmPrimaryCareerPool } from "@/lib/assess/warm";
 
 /** The signed-in student's own career intent, their pending suggestions, and the careers they can choose from. */
 export async function GET() {
@@ -19,5 +20,7 @@ export async function PUT(request: Request) {
   if ("error" in auth) return auth.error;
   const parsed = await parseBody(request, IntentBodySchema);
   if ("error" in parsed) return parsed.error;
-  return respond(await saveCareerIntent(createServiceClient(), auth.userId, parsed.body));
+  const result = await saveCareerIntent(createServiceClient(), auth.userId, parsed.body);
+  if (result.ok && parsed.body.primaryCareerId) after(() => warmPrimaryCareerPool(auth.userId));
+  return respond(result);
 }

@@ -1,0 +1,63 @@
+-- 086: a per-question time limit, enforced in the database. -1 means "time ran out" (the client's timer); a real pick that arrives after
+-- the limit (plus grace for network time) is also timed out. A timed-out answer is incorrect: chosen_index -1, normal ELO rules.
+drop function if exists public.record_assessment_answer(uuid, uuid, uuid, int, int);
+
+create function public.record_assessment_answer(
+  p_student uuid, p_session_question uuid, p_attempt uuid, p_displayed_index int, p_response_ms int, p_time_limit_s int default null
+) returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  sq public.assess_session_questions%rowtype;
+  s public.assess_sessions%rowtype;
+  q public.assess_question_pool%rowtype;
+  v_resp public.assess_responses%rowtype;
+  v_original int; v_correct boolean; v_elo jsonb; v_correct_displayed int; v_answered int; v_timed_out boolean;
+begin
+  select * into sq from public.assess_session_questions where id = p_session_question for update;
+  if not found then raise exception 'question_not_found'; end if;
+  select * into s from public.assess_sessions where id = sq.session_id;
+  if s.student_id <> p_student then raise exception 'question_not_found'; end if;
+  select * into q from public.assess_question_pool where id = sq.pool_question_id;
+  v_correct_displayed := array_position(sq.option_order, q.correct_index::smallint) - 1;
+
+  select * into v_resp from public.assess_responses where session_question_id = sq.id;
+  if found then
+    select jsonb_build_object('eventId', e.id, 'previous', e.previous_rating, 'change', e.change, 'newRating', e.new_rating)
+      into v_elo from public.elo_events e where e.id = v_resp.elo_event_id;
+    select count(*) into v_answered from public.assess_responses where session_id = s.id;
+    return jsonb_build_object(
+      'alreadyAnswered', true, 'isCorrect', v_resp.is_correct, 'timedOut', v_resp.chosen_index < 0,
+      'chosenIndex', case when v_resp.chosen_index < 0 then -1 else array_position(sq.option_order, v_resp.chosen_index::smallint) - 1 end,
+      'correctIndex', v_correct_displayed, 'explanation', q.explanation, 'elo', v_elo,
+      'sessionId', s.id, 'layer', s.layer, 'total', s.total_questions, 'answeredCount', v_answered);
+  end if;
+
+  if s.status <> 'IN_PROGRESS' then raise exception 'session_closed'; end if;
+  if sq.state <> 'SERVED' then raise exception 'question_not_served'; end if;
+
+  v_timed_out := p_displayed_index = -1 or (p_time_limit_s is not null and now() - sq.served_at > make_interval(secs => p_time_limit_s));
+  if not v_timed_out and (p_displayed_index is null or p_displayed_index < 0 or p_displayed_index >= array_length(sq.option_order, 1)) then
+    raise exception 'invalid_option';
+  end if;
+
+  v_original := case when v_timed_out then -1 else sq.option_order[p_displayed_index + 1] end;
+  v_correct := (not v_timed_out) and (v_original = q.correct_index);
+
+  insert into public.assess_responses (session_id, session_question_id, attempt_id, chosen_index, is_correct, response_ms)
+  values (s.id, sq.id, p_attempt, v_original, v_correct, p_response_ms) returning * into v_resp;
+
+  insert into public.student_skill_evidence (student_id, career_id, skill_id, skill_label, source, source_id, correct, difficulty, response_ms)
+  values (p_student, s.career_id, q.skill_id, q.skill_name,
+          case when s.layer = 'CAREER' then 'ASSESSMENT_CAREER' else 'ASSESSMENT_GENERAL' end, v_resp.id, v_correct, q.difficulty, p_response_ms);
+
+  if s.layer = 'CAREER' then
+    v_elo := public.apply_elo_event(p_student, s.career_id, 'ASSESSMENT', v_resp.id, v_correct, case when v_timed_out then 'career assessment question timed out' else 'career assessment answer' end);
+    update public.assess_responses set elo_event_id = (v_elo->>'eventId')::uuid where id = v_resp.id;
+  end if;
+
+  select count(*) into v_answered from public.assess_responses where session_id = s.id;
+  return jsonb_build_object('alreadyAnswered', false, 'isCorrect', v_correct, 'timedOut', v_timed_out,
+                            'chosenIndex', case when v_timed_out then -1 else p_displayed_index end,
+                            'correctIndex', v_correct_displayed, 'explanation', q.explanation, 'elo', v_elo,
+                            'sessionId', s.id, 'layer', s.layer, 'total', s.total_questions, 'answeredCount', v_answered);
+end $$;
+revoke all on function public.record_assessment_answer(uuid, uuid, uuid, int, int, int) from public, anon, authenticated;

@@ -28,6 +28,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { PlanBDialog } from "@/components/direction/PlanBDialog";
+import { ProfileEloCard, ProfileSkills } from "@/components/assess/result/ProfileViews";
+import { CommonProgress } from "@/components/assess/result/CommonProgress";
+import { getCareerProfile } from "@/lib/assess/career-profile";
+import { OnboardingGate } from "@/components/assess/OnboardingGate";
+import { studentGate } from "@/lib/assess/gate";
+import type { Db } from "@/lib/assess/db";
 
 export const metadata: Metadata = {
   title: "Dashboard — Capabilio AI",
@@ -37,6 +43,10 @@ export const metadata: Metadata = {
 export default async function DashboardPage() {
   const { supabase, user } = await requireAuthedUser();
 
+  // A first-time student sees only the onboarding shell until the career assessment is analysed (never the full dashboard).
+  const gate = await studentGate(createServiceClient() as unknown as Db, user.id);
+  if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="your dashboard" />;
+
   let data: Awaited<ReturnType<typeof getDashboardData>>;
   let skills: Awaited<ReturnType<typeof getSkills>>;
   let careerMatches: Awaited<ReturnType<typeof matchCareersForStudent>>;
@@ -45,7 +55,7 @@ export default async function DashboardPage() {
   let hasSeenIntro: boolean;
   try {
     const [dashboardData, skillRows, matches, vault, interest, { data: profile }] = await Promise.all([
-      getDashboardData(supabase, user.id),
+      getDashboardData(supabase, user.id, { lenient: true }),
       getSkills(supabase, user.id),
       matchCareersForStudent(supabase, user.id),
       getVaultItems(supabase, user.id),
@@ -66,7 +76,8 @@ export default async function DashboardPage() {
   }
 
   const service = createServiceClient();
-  const [rollNotice, direction] = await Promise.all([loadRollNumberNotice(service, user.id), getStudentDirection(service, user.id)]);
+  const [rollNotice, direction, careerProfile] = await Promise.all([loadRollNumberNotice(service, user.id), getStudentDirection(service, user.id), getCareerProfile(service as unknown as Db, user.id)]);
+  const hasProfile = careerProfile.unlocked && careerProfile.elo !== null;
   // Plan B is asked once, in 3-1, and never again after one is saved.
   const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;
   const askPlanB = planBAsk && !planBAsk.intent.planBKind ? planBAsk : null;
@@ -103,12 +114,14 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-5 pt-6">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1fr]">
           <CareerDirectionCard match={topMatch} />
-          <CapabilityCard skills={skills} />
+          {hasProfile ? <ProfileEloCard initial={careerProfile} /> : <CapabilityCard skills={skills} />}
         </div>
 
         <NextActionCard action={nextAction} />
 
-        <AssessmentResults data={data} />
+        {hasProfile && <ProfileSkills initial={careerProfile} />}
+
+        {hasProfile && careerProfile.common ? <CommonProgress bars={careerProfile.common} /> : <AssessmentResults data={data} />}
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <SkillGapsPreviewCard match={topMatch} />

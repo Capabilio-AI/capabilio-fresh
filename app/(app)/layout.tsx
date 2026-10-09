@@ -5,6 +5,9 @@ import { needsYearConfirmation, shouldShowGoalPrompt } from "@/lib/career/direct
 import { getEngagementReflection } from "@/lib/career/reflection";
 import { createServiceClient } from "@/lib/supabase/service";
 import { AppShell } from "@/components/shell/AppShell";
+import { AssessmentBanner } from "@/components/assess/AssessmentBanner";
+import { bannerState } from "@/lib/assess/banner";
+import type { Db } from "@/lib/assess/db";
 import { YearConfirmCard } from "@/components/direction/YearConfirmCard";
 import { GoalStatePrompt } from "@/components/direction/GoalStatePrompt";
 
@@ -19,6 +22,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const askGoal = direction && !askYear ? shouldShowGoalPrompt(direction) : false;
   const reflection = askGoal ? await getEngagementReflection(createServiceClient(), user.id) : null;
 
+  const assessBanner = await bannerState(createServiceClient() as unknown as Db, user.id);
+
   const banner =
     direction && askYear ? (
       <YearConfirmCard
@@ -28,9 +33,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         overrideYear={direction.academicYear?.source === "override" ? direction.academicYear.year : null}
       />
     ) : null;
+  const banners = (
+    <>
+      {assessBanner.show && <AssessmentBanner cta={assessBanner.cta} />}
+      {banner}
+    </>
+  );
 
   return (
-    <AppShell viewer={viewer} banner={banner}>
+    <AppShell viewer={viewer} banner={banners}>
       {askGoal && direction && <GoalStatePrompt reflection={reflection} current={direction.goalState} />}
       {children}
     </AppShell>

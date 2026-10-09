@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Briefcase, Calendar, Lock, MapPin, Rocket } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { OnboardingGate } from "@/components/assess/OnboardingGate";
+import { studentGate } from "@/lib/assess/gate";
+import type { Db as AssessDb } from "@/lib/assess/db";
+import { createServiceClient as createGateClient } from "@/lib/supabase/service";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { listOpenOpportunities, type OpportunityType } from "@/lib/launchpad/opportunities";
@@ -21,6 +25,8 @@ const TYPE_COLOR: Record<OpportunityType, string> = {
 
 export default async function LaunchpadPage() {
   const { supabase, user } = await requireAuthedUser();
+  const gate = await studentGate(createGateClient() as unknown as AssessDb, user.id);
+  if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="Launchpad recommendations" />;
 
   const [viewer, careerMatches] = await Promise.all([
     getViewerSummary(supabase, user.id),

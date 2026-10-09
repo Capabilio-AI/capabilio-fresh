@@ -10,18 +10,24 @@ import { formatAcademicYear } from "@/lib/career/academic-year";
 import { matchCareersForStudent } from "@/lib/career/match";
 import { CapabilityCard, overallCapabilityScore } from "@/components/dashboard/CapabilityCard";
 import { AvatarUpload } from "@/components/profile/AvatarUpload";
+import { ProfileEloCard } from "@/components/assess/result/ProfileViews";
+import { ProofOfWorkPanel } from "@/components/assess/result/ProofOfWorkPanel";
+import { getCareerProfile } from "@/lib/assess/career-profile";
+import { createServiceClient } from "@/lib/supabase/service";
+import type { Db } from "@/lib/assess/db";
 
 export const metadata: Metadata = { title: "Profile — Capabilio AI" };
 
 export default async function ProfilePage() {
   const { supabase, user } = await requireAuthedUser();
 
-  const [viewer, skills, vaultItems, careerMatches, educationEntries] = await Promise.all([
+  const [viewer, skills, vaultItems, careerMatches, educationEntries, assessmentProfile] = await Promise.all([
     getViewerSummary(supabase, user.id),
     getSkills(supabase, user.id),
     getVaultItems(supabase, user.id),
     matchCareersForStudent(supabase, user.id),
     getEducationEntries(supabase, user.id),
+    getCareerProfile(createServiceClient() as unknown as Db, user.id),
   ]);
   const yearLabel = formatAcademicYear(viewer.direction?.academicYear?.year ?? null, viewer.direction?.startYear ?? null, viewer.direction?.endYear ?? null);
   const topMatch = careerMatches[0] ?? null;
@@ -60,6 +66,11 @@ export default async function ProfilePage() {
             <span className="font-lp-mono text-[10px] uppercase tracking-wide text-white/50">Verified</span>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-4">
+        <ProfileEloCard initial={assessmentProfile} />
+        <ProofOfWorkPanel skills={assessmentProfile.skills.map((k) => ({ id: k.skillId, name: k.name }))} />
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">

@@ -9,6 +9,8 @@ import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, pickActiveRole, type SkillAreaRow } from "./taxonomy";
 import { logArenaEvent } from "./log";
+import { recordArenaPass } from "@/lib/assess/arena";
+import type { Db } from "@/lib/assess/db";
 import { GenerationRejected, difficultyForRating, ELO_BY_DIFFICULTY, type GeneratedChallenge, type GradeResult } from "./types";
 
 type Service = SupabaseClient<Database>;
@@ -233,6 +235,9 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
     if (error) throw error;
     const result = completion as { rating_delta: number; points: number; next_available_at: string; evidence_id?: string; already_completed: boolean };
     logArenaEvent("completion.verified", { ...logFields, ratingDelta: result.rating_delta, points: result.points, evidenceId: result.evidence_id ?? null, duplicate: result.already_completed });
+    // The same pass also moves the student's role ELO (one ledger shared with the career assessment) and their skill graph.
+    const arenaSkillId = (await service.from("arena_skill_areas").select("skill_id").eq("role_key", attempt.role_key).eq("area_key", attempt.skill_area_key ?? "").maybeSingle()).data?.skill_id ?? null;
+    await recordArenaPass(userId, { attemptId, roleKey: attempt.role_key, skillId: arenaSkillId, difficulty: (challenge.difficulty as "easy" | "medium" | "hard") ?? "easy" }, service as unknown as Db);
     return { passed: true, message: grade.message, checks: grade.checks, detail: grade.detail ?? null, points: result.points, nextAvailableAt: result.next_available_at };
   } catch (e) {
     await service.from("arena_domain_assignments").update({ status: "presented" }).eq("id", attemptId).is("completed_at", null);

@@ -23,7 +23,7 @@ const GeneratedQuestionSchema = z.object({
 });
 const BatchSchema = z.object({ questions: z.array(GeneratedQuestionSchema).min(BATCH_SIZE) });
 
-interface SectionSpec {
+export interface SectionSpec {
   label: string;
   skills: string[];
   guidance: string;
@@ -31,7 +31,7 @@ interface SectionSpec {
 
 // Tuned for a 1st-year (1-2 semester) B.Tech student — every section stays
 // at foundational, campus-placement-prep difficulty, not final-year level.
-const SECTION_SPECS: Record<Exclude<AssessmentSection, "career_interests">, SectionSpec> = {
+export const SECTION_SPECS: Record<Exclude<AssessmentSection, "career_interests">, SectionSpec> = {
   quantitative_aptitude: {
     label: "Quantitative Aptitude",
     skills: [

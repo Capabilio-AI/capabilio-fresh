@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { OnboardingGate } from "@/components/assess/OnboardingGate";
+import { studentGate } from "@/lib/assess/gate";
+import type { Db as AssessDb } from "@/lib/assess/db";
+import { createServiceClient as createGateClient } from "@/lib/supabase/service";
 import { getSkills } from "@/lib/dashboard/data";
 import { matchCareersForStudent, normalizeRole } from "@/lib/career/match";
 import { getSkillPracticeRecency } from "@/lib/career/skill-decay";
@@ -12,6 +16,8 @@ import { getRoadmapGraph } from "@/lib/roadmap-visual/service";
 import type { Stage } from "@/lib/roadmap-visual/graph-types";
 import { SkillsTab, type CareerSkill } from "@/components/dashboard/SkillsTab";
 import { SkillGapsTab } from "@/components/dashboard/SkillGapsTab";
+import { ProfileSkills } from "@/components/assess/result/ProfileViews";
+import { getCareerProfile } from "@/lib/assess/career-profile";
 
 export const metadata: Metadata = { title: "Skills & Gaps — Capabilio AI" };
 
@@ -23,7 +29,10 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
   const { view } = await searchParams;
   const showGaps = view === "gaps";
   const { supabase, user } = await requireAuthedUser();
+  const gate = await studentGate(createGateClient() as unknown as AssessDb, user.id);
+  if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="Launchpad recommendations" />;
 
+  const profile = await getCareerProfile(createServiceClient() as unknown as AssessDb, user.id);
   const [skills, careerMatches, practiceRecency, { intent }] = await Promise.all([
     getSkills(supabase, user.id),
     matchCareersForStudent(supabase, user.id),
@@ -77,7 +86,10 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
         {showGaps ? (
           <SkillGapsTab matches={match ? [match] : []} practiceRecency={practiceRecency} />
         ) : (
-          <SkillsTab careerName={careerName} skills={shownSkills} />
+          <>
+            {profile.unlocked && profile.elo && <ProfileSkills initial={profile} />}
+            <SkillsTab careerName={careerName} skills={shownSkills} />
+          </>
         )}
       </div>
     </div>

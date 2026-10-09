@@ -35,7 +35,8 @@ export interface DashboardData {
  */
 export async function getDashboardData(
   supabase: SupabaseClient<Database>,
-  userId: string
+  userId: string,
+  opts: { lenient?: boolean } = {}
 ): Promise<DashboardData> {
   const [{ data: profile, error: profileError }, { data: memberships }, direction, { data: attempt, error: attemptError }] =
     await Promise.all([
@@ -50,14 +51,14 @@ export async function getDashboardData(
     ]);
   if (profileError) throw profileError;
   if (attemptError) throw attemptError;
-  if (!attempt || attempt.status !== "completed") {
-    throw new DashboardNotReadyError("Assessment not completed yet");
-  }
+  // `lenient`: the caller has already established (via the onboarding status) that the student is ready, and that readiness no longer
+  // depends on the legacy assessment, so a missing legacy attempt just means "no legacy section scores", not "not ready".
+  const legacyDone = !!attempt && attempt.status === "completed";
+  if (!legacyDone && !opts.lenient) throw new DashboardNotReadyError("Assessment not completed yet");
 
-  const { data: responses, error: responsesError } = await supabase
-    .from("assessment_responses")
-    .select("section, is_correct")
-    .eq("attempt_id", attempt.id);
+  const { data: responses, error: responsesError } = legacyDone
+    ? await supabase.from("assessment_responses").select("section, is_correct").eq("attempt_id", attempt.id)
+    : { data: [], error: null };
   if (responsesError) throw responsesError;
 
   const bySection = new Map<AssessmentSection, { correct: number; total: number }>(
@@ -97,7 +98,7 @@ export async function getDashboardData(
     branch: membership?.branch ?? null,
     academicYear: direction?.academicYear?.year ?? null,
     yearLabel: formatAcademicYear(direction?.academicYear?.year ?? null, direction?.startYear ?? null, direction?.endYear ?? null),
-    completedAt: attempt.completed_at,
+    completedAt: attempt?.completed_at ?? null,
     sectionScores,
     overall: {
       correct: overallCorrect,
