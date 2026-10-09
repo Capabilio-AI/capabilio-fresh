@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { kindOf } from "@/lib/org/roles";
+import { getTier } from "@/lib/portfolio/elo";
 import { loadAspirations } from "./career-context";
 
 type Service = SupabaseClient<Database>;
@@ -14,6 +15,8 @@ export interface PersonSummary {
   headline: string | null;
   /** the career goal they show, "Aspiring AI/ML Engineer" */
   tagline?: string | null;
+  /** the live career ELO for a student with a chosen career */
+  elo?: number | null;
   /** "CSE · Class of 2027" */
   detail?: string | null;
   role: "student" | "faculty" | "staff" | null;
@@ -40,6 +43,20 @@ export function detailOf(m: { role: string; branch: string | null; endYear: numb
   return parts.length ? parts.join(" · ") : null;
 }
 
+/** Pure. The one line under a student's name: their live ELO and tier. The college is already known to every viewer, so it is not repeated. */
+export const eloLine = (elo: number | null | undefined): string | null => (typeof elo === "number" ? `ELO ${Math.round(elo)} · ${getTier(Math.round(elo)).label}` : null);
+
+/** The career ELO of each student, from the same ledger as the dashboard. */
+async function loadElos(service: Service, ids: string[]): Promise<Map<string, number>> {
+  const db = untyped(service);
+  const { data: intents } = await db.from("student_career_intent").select("student_id, primary_career_id").in("student_id", ids).not("primary_career_id", "is", null);
+  const rows = (intents ?? []) as { student_id: string; primary_career_id: string }[];
+  if (rows.length === 0) return new Map();
+  const { data: elos } = await db.from("student_career_elo").select("student_id, career_id, rating").in("student_id", rows.map((r) => r.student_id));
+  const rating = new Map(((elos ?? []) as { student_id: string; career_id: string; rating: number }[]).map((e) => [`${e.student_id}:${e.career_id}`, e.rating]));
+  return new Map(rows.flatMap((r) => (rating.has(`${r.student_id}:${r.primary_career_id}`) ? [[r.student_id, rating.get(`${r.student_id}:${r.primary_career_id}`) as number] as const] : [])));
+}
+
 /** Pure. "Aspiring AI/ML Engineer" from a career name. */
 export const taglineOf = (career: string | null | undefined): string | null => (career?.trim() ? `Aspiring ${career.trim()}` : null);
 
@@ -61,7 +78,7 @@ export async function loadPeople(service: Service, ids: string[]): Promise<Map<s
     untyped(service).from("mentor_profiles").select("user_id").in("user_id", unique).eq("status", "approved"),
   ]);
   const mentorIds = new Set(((mentors ?? []) as { user_id: string }[]).map((m) => m.user_id));
-  const aspirations = await loadAspirations(service, unique);
+  const [aspirations, elos] = await Promise.all([loadAspirations(service, unique), loadElos(service, unique)]);
   const membership = new Map<string, MembershipRow>();
   for (const m of (memberships ?? []) as unknown as MembershipRow[]) if (!membership.has(m.user_id) || m.role !== "student") membership.set(m.user_id, m);
   return new Map(
@@ -74,7 +91,9 @@ export async function loadPeople(service: Service, ids: string[]): Promise<Map<s
           id: p.id,
           name: p.full_name,
           avatarUrl: p.avatar_url,
-          headline: headlineOf(m && { role: m.role, institution: m.institutions?.name ?? null, branch: m.branch, endYear: m.end_year }),
+          // students are identified by their goal and ELO; staff keep "Role @ College", which is what makes them recognisable
+          headline: kind === "student" ? (eloLine(elos.get(p.id)) ?? "Student") : headlineOf(m && { role: m.role, institution: m.institutions?.name ?? null, branch: m.branch, endYear: m.end_year }),
+          elo: kind === "student" ? elos.get(p.id) ?? null : null,
           tagline: taglineOf(aspirations.get(p.id)),
           detail: detailOf(m && { role: m.role, branch: m.branch, endYear: m.end_year }),
           isMentor: mentorIds.has(p.id),

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Hash, UserPlus } from "lucide-react";
-import type { Suggestion, SuggestedPage, TrendingTag } from "@/lib/pulse/sidebar";
+import { Hash, Newspaper, UserPlus } from "lucide-react";
+import type { Suggestion, TrendingTag } from "@/lib/pulse/sidebar";
+import type { NewsItem } from "@/lib/pulse/news";
 import { Avatar } from "./Avatar";
 import { FollowButton } from "./FollowButton";
 import { MentorBadge } from "./MentorBadge";
@@ -11,77 +12,26 @@ import { MentorBadge } from "./MentorBadge";
 interface SidebarData {
   trending: TrendingTag[];
   suggestions: Suggestion[];
-  pages: SuggestedPage[];
 }
 
 const CARD = "rounded-2xl border border-[var(--m-rule)] bg-white p-5";
 
-/** Follows or unfollows a college page. */
-function PageFollow({ page }: { page: SuggestedPage }) {
-  const [following, setFollowing] = useState(page.following);
-  const [busy, setBusy] = useState(false);
-  async function toggle() {
-    const next = !following;
-    setFollowing(next);
-    setBusy(true);
-    const res = await fetch("/api/orgs/follow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: page.slug, following: next }) }).catch(() => null);
-    setBusy(false);
-    if (!res?.ok) setFollowing(!next);
-  }
-  return (
-    <button type="button" onClick={toggle} disabled={busy} aria-pressed={following} className={following ? "rounded-full border border-[var(--m-rule)] px-3 py-1 font-lp-body text-[12px] font-semibold text-[var(--m-ink)]" : "rounded-full bg-app-charcoal px-3 py-1 font-lp-body text-[12px] font-semibold text-white"}>
-      {following ? "Following" : "Follow"}
-    </button>
-  );
-}
-
-/** Right rail: what people are posting about this week, your college page, and people worth following, each with a reason. */
+/** Right rail: people worth following (each with a reason), what is trending, and technical news for the student's own career. */
 export function PulseSidebar() {
   const [data, setData] = useState<SidebarData | null>(null);
   const [failed, setFailed] = useState(false);
+  const [news, setNews] = useState<{ role: string | null; items: NewsItem[] } | null>(null);
 
   useEffect(() => {
     fetch("/api/pulse/sidebar")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad"))))
       .then((d: SidebarData) => setData(d))
       .catch(() => setFailed(true));
+    fetch("/api/pulse/news").then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad")))).then((d: { role: string | null; items: NewsItem[] }) => setNews(d)).catch(() => setNews({ role: null, items: [] }));
   }, []);
 
   return (
     <aside aria-label="Trending and suggestions" className="flex flex-col gap-4">
-      <section className={CARD}>
-        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><Hash size={15} className="text-app-orange" aria-hidden="true" /> Trending this week</h2>
-        {data === null && !failed ? <div className="mt-4 h-20 animate-pulse rounded-lg bg-app-background" /> : data && data.trending.length > 0 ? (
-          <ul className="mt-3 flex flex-col">
-            {data.trending.map((t) => (
-              <li key={t.tag}>
-                <Link href={`/pulse?tag=${t.tag}`} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-app-background">
-                  <span className="font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">#{t.tag}</span>
-                  <span className="font-lp-mono text-[11px] text-app-muted">{t.posts} {t.posts === 1 ? "post" : "posts"}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{failed ? "Couldn't load trending tags." : "Tags people use in posts show up here. Try #projects or #internships."}</p>
-        )}
-      </section>
-
-      {data && data.pages.length > 0 && (
-        <section className={CARD} aria-label="College pages">
-          <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><Building2 size={15} className="text-app-orange" aria-hidden="true" /> Your college</h2>
-          <ul className="mt-3 flex flex-col gap-3">
-            {data.pages.map((p) => (
-              <li key={p.slug} className="flex items-center gap-3">
-                <Link href={`/o/${p.slug}`} className="min-w-0 flex-1 truncate font-lp-body text-[13px] font-semibold text-[var(--m-ink)] hover:underline">{p.name}</Link>
-                <PageFollow page={p} />
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 font-lp-body text-[11.5px] text-app-muted">Follow it to see announcements and events in your feed.</p>
-        </section>
-      )}
-
       <section className={CARD}>
         <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><UserPlus size={15} className="text-app-orange" aria-hidden="true" /> People to follow</h2>
         {data === null && !failed ? <div className="mt-4 h-28 animate-pulse rounded-lg bg-app-background" /> : data && data.suggestions.length > 0 ? (
@@ -101,6 +51,42 @@ export function PulseSidebar() {
           </ul>
         ) : (
           <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{failed ? "Couldn't load suggestions." : "We suggest people from your college, your branch and your career area. Set your college and a career goal to see them. You can also use the search bar."}</p>
+        )}
+      </section>
+
+      <section className={CARD}>
+        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><Hash size={15} className="text-app-orange" aria-hidden="true" /> Trending this week</h2>
+        {data === null && !failed ? <div className="mt-4 h-20 animate-pulse rounded-lg bg-app-background" /> : data && data.trending.length > 0 ? (
+          <ul className="mt-3 flex flex-col">
+            {data.trending.map((t) => (
+              <li key={t.tag}>
+                <Link href={`/pulse?tag=${t.tag}`} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-app-background">
+                  <span className="font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">#{t.tag}</span>
+                  <span className="font-lp-mono text-[11px] text-app-muted">{t.posts} {t.posts === 1 ? "post" : "posts"}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{failed ? "Couldn't load trending tags." : "Tags people use in posts show up here. Try #projects or #internships."}</p>
+        )}
+      </section>
+
+      <section className={CARD} aria-label="Technical news">
+        <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><Newspaper size={15} className="text-app-orange" aria-hidden="true" /> {news?.role ? `${news.role} news` : "Tech news"}</h2>
+        {news === null ? <div className="mt-4 h-28 animate-pulse rounded-lg bg-app-background" /> : news.items.length > 0 ? (
+          <ul className="mt-3 flex flex-col gap-3">
+            {news.items.map((n) => (
+              <li key={n.id}>
+                <a href={n.url} target="_blank" rel="noopener noreferrer" className="group block rounded-lg px-2 py-1.5 hover:bg-app-background">
+                  <span className="block font-lp-body text-[13px] font-semibold leading-snug text-[var(--m-ink)] group-hover:underline">{n.title}</span>
+                  <span className="mt-0.5 block font-lp-mono text-[11px] text-app-muted">{n.source} · {n.points} points · {n.comments} comments</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{news.role ? "No big stories for your field right now. Check back soon." : "Choose a career direction and the latest technical news for it shows up here."}</p>
         )}
       </section>
     </aside>

@@ -21,7 +21,7 @@ export type FeedView =
   | { mode: "community"; slug: string; canPost: boolean; canModerate: boolean };
 
 const EMPTY: Record<FeedView["mode"], { title: string; body: string }> = {
-  for_you: { title: "Nothing here yet", body: "Be the first to share what you're building, or follow people and your college page." },
+  for_you: { title: "Your feed is quiet", body: "It shows what the people you follow share. Follow classmates, mentors and people aiming for your career from the suggestions, or share what you're building." },
   following: { title: "Your following feed is empty", body: "Follow classmates, mentors and college pages. What they share shows up here, newest first." },
   trending: { title: "Nothing is trending yet", body: "When posts about your career area get likes and comments this week, they show up here." },
   tag: { title: "No posts with this tag yet", body: "Post something with the tag and it will appear here." },

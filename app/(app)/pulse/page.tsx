@@ -36,7 +36,8 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
             <Link href={`/pulse/u/${user.id}`} className="-mt-8 flex flex-col items-center text-center">
               <Avatar person={viewer} size="lg" />
               <span className="mt-3 font-lp-display text-[16px] font-bold text-[var(--m-ink)]">{me.name ?? "You"}</span>
-              <span className="mt-0.5 font-lp-body text-[12px] text-app-muted">{me.headline ?? "Add your college in Settings"}</span>
+              {me.tagline && <span className="mt-0.5 font-lp-body text-[12.5px] font-medium text-app-blue">{me.tagline}</span>}
+              <span className="mt-0.5 font-lp-body text-[12px] text-app-muted">{me.headline ?? "Student"}</span>
             </Link>
             <dl className="mt-4 grid grid-cols-3 gap-1 border-t border-[var(--m-rule)] pt-4 text-center">
               {([["Posts", counts.posts], ["Followers", counts.followers], ["Following", counts.following]] as const).map(([label, n]) => (

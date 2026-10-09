@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Award, BookmarkPlus, Briefcase, FileText, HelpCircle, ImagePlus, Loader2, Send, X } from "lucide-react";
+import { Award, BookmarkPlus, FileText, FolderGit2, HelpCircle, ImagePlus, Loader2, Send, X } from "lucide-react";
 import clsx from "clsx";
 import { Avatar, type AvatarPerson } from "./Avatar";
 import { EMPTY_DRAFT, FIELD, Labelled, TagInput, draftBody, draftReady, type Draft, type Kind } from "./composer-fields";
@@ -10,11 +10,11 @@ import { EMPTY_DRAFT, FIELD, Labelled, TagInput, draftBody, draftReady, type Dra
 const MAX_DOC = 10 * 1024 * 1024;
 const MAX_IMAGE = 5 * 1024 * 1024;
 
-/** Projects are no longer a post kind in the composer; Pulse is for updates, opportunities, useful resources, questions and wins. */
-type ComposerKind = Exclude<Kind, "project">;
+/** Students do not post jobs: Pulse is for updates, what they are building, useful resources, questions and wins. */
+type ComposerKind = Exclude<Kind, "opportunity">;
 const KINDS: Record<ComposerKind, { label: string; icon: typeof Send; heading: string; submit: string; chip: string; docHint: string }> = {
   post: { label: "Update", icon: Send, heading: "Share an update", submit: "Post", chip: "border-app-charcoal bg-app-charcoal text-white", docHint: "Attach a PDF" },
-  opportunity: { label: "Opportunity", icon: Briefcase, heading: "Share a job, internship or referral", submit: "Share opportunity", chip: "border-app-blue bg-app-blue-container text-app-blue", docHint: "Attach the job description (PDF)" },
+  project: { label: "Project", icon: FolderGit2, heading: "Show what you are building", submit: "Share project", chip: "border-app-blue bg-app-blue-container text-app-blue", docHint: "Attach a write-up (PDF)" },
   resource: { label: "Resource", icon: BookmarkPlus, heading: "Share something useful you found", submit: "Share resource", chip: "border-app-success bg-app-success-container text-app-success", docHint: "Attach notes or a guide (PDF)" },
   question: { label: "Question", icon: HelpCircle, heading: "Ask the network", submit: "Ask question", chip: "border-app-warning bg-app-warning-container text-app-warning", docHint: "Attach a PDF for context" },
   achievement: { label: "Achievement", icon: Award, heading: "Share an achievement", submit: "Share achievement", chip: "border-app-success bg-app-success-container text-app-success", docHint: "Attach the certificate (PDF)" },
@@ -26,8 +26,8 @@ interface Picked {
 }
 
 /**
- * Create a post. Each kind has its own form, because an opportunity, a resource, a question and an achievement say different things:
- * an opportunity has a role, company and apply link, a resource a link and topics, a question a title and topics, an achievement an issuer, a date and proof.
+ * Create a post. Each kind has its own form, because a project, a resource, a question and an achievement say different things:
+ * a project has a name, what it is built with and links, a resource a link and topics, a question a title and topics, an achievement an issuer, a date and proof.
  * Every kind can carry one photo and one PDF.
  */
 export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placeholder }: { me: AvatarPerson; onPosted: () => void; endpoint?: string; placeholder?: string }) {
@@ -108,19 +108,18 @@ export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placehol
               <textarea value={draft.content} onChange={(e) => set("content", e.target.value.slice(0, 3000))} placeholder={placeholder ?? "What's on your mind? Use #tags so people can find it."} aria-label="Post text" rows={3} className={clsx(FIELD, "resize-none")} />
             )}
 
-            {kind === "opportunity" && (
+            {kind === "project" && (
               <>
-                <Labelled id="op-title" label="Role or opportunity"><input id="op-title" value={draft.title} onChange={(e) => set("title", e.target.value.slice(0, 120))} placeholder="e.g. Frontend intern, 3 months" className={FIELD} /></Labelled>
-                <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1"><legend className="sr-only">Type</legend>
-                  {([["job", "Job"], ["internship", "Internship"], ["referral", "Referral"], ["freelance", "Freelance"]] as const).map(([v, label]) => <label key={v} className="flex items-center gap-1.5 font-lp-body text-[13px] text-[var(--m-ink)]"><input type="radio" name="op-type" checked={draft.opportunityType === v} onChange={() => set("opportunityType", v)} /> {label}</label>)}
+                <Labelled id="pj-title" label="Project name"><input id="pj-title" value={draft.title} onChange={(e) => set("title", e.target.value.slice(0, 120))} placeholder="e.g. Face recognition attendance app" className={FIELD} /></Labelled>
+                <Labelled id="pj-desc" label="What does it do?" hint="what you built, what you learned"><textarea id="pj-desc" value={draft.content} onChange={(e) => set("content", e.target.value.slice(0, 3000))} rows={3} className={clsx(FIELD, "resize-none")} /></Labelled>
+                <Labelled id="pj-stack" label="Built with" hint="up to 8, press Enter after each"><TagInput id="pj-stack" value={draft.stack} onChange={(v) => set("stack", v)} max={8} placeholder="python, opencv, flask…" /></Labelled>
+                <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1"><legend className="sr-only">Status</legend>
+                  {([["building", "Still building"], ["shipped", "Shipped"]] as const).map(([v, label]) => <label key={v} className="flex items-center gap-1.5 font-lp-body text-[13px] text-[var(--m-ink)]"><input type="radio" name="pj-status" checked={draft.status === v} onChange={() => set("status", v)} /> {label}</label>)}
                 </fieldset>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Labelled id="op-company" label="Company"><input id="op-company" value={draft.company} onChange={(e) => set("company", e.target.value.slice(0, 100))} placeholder="Acme Technologies" className={FIELD} /></Labelled>
-                  <Labelled id="op-loc" label="Location"><input id="op-loc" value={draft.location} onChange={(e) => set("location", e.target.value.slice(0, 100))} placeholder="Remote, Bengaluru…" className={FIELD} /></Labelled>
+                  <Labelled id="pj-repo" label="Code" hint="optional"><input id="pj-repo" type="url" value={draft.repoUrl} onChange={(e) => set("repoUrl", e.target.value)} placeholder="https://github.com/…" className={FIELD} /></Labelled>
+                  <Labelled id="pj-demo" label="Live demo" hint="optional"><input id="pj-demo" type="url" value={draft.demoUrl} onChange={(e) => set("demoUrl", e.target.value)} placeholder="https://" className={FIELD} /></Labelled>
                 </div>
-                <Labelled id="op-desc" label="Details" hint="who it suits, how to reach you"><textarea id="op-desc" value={draft.content} onChange={(e) => set("content", e.target.value.slice(0, 3000))} rows={3} className={clsx(FIELD, "resize-none")} /></Labelled>
-                <Labelled id="op-skills" label="Skills" hint="up to 6, press Enter after each"><TagInput id="op-skills" value={draft.skills} onChange={(v) => set("skills", v)} max={6} placeholder="react, sql, communication…" /></Labelled>
-                <Labelled id="op-apply" label="Apply link" hint="optional"><input id="op-apply" type="url" value={draft.applyUrl} onChange={(e) => set("applyUrl", e.target.value)} placeholder="https://" className={FIELD} /></Labelled>
               </>
             )}
 

@@ -78,8 +78,8 @@ async function loadPagePosts(service: Service, viewerId: string, mode: RankedMod
 const textOf = (r: PostRow) => `${r.content} ${(r.meta as { title?: string } | null)?.title ?? ""} ${((r as { tags?: string[] }).tags ?? []).join(" ")}`;
 
 /**
- * The personalised feeds. For You mixes people you follow, posts that fit your career goal, what is popular this week, and posts from
- * your college and the pages you follow. Following is those people and pages, newest first. Trending is this week's most-engaged posts,
+ * The personalised feeds. For You is the people you follow and you, ranked by recency, relevance to your career goal and engagement, plus
+ * posts from your college and the pages you follow. Following is those people and pages, newest first. Trending is this week's most-engaged posts,
  * lifted when they fit your goal. The candidate set is scored once and frozen per `cursor`, so paging never reshuffles.
  */
 export async function getRankedFeed(supabase: SupabaseClient<Database>, service: Service, viewerId: string, mode: RankedMode, cursor: string | null): Promise<FeedPage & { role: string | null }> {
@@ -112,6 +112,8 @@ export async function getRankedFeed(supabase: SupabaseClient<Database>, service:
     const eng = engagementOf(likeCount.get(r.id) ?? 0, commentCount.get(r.id) ?? 0);
     const rel = relevance(textOf(r), ctx.keywords);
     const isFollowed = followed.has(r.user_id) || r.user_id === viewerId;
+    // Your feed is the people you follow and you. Posts from strangers appear only under Trending, never mixed in here.
+    if (mode === "for_you" && !isFollowed) continue;
     const at = new Date(r.created_at).getTime();
     const input = { ageHours: (asOf - at) / 3_600_000, engagement: eng, relevance: rel, followed: isFollowed, page: false, ownCollege: false };
     if (mode === "trending" && eng < 1 && rel < TRENDING_MIN_RELEVANCE) continue;
