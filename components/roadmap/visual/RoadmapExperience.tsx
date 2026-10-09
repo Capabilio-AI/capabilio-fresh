@@ -10,25 +10,17 @@ import { ExtraPanel } from "./ExtraPanel";
 import { TopicPanel } from "./TopicPanel";
 import { RoadmapHeader } from "./RoadmapHeader";
 import { RoadmapEmpty } from "./EmptyStates";
-import { CheckBanner } from "./CheckBanner";
 import { WhatChanged } from "./WhatChanged";
 import { SyllabusMap } from "./SyllabusMap";
 import { SubjectsPanel } from "./SubjectsPanel";
 import { SubjectsTree } from "./SubjectsTree";
 import { Drawer } from "@/components/metro/Drawer";
-import { STATUS_META } from "./meta";
-import { StationMark } from "./StationMark";
 import "@/components/metro/metro.css";
 import { useRoadmapGraph, type CareerSlot } from "./useRoadmapGraph";
 
 type View = "map" | "list";
 type Section = "career" | "curriculum";
 type CurriculumView = "tree" | "timetable";
-type Filter = "all" | "attention" | "unassessed" | "done" | "syllabus";
-const FILTERS: { id: Filter; label: string }[] = [{ id: "all", label: "All topics" }, { id: "attention", label: "Needs attention" }, { id: "unassessed", label: "Not assessed" }, { id: "done", label: "Proven (target met)" }, { id: "syllabus", label: "In my syllabus" }];
-
-const matchesFilter = (n: GraphNode, f: Filter) =>
-  f === "all" || (f === "attention" ? ["NOT_STARTED", "NEEDS_CHECK", "LEARNING"].includes(n.status) : f === "unassessed" ? n.status === "NOT_ASSESSED" : f === "done" ? n.status === "TARGET_MET" : (n.coverage?.courses ?? 0) > 0);
 
 export function RoadmapExperience({ initial, initialCareer }: { initial: GraphResponse; initialCareer: CareerSlot }) {
   const router = useRouter();
@@ -37,8 +29,6 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
   const [which, setWhich] = useState<CareerSlot>(initialCareer);
   const { data, stale, loading, refresh } = useRoadmapGraph(initial, which);
   const [view, setView] = useState<View>("map");
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
   const selected = params.get("node");
   const section: Section = params.get("section") === "curriculum" ? "curriculum" : "career";
   const [curriculumView, setCurriculumView] = useState<CurriculumView>("tree");
@@ -51,18 +41,12 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
   const select = useCallback((key: string | null) => update((n) => (key ? n.set("node", key) : n.delete("node"))), [update]);
   const setSection = useCallback((sec: Section) => update((n) => (sec === "curriculum" ? n.set("section", "curriculum") : n.delete("section"))), [update]);
 
-  const graph = data.ok ? data.graph : null;
-  const matches = useMemo(() => {
-    if (!graph || (!query.trim() && filter === "all")) return null;
-    const q = query.trim().toLowerCase();
-    return new Set(graph.nodes.filter((n) => n.type === "TOPIC" && matchesFilter(n, filter) && (!q || n.title.toLowerCase().includes(q) || n.skill?.name.toLowerCase().includes(q))).map((n) => n.key));
-  }, [graph, query, filter]);
+  const matches = null; // no search or filter on the map
 
   const handlers = useMemo<CanvasHandlers>(() => ({ selected, onSelect: select, matches }), [selected, select, matches]);
 
   if (!data.ok) return <div><RoadmapEmpty reason={data.reason} which={which} onReady={() => void refresh()} /></div>;
   const g = data.graph;
-  const counts = g.nodes.filter((n) => n.type === "TOPIC").reduce<Record<string, number>>((a, n) => ({ ...a, [n.status]: (a[n.status] ?? 0) + 1 }), {});
   const open = selected && g.nodes.some((n) => n.key === selected) ? selected : null;
   const openNode = g.nodes.find((n) => n.key === open) ?? null;
   const hasSubjects = Boolean(g.syllabus && g.syllabus.some((x) => x.topics.length > 0));
@@ -76,25 +60,13 @@ export function RoadmapExperience({ initial, initialCareer }: { initial: GraphRe
 
       <WhatChanged nodes={g.nodes} storageKey={`roadmap-memo:${g.career.id}`} onOpen={select} />
 
-      {g.header.assessedTopics < g.header.totalTopics && <CheckBanner career={data.which} assessedTopics={g.header.assessedTopics} />}
-
       <SectionSwitch section={section} onChange={setSection} />
 
       {section === "career" ? (
         <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <div role="tablist" aria-label="View" className="flex gap-1 rounded-lg border border-app-border bg-white p-1">{[tab("map", "Career map"), tab("list", "List")]}</div>
-          <label className="sr-only" htmlFor="rm-search">Search topics</label>
-          <input id="rm-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search topics" className="min-w-0 flex-1 rounded-md border border-app-border bg-white px-3 py-1.5 font-lp-body text-[13px] sm:max-w-xs" />
-          <label className="sr-only" htmlFor="rm-filter">Filter topics</label>
-          <select id="rm-filter" value={filter} onChange={(e) => setFilter(e.target.value as Filter)} className="rounded-md border border-app-border bg-white px-2 py-1.5 font-lp-body text-[13px]">{FILTERS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select>
-          {matches && <p role="status" className="font-lp-body text-[12px] text-app-muted">{matches.size === 0 && filter === "syllabus" && g.header.curriculum.analysed === false ? "Your syllabus is still being analysed, so nothing is matched yet." : `${matches.size} matching`}</p>}
         </div>
-
-        <ul aria-label="Legend" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 font-lp-body text-[12px] text-app-muted">
-          {(Object.keys(STATUS_META) as (keyof typeof STATUS_META)[]).filter((s) => counts[s]).map((s) => <li key={s} className="flex items-center gap-1.5"><StationMark status={s} size={16} /> {STATUS_META[s].label} ({counts[s]})</li>)}
-          <li><span aria-hidden className="font-mono">●● ●○</span> syllabus coverage (strong / partial)</li>
-        </ul>
 
         <div className="min-w-0">
           {view === "map" && (

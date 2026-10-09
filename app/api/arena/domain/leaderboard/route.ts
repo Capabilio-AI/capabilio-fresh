@@ -7,13 +7,9 @@ import { requireUser } from "@/lib/api/require-user";
 const LEADERBOARD_LIMIT = 50;
 
 /**
- * Global ELO rank across Domain sub-skills — one row per user, averaging every
- * arena_skill_ratings row they have (same averaging getPortfolioElo already
- * uses, lib/portfolio/elo.ts). Domain has no branch to scope by (it's chosen
- * career, not curriculum), so unlike Stream's leaderboard this is global only.
- * arena_skill_ratings is self-read-only by RLS (it's per-candidate evidence,
- * not public like arena_stream_stats) -- the aggregate read needs the service
- * client, same as getPortfolioElo already does for one user.
+ * Global ELO rank: one row per student, using the same career ELO ledger (student_career_elo) the dashboard and portfolio show, so a
+ * student's rank always matches their rating. A student with ratings on several careers ranks by their highest.
+ * The ledger is not publicly readable, so the aggregate read uses the service client.
  */
 export async function GET() {
   const supabase = await createClient();
@@ -21,22 +17,14 @@ export async function GET() {
   if ("error" in auth) return auth.error;
 
   const service = createServiceClient();
-  const [{ data: areaRatings, error }, { data: skillRatings }] = await Promise.all([
-    service.from("arena_skill_ratings").select("user_id, rating"),
-    // per-skill ELO from career-based challenges (migration 062) ranks alongside the legacy per-area ratings
-    untyped(service).from("arena_skill_elo").select("student_id, rating"),
-  ]);
+  const { data: ledger, error } = await untyped(service).from("student_career_elo").select("student_id, rating");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const ratings = [...(areaRatings ?? []), ...((skillRatings ?? []) as { student_id: string; rating: number }[]).map((r) => ({ user_id: r.student_id, rating: r.rating }))];
-  if (ratings.length === 0) return NextResponse.json({ entries: [] });
+  const best = new Map<string, number>();
+  for (const r of (ledger ?? []) as { student_id: string; rating: number }[]) best.set(r.student_id, Math.max(best.get(r.student_id) ?? 0, r.rating));
+  if (best.size === 0) return NextResponse.json({ entries: [] });
 
-  const sums = new Map<string, { total: number; count: number }>();
-  for (const r of ratings) {
-    const s = sums.get(r.user_id) ?? { total: 0, count: 0 };
-    sums.set(r.user_id, { total: s.total + r.rating, count: s.count + 1 });
-  }
-  const averages = [...sums.entries()]
-    .map(([userId, s]) => ({ userId, rating: Math.round(s.total / s.count) }))
+  const averages = [...best.entries()]
+    .map(([userId, rating]) => ({ userId, rating: Math.round(rating) }))
     .sort((a, b) => b.rating - a.rating)
     .slice(0, LEADERBOARD_LIMIT);
 

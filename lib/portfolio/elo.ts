@@ -27,16 +27,18 @@ export interface PortfolioElo {
 const BASELINE_RATING = 400;
 
 /**
- * A single Arena Rating for the portfolio hero card — the average of every
- * skill-area rating the student has actually earned (each area starts at
- * `arena_skill_ratings.rating`'s own default of 400 the moment it's first
- * touched). A student with no completed Arena work yet has no rows at all,
- * so they show the same 400 baseline everyone starts from.
+ * The one ELO: the rating on the student's primary career in the shared ledger (student_career_elo), the same number the dashboard,
+ * the skill graph and the assessment result show. Assessments, verified Arena passes and career projects all move this one row.
+ * No primary career or no ledger row yet means the 400 every student starts from.
  */
 export async function getPortfolioElo(service: SupabaseClient<Database>, userId: string): Promise<PortfolioElo> {
-  const { data } = await service.from("arena_skill_ratings").select("rating").eq("user_id", userId);
-  const ratings = (data ?? []).map((r) => r.rating);
-  const rating = ratings.length ? Math.round(ratings.reduce((sum, r) => sum + r, 0) / ratings.length) : BASELINE_RATING;
+  const db = service as unknown as SupabaseClient;
+  const { data: intent } = await db.from("student_career_intent").select("primary_career_id").eq("student_id", userId).maybeSingle();
+  const careerId = (intent as { primary_career_id: string | null } | null)?.primary_career_id;
+  const { data: row } = careerId
+    ? await db.from("student_career_elo").select("rating").eq("student_id", userId).eq("career_id", careerId).maybeSingle()
+    : { data: null };
+  const rating = Math.round((row as { rating: number } | null)?.rating ?? BASELINE_RATING);
   const tier = getTier(rating);
   const progressToNextTier = tier.max >= 9999 ? 100 : Math.round(((rating - tier.min) / (tier.max - tier.min)) * 100);
   return { rating, tier, progressToNextTier };
