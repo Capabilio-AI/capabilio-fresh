@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Lock } from "lucide-react";
 import clsx from "clsx";
 import { PRIMARY_NAV, isNavItemActive } from "@/lib/nav/config";
 
@@ -14,9 +13,8 @@ export function HeaderNav({ launchpadOpen }: { launchpadOpen: boolean }) {
     <nav aria-label="Primary" className="sticky top-[64px] z-20 bg-[var(--m-ground)] px-4 pb-2 pt-0">
       <div className="mx-auto flex max-w-full justify-center overflow-x-auto py-0.5">
         <div className="glass inline-flex min-w-max gap-0.5 rounded-full p-1">
-          {PRIMARY_NAV.map((item) => {
+          {PRIMARY_NAV.filter((item) => !item.requiresLaunchpad || launchpadOpen).map((item) => {
             const active = isNavItemActive(pathname, item.href);
-            const locked = item.requiresLaunchpad ? !launchpadOpen : false;
             const Icon = item.icon;
             return (
               <Link
@@ -30,7 +28,6 @@ export function HeaderNav({ launchpadOpen }: { launchpadOpen: boolean }) {
               >
                 <Icon size={16} strokeWidth={2.2} className={active ? "text-[var(--m-accent)]" : ""} aria-hidden />
                 {item.label}
-                {locked && <Lock size={12} aria-label="Locked" />}
               </Link>
             );
           })}

@@ -45,7 +45,7 @@ function SkillRow({ gap, recency }: { gap: SkillGap; recency?: SkillPracticeRece
           )}
         </span>
         <span>
-          {gap.current === null ? "Not assessed" : `${gap.current}%`} · target {gap.required}%
+          {gap.current === null ? "Not assessed" : `${gap.current}%`} · market needs {gap.required}%
         </span>
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-lp-surface-subtle">
@@ -64,9 +64,12 @@ function SkillRow({ gap, recency }: { gap: SkillGap; recency?: SkillPracticeRece
 export function SkillGapsTab({
   matches,
   practiceRecency = new Map(),
+  section = "gaps",
 }: {
   matches: CareerMatch[];
   practiceRecency?: Map<string, SkillPracticeRecency>;
+  /** graph: the radar of every role skill; gaps: the tiered gap analysis */
+  section?: "graph" | "gaps";
 }) {
   if (matches.length === 0) {
     return <EmptyState message="No career requirements to compare against yet." />;
@@ -103,13 +106,14 @@ export function SkillGapsTab({
                 ))}
             </div>
 
-            {match.skillGaps.length >= 3 && (
+            {section === "graph" && match.skillGaps.length >= 3 && (
               <div className="mt-4">
                 <RoundRadar caption={`${match.careerRole} skills`} axes={match.skillGaps.map((g) => ({ label: g.skill, value: g.current, target: g.required }))} />
+                <p className="mt-1 text-center font-lp-mono text-[11px] text-lp-text-muted">Solid shape: where you stand · dashed outline: what the market needs for this role</p>
               </div>
             )}
 
-            <div className="mt-4 flex flex-col gap-5">
+            {section === "gaps" && <div className="mt-4 flex flex-col gap-5">
               {(["critical", "moderate", "met"] as const)
                 .filter((tier) => groups[tier].length > 0)
                 .map((tier) => (
@@ -124,7 +128,7 @@ export function SkillGapsTab({
                     </div>
                   </div>
                 ))}
-            </div>
+            </div>}
           </div>
         );
       })}

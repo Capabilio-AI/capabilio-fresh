@@ -6,11 +6,11 @@ export interface RadarAxis {
   target?: number;
 }
 
-const W = 600;
-const H = 480;
+const W = 760;
+const H = 600;
 const CX = W / 2;
 const CY = H / 2;
-const R = 150;
+const R = 200;
 const RINGS = [25, 50, 75, 100];
 const MAX_LINE = 15;
 
@@ -54,9 +54,11 @@ export function RoundRadar({ axes, color = "var(--m-ink)", targetColor = "var(--
   if (n < 3) return null;
   const pts = axes.map((a, i) => polar(i, n, a.value ?? 0));
   const tpts = axes.every((a) => a.target !== undefined) ? axes.map((a, i) => polar(i, n, a.target ?? 0)) : null;
+  // many axes: one compact line per label (name + value) so neighbours never touch; the full name is in the hover title
+  const compact = n > 10;
   const summary = axes.map((a) => `${a.label} ${a.value === null ? "not assessed" : `${a.value} percent`}`).join(", ");
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${caption}: ${summary}`} className="mx-auto h-auto w-full max-w-[640px]">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${caption}: ${summary}`} className="mx-auto h-auto w-full max-w-[760px]">
       <defs>
         <radialGradient id="rr-fill" cx="50%" cy="50%" r="50%">
           <stop offset="0%" style={{ stopColor: color }} stopOpacity="0.38" />
@@ -70,9 +72,19 @@ export function RoundRadar({ axes, color = "var(--m-ink)", targetColor = "var(--
       <path d={smooth(pts)} fill="url(#rr-fill)" style={{ stroke: color }} strokeWidth="3" strokeLinejoin="round" />
       {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="4.5" fill="#fff" style={{ stroke: color }} strokeWidth="2.5" />)}
       {axes.map((a, i) => {
-        const [lx, ly] = polar(i, n, 100 + 18);
+        const [lx, ly] = polar(i, n, 100 + (compact ? 9 : 9));
         const cos = Math.cos(-Math.PI / 2 + (i / n) * Math.PI * 2);
-        const anchor = Math.abs(cos) < 0.25 ? "middle" : cos > 0 ? "start" : "end";
+        const anchor = Math.abs(cos) < (compact ? 0.12 : 0.25) ? "middle" : cos > 0 ? "start" : "end";
+        const value = a.value === null ? "n/a" : `${a.value}%`;
+        if (compact) {
+          const name = a.label.length > 20 ? `${a.label.slice(0, 19)}…` : a.label;
+          return (
+            <text key={i} x={lx} y={ly + 4} textAnchor={anchor} fontSize="11.5" fontWeight="700" className="fill-[var(--m-ink)]">
+              <title>{`${a.label}: ${a.value === null ? "not assessed" : `${a.value}%`}`}</title>
+              {name} <tspan fontWeight="400" className="fill-[var(--m-muted)]">{value}</tspan>
+            </text>
+          );
+        }
         const ls = lines(a.label);
         const y0 = ly - ((ls.length - 1) * 7) / 2;
         return (

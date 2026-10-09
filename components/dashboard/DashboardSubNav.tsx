@@ -8,8 +8,7 @@ import { useDirectionFlags } from "@/components/direction/DirectionContext";
 const TABS: { label: string; href: string; jobTrackOnly?: boolean; launchpadOnly?: boolean }[] = [
   { label: "Overview", href: "/dashboard" },
   { label: "Portfolio", href: "/dashboard/portfolio" },
-  { label: "Skill Graph", href: "/dashboard/skill-graph" },
-  { label: "Skills & Gaps", href: "/dashboard/skills" },
+  { label: "Skills", href: "/dashboard/skills" },
   { label: "Roadmap", href: "/dashboard/roadmap" },
   { label: "Vault History", href: "/dashboard/vault" },
   { label: "AI Interview", href: "/dashboard/interview", launchpadOnly: true },
