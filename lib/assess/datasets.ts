@@ -79,6 +79,7 @@ export const SOURCES: readonly DatasetSource[] = [
   mmlu("college_mathematics", "engineering_mathematics", "HARD", 40),
   mmlu("high_school_computer_science", "programming_fundamentals", byLength(150, 330), 100),
   mmlu("college_computer_science", "programming_fundamentals", "HARD", 40),
+  mmlu("logical_fallacies", "logical_reasoning", "MEDIUM", 40),
   mmlu("conceptual_physics", "basic_sciences", "EASY", 40),
   mmlu("high_school_physics", "basic_sciences", "MEDIUM", 40),
   mmlu("high_school_chemistry", "basic_sciences", "MEDIUM", 40),

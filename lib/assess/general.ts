@@ -23,7 +23,7 @@ export const COMMON_SECTION_REGISTRY: readonly CommonSectionConfig[] = [
   { section: "verbal_communication", enabled: true, questions: 10, label: "Communication" },
   { section: "programming_fundamentals", enabled: true, questions: 10, label: "Basic Programming" },
   { section: "quantitative_aptitude", enabled: false, questions: 10, label: SECTION_LABEL.quantitative_aptitude },
-  { section: "logical_reasoning", enabled: false, questions: 10, label: SECTION_LABEL.logical_reasoning },
+  { section: "logical_reasoning", enabled: true, questions: 10, label: SECTION_LABEL.logical_reasoning },
   { section: "engineering_mathematics", enabled: false, questions: 10, label: SECTION_LABEL.engineering_mathematics },
   { section: "basic_sciences", enabled: false, questions: 10, label: SECTION_LABEL.basic_sciences },
 ];

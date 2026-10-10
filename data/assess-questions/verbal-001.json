@@ -1,0 +1,811 @@
+{
+ "section": "verbal_communication",
+ "questions": [
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Choose the sentence with correct subject-verb agreement.",
+   "o": [
+    "The list of items are on the desk.",
+    "The list of items is on the desk.",
+    "The lists of item is on the desk.",
+    "The list of items were on the desk."
+   ],
+   "a": 1,
+   "e": "The subject is the singular noun 'list', so the verb must be singular: 'is'. 'Of items' is only a modifier."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Fill in the blank: She ____ to the office every day by bus.",
+   "o": [
+    "go",
+    "going",
+    "goes",
+    "gone"
+   ],
+   "a": 2,
+   "e": "A habitual action with a singular third-person subject takes the simple present with -s: 'goes'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Fill in the blank: They ____ their project yesterday.",
+   "o": [
+    "complete",
+    "completed",
+    "completing",
+    "have complete"
+   ],
+   "a": 1,
+   "e": "'Yesterday' marks a finished past action, so the simple past 'completed' is correct."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Choose the correct article: He is ____ honest engineer.",
+   "o": [
+    "a",
+    "an",
+    "the",
+    "no article"
+   ],
+   "a": 1,
+   "e": "'Honest' begins with a vowel sound (the h is silent), so it takes 'an'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Choose the correct preposition: The meeting is scheduled ____ Monday.",
+   "o": [
+    "in",
+    "at",
+    "on",
+    "by"
+   ],
+   "a": 2,
+   "e": "Days of the week take the preposition 'on'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Choose the correct pronoun: The manager gave the report to Priya and ____.",
+   "o": [
+    "I",
+    "me",
+    "myself",
+    "mine"
+   ],
+   "a": 1,
+   "e": "After the preposition 'to' we need an object pronoun: 'me'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Which sentence is written correctly?",
+   "o": [
+    "Their going to submit the form today.",
+    "There going to submit the form today.",
+    "They're going to submit the form today.",
+    "Theyre going to submit the form today."
+   ],
+   "a": 2,
+   "e": "'They're' is the contraction of 'they are'. 'Their' shows possession and 'there' shows place."
+  },
+  {
+   "d": "EASY",
+   "skill": "Vocabulary",
+   "q": "Choose the word closest in meaning to 'rapid'.",
+   "o": [
+    "Slow",
+    "Quick",
+    "Heavy",
+    "Quiet"
+   ],
+   "a": 1,
+   "e": "'Rapid' means happening at great speed, which is the same as 'quick'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Vocabulary",
+   "q": "Choose the word opposite in meaning to 'expand'.",
+   "o": [
+    "Grow",
+    "Stretch",
+    "Shrink",
+    "Spread"
+   ],
+   "a": 2,
+   "e": "'Expand' means to become larger, so its opposite is 'shrink'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Vocabulary",
+   "q": "Choose the word closest in meaning to 'begin'.",
+   "o": [
+    "Finish",
+    "Start",
+    "Delay",
+    "Pause"
+   ],
+   "a": 1,
+   "e": "'Begin' and 'start' both mean to take the first step in doing something."
+  },
+  {
+   "d": "EASY",
+   "skill": "Vocabulary",
+   "q": "Fill in the blank: Please ____ the form carefully before you sign it.",
+   "o": [
+    "read",
+    "reed",
+    "red",
+    "reads"
+   ],
+   "a": 0,
+   "e": "The base verb 'read' fits after 'please'. 'Red' is a colour and 'reed' is a plant."
+  },
+  {
+   "d": "EASY",
+   "skill": "Vocabulary",
+   "q": "Choose the word opposite in meaning to 'ancient'.",
+   "o": [
+    "Old",
+    "Modern",
+    "Historic",
+    "Traditional"
+   ],
+   "a": 1,
+   "e": "'Ancient' means very old, so the opposite is 'modern'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Business Communication",
+   "q": "Which is the most suitable opening for a formal email to a person you have not met?",
+   "o": [
+    "Hey buddy,",
+    "Dear Mr. Rao,",
+    "Yo Rao,",
+    "Hi there!!!"
+   ],
+   "a": 1,
+   "e": "A formal email to someone you do not know should open with a respectful greeting such as 'Dear Mr. Rao,'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Business Communication",
+   "q": "Which closing is most appropriate for a formal email?",
+   "o": [
+    "Cheers mate",
+    "Bye bye",
+    "Yours sincerely",
+    "See ya"
+   ],
+   "a": 2,
+   "e": "'Yours sincerely' is a standard, polite closing for formal correspondence."
+  },
+  {
+   "d": "EASY",
+   "skill": "Business Communication",
+   "q": "A teammate asks you for the status of your task. Which reply is clearest?",
+   "o": [
+    "Almost.",
+    "The module is 80% done; testing will finish by Thursday.",
+    "Working on it, you know.",
+    "Don't worry about it."
+   ],
+   "a": 1,
+   "e": "A good status update is specific: it states progress and gives a clear deadline."
+  },
+  {
+   "d": "EASY",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'Riya reviews code every morning before meetings begin. She says it keeps her mind sharp and helps her catch bugs early.' When does Riya review code?",
+   "o": [
+    "After lunch",
+    "Before meetings, in the morning",
+    "At night",
+    "During meetings"
+   ],
+   "a": 1,
+   "e": "The passage says she reviews code 'every morning before meetings begin'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'The library closes at 8 p.m. on weekdays but stays open until 5 p.m. on Saturdays. It is closed on Sundays.' On which day is the library NOT open?",
+   "o": [
+    "Monday",
+    "Wednesday",
+    "Saturday",
+    "Sunday"
+   ],
+   "a": 3,
+   "e": "The passage states the library is closed on Sundays."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Choose the correct plural of 'analysis'.",
+   "o": [
+    "Analysises",
+    "Analyses",
+    "Analysis's",
+    "Analysi"
+   ],
+   "a": 1,
+   "e": "Nouns ending in -is form the plural with -es: 'analyses'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Choose the correct sentence.",
+   "o": [
+    "He don't like coffee.",
+    "He doesn't likes coffee.",
+    "He doesn't like coffee.",
+    "He not like coffee."
+   ],
+   "a": 2,
+   "e": "After 'doesn't' the main verb stays in its base form: 'doesn't like'."
+  },
+  {
+   "d": "EASY",
+   "skill": "Grammar",
+   "q": "Fill in the blank: I have lived in Hyderabad ____ 2019.",
+   "o": [
+    "for",
+    "since",
+    "from",
+    "during"
+   ],
+   "a": 1,
+   "e": "'Since' is used with a specific starting point in time such as a year; 'for' is used with a duration."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Identify the error: 'Each of the students have submitted their assignment.'",
+   "o": [
+    "Each of the",
+    "students have",
+    "submitted their",
+    "No error"
+   ],
+   "a": 1,
+   "e": "'Each' is singular, so the verb should be 'has submitted'."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Choose the correct sentence.",
+   "o": [
+    "Neither the manager nor the engineers was present.",
+    "Neither the manager nor the engineers were present.",
+    "Neither the manager nor the engineers is present.",
+    "Neither the manager nor the engineers has been present."
+   ],
+   "a": 1,
+   "e": "With 'neither...nor', the verb agrees with the nearer subject. 'Engineers' is plural, so 'were' is correct."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Choose the best replacement for the underlined part: 'If I would have known about the delay, I would have left earlier.'",
+   "o": [
+    "If I had known",
+    "If I knew",
+    "If I would know",
+    "If I have known"
+   ],
+   "a": 0,
+   "e": "A third conditional (past unreal) uses 'had + past participle' in the if-clause: 'If I had known'."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Choose the sentence with correct punctuation.",
+   "o": [
+    "Its a long road, but it's worth it.",
+    "It's a long road, but its worth it.",
+    "It's a long road, but it's worth it.",
+    "Its a long road, but its worth it."
+   ],
+   "a": 2,
+   "e": "Both clauses mean 'it is', so both need the contraction 'it's'. 'Its' is the possessive form."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Choose the correct sentence.",
+   "o": [
+    "Having finished the report, the email was sent.",
+    "Having finished the report, she sent the email.",
+    "Having finished the report, the email she sent.",
+    "Having finished, the report the email was sent."
+   ],
+   "a": 1,
+   "e": "The opening phrase must refer to the person who finished the report, so the main clause needs that person ('she') as the subject. The other options leave the phrase dangling."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Choose the correct sentence.",
+   "o": [
+    "She is more smarter than her brother.",
+    "She is smarter than her brother.",
+    "She is most smarter than her brother.",
+    "She is smart than her brother."
+   ],
+   "a": 1,
+   "e": "The comparative of 'smart' is 'smarter'. Do not combine 'more' with an -er form."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Convert to indirect speech: He said, 'I am learning Python.'",
+   "o": [
+    "He said that he is learning Python.",
+    "He said that he was learning Python.",
+    "He said that I was learning Python.",
+    "He said that he has learned Python."
+   ],
+   "a": 1,
+   "e": "In reported speech the present continuous shifts back to the past continuous, and the pronoun 'I' becomes 'he'."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Choose the correct sentence.",
+   "o": [
+    "The committee has announced it's decision.",
+    "The committee has announced its decision.",
+    "The committee have announced its' decision.",
+    "The committee has announced their's decision."
+   ],
+   "a": 1,
+   "e": "'Its' (no apostrophe) is the possessive. 'It's' means 'it is' and the other forms are not valid."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "Choose the word that best fits: 'The new policy was met with strong ____ from employees, who felt it was unfair.'",
+   "o": [
+    "approval",
+    "resistance",
+    "indifference",
+    "celebration"
+   ],
+   "a": 1,
+   "e": "Employees who feel a policy is unfair would push back, so 'resistance' fits the context."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "Choose the word closest in meaning to 'meticulous'.",
+   "o": [
+    "Careless",
+    "Extremely careful",
+    "Rushed",
+    "Generous"
+   ],
+   "a": 1,
+   "e": "'Meticulous' describes someone who pays great attention to detail."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "Choose the word opposite in meaning to 'scarce'.",
+   "o": [
+    "Rare",
+    "Limited",
+    "Abundant",
+    "Precious"
+   ],
+   "a": 2,
+   "e": "'Scarce' means in short supply, so the opposite is 'abundant'."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "Choose the word closest in meaning to 'mitigate'.",
+   "o": [
+    "Worsen",
+    "Reduce the severity of",
+    "Ignore",
+    "Announce"
+   ],
+   "a": 1,
+   "e": "To mitigate something, such as a risk, is to make it less severe."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "Fill in the blank: The auditor found several ____ between the two financial reports.",
+   "o": [
+    "discrepancies",
+    "similarities",
+    "agreements",
+    "coincidences"
+   ],
+   "a": 0,
+   "e": "An auditor comparing reports looks for differences; 'discrepancies' means inconsistencies."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "Choose the word closest in meaning to 'concise'.",
+   "o": [
+    "Lengthy",
+    "Brief and clear",
+    "Confusing",
+    "Detailed and long"
+   ],
+   "a": 1,
+   "e": "'Concise' means expressing much in few words."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "Choose the correct word: The new feature will ____ the performance of the app.",
+   "o": [
+    "effect",
+    "affect",
+    "affects",
+    "effects"
+   ],
+   "a": 1,
+   "e": "'Affect' is the verb meaning to influence. 'Effect' is usually a noun meaning result."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "What does the idiom 'to hit the nail on the head' mean?",
+   "o": [
+    "To damage something",
+    "To describe something exactly right",
+    "To work very hard",
+    "To make a loud noise"
+   ],
+   "a": 1,
+   "e": "The idiom means to say or do something that is exactly correct."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Vocabulary",
+   "q": "What does the phrase 'bottleneck' mean in a project context?",
+   "o": [
+    "A point that slows down the overall process",
+    "A completed milestone",
+    "A team celebration",
+    "A change in management"
+   ],
+   "a": 0,
+   "e": "A bottleneck is a stage that limits throughput, like the narrow neck of a bottle."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Business Communication",
+   "q": "Your teammate's code has a bug. Which feedback is the most professional?",
+   "o": [
+    "Your code is terrible.",
+    "There is an off-by-one error in the loop on line 42; changing the bound to n-1 should fix it.",
+    "Why can't you ever get this right?",
+    "Somebody should fix this."
+   ],
+   "a": 1,
+   "e": "Good feedback is specific, focuses on the work and suggests a fix, without criticising the person."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Business Communication",
+   "q": "You must decline a meeting because of a clash. Which reply is best?",
+   "o": [
+    "Can't come.",
+    "I have a clash at that time and will not be able to attend. Could we move it to 3 p.m. or share the notes afterwards?",
+    "Not interested.",
+    "Ask someone else."
+   ],
+   "a": 1,
+   "e": "A polite decline explains briefly and offers an alternative, keeping the relationship constructive."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Business Communication",
+   "q": "Which subject line is best for an email asking your manager to approve leave?",
+   "o": [
+    "Hello",
+    "Urgent!!!",
+    "Leave request: 14-16 March",
+    "Please read"
+   ],
+   "a": 2,
+   "e": "A clear subject line states the purpose and key details so the reader knows what is needed."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Business Communication",
+   "q": "In a group discussion another participant makes a point you disagree with. What is the best approach?",
+   "o": [
+    "Interrupt and say they are wrong",
+    "Stay silent for the whole discussion",
+    "Acknowledge their point, then present your view with a reason",
+    "Change the topic"
+   ],
+   "a": 2,
+   "e": "Respectful disagreement acknowledges the other view and supports your own with reasoning."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'Remote work has increased flexibility for many employees. However, some teams report weaker collaboration because spontaneous conversations happen less often.' What is the main idea?",
+   "o": [
+    "Remote work is always better than office work",
+    "Remote work offers flexibility but can reduce spontaneous collaboration",
+    "Teams should stop working remotely",
+    "Employees dislike flexibility"
+   ],
+   "a": 1,
+   "e": "The passage presents both a benefit (flexibility) and a drawback (less spontaneous collaboration)."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'Although the prototype passed all unit tests, it failed under real traffic because the tests used unrealistically small datasets.' Why did the prototype fail under real traffic?",
+   "o": [
+    "The unit tests were not run",
+    "The tests did not reflect real data sizes",
+    "The traffic was too low",
+    "The prototype had no code"
+   ],
+   "a": 1,
+   "e": "The passage says the tests used unrealistically small datasets, so they missed problems that appear at real scale."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'Priya compared three vendors. Vendor A was cheapest but slow to deliver; Vendor B was costly but reliable; Vendor C balanced cost and speed.' Which vendor offers the best balance?",
+   "o": [
+    "Vendor A",
+    "Vendor B",
+    "Vendor C",
+    "None of them"
+   ],
+   "a": 2,
+   "e": "The passage says Vendor C balanced cost and speed."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'The release was postponed twice, not because of code quality, but because the deployment checklist was incomplete.' What caused the postponements?",
+   "o": [
+    "Poor code quality",
+    "An incomplete deployment checklist",
+    "A shortage of engineers",
+    "Customer complaints"
+   ],
+   "a": 1,
+   "e": "The passage explicitly rules out code quality and names the incomplete checklist."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Grammar",
+   "q": "Choose the sentence that uses the semicolon correctly.",
+   "o": [
+    "I finished the report; and sent it.",
+    "I finished the report; it is in your inbox.",
+    "I finished; the report it is in your inbox.",
+    "I finished the report, it; is in your inbox."
+   ],
+   "a": 1,
+   "e": "A semicolon joins two closely related independent clauses, as in 'I finished the report; it is in your inbox.'"
+  },
+  {
+   "d": "HARD",
+   "skill": "Grammar",
+   "q": "Identify the error: 'Not only did the system crash, but also it corrupted the database.'",
+   "o": [
+    "Not only did the system crash",
+    "but also it corrupted",
+    "the database",
+    "No error"
+   ],
+   "a": 1,
+   "e": "After 'not only' the parallel clause should be inverted as well: 'but it also corrupted' or 'but also did it corrupt'. 'but also it corrupted' is not grammatical."
+  },
+  {
+   "d": "HARD",
+   "skill": "Grammar",
+   "q": "Choose the sentence that is free of faulty parallelism.",
+   "o": [
+    "She enjoys coding, to read blogs, and attending hackathons.",
+    "She enjoys coding, reading blogs, and attending hackathons.",
+    "She enjoys to code, reading blogs, and attend hackathons.",
+    "She enjoys coding, reading blogs, and to attend hackathons."
+   ],
+   "a": 1,
+   "e": "Items in a list should share the same form. Coding, reading and attending are all gerunds."
+  },
+  {
+   "d": "HARD",
+   "skill": "Grammar",
+   "q": "Choose the sentence with correct use of 'whom'.",
+   "o": [
+    "Whom is responsible for the deployment?",
+    "The engineer whom I mentored has joined Google.",
+    "Whom will present the demo?",
+    "The person whom called you is waiting."
+   ],
+   "a": 1,
+   "e": "'Whom' is the object form. In 'whom I mentored', 'whom' is the object of 'mentored'. The other sentences need 'who' as the subject."
+  },
+  {
+   "d": "HARD",
+   "skill": "Grammar",
+   "q": "Choose the sentence in which the modifier is placed correctly.",
+   "o": [
+    "The manager only approved the budget on Friday.",
+    "The manager approved only the budget on Friday, not the hiring plan.",
+    "Only the manager approved on Friday, the budget being.",
+    "The manager approved on Friday the only budget."
+   ],
+   "a": 1,
+   "e": "'Only' should sit directly before the word it limits. Here it limits 'the budget', contrasting it with the hiring plan."
+  },
+  {
+   "d": "HARD",
+   "skill": "Grammar",
+   "q": "Choose the correct sentence.",
+   "o": [
+    "The reason is because the server ran out of memory.",
+    "The reason is that the server ran out of memory.",
+    "The reason is due because the server ran out of memory.",
+    "The reason being because the server ran out of memory."
+   ],
+   "a": 1,
+   "e": "'The reason is' should be followed by 'that', not 'because', since 'reason' and 'because' are redundant together."
+  },
+  {
+   "d": "HARD",
+   "skill": "Vocabulary",
+   "q": "Choose the word that best completes the sentence: 'The architect's design was ____: it solved the problem with the fewest possible components.'",
+   "o": [
+    "ostentatious",
+    "elegant",
+    "convoluted",
+    "redundant"
+   ],
+   "a": 1,
+   "e": "Solving a problem with the fewest components describes an 'elegant' design. 'Convoluted' and 'redundant' mean the opposite."
+  },
+  {
+   "d": "HARD",
+   "skill": "Vocabulary",
+   "q": "Choose the word closest in meaning to 'ubiquitous'.",
+   "o": [
+    "Rare",
+    "Present everywhere",
+    "Expensive",
+    "Temporary"
+   ],
+   "a": 1,
+   "e": "'Ubiquitous' means seeming to be everywhere at the same time."
+  },
+  {
+   "d": "HARD",
+   "skill": "Vocabulary",
+   "q": "Choose the word closest in meaning to 'ambiguous'.",
+   "o": [
+    "Open to more than one interpretation",
+    "Absolutely certain",
+    "Strongly worded",
+    "Short"
+   ],
+   "a": 0,
+   "e": "An ambiguous statement can reasonably be understood in more than one way."
+  },
+  {
+   "d": "HARD",
+   "skill": "Vocabulary",
+   "q": "Choose the word opposite in meaning to 'verbose'.",
+   "o": [
+    "Wordy",
+    "Succinct",
+    "Eloquent",
+    "Talkative"
+   ],
+   "a": 1,
+   "e": "'Verbose' means using more words than needed, so the opposite is 'succinct'."
+  },
+  {
+   "d": "HARD",
+   "skill": "Vocabulary",
+   "q": "In the sentence 'The startup's growth was meteoric', what does 'meteoric' suggest?",
+   "o": [
+    "Slow and steady",
+    "Extremely rapid",
+    "Dangerous",
+    "Short-lived only"
+   ],
+   "a": 1,
+   "e": "Like a meteor streaking across the sky, 'meteoric' growth is very rapid."
+  },
+  {
+   "d": "HARD",
+   "skill": "Business Communication",
+   "q": "A client is upset about a missed deadline. Which response is the most professional?",
+   "o": [
+    "It's not our fault; your requirements kept changing.",
+    "We apologise for the delay. The release is now planned for Friday, and we will update you daily until it ships.",
+    "Deadlines slip all the time.",
+    "Please talk to my manager."
+   ],
+   "a": 1,
+   "e": "An effective response takes responsibility, gives a concrete new plan and sets expectations for follow-up."
+  },
+  {
+   "d": "HARD",
+   "skill": "Business Communication",
+   "q": "You need to explain a technical outage to a non-technical executive. Which summary is best?",
+   "o": [
+    "A race condition in the connection pool caused deadlocks across replicas.",
+    "Some users could not log in for 40 minutes because of a software fault. It is fixed, and we are adding checks to prevent a repeat.",
+    "Everything is broken but we are on it.",
+    "The outage was caused by engineers."
+   ],
+   "a": 1,
+   "e": "Tailor to the audience: state impact, duration, current status and prevention in plain language."
+  },
+  {
+   "d": "HARD",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'Automation reduces repetitive work, but it does not remove the need for judgment. Teams that automate without monitoring often discover errors only after customers do.' Which statement is best supported?",
+   "o": [
+    "Automation should be avoided",
+    "Automation needs human monitoring to be reliable",
+    "Customers cause most errors",
+    "Judgment is unnecessary once tasks are automated"
+   ],
+   "a": 1,
+   "e": "The passage warns that automation without monitoring leads to late discovery of errors, implying monitoring is required."
+  },
+  {
+   "d": "HARD",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'The survey found that 70% of respondents preferred the new interface. However, only 120 of the 10,000 users were surveyed.' What is the main limitation of the finding?",
+   "o": [
+    "The sample is very small relative to the user base",
+    "The interface is too new",
+    "70% is a low number",
+    "The survey was too long"
+   ],
+   "a": 0,
+   "e": "Only 1.2% of users were surveyed, so the result may not represent all users."
+  },
+  {
+   "d": "HARD",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'Critics argue that strict code-review rules slow delivery. Proponents counter that the time saved by avoiding production bugs outweighs the delay.' What does the author present?",
+   "o": [
+    "Only the critics' view",
+    "Only the proponents' view",
+    "Two opposing views on code-review rules",
+    "A conclusion that reviews are useless"
+   ],
+   "a": 2,
+   "e": "The passage describes what critics say and what proponents say in response, without taking a side."
+  },
+  {
+   "d": "HARD",
+   "skill": "Reading Comprehension",
+   "q": "Passage: 'The pilot succeeded in one city, so the company assumed it would succeed nationwide. Within a quarter, it had closed half of its new branches.' What flaw in reasoning does the passage illustrate?",
+   "o": [
+    "Generalising from a single case",
+    "Ignoring cost",
+    "Relying on expert advice",
+    "Delaying a decision"
+   ],
+   "a": 0,
+   "e": "The company assumed a result from one city would hold everywhere, which is a hasty generalisation."
+  }
+ ]
+}

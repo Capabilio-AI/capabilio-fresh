@@ -14,6 +14,7 @@
     "roadmap:content": "node --env-file=.env.local --import tsx scripts/roadmap-content.mts",
     "ai:check": "node --env-file=.env.local --import tsx scripts/check-bedrock.mts",
     "assess:pool": "node --env-file=.env.local --import tsx scripts/assess-pool.mts",
+    "assess:author": "node --env-file=.env.local --import tsx scripts/assess-author.mts",
     "assess:import": "node --env-file=.env.local --import tsx scripts/assess-import.mts",
     "stream:import": "node --env-file=.env.local --import tsx scripts/stream-import.mts",
     "stream:bulk": "node --env-file=.env.local --import tsx scripts/stream-bulk.mts",

@@ -1,0 +1,798 @@
+{
+ "section": "logical_reasoning",
+ "questions": [
+  {
+   "d": "EASY",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 2, 4, 6, 8, ?",
+   "o": [
+    "9",
+    "10",
+    "12",
+    "14"
+   ],
+   "a": 1,
+   "e": "The series increases by 2 each time, so the next term is 8 + 2 = 10."
+  },
+  {
+   "d": "EASY",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 3, 6, 12, 24, ?",
+   "o": [
+    "36",
+    "42",
+    "48",
+    "30"
+   ],
+   "a": 2,
+   "e": "Each term is double the previous one, so the next term is 24 x 2 = 48."
+  },
+  {
+   "d": "EASY",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 1, 4, 9, 16, ?",
+   "o": [
+    "20",
+    "24",
+    "25",
+    "36"
+   ],
+   "a": 2,
+   "e": "These are perfect squares (1, 2, 3, 4 squared), so the next is 5 squared = 25."
+  },
+  {
+   "d": "EASY",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: A, C, E, G, ?",
+   "o": [
+    "H",
+    "I",
+    "J",
+    "K"
+   ],
+   "a": 1,
+   "e": "The letters skip one each time (A, C, E, G), so the next letter is I."
+  },
+  {
+   "d": "EASY",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 100, 90, 80, 70, ?",
+   "o": [
+    "50",
+    "65",
+    "60",
+    "55"
+   ],
+   "a": 2,
+   "e": "The series decreases by 10 each time, so the next term is 60."
+  },
+  {
+   "d": "EASY",
+   "skill": "Analogy & Classification",
+   "q": "Which one is the odd one out?",
+   "o": [
+    "Apple",
+    "Mango",
+    "Potato",
+    "Banana"
+   ],
+   "a": 2,
+   "e": "Apple, mango and banana are fruits; potato is a vegetable."
+  },
+  {
+   "d": "EASY",
+   "skill": "Analogy & Classification",
+   "q": "Which one is the odd one out?",
+   "o": [
+    "Python",
+    "Java",
+    "Chrome",
+    "C++"
+   ],
+   "a": 2,
+   "e": "Python, Java and C++ are programming languages; Chrome is a web browser."
+  },
+  {
+   "d": "EASY",
+   "skill": "Analogy & Classification",
+   "q": "Hand is to glove as foot is to what?",
+   "o": [
+    "Sock",
+    "Leg",
+    "Walk",
+    "Toe"
+   ],
+   "a": 0,
+   "e": "A glove covers the hand, in the same way a sock covers the foot."
+  },
+  {
+   "d": "EASY",
+   "skill": "Analogy & Classification",
+   "q": "Doctor is to hospital as teacher is to what?",
+   "o": [
+    "Book",
+    "School",
+    "Student",
+    "Class test"
+   ],
+   "a": 1,
+   "e": "A doctor works in a hospital, and a teacher works in a school."
+  },
+  {
+   "d": "EASY",
+   "skill": "Analogy & Classification",
+   "q": "Which number is the odd one out: 2, 3, 5, 9, 11?",
+   "o": [
+    "3",
+    "5",
+    "9",
+    "11"
+   ],
+   "a": 2,
+   "e": "2, 3, 5 and 11 are prime numbers. 9 is divisible by 3, so it is not prime."
+  },
+  {
+   "d": "EASY",
+   "skill": "Direction Sense",
+   "q": "Ravi walks 5 km north and then 5 km south. How far is he from his starting point?",
+   "o": [
+    "0 km",
+    "5 km",
+    "10 km",
+    "2.5 km"
+   ],
+   "a": 0,
+   "e": "The two movements are equal and opposite, so he ends at the starting point."
+  },
+  {
+   "d": "EASY",
+   "skill": "Direction Sense",
+   "q": "A person facing east turns right. Which direction is the person facing now?",
+   "o": [
+    "North",
+    "South",
+    "West",
+    "East"
+   ],
+   "a": 1,
+   "e": "Turning right from east means facing south."
+  },
+  {
+   "d": "EASY",
+   "skill": "Blood Relations",
+   "q": "A is the brother of B, and B is the mother of C. How is A related to C?",
+   "o": [
+    "Father",
+    "Uncle",
+    "Cousin",
+    "Grandfather"
+   ],
+   "a": 1,
+   "e": "A is the brother of C's mother, so A is C's maternal uncle."
+  },
+  {
+   "d": "EASY",
+   "skill": "Puzzles & Deduction",
+   "q": "In a row, Ravi is 4th from the left and 5th from the right. How many people are in the row?",
+   "o": [
+    "8",
+    "9",
+    "10",
+    "7"
+   ],
+   "a": 0,
+   "e": "Total = 4 + 5 - 1 = 8, because Ravi is counted in both positions."
+  },
+  {
+   "d": "EASY",
+   "skill": "Coding-Decoding",
+   "q": "If CAT is coded as DBU, what is the code for DOG?",
+   "o": [
+    "EPH",
+    "EOH",
+    "DPH",
+    "FPI"
+   ],
+   "a": 0,
+   "e": "Each letter moves one place forward: D to E, O to P, G to H, giving EPH."
+  },
+  {
+   "d": "EASY",
+   "skill": "Puzzles & Deduction",
+   "q": "All dogs are animals and all animals breathe. Which conclusion must be true?",
+   "o": [
+    "All dogs breathe",
+    "All animals are dogs",
+    "Some animals do not breathe",
+    "No dog breathes"
+   ],
+   "a": 0,
+   "e": "If all dogs are animals and all animals breathe, then all dogs breathe."
+  },
+  {
+   "d": "EASY",
+   "skill": "Puzzles & Deduction",
+   "q": "Today is Wednesday. What day will it be the day after tomorrow?",
+   "o": [
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+   ],
+   "a": 1,
+   "e": "Tomorrow is Thursday, and the day after that is Friday."
+  },
+  {
+   "d": "EASY",
+   "skill": "Puzzles & Deduction",
+   "q": "How many days are there in a leap year?",
+   "o": [
+    "365",
+    "364",
+    "366",
+    "367"
+   ],
+   "a": 2,
+   "e": "A leap year has an extra day in February, making 366 days."
+  },
+  {
+   "d": "EASY",
+   "skill": "Puzzles & Deduction",
+   "q": "All roses are flowers, and some flowers fade quickly. Can we conclude that all roses fade quickly?",
+   "o": [
+    "Yes, definitely",
+    "No, this cannot be concluded",
+    "Yes, but only in summer",
+    "Only if all flowers fade"
+   ],
+   "a": 1,
+   "e": "Only some flowers fade quickly, and the roses may not be among them, so the conclusion is not certain."
+  },
+  {
+   "d": "EASY",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 5, 10, 15, 20, ?",
+   "o": [
+    "22",
+    "25",
+    "30",
+    "35"
+   ],
+   "a": 1,
+   "e": "The series increases by 5 each time, so the next term is 25."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 2, 6, 12, 20, 30, ?",
+   "o": [
+    "38",
+    "40",
+    "42",
+    "44"
+   ],
+   "a": 2,
+   "e": "The differences are 4, 6, 8, 10, so the next difference is 12 and the term is 30 + 12 = 42."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 1, 1, 2, 3, 5, 8, ?",
+   "o": [
+    "11",
+    "12",
+    "13",
+    "15"
+   ],
+   "a": 2,
+   "e": "Each term is the sum of the two before it (Fibonacci): 5 + 8 = 13."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 5, 11, 23, 47, ?",
+   "o": [
+    "91",
+    "93",
+    "95",
+    "97"
+   ],
+   "a": 2,
+   "e": "Each term is double the previous term plus 1: 47 x 2 + 1 = 95."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 2, 5, 10, 17, 26, ?",
+   "o": [
+    "35",
+    "36",
+    "37",
+    "38"
+   ],
+   "a": 2,
+   "e": "The terms are n squared + 1 (1+1, 4+1, 9+1, ...), so the next is 36 + 1 = 37."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: AZ, BY, CX, ?",
+   "o": [
+    "DW",
+    "DV",
+    "EW",
+    "CW"
+   ],
+   "a": 0,
+   "e": "The first letter moves forward and the second moves backward each time, giving DW."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Coding-Decoding",
+   "q": "If TIGER is coded as UJHFS, what is the code for LION?",
+   "o": [
+    "MJPO",
+    "MKPO",
+    "KHNM",
+    "MJOP"
+   ],
+   "a": 0,
+   "e": "Each letter is shifted one place forward: L to M, I to J, O to P, N to O."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Coding-Decoding",
+   "q": "If A=1, B=2, C=3 and so on, what is the sum of the letter values in FACE?",
+   "o": [
+    "13",
+    "15",
+    "17",
+    "14"
+   ],
+   "a": 1,
+   "e": "F=6, A=1, C=3, E=5, and 6 + 1 + 3 + 5 = 15."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Blood Relations",
+   "q": "Pointing to a man, Anil says, 'He is the son of my mother's only brother.' How is the man related to Anil?",
+   "o": [
+    "Brother",
+    "Maternal cousin",
+    "Nephew",
+    "Uncle"
+   ],
+   "a": 1,
+   "e": "The man's father is Anil's maternal uncle, so the man is Anil's maternal cousin."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Blood Relations",
+   "q": "A's father is B's son. How is B related to A?",
+   "o": [
+    "Father",
+    "Grandfather",
+    "Uncle",
+    "Brother"
+   ],
+   "a": 1,
+   "e": "A's father is B's son, which makes B the father of A's father, i.e. A's grandfather."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Direction Sense",
+   "q": "Ravi walks 10 m east, then 10 m south, then 10 m west. How far and in which direction is he from the starting point?",
+   "o": [
+    "10 m south",
+    "10 m north",
+    "20 m south",
+    "He is back at the start"
+   ],
+   "a": 0,
+   "e": "The east and west moves cancel out, leaving a net movement of 10 m south."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Direction Sense",
+   "q": "A person walks 3 km north and then 4 km east. What is the shortest distance from the starting point?",
+   "o": [
+    "5 km",
+    "7 km",
+    "6 km",
+    "4 km"
+   ],
+   "a": 0,
+   "e": "The path forms a right triangle with sides 3 and 4, so the hypotenuse is 5 km."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "In a class of 40, Meena ranks 12th from the top. What is her rank from the bottom?",
+   "o": [
+    "27",
+    "28",
+    "29",
+    "30"
+   ],
+   "a": 2,
+   "e": "Rank from bottom = 40 - 12 + 1 = 29."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "All engineers are graduates. Some graduates are artists. Conclusions: I. Some engineers are artists. II. Some artists are graduates. Which follows?",
+   "o": [
+    "Only I",
+    "Only II",
+    "Both I and II",
+    "Neither I nor II"
+   ],
+   "a": 1,
+   "e": "Conclusion II is the converse of a given statement and must be true. Conclusion I is not guaranteed because the artists may be different graduates."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "No cat is a dog. All dogs are animals. Conclusions: I. No dog is a cat. II. Some animals are not cats. Which follows?",
+   "o": [
+    "Only I",
+    "Only II",
+    "Both I and II",
+    "Neither I nor II"
+   ],
+   "a": 2,
+   "e": "I is the converse of the first statement. Since dogs are animals and no dog is a cat, some animals (the dogs) are not cats, so II also follows."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "If the 5th of a month is a Monday, which day is the 26th of the same month?",
+   "o": [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday"
+   ],
+   "a": 1,
+   "e": "26 - 5 = 21 days later, which is exactly 3 weeks, so it is also a Monday."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "A father is 3 times as old as his son. After 12 years he will be twice as old as his son. What is the son's present age?",
+   "o": [
+    "10 years",
+    "12 years",
+    "14 years",
+    "16 years"
+   ],
+   "a": 1,
+   "e": "Let the son be x. Then 3x + 12 = 2(x + 12), which gives x = 12."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "Four friends S, P, Q and R stand in a line in that order from left to right. Who is second from the right?",
+   "o": [
+    "S",
+    "P",
+    "Q",
+    "R"
+   ],
+   "a": 2,
+   "e": "From the right the order is R, Q, P, S, so Q is second from the right."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Analogy & Classification",
+   "q": "Which number is the odd one out: 8, 27, 64, 100, 125?",
+   "o": [
+    "8",
+    "27",
+    "100",
+    "125"
+   ],
+   "a": 2,
+   "e": "8, 27, 64 and 125 are perfect cubes. 100 is not a cube."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Analogy & Classification",
+   "q": "3 is to 27 as 4 is to what?",
+   "o": [
+    "16",
+    "48",
+    "64",
+    "81"
+   ],
+   "a": 2,
+   "e": "27 is 3 cubed, so the answer is 4 cubed = 64."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Analogy & Classification",
+   "q": "ACE is to BDF as GIK is to what?",
+   "o": [
+    "HJL",
+    "HJK",
+    "IKM",
+    "HIL"
+   ],
+   "a": 0,
+   "e": "Each letter moves one place forward: G to H, I to J, K to L."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Analogy & Classification",
+   "q": "Which one is the odd one out?",
+   "o": [
+    "Printer",
+    "Scanner",
+    "Compiler",
+    "Keyboard"
+   ],
+   "a": 2,
+   "e": "Printer, scanner and keyboard are hardware devices. A compiler is software."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "A pen costs 5 more than a pencil. Together they cost 25. What is the cost of the pencil?",
+   "o": [
+    "8",
+    "10",
+    "12",
+    "15"
+   ],
+   "a": 1,
+   "e": "Let the pencil cost x. Then x + (x + 5) = 25, so x = 10."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "The rule is: 'All managers attend the weekly meeting.' Raj did not attend the weekly meeting. What must be true?",
+   "o": [
+    "Raj is not a manager",
+    "Raj is a manager",
+    "Raj was on leave",
+    "Nobody attended"
+   ],
+   "a": 0,
+   "e": "If every manager attends, anyone who did not attend cannot be a manager."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "1 January 2023 was a Sunday. What day was 1 January 2024?",
+   "o": [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Saturday"
+   ],
+   "a": 1,
+   "e": "2023 is not a leap year, so it has 365 days, which is 52 weeks and 1 day. The day moves forward by one, to Monday."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "What is the angle between the hour hand and the minute hand at exactly 3:00?",
+   "o": [
+    "60 degrees",
+    "90 degrees",
+    "120 degrees",
+    "180 degrees"
+   ],
+   "a": 1,
+   "e": "At 3:00 the minute hand is on 12 and the hour hand is on 3, a quarter of the dial, which is 90 degrees."
+  },
+  {
+   "d": "MEDIUM",
+   "skill": "Puzzles & Deduction",
+   "q": "Some pens are books. All books are pencils. Conclusions: I. Some pens are pencils. II. All pens are pencils. Which follows?",
+   "o": [
+    "Only I",
+    "Only II",
+    "Both I and II",
+    "Neither I nor II"
+   ],
+   "a": 0,
+   "e": "The pens that are books are also pencils, so some pens are pencils. Nothing says every pen is a book, so II does not follow."
+  },
+  {
+   "d": "HARD",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 3, 7, 15, 31, 63, ?",
+   "o": [
+    "95",
+    "111",
+    "127",
+    "131"
+   ],
+   "a": 2,
+   "e": "Each term is double the previous plus 1: 63 x 2 + 1 = 127."
+  },
+  {
+   "d": "HARD",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 2, 3, 5, 7, 11, 13, ?",
+   "o": [
+    "15",
+    "17",
+    "19",
+    "21"
+   ],
+   "a": 1,
+   "e": "These are consecutive prime numbers, and the next prime after 13 is 17."
+  },
+  {
+   "d": "HARD",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 1, 2, 6, 24, 120, ?",
+   "o": [
+    "240",
+    "360",
+    "600",
+    "720"
+   ],
+   "a": 3,
+   "e": "Each term is the previous multiplied by 2, 3, 4, 5 and then 6: 120 x 6 = 720."
+  },
+  {
+   "d": "HARD",
+   "skill": "Number & Letter Series",
+   "q": "What comes next in the series: 4, 6, 9, 13, 18, ?",
+   "o": [
+    "22",
+    "23",
+    "24",
+    "25"
+   ],
+   "a": 2,
+   "e": "The differences are 2, 3, 4, 5, so the next difference is 6 and the term is 24."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "A says 'B is a liar.' B says 'A and I are both honest.' Assuming each person is either always honest or always lying, who is honest?",
+   "o": [
+    "A is honest and B is a liar",
+    "B is honest and A is a liar",
+    "Both are honest",
+    "Both are liars"
+   ],
+   "a": 0,
+   "e": "If A were lying, B would be honest, but then B's claim that A is honest would be false, a contradiction. So A is honest and B is lying."
+  },
+  {
+   "d": "HARD",
+   "skill": "Direction Sense",
+   "q": "A man walks 6 km north, turns right and walks 8 km, then turns right again and walks 6 km. Where is he relative to the starting point?",
+   "o": [
+    "8 km east",
+    "8 km west",
+    "14 km north",
+    "6 km south"
+   ],
+   "a": 0,
+   "e": "North 6, east 8, south 6 leaves him at the same north-south position and 8 km to the east."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "In a row of 31 students, Gita is 9th from the left and Hari is 12th from the right. How many students are between them?",
+   "o": [
+    "8",
+    "9",
+    "10",
+    "11"
+   ],
+   "a": 2,
+   "e": "Hari's position from the left is 31 - 12 + 1 = 20. Students between = 20 - 9 - 1 = 10."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "The ages of A and B are in the ratio 3:5. After 6 years the ratio will be 2:3. What is A's present age?",
+   "o": [
+    "12 years",
+    "15 years",
+    "18 years",
+    "21 years"
+   ],
+   "a": 2,
+   "e": "Let ages be 3x and 5x. Then (3x + 6)/(5x + 6) = 2/3 gives x = 6, so A is 18."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "What is the smaller angle between the hour hand and the minute hand at 3:30?",
+   "o": [
+    "60 degrees",
+    "75 degrees",
+    "90 degrees",
+    "105 degrees"
+   ],
+   "a": 1,
+   "e": "At 3:30 the hour hand is at 105 degrees and the minute hand at 180 degrees, a difference of 75 degrees."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "Some A are B. All B are C. No C is D. Conclusions: I. Some A are C. II. Some A are not D. III. No B is D. Which follow?",
+   "o": [
+    "Only I",
+    "Only I and II",
+    "Only II and III",
+    "All of I, II and III"
+   ],
+   "a": 3,
+   "e": "Those A that are B are also C, so I follows. Since no C is D, those A are not D, so II follows. All B are C and no C is D, so III follows."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "Statement: A company announces that all employees must use two-factor login from next month. Which assumption is implicit?",
+   "o": [
+    "The company wants to improve account security",
+    "All employees own the latest smartphone",
+    "Employees will resist the change",
+    "Passwords will no longer be needed"
+   ],
+   "a": 0,
+   "e": "Making a new login step mandatory implies the company believes it improves security. The other statements are not required by the announcement."
+  },
+  {
+   "d": "HARD",
+   "skill": "Blood Relations",
+   "q": "A is B's sister, C is B's mother, D is C's father, and E is D's mother. How is A related to D?",
+   "o": [
+    "Granddaughter",
+    "Daughter",
+    "Great-granddaughter",
+    "Niece"
+   ],
+   "a": 0,
+   "e": "C is also A's mother, and D is C's father, so D is A's grandfather and A is D's granddaughter."
+  },
+  {
+   "d": "HARD",
+   "skill": "Coding-Decoding",
+   "q": "If MOUSE is coded as PRXVH, what is the code for LAMP?",
+   "o": [
+    "ODPS",
+    "ODQS",
+    "NCOR",
+    "OEPS"
+   ],
+   "a": 0,
+   "e": "Each letter is shifted three places forward: L to O, A to D, M to P, P to S."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "At a meeting, each of 8 people shakes hands exactly once with every other person. How many handshakes take place?",
+   "o": [
+    "16",
+    "28",
+    "56",
+    "64"
+   ],
+   "a": 1,
+   "e": "The number of pairs is 8 x 7 / 2 = 28."
+  },
+  {
+   "d": "HARD",
+   "skill": "Puzzles & Deduction",
+   "q": "What is the minimum number of people needed to be sure that at least two of them were born in the same month?",
+   "o": [
+    "12",
+    "13",
+    "24",
+    "25"
+   ],
+   "a": 1,
+   "e": "There are 12 months, so by the pigeonhole principle 13 people guarantee a repeated month."
+  }
+ ]
+}
