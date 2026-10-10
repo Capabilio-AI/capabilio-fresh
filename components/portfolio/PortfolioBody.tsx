@@ -113,7 +113,7 @@ export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, 
               <li key={t.attemptId} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--m-rule)] p-3.5">
                 <div className="min-w-0">
                   <p className="font-lp-body text-[14px] font-bold text-[var(--m-ink)]">{t.title}</p>
-                  <p className="mt-0.5 text-[12.5px] text-app-muted">{[t.company, fmtDate(t.completedAt)].filter(Boolean).join(", ")}</p>
+                  <p className="mt-0.5 text-[12.5px] text-app-muted">{[t.company, t.score !== undefined ? `Score ${t.score}%` : null, t.eloDelta ? `+${t.eloDelta} ELO` : null, fmtDate(t.completedAt)].filter(Boolean).join(", ")}</p>
                 </div>
                 <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 text-[12.5px] font-bold text-[var(--m-accent-ink)] hover:underline">View evidence</button>
               </li>

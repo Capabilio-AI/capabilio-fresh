@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
+import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
 
 interface Completion {
   id: string;
@@ -16,6 +17,7 @@ interface Completion {
 /** Domain-only history — every row here is a verified pass (a failed submission never reaches arena_attempt_completions). */
 export function DomainHistory() {
   const [completions, setCompletions] = useState<Completion[] | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/arena/domain/history")
@@ -53,11 +55,15 @@ export function DomainHistory() {
                   </p>
                 </div>
               </div>
-              <span className="rounded-full bg-app-background px-3 py-1 font-lp-mono text-[11px] font-semibold text-[var(--m-ink)]">+{c.ratingDelta} ELO{c.ratingAfter !== null ? ` · ${c.ratingAfter}` : ""}</span>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-app-background px-3 py-1 font-lp-mono text-[11px] font-semibold text-[var(--m-ink)]">+{c.ratingDelta} ELO{c.ratingAfter !== null ? ` · ${c.ratingAfter}` : ""}</span>
+                <button type="button" onClick={() => setOpenId(c.id)} className="font-lp-body text-[12.5px] font-bold text-app-orange hover:underline">View details</button>
+              </div>
             </div>
           ))}
         </div>
       )}
+      {openId && <EvidenceModal fetchUrl={`/api/arena/attempts/${openId}`} onClose={() => setOpenId(null)} />}
     </div>
   );
 }

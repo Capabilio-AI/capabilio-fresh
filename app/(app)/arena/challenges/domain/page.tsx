@@ -34,7 +34,7 @@ function Notice({ title, body, cta }: { title: string; body: string; cta?: { hre
 export default async function DomainChallengesPage({ searchParams }: { searchParams: Promise<{ career?: string; sample?: string }> }) {
   const { user } = await requireAuthedUser();
   const params = await searchParams;
-  const which = params.career === "plan-b" ? "plan-b" : "primary";
+  const which = "primary"; // students choose one target career; Plan B is no longer offered
   const service = createServiceClient();
   const view = await loadDomainSet(service, user.id, which);
 
@@ -74,15 +74,6 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
           <Link href="/arena/challenges/domain" className={`rounded-full px-3 py-1 font-semibold ${view.which === "primary" ? "bg-app-blue-container text-app-blue" : "border border-[var(--m-rule)] text-app-muted"}`}>
             {view.primary}
           </Link>
-          {view.planB ? (
-            <Link href="?career=plan-b" className={`rounded-full px-3 py-1 font-semibold ${view.which === "plan-b" ? "bg-app-blue-container text-app-blue" : "border border-[var(--m-rule)] text-app-muted"}`}>
-              Plan B: {view.planB}
-            </Link>
-          ) : (
-            <Link href={SET_CAREER_HREF} className="text-app-muted hover:text-[var(--m-ink)]">
-              + Add Plan B
-            </Link>
-          )}
           <Link href={SET_CAREER_HREF} className="ml-auto text-app-muted hover:text-[var(--m-ink)]">
             change
           </Link>

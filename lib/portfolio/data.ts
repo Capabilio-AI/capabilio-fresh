@@ -4,6 +4,8 @@ import { getVaultItems, type VaultItem } from "@/lib/vault/data";
 import { getViewerSummary, type ViewerSummary } from "@/lib/dashboard/viewer";
 import { getStatedCareerInterest } from "@/lib/career/interest-statement";
 import { buildCapabilityGroups, type CapabilityGroup, type PortfolioEvidence } from "@/lib/portfolio/view";
+import { createServiceClient } from "@/lib/supabase/service";
+import { untyped } from "@/lib/org/db";
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
 
 export interface ArenaTask {
@@ -12,6 +14,9 @@ export interface ArenaTask {
   company: string | null;
   area: string;
   completedAt: string | null;
+  /** Catalog Domain tickets carry their score and ELO; legacy workstation tasks do not. */
+  score?: number;
+  eloDelta?: number;
 }
 
 export interface GithubEvidence {
@@ -102,6 +107,21 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
       completedAt: c.completed_at,
     };
   });
+
+  // Domain tickets from the catalog model (challenge_attempts) are verified Arena work too. The caller has already authorised `userId`, so this reads with the service client.
+  const { data: ticketRows } = await untyped(createServiceClient())
+    .from("challenge_attempts")
+    .select("id, submitted_at, score, elo_delta, arena_challenges ( title, track ), challenge_id")
+    .eq("student_id", userId)
+    .eq("status", "PASSED")
+    .eq("evidence_status", "VERIFIED_AUTOMATED")
+    .order("submitted_at", { ascending: false })
+    .limit(30);
+  const ticketTasks: ArenaTask[] = ((ticketRows ?? []) as unknown as { id: string; submitted_at: string; score: number | null; elo_delta: number | null; arena_challenges: { title: string; track: string } | null }[])
+    .filter((t) => t.arena_challenges?.track === "domain")
+    .map((t) => ({ attemptId: t.id, title: t.arena_challenges!.title, company: null, area: "Domain ticket", completedAt: t.submitted_at, score: t.score ?? 0, eloDelta: t.elo_delta ?? 0 }));
+  arenaTasks.push(...ticketTasks);
+  arenaTasks.sort((a, b) => ((a.completedAt ?? "") < (b.completedAt ?? "") ? 1 : -1));
 
   const interviews: InterviewSummary[] = (interviewRows ?? [])
     .filter((r): r is typeof r & { completed_at: string; overall_score: number } => Boolean(r.completed_at) && r.overall_score !== null)
