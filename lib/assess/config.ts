@@ -40,7 +40,7 @@ export const GENERATION_BATCH_SIZE = 4;
 export const LIVE_GENERATION_TIMEOUT_MS = 20_000;
 
 /** Bump when the prompt or schema changes meaningfully; stored with every question. */
-export const QUESTION_VERSION = 1;
+export const QUESTION_VERSION = 2;
 
 export const CONFIDENCE_LEVELS = ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT"] as const;
 export type Confidence = (typeof CONFIDENCE_LEVELS)[number];

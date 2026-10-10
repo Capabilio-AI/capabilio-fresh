@@ -5,12 +5,14 @@ import { QUESTION_TYPES } from "@/lib/assess/config";
 import type { Slot } from "@/lib/assess/slots";
 import type { Expectation } from "@/lib/assess/validate";
 
-export const QUESTION_PROMPT_VERSION = "question.v2";
+export const QUESTION_PROMPT_VERSION = "question.v3";
 
+// Career questions are pitched at a FIRST-YEAR student who has only just chosen the role and has never worked in it.
+// "Hard" therefore means a small multi-step basic idea, never professional depth.
 const DIFFICULTY_GUIDE: Record<Difficulty, string> = {
-  EASY: "a fresher who has covered the basics should get this right with a moment's thought",
-  MEDIUM: "needs solid working knowledge applied to a realistic situation; one non-obvious step",
-  HARD: "needs depth: edge cases, trade-offs or multi-step reasoning an experienced junior would still pause on",
+  EASY: "a first-year student who has just heard of this skill should get it right: a basic term, what it is for, or the simplest example",
+  MEDIUM: "applies one basic idea to a short, simple everyday situation; no jargon beyond the skill's own basic vocabulary",
+  HARD: "still beginner level: combines two basic ideas or reads a tiny example (2-4 lines of code, a 3-row table); never edge cases, tooling or production trade-offs",
 };
 
 export interface PromptContext {
@@ -56,8 +58,9 @@ ${SHAPE}`;
   if (c.slot.kind === "CAREER") {
     const s = c.slot;
     const system = `${common}
-- These are PROFESSIONAL SCENARIO questions for the role "${s.careerName}": a business case, a SQL query or code snippet to read or fix, a chart/data table to interpret, a bug to diagnose, an output to predict, or a decision to make. Do NOT write definition questions ("What is X?").
-  Example of the right style: "A marketing manager wants the average basket value for returning customers. Which query is correct?" followed by four queries.
+- These are BEGINNER questions about the role "${s.careerName}" for a FIRST-YEAR college student who has just started and knows almost nothing about the role yet. They check whether the student has the very basics of "${s.skillName}", not whether they could do the job.
+  Use plain words. Prefer short, concrete questions: what a basic term means, what a simple thing is used for, which of four simple examples is correct, or what a tiny snippet (at most 4 lines) prints. A short everyday scenario is welcome. Do NOT write tricky, professional or tool-specific questions, and do not assume prior work experience.
+  Example of the right style: "Which of these is used to find the average of a column of numbers in SQL?" with four short options.
 - Pick the "type" that fits the question: ${QUESTION_TYPES.join(", ")}.`;
     const user = [
       `CAREER_ROLE: ${s.careerName}`,
@@ -68,9 +71,9 @@ ${SHAPE}`;
       c.assessed?.length ? `ALREADY_ASSESSED_SKILLS: ${c.assessed.join(", ")}` : "",
       c.remaining?.length ? `STILL_TO_ASSESS: ${c.remaining.join(", ")}` : "",
       c.avoid.length ? `Do not repeat or lightly reword any of these existing questions:\n- ${c.avoid.join("\n- ")}` : "",
-      `Write ${c.count} different questions that all test ${s.skillName} for a ${s.careerName}, each in a different realistic situation.`,
+      `Write ${c.count} different questions that all test ${s.skillName} for a ${s.careerName}, each on a different basic point.`,
     ].filter(Boolean).join("\n");
-    return { system, user, expectation: { skillKey: s.skillKey, careerKey: s.careerKey, difficulty: c.difficulty, minQuestionLength: 60 } };
+    return { system, user, expectation: { skillKey: s.skillKey, careerKey: s.careerKey, difficulty: c.difficulty, minQuestionLength: 25 } };
   }
 
   const g = c.slot;

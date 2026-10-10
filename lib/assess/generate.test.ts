@@ -39,7 +39,7 @@ describe("generateBatch", () => {
     expect(out.valid).toHaveLength(1); // q2: verifier disagreed; q3 bad key; 4th malformed
     expect(out.valid[0].question).toContain("report number 1");
     expect(out.rejected.join(" ")).toMatch(/not exactly one|schema|verification/);
-    expect(out.provenance).toMatchObject({ provider: "mock", model: "m", promptVersion: "question.v2" });
+    expect(out.provenance).toMatchObject({ provider: "mock", model: "m", promptVersion: "question.v3" });
   });
 
   it("never returns anything from non-JSON output", async () => {
@@ -62,9 +62,9 @@ describe("verifyBatch", () => {
 });
 
 describe("buildPrompt", () => {
-  it("asks for realistic scenarios, names the exact skill and difficulty, and carries the avoid-list", () => {
+  it("asks for beginner-level questions, names the exact skill and difficulty, and carries the avoid-list", () => {
     const p = buildPrompt({ slot, difficulty: "HARD", count: 4, studentLevel: "fresher", avoid: ["Which query counts rows?"] });
-    expect(p.system).toMatch(/PROFESSIONAL SCENARIO/);
+    expect(p.system).toMatch(/FIRST-YEAR college student/);
     expect(p.user).toContain("SKILL_ID: SKILL_SQL");
     expect(p.user).toContain("DIFFICULTY: HARD");
     expect(p.user).toContain("Which query counts rows?");

@@ -5,6 +5,14 @@ export const metadata: Metadata = {
   title: "Capabilio AI — Your Career Needs More Than a Resume",
   description:
     "Capabilio AI is an AI Career Operating System. Build skills, practice on real challenges, and turn your work into verified career evidence.",
+  // transparent "C." mark: dark letter on light browser chrome, white letter on dark chrome
+  icons: {
+    icon: [
+      { url: "/brand/icon-light.png", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/brand/icon-dark.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: "/brand/icon-light.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

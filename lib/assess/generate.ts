@@ -18,6 +18,8 @@ export interface Provenance {
   provider: string;
   model: string;
   promptVersion: string;
+  /** set for questions downloaded from an open dataset instead of generated */
+  dataset?: { name: string; license: string };
 }
 
 const AnswersSchema = z.object({ answers: z.array(z.object({ id: z.number().int(), choice: z.string() })) });
@@ -103,7 +105,9 @@ export async function storeQuestions(db: SupabaseClient, slot: Slot, questions: 
     correct_index: q.correctIndex,
     explanation: q.explanation,
     estimated_seconds: q.estimatedTimeSeconds,
-    source: "groq",
+    source: by.dataset ? "dataset" : "groq",
+    dataset: by.dataset?.name ?? null,
+    license: by.dataset?.license ?? null,
     provider: by.provider,
     model: by.model,
     prompt_version: by.promptVersion,
@@ -144,7 +148,7 @@ export async function topUp(
   for (let round = 0; round < (opts.rounds ?? 3) && inserted < want; round++) {
     const avoid = await recentStems(db, slot);
     const out = await generateBatch(
-      { slot, difficulty, count: Math.min(GENERATION_BATCH_SIZE, want - inserted + 1), studentLevel: opts.studentLevel ?? "final-year engineering student or fresher", avoid, ...opts.context },
+      { slot, difficulty, count: Math.min(GENERATION_BATCH_SIZE, want - inserted + 1), studentLevel: opts.studentLevel ?? "first-year college student, complete beginner in this career role", avoid, ...opts.context },
       opts.deps
     );
     rejected.push(...out.rejected);
