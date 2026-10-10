@@ -65,7 +65,7 @@ export interface PortfolioData {
   mostRecent: string | null;
   elo: PortfolioElo;
   /** From the latest skill-graph snapshot on the student's primary career; null until they have one. */
-  graph: { careerName: string | null; readiness: number; skills: { name: string; score: number; evidenceCount: number }[] } | null;
+  graph: { careerName: string | null; readiness: number; skills: { name: string; score: number; evidenceCount: number; targetLevel: number | null }[] } | null;
   interviews: InterviewSummary[];
 }
 
@@ -212,6 +212,6 @@ async function loadGraph(userId: string): Promise<PortfolioData["graph"]> {
     db.from("careers").select("name").eq("id", careerId).maybeSingle(),
   ]);
   if (!snap) return null;
-  const skills = ((snap as { skills: { name: string; score: number; evidenceCount: number }[] }).skills ?? []).map((k) => ({ name: k.name, score: Math.round(k.score), evidenceCount: k.evidenceCount }));
+  const skills = ((snap as { skills: { name: string; score: number; evidenceCount: number; targetLevel?: number | null }[] }).skills ?? []).map((k) => ({ name: k.name, score: Math.round(k.score), evidenceCount: k.evidenceCount, targetLevel: typeof k.targetLevel === "number" ? Math.round(k.targetLevel) : null }));
   return { careerName: (career as { name: string } | null)?.name ?? null, readiness: Math.round((snap as { readiness: number }).readiness), skills };
 }

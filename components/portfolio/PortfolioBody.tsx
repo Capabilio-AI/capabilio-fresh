@@ -10,6 +10,7 @@ import type { CapabilityGroup } from "@/lib/portfolio/view";
 import { buildPortfolioSummary } from "@/lib/portfolio/summary";
 import type { ArenaTask, GithubEvidence, InterviewSummary, PortfolioData } from "@/lib/portfolio/data";
 import type { EducationEntry } from "@/lib/dashboard/education";
+import { SkillSignal } from "@/components/portfolio/SkillSignal";
 import { LiveStatus } from "@/components/portfolio/LiveStatus";
 import type { PortfolioElo } from "@/lib/portfolio/elo";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
@@ -120,12 +121,14 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
         ))}
       </dl>
 
-      <div className="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className={`grid gap-10 p-6 sm:p-8 ${github ? "lg:grid-cols-[minmax(0,1fr)_300px]" : ""}`}>
         <div className="flex min-w-0 flex-col gap-9">
           <Section title="Professional summary">
             <p className="max-w-[68ch] font-lp-body text-[15.5px] leading-[1.7] text-[var(--m-ink)]">{summary}</p>
             {profile.bio && <p className="mt-4 max-w-[68ch] whitespace-pre-line font-lp-body text-[14.5px] leading-[1.7] text-[var(--m-muted)]"><span className="font-bold text-[var(--m-ink)]">In their own words (self-written): </span>{profile.bio}</p>}
           </Section>
+
+          {measured.length > 0 && <SkillSignal skills={measured} />}
 
           {education.length > 0 && (
             <Section title="Education">
@@ -191,20 +194,6 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
         </div>
 
         <aside className="flex min-w-0 flex-col gap-9">
-          {measured.length > 0 && (
-            <Section title="Measured skills">
-              <ul className="flex flex-col gap-3.5">
-                {measured.map((s) => (
-                  <li key={s.name}>
-                    <div className="flex items-baseline justify-between gap-3 font-lp-body text-[14px] text-[var(--m-ink)]"><span className="font-bold">{s.name}</span><span className="tabular-nums text-[var(--m-muted)]">{s.score}%</span></div>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--m-ground)]"><div className="h-full rounded-full bg-[var(--m-accent)]" style={{ width: `${Math.min(100, s.score)}%` }} /></div>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 font-lp-body text-[12.5px] leading-relaxed text-[var(--m-muted)]">Scores come from graded assessments and challenges on Capabilio, not self-reported.</p>
-            </Section>
-          )}
-
           {github && (
             <Section title="GitHub">
               <a href={github.profileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-lp-body text-[15px] font-bold text-[var(--m-ink)] hover:underline"><GitBranch size={16} aria-hidden />{github.username}<ExternalLink size={12} className="text-[var(--m-muted)]" aria-hidden /></a>
