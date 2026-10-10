@@ -5,10 +5,11 @@ import { untyped } from "@/lib/org/db";
 import { requireUser } from "@/lib/api/require-user";
 import { resolveStreamScope } from "@/lib/arena-challenges/resolve-scope";
 import { getOrAssignWeeklyBatch } from "@/lib/arena-challenges/weekly-batch";
-import { loadStreamStudentContext } from "@/lib/arena-challenges/stream-context";
+import { loadStreamPool, loadStreamStudentContext } from "@/lib/arena-challenges/stream-context";
 import { getSpin } from "@/lib/arena-challenges/spin";
 import { IT_CLUSTER_SCOPE_KEY } from "@/lib/arena-challenges/branch-clusters";
 import { generateWeeklyChallenges, weeklyPool } from "@/lib/arena-challenges/leetcode/weekly";
+import { WEEKLY_TARGET } from "@/lib/arena-challenges/leetcode/problem";
 import { timeLimitForDifficulty } from "@/lib/arena-challenges/timer";
 
 export const maxDuration = 300;
@@ -35,11 +36,17 @@ export async function GET() {
     return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: spinWeek, needsSpin: true, challenges: [], shortfall: 0, emptyReason: null });
   }
 
-  // IT students: this week's problems are written by the AI once a week. Until enough exist, start (or continue) that run in the background.
+  // IT students: this week's problems are written by the AI once a week and stored. If that run is short (quota, outage) the student is
+  // served from the stored bank instead (older problems they have not solved); AI is only asked again after a cooldown.
   if (scope.scopeKey === IT_CLUSTER_SCOPE_KEY) {
-    const pool = await weeklyPool(service);
-    if (pool.total < spin.count) {
-      if (!pool.generating) after(() => generateWeeklyChallenges(service));
+    const [pool, bank, { data: solvedRows }] = await Promise.all([
+      weeklyPool(service),
+      loadStreamPool(service, scope),
+      service.from("arena_challenge_completions").select("challenge_id").eq("user_id", auth.userId).eq("track", "stream").eq("is_correct", true),
+    ]);
+    if (pool.total < WEEKLY_TARGET && !pool.generating) after(() => generateWeeklyChallenges(service));
+    const solved = new Set((solvedRows ?? []).map((r) => r.challenge_id));
+    if (bank.filter((c) => !solved.has(c.id)).length < spin.count) {
       return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: pool.weekStart, preparing: true, challenges: [], shortfall: 0, emptyReason: null });
     }
   }

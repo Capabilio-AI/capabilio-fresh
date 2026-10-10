@@ -9,6 +9,8 @@ export interface StreamCandidate {
   difficulty: string;
   category: string;
   courseTags: string[];
+  /** an older stored challenge, served only when this week's fresh ones run short: ranked after fresh ones */
+  stale?: boolean;
 }
 
 export interface StudentCourse {
@@ -98,7 +100,7 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
     .map((c) => {
       const tier = tierFor(c, input.courses, input.currentYear);
       tiers[c.id] = tier;
-      return { c, bucket: TIER_RANK[tier] * 2 + (input.recentIds.has(c.id) ? 1 : 0), tie: stableHash(`${input.seed}:${c.id}`) };
+      return { c, bucket: TIER_RANK[tier] * 2 + (input.recentIds.has(c.id) || c.stale ? 1 : 0), tie: stableHash(`${input.seed}:${c.id}`) };
     })
     .sort((a, b) => a.bucket - b.bucket || a.tie - b.tie);
   const bucketOf = new Map(ranked.map((r) => [r.c.id, r.bucket]));

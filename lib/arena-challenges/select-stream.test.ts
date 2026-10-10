@@ -90,3 +90,12 @@ describe("scaleMix and batch size", () => {
     }
   });
 });
+
+describe("stored bank", () => {
+  it("serves fresh challenges first, falls back to older stored ones, and never gives a solved one", () => {
+    const pool = [cand("fresh1", "easy"), { ...cand("old1", "easy"), stale: true }, { ...cand("old2", "easy"), stale: true }, { ...cand("oldSolved", "easy"), stale: true }];
+    const out = selectStreamBatch({ ...base({ pool, solvedIds: new Set(["oldSolved"]), size: 3 }) });
+    expect(out.ids[0]).toBe("fresh1");
+    expect(out.ids.sort()).toEqual(["fresh1", "old1", "old2"]);
+  });
+});

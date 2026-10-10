@@ -8,6 +8,8 @@ import { generateAndVerify, type VerifiedProblem } from "./generate";
 import { TARGET_BY_DIFFICULTY, WEEKLY_TARGET } from "./problem";
 
 const STALE_AFTER_MS = 6 * 60_000;
+/** after a run ends short (quota, outage) automatic triggers wait this long before spending AI calls again */
+const RETRY_COOLDOWN_MS = 15 * 60_000;
 const TOPICS = ["Arrays", "Strings", "Hashing", "Two Pointers", "Sorting", "Stack", "Recursion", "Math", "Matrix", "Greedy", "Binary Search", "Prefix Sums", "Simulation", "Dynamic Programming"];
 const MAX_CALLS = 10;
 type Difficulty = keyof typeof TARGET_BY_DIFFICULTY;
@@ -33,7 +35,7 @@ export async function weeklyPool(service: SupabaseClient): Promise<WeeklyPool> {
   return { weekStart, counts, total: counts.easy + counts.medium + counts.hard, generating };
 }
 
-async function claim(service: SupabaseClient, weekStart: string): Promise<boolean> {
+async function claim(service: SupabaseClient, weekStart: string, force: boolean): Promise<boolean> {
   const db = untyped(service);
   const row = { scope_key: IT_CLUSTER_SCOPE_KEY, week_start: weekStart, status: "RUNNING", started_at: new Date().toISOString() };
   const ins = await db.from("arena_weekly_generation").insert(row);
@@ -41,6 +43,7 @@ async function claim(service: SupabaseClient, weekStart: string): Promise<boolea
   const { data: cur } = await db.from("arena_weekly_generation").select("status, started_at").eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("week_start", weekStart).maybeSingle();
   if (!cur || cur.status === "DONE") return false;
   if (cur.status === "RUNNING" && Date.now() - new Date(cur.started_at).getTime() < STALE_AFTER_MS) return false;
+  if (cur.status === "FAILED" && !force && Date.now() - new Date(cur.started_at).getTime() < RETRY_COOLDOWN_MS) return false;
   // FAILED or stale: take it over, but only if nobody else did in the meantime (compare-and-set on started_at)
   const { data: won } = await db.from("arena_weekly_generation").update({ status: "RUNNING", started_at: row.started_at }).eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("week_start", weekStart).eq("started_at", cur.started_at).select("week_start");
   return (won?.length ?? 0) > 0;
@@ -62,9 +65,9 @@ async function store(service: SupabaseClient, weekStart: string, v: VerifiedProb
 }
 
 /** Fills this week's pool up to the targets. Safe to call from anywhere, any number of times. Returns how many problems it added. */
-export async function generateWeeklyChallenges(service: SupabaseClient, budgetMs = 240_000): Promise<{ added: number; claimed: boolean }> {
+export async function generateWeeklyChallenges(service: SupabaseClient, budgetMs = 240_000, force = false): Promise<{ added: number; claimed: boolean }> {
   const weekStart = currentStreamWeek();
-  if (!(await claim(service, weekStart))) return { added: 0, claimed: false };
+  if (!(await claim(service, weekStart, force))) return { added: 0, claimed: false };
   const started = Date.now();
   let added = 0;
   let note = "";

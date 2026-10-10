@@ -38,10 +38,12 @@ interface PoolRow {
  */
 export async function loadStreamPool(service: Service, scope: Pick<StreamScope, "scopeKey" | "branchKey">): Promise<StreamCandidate[]> {
   if (scope.scopeKey === IT_CLUSTER_SCOPE_KEY) {
-    // IT students get only this week's LeetCode-style set (generated once a week, see leetcode/weekly.ts)
-    const { data, error } = await untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags").eq("track", "stream").eq("status", "PUBLISHED").eq("kind", "leetcode").eq("week_start", currentStreamWeek());
+    // IT students: this week's AI-written LeetCode-style set first; every older stored one stays available as a bank (marked stale)
+    // so a week the AI could not fill (quota, outage) is still served from the database. Solved ones are excluded by the selector.
+    const week = currentStreamWeek();
+    const { data, error } = await untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags, week_start").eq("track", "stream").eq("status", "PUBLISHED").eq("kind", "leetcode").order("week_start", { ascending: false }).limit(400);
     if (error) throw error;
-    return ((data ?? []) as PoolRow[]).map((r) => ({ id: r.id, difficulty: r.difficulty, category: r.category, courseTags: r.course_tags ?? [] }));
+    return ((data ?? []) as (PoolRow & { week_start: string | null })[]).map((r) => ({ id: r.id, difficulty: r.difficulty, category: r.category, courseTags: r.course_tags ?? [], stale: r.week_start !== week }));
   }
   const base = () => untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags").eq("track", "stream").eq("status", "PUBLISHED").is("user_id", null);
   const [explicit, legacy] = await Promise.all([base().contains("branch_keys", [scope.branchKey]), base().eq("scope_key", scope.scopeKey).eq("branch_keys", "{}")]);
