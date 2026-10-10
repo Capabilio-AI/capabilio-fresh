@@ -8,9 +8,11 @@ interface PasswordFieldProps {
   onChange: (value: string) => void;
   label?: string;
   error?: string;
+  placeholder?: string;
+  autoComplete?: string;
 }
 
-export function PasswordField({ value, onChange, label = "Password", error }: PasswordFieldProps) {
+export function PasswordField({ value, onChange, label = "Password", error, placeholder = "Enter your password", autoComplete = "current-password" }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   const id = useId();
   const errorId = `${id}-error`;
@@ -26,8 +28,8 @@ export function PasswordField({ value, onChange, label = "Password", error }: Pa
           type={visible ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter your password"
-          autoComplete="current-password"
+          placeholder={placeholder}
+          autoComplete={autoComplete}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
           className="w-full rounded border border-lp-border-hairline bg-lp-surface-card py-3 pl-4 pr-11 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted transition-colors focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"

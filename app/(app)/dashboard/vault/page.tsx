@@ -13,7 +13,7 @@ export default async function VaultHistoryPage() {
 
   return (
     <div>
-      <PageHead title="Vault History" intro="Where you studied and the proof behind it: institutions, certificates, projects, resumes, and links." />
+      <PageHead title="Vault History" intro="Where you studied and the proof behind it: institutions, certificates, projects, and links." />
 
       <div className="flex flex-col gap-10 pt-4">
         <section id="education" aria-labelledby="education-heading" className="scroll-mt-24">

@@ -4112,6 +4112,13 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
+          cover_url: string | null
+          headline: string | null
+          location: string | null
+          passport_code: string
+          passport_no: string | null
+          passport_public: boolean
           created_at: string
           email: string
           full_name: string | null
@@ -4124,6 +4131,13 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
+          cover_url?: string | null
+          headline?: string | null
+          location?: string | null
+          passport_code?: string
+          passport_no?: string | null
+          passport_public?: boolean
           created_at?: string
           email: string
           full_name?: string | null
@@ -4136,6 +4150,13 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
+          cover_url?: string | null
+          headline?: string | null
+          location?: string | null
+          passport_code?: string
+          passport_no?: string | null
+          passport_public?: boolean
           created_at?: string
           email?: string
           full_name?: string | null

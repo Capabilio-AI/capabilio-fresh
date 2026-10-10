@@ -21,8 +21,10 @@
     "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts"
   },
   "dependencies": {
+    "@remotion/player": "^4.0.534",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
+    "@types/qrcode": "^1.5.6",
     "@xyflow/react": "^12.12.0",
     "clsx": "^2.1.1",
     "framer-motion": "^13.4.0",
@@ -30,9 +32,11 @@
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
     "pdf-parse": "^2.4.5",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
+    "remotion": "^4.0.534",
     "sql.js": "^1.13.0",
     "thinking-orbs": "^0.3.2",
     "ws": "^8.21.3",

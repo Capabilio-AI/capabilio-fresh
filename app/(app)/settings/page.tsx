@@ -7,7 +7,6 @@ import { formatAcademicYear } from "@/lib/career/academic-year";
 import { EditableNameForm } from "@/components/settings/EditableNameForm";
 import { SettingsRow, SettingsSection } from "@/components/settings/SettingsRow";
 import { PulsePrivacy } from "@/components/settings/PulsePrivacy";
-import { ChangePasswordButton } from "@/components/settings/ChangePasswordButton";
 import { SignOutButton } from "@/components/settings/SignOutButton";
 
 export const metadata: Metadata = { title: "Settings — Capabilio AI" };
@@ -74,8 +73,10 @@ export default async function SettingsPage() {
         </SettingsSection>
 
         <SettingsSection title="Security">
-          <SettingsRow icon={Lock} title="Password" description="We'll email you a link to set a new one.">
-            <ChangePasswordButton email={viewer.email} />
+          <SettingsRow icon={Lock} title="Password" description="Change it any time from your profile settings.">
+            <Link href="/profile?tab=settings" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
+              Change password →
+            </Link>
           </SettingsRow>
           <SettingsRow icon={ShieldCheck} title="Data access" description="Only you can see your assessment, Vault, and capability data — staff at your institution can view it only where your role's permissions explicitly allow it." />
           <SettingsRow icon={LogOut} title="Sign out" description="End your session on this device." tone="warning">

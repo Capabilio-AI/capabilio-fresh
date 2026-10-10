@@ -8,9 +8,12 @@ import { compressImage } from "@/lib/image/compress";
 export function AvatarUpload({
   avatarUrl,
   initials,
+  large = false,
 }: {
   avatarUrl: string | null;
   initials: string;
+  /** the profile page hero: a bigger photo that sits on a white ring over the cover */
+  large?: boolean;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +49,7 @@ export function AvatarUpload({
 
   return (
     <div className="relative shrink-0">
-      <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-app-orange font-lp-display text-[20px] font-semibold text-white ring-2 ring-white/20">
+      <span className={`flex items-center justify-center overflow-hidden rounded-2xl bg-app-orange font-lp-display font-semibold text-white ${large ? "h-28 w-28 text-[32px] ring-4 ring-white sm:h-32 sm:w-32" : "h-20 w-20 text-[20px] ring-2 ring-white/20"}`}>
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element -- storage-hosted user avatar, arbitrary origin
           <img src={preview} alt="" className="h-full w-full object-cover" />
