@@ -3,9 +3,8 @@
 // reproduce every one of them. A problem that fails any step is discarded.
 import { z } from "zod";
 import { generateStructured, type GenerateDeps } from "@/lib/ai/llm";
-import { runCode } from "@/lib/code-execution/wandbox";
 import { GeneratedBatchSchema, GeneratedProblemSchema, type GeneratedProblem, type PublicProblem } from "./problem";
-import { RUN_CONCURRENCY, mapLimit, outputsMatch, type JudgeTest, type Runner } from "./judge";
+import { outputsMatch, wandboxExecutor, type Executor, type JudgeTest } from "./judge";
 
 export const PROMPT_VERSION = "leetcode.v1";
 const MAX_OUTPUT_CHARS = 600;
@@ -91,27 +90,25 @@ export interface VerifiedProblem {
 }
 
 /** Null when the problem cannot be trusted. `run` is injectable so the whole check is testable without the network. */
-export async function verifyProblem(p: GeneratedProblem, deps: GenerateDeps = {}, run: Runner = runCode): Promise<{ ok: true; value: VerifiedProblem } | { ok: false; reason: string }> {
+export async function verifyProblem(p: GeneratedProblem, deps: GenerateDeps = {}, exec: Executor = wandboxExecutor): Promise<{ ok: true; value: VerifiedProblem } | { ok: false; reason: string }> {
   const inputs = [...p.sample_inputs, ...p.hidden_inputs].map((s) => s.replace(/\r/g, "").trimEnd() + "\n");
   if (new Set(inputs).size !== inputs.length) return { ok: false, reason: "duplicate test inputs" };
 
-  const reference = await mapLimit(inputs, RUN_CONCURRENCY, async (input) => {
-    try { return await run("python", p.reference_solution, input); } catch { return null; }
-  });
-  if (reference.some((r) => r === null)) return { ok: false, reason: "code runner unavailable" };
-  const outputs = (reference as NonNullable<(typeof reference)[number]>[]).map((r) => (r.compileError || r.stderr.trim() !== "" && r.stdout.trim() === "" ? null : r.stdout.trim()));
+  const reference = await exec("python", p.reference_solution, inputs).catch(() => null);
+  if (!reference) return { ok: false, reason: "code runner unavailable" };
+  const outputs = reference.map((r) => (r.compileError || (r.stderr.trim() !== "" && r.stdout.trim() === "") ? null : r.stdout.trim()));
   if (outputs.some((o) => o === null || o === "" || o.length > MAX_OUTPUT_CHARS)) return { ok: false, reason: "reference solution failed or printed nothing usable" };
   const clean = outputs as string[];
   if (new Set(clean).size < 2) return { ok: false, reason: "every test has the same answer" };
 
   const independent = await solveIndependently(p, deps);
   if (!independent) return { ok: false, reason: "no independent solution" };
-  const second = await mapLimit(inputs, RUN_CONCURRENCY, async (input) => { try { return await run("python", independent, input); } catch { return null; } });
-  if (second.some((r, i) => !r || !outputsMatch(r.stdout, clean[i]))) return { ok: false, reason: "independent solution disagrees with the reference" };
+  const second = await exec("python", independent, inputs).catch(() => null);
+  if (!second || second.some((r, i) => !outputsMatch(r.stdout, clean[i]))) return { ok: false, reason: "independent solution disagrees with the reference" };
 
   // the starter must not already solve it
-  const starter = await run("python", p.starter_python, inputs[0]).catch(() => null);
-  if (starter && outputsMatch(starter.stdout, clean[0])) return { ok: false, reason: "starter code already prints the answer" };
+  const starter = await exec("python", p.starter_python, [inputs[0]]).catch(() => null);
+  if (starter && outputsMatch(starter[0].stdout, clean[0])) return { ok: false, reason: "starter code already prints the answer" };
 
   const tests = inputs.map((input, i) => ({ input, output: clean[i] }));
   return {
@@ -138,7 +135,7 @@ export interface BatchOutcome {
 }
 
 /** One model call, then every problem in it is checked independently. Problems of the wrong difficulty are rejected. */
-export async function generateAndVerify(ctx: GenerateContext, deps: GenerateDeps = {}, run: Runner = runCode): Promise<BatchOutcome> {
+export async function generateAndVerify(ctx: GenerateContext, deps: GenerateDeps = {}, exec: Executor = wandboxExecutor): Promise<BatchOutcome> {
   const { system, user } = buildPrompt(ctx);
   const gen = await generateStructured({ task: "challenge", system, user, schema: GeneratedBatchSchema, maxTokens: 6000, temperature: 0.7, promptVersion: PROMPT_VERSION }, deps);
   const rejected: string[] = [];
@@ -154,7 +151,7 @@ export async function generateAndVerify(ctx: GenerateContext, deps: GenerateDeps
   }
   const verified: VerifiedProblem[] = [];
   for (const p of parsed) { // one at a time: each check already runs several code executions in parallel
-    const v = await verifyProblem(p, deps, run);
+    const v = await verifyProblem(p, deps, exec);
     if (v.ok) verified.push(v.value); else rejected.push(`${p.title}: ${v.reason}`);
   }
   return { verified, rejected };

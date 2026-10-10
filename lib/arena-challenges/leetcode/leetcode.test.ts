@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { mockAdapter, setAdapterForTest } from "@/lib/ai/llm";
-import { judge, mapLimit, normalizeOutput, outputsMatch, type Runner } from "./judge";
+import { judge, mapLimit, normalizeOutput, outputsMatch, perTest, pythonHarness, withRetry, type Runner } from "./judge";
 import { verifyProblem } from "./generate";
 import { topicsFor } from "./weekly";
 import type { GeneratedProblem } from "./problem";
@@ -38,9 +38,9 @@ describe("judge", () => {
   it("passes only the tests the code gets right and treats a runner failure as a fail", async () => {
     const tests = [{ input: "1 2", output: "3" }, { input: "5 5", output: "10" }];
     const wrong = run({ BAD: () => "3" });
-    const v = await judge("python", "BAD", tests, wrong);
+    const v = await judge("python", "BAD", tests, perTest(wrong));
     expect(v.map((x) => x.passed)).toEqual([true, false]);
-    const down = await judge("python", "X", tests, async () => { throw new Error("down"); });
+    const down = await judge("python", "X", tests, perTest(async () => { throw new Error("down"); }));
     expect(down.every((x) => !x.passed && x.error.includes("unavailable"))).toBe(true);
   });
 });
@@ -49,22 +49,22 @@ describe("verifyProblem", () => {
   const solver = (solution: string) => setAdapterForTest("mock", mockAdapter(() => ({ solution })));
   it("keeps a problem whose independent solution reproduces the reference outputs, with outputs from running the reference", async () => {
     solver("INDEP");
-    const out = await verifyProblem(problem, deps, run({ REF: sum, INDEP: sum, STARTER: () => "" }));
+    const out = await verifyProblem(problem, deps, perTest(run({ REF: sum, INDEP: sum, STARTER: () => "" })));
     if (!out.ok) throw new Error(out.reason);
     expect(out.ok && out.value.tests.map((t) => t.output)).toEqual(["6", "30", "5", "0", "7", "1000"]);
     expect(out.ok && out.value.sampleCount).toBe(2);
   });
   it("rejects when the independent solution disagrees, or the starter already solves it", async () => {
     solver("INDEP");
-    expect((await verifyProblem(problem, deps, run({ REF: sum, INDEP: () => "0", STARTER: () => "" }))).ok).toBe(false);
+    expect((await verifyProblem(problem, deps, perTest(run({ REF: sum, INDEP: () => "0", STARTER: () => "" })))).ok).toBe(false);
     solver("INDEP");
-    expect((await verifyProblem(problem, deps, run({ REF: sum, INDEP: sum, STARTER: sum }))).ok).toBe(false);
+    expect((await verifyProblem(problem, deps, perTest(run({ REF: sum, INDEP: sum, STARTER: sum })))).ok).toBe(false);
   });
   it("rejects a reference that fails or a test set where every answer is the same", async () => {
     solver("INDEP");
-    expect((await verifyProblem(problem, deps, run({ REF: () => "", INDEP: sum, STARTER: () => "" }))).ok).toBe(false);
+    expect((await verifyProblem(problem, deps, perTest(run({ REF: () => "", INDEP: sum, STARTER: () => "" })))).ok).toBe(false);
     solver("INDEP");
-    expect((await verifyProblem(problem, deps, run({ REF: () => "7", INDEP: () => "7", STARTER: () => "" }))).ok).toBe(false);
+    expect((await verifyProblem(problem, deps, perTest(run({ REF: () => "7", INDEP: () => "7", STARTER: () => "" })))).ok).toBe(false);
   });
 });
 
@@ -72,5 +72,23 @@ describe("topicsFor", () => {
   it("differs between consecutive weeks", () => {
     expect(topicsFor("2026-10-11")).not.toEqual(topicsFor("2026-10-18"));
     expect(topicsFor("2026-10-11")).toHaveLength(5);
+  });
+});
+
+describe("withRetry", () => {
+  it("retries a flaky run and gives up after the waits are used", async () => {
+    let calls = 0;
+    const flaky: Runner = async () => { if (++calls < 3) throw new Error("drop"); return { stdout: "ok", stderr: "", compileError: "" }; };
+    expect((await withRetry(flaky, [0, 0], async () => {})("python", "x", "")).stdout).toBe("ok");
+    await expect(withRetry(async () => { throw new Error("down"); }, [0], async () => {})("python", "x", "")).rejects.toThrow("down");
+  });
+});
+
+describe("pythonHarness", () => {
+  it("embeds the code and inputs as data, so quotes and newlines in them cannot break out of the program", () => {
+    const h = pythonHarness('print("""x""")\nimport os; os.system("echo hi")', ['1 2\n', '"; DROP\n']);
+    expect(h).toContain("json.loads(");
+    expect(h).not.toContain("os.system(\"echo hi\")\nINPUTS");
+    expect(h.split("\n").filter((l) => l.startsWith("CODE =") || l.startsWith("INPUTS =")).length).toBe(2);
   });
 });

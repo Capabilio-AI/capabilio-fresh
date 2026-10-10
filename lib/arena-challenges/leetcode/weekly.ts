@@ -80,7 +80,7 @@ export async function generateWeeklyChallenges(service: SupabaseClient, budgetMs
       while (counts[d] < TARGET_BY_DIFFICULTY[d] && calls < MAX_CALLS && Date.now() - started < budgetMs) {
         calls++;
         const need = TARGET_BY_DIFFICULTY[d] - counts[d];
-        const out = await generateAndVerify({ difficulty: d, count: Math.min(2, need + 1), topics: topicsFor(weekStart), avoidTitles: avoid });
+        const out = await generateAndVerify({ difficulty: d, count: d === "hard" ? 1 : Math.min(2, need + 1), topics: topicsFor(weekStart), avoidTitles: avoid });
         for (const v of out.verified.slice(0, need)) {
           if (await store(service, weekStart, v)) { counts[d]++; added++; avoid.push(v.problem.title); }
         }

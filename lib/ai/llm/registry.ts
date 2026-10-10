@@ -30,7 +30,9 @@ registerAdapter("groq", (env) => {
 registerAdapter("openai-compatible", (env) => {
   if (!env.OPENAI_COMPAT_BASE_URL || !env.OPENAI_COMPAT_API_KEY) throw new LlmError("config", "OPENAI_COMPAT_BASE_URL and OPENAI_COMPAT_API_KEY are required");
   const mode = (env.OPENAI_COMPAT_JSON_MODE || "json_object") as JsonMode;
-  return openAiCompatible({ name: "openai-compatible", baseUrl: env.OPENAI_COMPAT_BASE_URL, apiKey: env.OPENAI_COMPAT_API_KEY, jsonMode: mode });
+  // Gemini's "latest" models think before answering and spend output tokens doing it, which cuts long JSON off: keep thinking low
+  const effort = env.OPENAI_COMPAT_REASONING_EFFORT || (/generativelanguage\.googleapis\.com/.test(env.OPENAI_COMPAT_BASE_URL) ? "low" : "");
+  return openAiCompatible({ name: "openai-compatible", baseUrl: env.OPENAI_COMPAT_BASE_URL, apiKey: env.OPENAI_COMPAT_API_KEY, jsonMode: mode, timeoutMs: Number(env.OPENAI_COMPAT_TIMEOUT_MS) || 150_000, extraBody: () => (effort ? { reasoning_effort: effort } : {}) });
 });
 registerAdapter("bedrock", () => bedrockAdapter);
 
