@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, CheckCircle2, CircleX } from "lucide-react";
+import { TicketEvidence } from "./TicketEvidence";
 import { sqlOutputDetail, type AttemptEvidence } from "@/lib/arena/attempt-evidence";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
@@ -55,19 +56,10 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
               {state.data.completedAt ? `Verified Arena submission · ${fmt(state.data.completedAt)}` : "Not yet verified"}
             </p>
 
-            {state.data.ticket && (
-              <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-                {[["Score", `${state.data.ticket.score}%`], ["Checks passed", `${state.data.ticket.checksPassed}/${state.data.ticket.checksTotal}`], ["ELO earned", `+${state.data.ticket.eloDelta}`]].map(([k, v]) => (
-                  <div key={k} className="rounded-xl bg-app-background px-2 py-3">
-                    <dd className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">{v}</dd>
-                    <dt className="mt-0.5 font-lp-mono text-[11px] text-app-muted">{k}</dt>
-                  </div>
-                ))}
-              </dl>
-            )}
-
+            {state.data.ticket ? <TicketEvidence data={state.data} /> : (
+            <>
             <section className="mt-5 rounded-xl border border-[var(--m-rule)] p-4">
-              <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">{state.data.ticket ? "The scenario" : "The request"}</h3>
+              <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">The request</h3>
               {state.data.requester && <p className="mt-1 font-lp-mono text-[11.5px] text-app-muted">From {state.data.requester}</p>}
               <p className="mt-2 font-lp-body text-[13.5px] leading-relaxed text-[var(--m-ink)]">{state.data.scenario}</p>
               <ul className="mt-3 flex flex-col gap-1">
@@ -81,7 +73,7 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
 
             {state.data.grade && (
               <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
-                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">{state.data.ticket ? "Output: how each check went" : "Deterministic grading"}</h3>
+                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Deterministic grading</h3>
                 <p className="mt-1 font-lp-body text-[13px] text-[var(--m-ink)]">{state.data.grade.message}</p>
                 <ul className="mt-2 flex flex-col gap-1">
                   {state.data.grade.checks.map((c) => (
@@ -95,24 +87,12 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
 
             {state.data.submissionText && (
               <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
-                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">{state.data.ticket ? "What the student wrote" : "Submitted work"}</h3>
+                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Submitted work</h3>
                 <pre className="mt-2 max-h-[280px] overflow-auto whitespace-pre-wrap rounded-lg bg-app-background p-3 font-lp-mono text-[12px] text-[var(--m-ink)]">{state.data.submissionText}</pre>
               </section>
             )}
 
-            {state.data.ticket?.terminalOutput && (
-              <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
-                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Terminal output</h3>
-                <pre className="mt-2 max-h-[240px] overflow-auto whitespace-pre-wrap rounded-lg bg-app-background p-3 font-lp-mono text-[12px] text-[var(--m-ink)]">{state.data.ticket.terminalOutput}</pre>
-              </section>
-            )}
 
-            {state.data.ticket?.reflection && (
-              <section className="mt-3 rounded-xl border border-[var(--m-rule)] p-4">
-                <h3 className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Student&apos;s reflection</h3>
-                <p className="mt-2 whitespace-pre-wrap font-lp-body text-[13px] text-[var(--m-ink)]">{state.data.ticket.reflection}</p>
-              </section>
-            )}
 
             {(() => {
               const output = sqlOutputDetail(state.data.grade?.detail);
@@ -158,9 +138,11 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
                 {[
                   ["Assigned", fmt(state.data.assignedAt)],
                   ["Verified", fmt(state.data.completedAt)],
-                  ...(state.data.ticket ? [["Hints used", state.data.ticket.hintsUsed], ["Verification", state.data.ticket.verified ? "Automated server checks" : "Not verified"]] : [["Rotation cycle", state.data.cycleNumber ?? "—"], ["Submissions", state.data.submissionCount]]),
+                  ["Rotation cycle", state.data.cycleNumber ?? "—"],
+                  ["Submissions", state.data.submissionCount],
                   ["Difficulty", state.data.difficulty],
-                  ...(state.data.ticket ? [] : [["Generated by", state.data.generationProvider ? `${state.data.generationProvider} · ${state.data.generationModel}` : "hand-authored (legacy)"], ["Generation version", state.data.generationVersion ?? "—"]]),
+                  ["Generated by", state.data.generationProvider ? `${state.data.generationProvider} · ${state.data.generationModel}` : "hand-authored (legacy)"],
+                  ["Generation version", state.data.generationVersion ?? "—"],
                   ["Grading version", state.data.gradingVersion ?? "—"],
                 ].map(([k, v]) => (
                   <div key={String(k)} className="flex justify-between gap-3 border-b border-[var(--m-rule)] py-1">
@@ -170,6 +152,8 @@ export function EvidenceModal({ fetchUrl, onClose }: EvidenceModalProps) {
                 ))}
               </dl>
             </section>
+            </>
+            )}
           </>
         )}
       </div>

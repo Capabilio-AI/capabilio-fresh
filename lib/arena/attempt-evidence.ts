@@ -22,7 +22,11 @@ export interface AttemptEvidence {
   generationVersion: string | null;
   gradingVersion: string | null;
   /** Set for catalog Domain tickets (challenge_attempts); absent for legacy workstation attempts. */
-  ticket?: { score: number; checksPassed: number; checksTotal: number; eloDelta: number; hintsUsed: number; reflection: string | null; terminalOutput: string | null; verified: boolean };
+  ticket?: { score: number; checksPassed: number; checksTotal: number; eloDelta: number; hintsUsed: number; reflection: string | null; terminalOutput: string | null; verified: boolean;
+    /** What the student was handed: starter files, notebook cells, seed SQL. */
+    given: { files: { name: string; content: string }[]; cells: string[]; seedSql: string | null };
+    /** Per check: what was expected, what the student produced, and the verdict. Expected is only revealed for checks that passed. */
+    comparison: { label: string; expected: string; got: string; passed: boolean }[] };
 }
 
 export type SqlOutputDetail = { columns: string[]; rows: (string | number | boolean | null)[][]; truncated: boolean } | { error: string };
@@ -100,14 +104,14 @@ async function getTicketEvidence(service: SupabaseClient<Database>, attemptId: s
   const { data: a } = await db.from("challenge_attempts").select("id, challenge_id, status, started_at, submitted_at, score, checks_passed, checks_total, check_results, evidence_status, elo_delta, hints_used, submission, reflection_text, grading_version, runtime_type").eq("id", attemptId).eq("student_id", userId).neq("status", "IN_PROGRESS").maybeSingle();
   if (!a) return null;
   const [{ data: challenge }, { data: steps }, { data: checks }, { data: skills }] = await Promise.all([
-    db.from("arena_challenges").select("title, difficulty, ticket_brief, scenario, requester, grading_version").eq("id", a.challenge_id).maybeSingle(),
+    db.from("arena_challenges").select("title, difficulty, ticket_brief, scenario, requester, grading_version, starter_assets_ref").eq("id", a.challenge_id).maybeSingle(),
     db.from("challenge_steps").select("step_order, title, instruction").eq("challenge_id", a.challenge_id).order("step_order"),
-    db.from("challenge_checks").select("id, label, visible, config").eq("challenge_id", a.challenge_id),
+    db.from("challenge_checks").select("id, label, visible, check_type, config").eq("challenge_id", a.challenge_id),
     db.from("arena_challenge_skills").select("skills ( name )").eq("challenge_id", a.challenge_id),
   ]);
   if (!challenge) return null;
 
-  const checkRows = (checks ?? []) as { id: string; label: string; visible: boolean; config: { public?: { prompt?: string } } | null }[];
+  const checkRows = (checks ?? []) as { id: string; label: string; visible: boolean; check_type: string; config: ({ public?: { prompt?: string } } & Record<string, unknown>) | null }[];
   const promptOf = new Map(checkRows.map((c, i) => [c.id, c.config?.public?.prompt || (c.visible ? c.label : `Answer ${i + 1}`)]));
   const sub = (a.submission ?? {}) as { answers?: Record<string, unknown>; queries?: Record<string, string>; terminal?: Record<string, string>; files?: Record<string, string> };
   const lines: string[] = [];
@@ -115,6 +119,31 @@ async function getTicketEvidence(service: SupabaseClient<Database>, attemptId: s
   for (const [id, q] of Object.entries(sub.queries ?? {})) lines.push(`${promptOf.get(id) ?? "Query"}\n${q}`);
   for (const [name, body] of Object.entries(sub.files ?? {})) lines.push(`// ${name}\n${body}`);
   const terminal = Object.values(sub.terminal ?? {}).join("\n").trim() || null;
+
+  const resultOf = new Map(((a.check_results ?? []) as { checkId?: string; passed: boolean }[]).map((r) => [r.checkId, r.passed]));
+  const clip = (t: string, n = 400) => (t.length > n ? `${t.slice(0, n)}…` : t);
+  const comparison = checkRows.map((c, i) => {
+    const passedCheck = resultOf.get(c.id) === true;
+    const cfg = (c.config ?? {}) as Record<string, unknown>;
+    const ans = sub.answers?.[c.id];
+    const gotText = (v: unknown) => (v === undefined || v === null || v === "" ? "(nothing submitted)" : typeof v === "string" ? v : JSON.stringify(v));
+    let expected = "Hidden";
+    let got = gotText(ans);
+    if (passedCheck) {
+      switch (c.check_type) {
+        case "NUMERIC_ANSWER": expected = `${String(cfg.expected)}${typeof cfg.tolerancePct === "number" ? ` (±${cfg.tolerancePct}%)` : ""}`; break;
+        case "CHOICE_ANSWER": expected = [cfg.correct].flat().join(", "); break;
+        case "OUTPUT_MATCH": expected = String(cfg.expected ?? ""); break;
+        case "QUERY_RESULT": expected = "The same rows as the reference query"; got = clip(sub.queries?.[c.id] ?? "", 600); break;
+        case "FILE_STATE": expected = `File ${String(cfg.path ?? "")} with the required content`; got = "File present with the required content"; break;
+        case "TERMINAL_OUTPUT": expected = cfg.matches ? `Output matching ${String(cfg.matches)}` : "Browser-reported"; got = clip(sub.terminal?.[c.id] ?? "") || "(no output)"; break;
+        default: expected = "Passing in the browser"; got = "Reported by the student's browser";
+      }
+    }
+    return { label: c.visible ? c.label : `Hidden check ${i + 1}`, expected, got: clip(got), passed: passedCheck };
+  });
+  const assets = (challenge.starter_assets_ref ?? {}) as { files?: Record<string, string>; cells?: string[]; seedSql?: string };
+  const given = { files: Object.entries(assets.files ?? {}).map(([name, content]) => ({ name, content: clip(String(content), 1200) })), cells: (assets.cells ?? []).map((c) => clip(String(c), 1200)), seedSql: assets.seedSql ? clip(assets.seedSql, 1500) : null };
 
   const results = (a.check_results ?? []) as { label: string | null; visible: boolean; passed: boolean }[];
   const passed = a.status === "PASSED";
@@ -137,6 +166,6 @@ async function getTicketEvidence(service: SupabaseClient<Database>, attemptId: s
     generationModel: null,
     generationVersion: null,
     gradingVersion: a.grading_version ?? challenge.grading_version ?? null,
-    ticket: { score: a.score ?? 0, checksPassed: a.checks_passed ?? 0, checksTotal: a.checks_total ?? 0, eloDelta: a.elo_delta ?? 0, hintsUsed: a.hints_used ?? 0, reflection: a.reflection_text ?? null, terminalOutput: terminal, verified: a.evidence_status === "VERIFIED_AUTOMATED" },
+    ticket: { score: a.score ?? 0, checksPassed: a.checks_passed ?? 0, checksTotal: a.checks_total ?? 0, eloDelta: a.elo_delta ?? 0, hintsUsed: a.hints_used ?? 0, reflection: a.reflection_text ?? null, terminalOutput: terminal, verified: a.evidence_status === "VERIFIED_AUTOMATED", given, comparison },
   };
 }

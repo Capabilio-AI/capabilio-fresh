@@ -31,12 +31,10 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
   return (
     <MetroScope>
     <div className="min-h-screen bg-app-background px-4 py-10 sm:px-8">
-      <div className="mx-auto max-w-4xl">
-        <p className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">Capabilio AI · Verified portfolio</p>
-        <h1 className="mt-1 font-lp-display text-[26px] font-semibold text-app-charcoal">Portfolio</h1>
-        <p className="mt-1 font-lp-body text-[13px] text-app-muted">What this candidate has demonstrated, not what they&apos;ve claimed. Every item below links to verifiable evidence.</p>
+      <div className="mx-auto max-w-5xl">
+        <p className="mb-4 font-lp-body text-[13px] text-app-muted print:hidden">Verified by Capabilio AI. Every score and piece of work below links to graded evidence.</p>
 
-        <div className="pt-6">
+        <div>
           <PortfolioBody
             viewer={data.viewer}
             statedRole={data.statedRole}
@@ -48,6 +46,7 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
             keyEvidence={data.keyEvidence}
             mostRecent={data.mostRecent}
             elo={data.elo}
+            graph={data.graph}
             isOwner={false}
             evidenceBaseUrl={`/api/portfolio/${slug}/attempts`}
           />

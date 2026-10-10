@@ -51,6 +51,8 @@ export interface PortfolioData {
   keyEvidence: string[];
   mostRecent: string | null;
   elo: PortfolioElo;
+  /** From the latest skill-graph snapshot on the student's primary career; null until they have one. */
+  graph: { careerName: string | null; readiness: number; skills: { name: string; score: number; evidenceCount: number }[] } | null;
   interviews: InterviewSummary[];
 }
 
@@ -123,6 +125,8 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
   arenaTasks.push(...ticketTasks);
   arenaTasks.sort((a, b) => ((a.completedAt ?? "") < (b.completedAt ?? "") ? 1 : -1));
 
+  const graph = await loadGraph(userId);
+
   const interviews: InterviewSummary[] = (interviewRows ?? [])
     .filter((r): r is typeof r & { completed_at: string; overall_score: number } => Boolean(r.completed_at) && r.overall_score !== null)
     .map((r) => ({
@@ -153,6 +157,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     items,
     groups,
     arenaTasks,
+    graph,
     github: github
       ? {
           username: github.username,
@@ -167,4 +172,19 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     elo,
     interviews,
   };
+}
+
+/** The measured skill scores and readiness behind the portfolio, from the newest snapshot of the primary career. Service client: the caller already authorised `userId`. */
+async function loadGraph(userId: string): Promise<PortfolioData["graph"]> {
+  const db = untyped(createServiceClient());
+  const { data: intent } = await db.from("student_career_intent").select("primary_career_id").eq("student_id", userId).maybeSingle();
+  const careerId = (intent as { primary_career_id: string | null } | null)?.primary_career_id;
+  if (!careerId) return null;
+  const [{ data: snap }, { data: career }] = await Promise.all([
+    db.from("career_skill_graph_snapshots").select("readiness, skills").eq("student_id", userId).eq("career_id", careerId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("careers").select("name").eq("id", careerId).maybeSingle(),
+  ]);
+  if (!snap) return null;
+  const skills = ((snap as { skills: { name: string; score: number; evidenceCount: number }[] }).skills ?? []).map((k) => ({ name: k.name, score: Math.round(k.score), evidenceCount: k.evidenceCount }));
+  return { careerName: (career as { name: string } | null)?.name ?? null, readiness: Math.round((snap as { readiness: number }).readiness), skills };
 }

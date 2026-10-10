@@ -7,21 +7,21 @@ import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { initialsOf } from "@/lib/dashboard/viewer";
 import type { VaultItem } from "@/lib/vault/data";
 import type { CapabilityGroup } from "@/lib/portfolio/view";
-import { buildProfessionalSummary, evidenceLine, toRadarData } from "@/lib/portfolio/view";
-import type { ArenaTask, GithubEvidence, InterviewSummary } from "@/lib/portfolio/data";
+import { buildPortfolioSummary } from "@/lib/portfolio/summary";
+import type { ArenaTask, GithubEvidence, InterviewSummary, PortfolioData } from "@/lib/portfolio/data";
 import type { PortfolioElo } from "@/lib/portfolio/elo";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
-import { RoundRadar } from "@/components/metro/RoundRadar";
 
 const TYPE_ICON: Record<string, LucideIcon> = { certificate: Award, project: Sparkles, resume: FileText, link: Link2, other: FileText };
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "");
+const MAX_SKILLS = 10;
+const MAX_TASKS = 8;
 
-function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[var(--m-rule)] bg-white p-5 sm:p-6">
-      <h2 className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">{title}</h2>
-      {sub && <p className="mt-0.5 font-lp-body text-[13.5px] text-app-muted">{sub}</p>}
-      <div className="mt-4">{children}</div>
+    <section className="break-inside-avoid">
+      <h2 className="border-b border-[var(--m-rule)] pb-2 font-lp-display text-[18px] font-bold text-[var(--m-ink)]">{title}</h2>
+      <div className="pt-4">{children}</div>
     </section>
   );
 }
@@ -38,126 +38,142 @@ export interface PortfolioBodyProps {
   keyEvidence: string[];
   mostRecent: string | null;
   elo: PortfolioElo;
+  graph: PortfolioData["graph"];
   isOwner: boolean;
   /** Base path for the evidence-popup fetch; attemptId is appended as the last segment. */
   evidenceBaseUrl: string;
 }
 
 /**
- * The portfolio a student shows a recruiter: who they are, what they have demonstrated (radar plus the proof), verified Arena work,
- * GitHub, and their projects and certificates. Everything is built from verified evidence.
+ * The portfolio a student hands a recruiter, laid out like a professional profile: who they are, a factual summary, the work they have
+ * completed (each piece opens its full evidence), their measured skills, GitHub, and projects. Everything comes from verified records.
  */
-export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, items, keyEvidence, elo, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, statedRole, groups, arenaTasks, github, items, elo, graph, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
-  const demonstrated = groups.flatMap((g) => g.capabilities);
   const githubVerified = github?.verified ?? false;
-  const radar = toRadarData(demonstrated, 8);
-  const summary = buildProfessionalSummary({ statedRole, groups, elo, keyEvidence });
-  const top = [...demonstrated].sort((a, b) => b.evidenceCount - a.evidenceCount).slice(0, 8);
+  const role = graph?.careerName ?? statedRole;
+
+  const measured = (graph?.skills ?? []).filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, MAX_SKILLS);
+  const scored = arenaTasks.filter((t) => t.score !== undefined);
+  const averageScore = scored.length ? Math.round(scored.reduce((n, t) => n + (t.score ?? 0), 0) / scored.length) : null;
+  const summary = buildPortfolioSummary({
+    name: viewer.fullName, role, branch: viewer.branch, college: viewer.collegeName,
+    readiness: graph?.readiness ?? null, skills: measured, verifiedChallenges: arenaTasks.length, averageScore,
+    githubVerified, githubRepos: github?.repositoriesAnalyzed ?? null, projects: items.length,
+  });
+  const facts: [string, string][] = [
+    ...(role ? [["Target role", role] as [string, string]] : []),
+    ["ELO score", String(elo.rating)],
+    ...(graph ? [["Role readiness", `${graph.readiness}%`] as [string, string]] : []),
+    ["Verified tickets", String(arenaTasks.length)],
+    ...(averageScore !== null ? [["Average score", `${averageScore}%`] as [string, string]] : []),
+  ];
+  const empty = measured.length === 0 && arenaTasks.length === 0 && items.length === 0 && !github && groups.length === 0;
 
   return (
-    <div className="flex flex-col gap-5">
-      <section className="rounded-2xl bg-[var(--m-ink)] p-5 text-white sm:p-6">
-        <div className="flex flex-wrap items-center gap-5">
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white font-lp-display text-[22px] font-bold text-[var(--m-ink)]">
-            {viewer.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- storage-hosted user avatar, arbitrary origin
-              <img src={viewer.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              initialsOf(viewer.fullName, viewer.email)
-            )}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-lp-display text-[26px] font-bold leading-tight">{viewer.fullName ?? viewer.email}</p>
-            <p className="mt-1 text-[14px] text-[var(--m-soft)]">{[statedRole && `Aspiring ${statedRole}`, viewer.branch, viewer.collegeName].filter(Boolean).join(", ")}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 print:hidden">
-            {githubVerified && <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12.5px] font-bold"><ShieldCheck size={14} aria-hidden />GitHub verified</span>}
-            <span className="rounded-full px-3 py-1.5 text-[12.5px] font-bold text-white" style={{ backgroundColor: elo.tier.color }}>{elo.tier.label} · ELO {elo.rating}</span>
-            <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-[12.5px] font-bold text-[var(--m-ink)] transition-transform hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"><Download size={13} aria-hidden />Download PDF</button>
-          </div>
+    <article className="rounded-2xl border border-[var(--m-rule)] bg-white print:border-0">
+      <header className="flex flex-wrap items-start gap-5 p-6 sm:p-8">
+        <span className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--m-ink)] font-lp-display text-[24px] font-bold text-white">
+          {viewer.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- storage-hosted user avatar, arbitrary origin
+            <img src={viewer.avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            initialsOf(viewer.fullName, viewer.email)
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="font-lp-display text-[30px] font-bold leading-tight text-[var(--m-ink)] sm:text-[34px]">{viewer.fullName ?? viewer.email}</h1>
+          <p className="mt-1 font-lp-body text-[15px] text-[var(--m-muted)]">{[viewer.branch, viewer.collegeName].filter(Boolean).join(", ")}</p>
+          {githubVerified && <p className="mt-2 inline-flex items-center gap-1.5 font-lp-body text-[13px] font-bold text-[var(--m-ink)]"><ShieldCheck size={15} aria-hidden className="text-[var(--m-accent-ink)]" />GitHub ownership verified</p>}
         </div>
-        <p className="mt-5 max-w-[75ch] font-lp-body text-[14.5px] leading-relaxed text-white/90">{summary}</p>
-      </section>
+        <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded-lg border border-[var(--m-rule)] px-3.5 py-2 font-lp-body text-[13px] font-bold text-[var(--m-ink)] hover:bg-[var(--m-ground)] print:hidden"><Download size={14} aria-hidden />Download PDF</button>
+      </header>
 
-      {radar.length >= 3 && (
-        <Section title="Demonstrated capabilities" sub="Every skill here is backed by verified Arena work or observed GitHub activity. The shape shows how much proof stands behind each skill.">
-          <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_1fr]">
-            <RoundRadar caption="Demonstrated capabilities" axes={radar.map((r) => ({ label: r.subject, value: r.value }))} />
-            <ul className="flex flex-col gap-3">
-              {top.map((cap) => {
-                const first = cap.evidence[0];
-                return (
-                  <li key={cap.skill} className="rounded-xl border border-[var(--m-rule)] p-3.5">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="font-lp-body text-[14.5px] font-bold text-[var(--m-ink)]">{cap.skill}</p>
-                      {first?.metadata?.attemptId ? (
-                        <button type="button" onClick={() => setOpenAttemptId(first.metadata!.attemptId!)} className="shrink-0 text-[12.5px] font-bold text-[var(--m-accent-ink)] hover:underline">View evidence</button>
-                      ) : first?.sourceUrl ? (
-                        <a href={first.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex shrink-0 items-center gap-1 text-[12.5px] font-bold text-[var(--m-accent-ink)] hover:underline"><ExternalLink size={11} aria-hidden />View evidence</a>
-                      ) : null}
+      <dl className="mx-6 flex flex-wrap gap-px overflow-hidden rounded-xl border border-[var(--m-rule)] bg-[var(--m-rule)] sm:mx-8">
+        {facts.map(([k, v]) => (
+          <div key={k} className="flex-1 basis-[140px] bg-white px-4 py-3">
+            <dt className="font-lp-body text-[12px] text-[var(--m-muted)]">{k}</dt>
+            <dd className="mt-0.5 font-lp-display text-[17px] font-bold tabular-nums text-[var(--m-ink)]">{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex min-w-0 flex-col gap-9">
+          <Section title="Professional summary">
+            <p className="max-w-[68ch] font-lp-body text-[15.5px] leading-[1.7] text-[var(--m-ink)]">{summary}</p>
+          </Section>
+
+          {arenaTasks.length > 0 && (
+            <Section title="Verified work">
+              <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
+                {arenaTasks.slice(0, MAX_TASKS).map((t) => (
+                  <li key={t.attemptId} className="flex items-start justify-between gap-4 py-3.5 first:pt-0">
+                    <div className="min-w-0">
+                      <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{t.title}</p>
+                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.score !== undefined ? `Score ${t.score}%` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
                     </div>
-                    <p className="mt-0.5 text-[12.5px] text-app-muted">{evidenceLine(cap)}</p>
+                    <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>
                   </li>
-                );
-              })}
-            </ul>
-          </div>
-        </Section>
-      )}
+                ))}
+              </ul>
+            </Section>
+          )}
 
-      {arenaTasks.length > 0 && (
-        <Section title="Verified Arena work" sub="Role tasks completed in Capabilio's workstations and graded automatically.">
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {arenaTasks.slice(0, 6).map((t) => (
-              <li key={t.attemptId} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--m-rule)] p-3.5">
-                <div className="min-w-0">
-                  <p className="font-lp-body text-[14px] font-bold text-[var(--m-ink)]">{t.title}</p>
-                  <p className="mt-0.5 text-[12.5px] text-app-muted">{[t.company, t.score !== undefined ? `Score ${t.score}%` : null, t.eloDelta ? `+${t.eloDelta} ELO` : null, fmtDate(t.completedAt)].filter(Boolean).join(", ")}</p>
-                </div>
-                <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 text-[12.5px] font-bold text-[var(--m-accent-ink)] hover:underline">View evidence</button>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+          {items.length > 0 && (
+            <Section title="Projects and certificates">
+              <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
+                {items.map((item) => {
+                  const Icon = TYPE_ICON[item.item_type] ?? FileText;
+                  const href = item.fileUrl ?? item.url;
+                  return (
+                    <li key={item.id} className="flex items-start gap-3 py-3.5 first:pt-0">
+                      <Icon size={17} aria-hidden className="mt-0.5 shrink-0 text-[var(--m-muted)]" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{item.title}</p>
+                        {item.description && <p className="mt-0.5 line-clamp-2 font-lp-body text-[13px] text-[var(--m-muted)]">{item.description}</p>}
+                      </div>
+                      {href && <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline"><ExternalLink size={12} aria-hidden />View</a>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </Section>
+          )}
 
-      {github && (
-        <Section title="GitHub" sub="Observed repository activity, open to review directly on GitHub.">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <a href={github.profileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-lp-body text-[15px] font-bold text-[var(--m-ink)] hover:underline"><GitBranch size={16} aria-hidden />{github.username}<ExternalLink size={13} className="text-app-muted" aria-hidden /></a>
-            <span className="text-[12.5px] text-app-muted">{[githubVerified ? "Ownership verified" : "Ownership not verified", github.repositoriesAnalyzed ? `${github.repositoriesAnalyzed} repositories analysed` : null].filter(Boolean).join(", ")}</span>
-          </div>
-          {isOwner && <Link href="/dashboard/vault/code-dna" className="mt-3 inline-block text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline">Open Code DNA</Link>}
-        </Section>
-      )}
-
-      {items.length > 0 && (
-        <Section title="Projects and certificates">
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => {
-              const Icon = TYPE_ICON[item.item_type] ?? FileText;
-              const href = item.fileUrl ?? item.url;
-              return (
-                <li key={item.id} className="rounded-xl border border-[var(--m-rule)] p-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--m-ground)] text-[var(--m-ink)]"><Icon size={16} aria-hidden /></span>
-                  <p className="mt-2.5 font-lp-body text-[14px] font-bold text-[var(--m-ink)]">{item.title}</p>
-                  {item.description && <p className="mt-1 line-clamp-2 text-[12.5px] text-app-muted">{item.description}</p>}
-                  {href && <a href={href} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-[12.5px] font-bold text-[var(--m-accent-ink)] hover:underline"><ExternalLink size={11} aria-hidden />View</a>}
-                </li>
-              );
-            })}
-          </ul>
-        </Section>
-      )}
-
-      {groups.length === 0 && arenaTasks.length === 0 && items.length === 0 && !github && (
-        <div className="rounded-xl border border-dashed border-[var(--m-off)] bg-white px-6 py-14 text-center font-lp-body text-[14px] text-app-muted">
-          {isOwner ? "Nothing verified yet. Complete an Arena task or connect GitHub, and your portfolio builds itself from that evidence." : "Nothing verified yet."}
+          {empty && (
+            <p className="rounded-xl border border-dashed border-[var(--m-rule)] px-6 py-12 text-center font-lp-body text-[14px] text-[var(--m-muted)]">
+              {isOwner ? "Nothing verified yet. Complete an Arena task or connect GitHub, and your portfolio builds itself from that evidence." : "Nothing verified yet."}
+            </p>
+          )}
         </div>
-      )}
+
+        <aside className="flex min-w-0 flex-col gap-9">
+          {measured.length > 0 && (
+            <Section title="Measured skills">
+              <ul className="flex flex-col gap-3.5">
+                {measured.map((s) => (
+                  <li key={s.name}>
+                    <div className="flex items-baseline justify-between gap-3 font-lp-body text-[14px] text-[var(--m-ink)]"><span className="font-bold">{s.name}</span><span className="tabular-nums text-[var(--m-muted)]">{s.score}%</span></div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--m-ground)]"><div className="h-full rounded-full bg-[var(--m-accent)]" style={{ width: `${Math.min(100, s.score)}%` }} /></div>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 font-lp-body text-[12.5px] leading-relaxed text-[var(--m-muted)]">Scores come from graded assessments and challenges on Capabilio, not self-reported.</p>
+            </Section>
+          )}
+
+          {github && (
+            <Section title="GitHub">
+              <a href={github.profileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-lp-body text-[15px] font-bold text-[var(--m-ink)] hover:underline"><GitBranch size={16} aria-hidden />{github.username}<ExternalLink size={12} className="text-[var(--m-muted)]" aria-hidden /></a>
+              <p className="mt-1 font-lp-body text-[13px] text-[var(--m-muted)]">{[githubVerified ? "Ownership verified" : "Ownership not verified", github.repositoriesAnalyzed ? `${github.repositoriesAnalyzed} repositories analysed` : null].filter(Boolean).join(", ")}</p>
+              {isOwner && <Link href="/dashboard/vault/code-dna" className="mt-2 inline-block font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline print:hidden">Open Code DNA</Link>}
+            </Section>
+          )}
+        </aside>
+      </div>
 
       {openAttemptId && <EvidenceModal fetchUrl={`${evidenceBaseUrl}/${openAttemptId}`} onClose={() => setOpenAttemptId(null)} />}
-    </div>
+    </article>
   );
 }
