@@ -1,6 +1,7 @@
 import { LlmError, type LlmAdapter } from "./types";
 import { openAiCompatible, type JsonMode } from "./adapters/openai-compatible";
 import { bedrockAdapter } from "./adapters/bedrock";
+import { anthropicAdapter } from "./adapters/anthropic";
 
 type Env = Record<string, string | undefined>;
 type Factory = (env: Env) => LlmAdapter;
@@ -30,11 +31,13 @@ registerAdapter("groq", (env) => {
 registerAdapter("openai-compatible", (env) => {
   if (!env.OPENAI_COMPAT_BASE_URL || !env.OPENAI_COMPAT_API_KEY) throw new LlmError("config", "OPENAI_COMPAT_BASE_URL and OPENAI_COMPAT_API_KEY are required");
   const mode = (env.OPENAI_COMPAT_JSON_MODE || "json_object") as JsonMode;
-  // Gemini's "latest" models think before answering and spend output tokens doing it, which cuts long JSON off: keep thinking low
-  const effort = env.OPENAI_COMPAT_REASONING_EFFORT || (/generativelanguage\.googleapis\.com/.test(env.OPENAI_COMPAT_BASE_URL) ? "low" : "");
-  return openAiCompatible({ name: "openai-compatible", baseUrl: env.OPENAI_COMPAT_BASE_URL, apiKey: env.OPENAI_COMPAT_API_KEY, jsonMode: mode, timeoutMs: Number(env.OPENAI_COMPAT_TIMEOUT_MS) || 150_000, extraBody: () => (effort ? { reasoning_effort: effort } : {}) });
+  return openAiCompatible({ name: "openai-compatible", baseUrl: env.OPENAI_COMPAT_BASE_URL, apiKey: env.OPENAI_COMPAT_API_KEY, jsonMode: mode });
 });
 registerAdapter("bedrock", () => bedrockAdapter);
+registerAdapter("anthropic", (env) => {
+  if (!env.ANTHROPIC_API_KEY) throw new LlmError("config", "ANTHROPIC_API_KEY is not set");
+  return anthropicAdapter({ apiKey: env.ANTHROPIC_API_KEY, baseUrl: env.ANTHROPIC_BASE_URL });
+});
 
 export function adapterFor(name: string, env: Env = process.env): LlmAdapter {
   const pinned = overrides.get(name);
