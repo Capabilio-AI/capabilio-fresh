@@ -8,8 +8,7 @@ import { getOrAssignWeeklyBatch } from "@/lib/arena-challenges/weekly-batch";
 import { loadStreamPool, loadStreamStudentContext } from "@/lib/arena-challenges/stream-context";
 import { getSpin } from "@/lib/arena-challenges/spin";
 import { IT_CLUSTER_SCOPE_KEY } from "@/lib/arena-challenges/branch-clusters";
-import { generateWeeklyChallenges, weeklyPool } from "@/lib/arena-challenges/leetcode/weekly";
-import { WEEKLY_TARGET } from "@/lib/arena-challenges/leetcode/problem";
+import { generateOnDemand, weeklyPool } from "@/lib/arena-challenges/leetcode/weekly";
 import { timeLimitForDifficulty } from "@/lib/arena-challenges/timer";
 
 export const maxDuration = 300;
@@ -36,18 +35,18 @@ export async function GET() {
     return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: spinWeek, needsSpin: true, challenges: [], shortfall: 0, emptyReason: null });
   }
 
-  // IT students: this week's problems are written by the AI once a week and stored. If that run is short (quota, outage) the student is
-  // served from the stored bank instead (older problems they have not solved); AI is only asked again after a cooldown.
+  // IT students are served from the stored bank. Only when their wheel number is larger than the unsolved problems the bank can give them is
+  // the shortfall generated (never more than that), so the bank grows with real demand instead of being filled up front.
   if (scope.scopeKey === IT_CLUSTER_SCOPE_KEY) {
     const [pool, bank, { data: solvedRows }] = await Promise.all([
       weeklyPool(service),
       loadStreamPool(service, scope),
       service.from("arena_challenge_completions").select("challenge_id").eq("user_id", auth.userId).eq("track", "stream").eq("is_correct", true),
     ]);
-    // the weekly run adds new problems only while the bank is below its cap; a full bank is served from the database
-    if (pool.total < WEEKLY_TARGET && !pool.generating) after(() => generateWeeklyChallenges(service));
     const solved = new Set((solvedRows ?? []).map((r) => r.challenge_id));
-    if (bank.filter((c) => !solved.has(c.id)).length < spin.count) {
+    const available = bank.filter((c) => !solved.has(c.id)).length;
+    if (available < spin.count) {
+      if (!pool.generating) after(() => generateOnDemand(service, spin.count - available));
       return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: pool.weekStart, preparing: true, challenges: [], shortfall: 0, emptyReason: null });
     }
   }

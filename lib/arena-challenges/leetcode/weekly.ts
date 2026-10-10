@@ -1,17 +1,17 @@
-// Once per Sunday-IST week, the IT cluster gets TARGET problems from the AI. A run claims a row in arena_weekly_generation so two
-// requests (or a cron and a student) never generate twice; a run that stops early is continued by the next trigger.
+// The IT bank of LeetCode-style problems (cap STREAM_BANK_CAP) grows only on demand: when a student's wheel number is larger than the
+// unsolved problems the bank can give them, exactly the shortfall is generated. A run claims a row in arena_weekly_generation so two
+// students never trigger two runs at once. Problems can also be authored elsewhere and imported (importProblems), which costs no AI calls.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { untyped } from "@/lib/org/db";
 import { IT_CLUSTER_SCOPE_KEY } from "../branch-clusters";
 import { currentStreamWeek } from "../week";
-import { generateAndVerify, type VerifiedProblem } from "./generate";
-import { STREAM_BANK_CAP, TARGET_BY_DIFFICULTY, WEEKLY_TARGET } from "./problem";
+import { generateAndVerify, verifyProblem, type VerifiedProblem } from "./generate";
+import { GeneratedProblemSchema, STREAM_BANK_CAP, TARGET_BY_DIFFICULTY } from "./problem";
 
 const STALE_AFTER_MS = 6 * 60_000;
 /** after a run ends short (quota, outage) automatic triggers wait this long before spending AI calls again */
 const RETRY_COOLDOWN_MS = 15 * 60_000;
 const TOPICS = ["Arrays", "Strings", "Hashing", "Two Pointers", "Sorting", "Stack", "Recursion", "Math", "Matrix", "Greedy", "Binary Search", "Prefix Sums", "Simulation", "Dynamic Programming"];
-const MAX_CALLS = 10;
 type Difficulty = keyof typeof TARGET_BY_DIFFICULTY;
 
 /** How many LeetCode-style problems are stored in total (every week). */
@@ -47,7 +47,7 @@ async function claim(service: SupabaseClient, weekStart: string, force: boolean)
   const ins = await db.from("arena_weekly_generation").insert(row);
   if (!ins.error) return true;
   const { data: cur } = await db.from("arena_weekly_generation").select("status, started_at").eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("week_start", weekStart).maybeSingle();
-  if (!cur || cur.status === "DONE") return false;
+  if (!cur) return false;
   if (cur.status === "RUNNING" && Date.now() - new Date(cur.started_at).getTime() < STALE_AFTER_MS) return false;
   if (cur.status === "FAILED" && !force && Date.now() - new Date(cur.started_at).getTime() < RETRY_COOLDOWN_MS) return false;
   // FAILED or stale: take it over, but only if nobody else did in the meantime (compare-and-set on started_at)
@@ -55,7 +55,7 @@ async function claim(service: SupabaseClient, weekStart: string, force: boolean)
   return (won?.length ?? 0) > 0;
 }
 
-async function store(service: SupabaseClient, weekStart: string | null, v: VerifiedProblem): Promise<boolean> {
+export async function store(service: SupabaseClient, weekStart: string | null, v: VerifiedProblem): Promise<boolean> {
   const db = untyped(service);
   const p = v.problem;
   const { data, error } = await db.from("arena_challenges").insert({
@@ -70,35 +70,19 @@ async function store(service: SupabaseClient, weekStart: string | null, v: Verif
   return true;
 }
 
-/** Fills this week's pool up to the targets. Safe to call from anywhere, any number of times. Returns how many problems it added. */
-export async function generateWeeklyChallenges(service: SupabaseClient, budgetMs = 240_000, force = false): Promise<{ added: number; claimed: boolean }> {
-  if ((await bankSize(service)) >= STREAM_BANK_CAP) return { added: 0, claimed: false }; // bank full: served from the database, no AI call
+/**
+ * Generates `need` more problems because a student's wheel number outran what the bank can give them. Safe to call from any request:
+ * a second call while one is running (or right after a failed one) does nothing. Returns how many were added.
+ */
+export async function generateOnDemand(service: SupabaseClient, need: number, budgetMs = 240_000): Promise<{ added: number; claimed: boolean }> {
+  const room = STREAM_BANK_CAP - (await bankSize(service));
+  if (room <= 0 || need <= 0) return { added: 0, claimed: false }; // bank full: served from the database, no AI call
   const weekStart = currentStreamWeek();
-  if (!(await claim(service, weekStart, force))) return { added: 0, claimed: false };
-  const started = Date.now();
-  let added = 0;
+  if (!(await claim(service, weekStart, false))) return { added: 0, claimed: false };
+  const goal = Math.min(need, room, 9);
   let note = "";
-  try {
-    const { counts } = await weeklyPool(service);
-    const { data: titles } = await untyped(service).from("arena_challenges").select("title").eq("track", "stream").eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("kind", "leetcode").limit(200);
-    const avoid = ((titles ?? []) as { title: string }[]).map((t) => t.title);
-    let calls = 0;
-    for (const d of ["easy", "medium", "hard"] as Difficulty[]) {
-      while (counts[d] < TARGET_BY_DIFFICULTY[d] && calls < MAX_CALLS && Date.now() - started < budgetMs) {
-        calls++;
-        const need = TARGET_BY_DIFFICULTY[d] - counts[d];
-        const out = await generateAndVerify({ difficulty: d, count: d === "hard" ? 1 : Math.min(2, need + 1), topics: topicsFor(weekStart), avoidTitles: avoid });
-        for (const v of out.verified.slice(0, need)) {
-          if (await store(service, weekStart, v)) { counts[d]++; added++; avoid.push(v.problem.title); }
-        }
-        if (out.rejected.length) note = out.rejected.slice(0, 3).join(" | ").slice(0, 400);
-      }
-    }
-  } catch (e) {
-    note = e instanceof Error ? e.message.slice(0, 300) : "unknown error";
-  }
-  const { total } = await weeklyPool(service);
-  await untyped(service).from("arena_weekly_generation").update({ status: total >= WEEKLY_TARGET ? "DONE" : "FAILED", note }).eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("week_start", weekStart);
+  const added = await generateBulk(service, goal, (_a, n) => { if (n) note = n; }, Date.now() + budgetMs);
+  await untyped(service).from("arena_weekly_generation").update({ status: added >= goal ? "DONE" : "FAILED", note }).eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("week_start", weekStart);
   return { added, claimed: true };
 }
 
@@ -106,7 +90,7 @@ export async function generateWeeklyChallenges(service: SupabaseClient, budgetMs
  * Fills the bank outside the weekly run (a script, a long job): `count` more problems with the usual mix, no weekly target, stopping at the
  * bank cap, on a provider error, or when `shouldStop` says so. Returns how many were added.
  */
-export async function generateBulk(service: SupabaseClient, count: number, onProgress: (added: number, note: string) => void = () => {}): Promise<number> {
+export async function generateBulk(service: SupabaseClient, count: number, onProgress: (added: number, note: string) => void = () => {}, deadline = Infinity): Promise<number> {
   const room = Math.max(0, STREAM_BANK_CAP - (await bankSize(service)));
   const goal = Math.min(count, room);
   const { data: titles } = await untyped(service).from("arena_challenges").select("title").eq("track", "stream").eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("kind", "leetcode").limit(1500);
@@ -114,7 +98,7 @@ export async function generateBulk(service: SupabaseClient, count: number, onPro
   const mix: Difficulty[] = ["easy", "easy", "medium", "medium", "medium", "hard"]; // 1/3 easy, 1/2 medium, 1/6 hard
   let added = 0;
   let failures = 0;
-  for (let i = 0; added < goal && failures < 5; i++) {
+  for (let i = 0; added < goal && failures < 5 && Date.now() < deadline; i++) {
     const d = mix[i % mix.length];
     try {
       const out = await generateAndVerify({ difficulty: d, count: 2, topics: topicsFor(new Date(Date.now() + i * 7 * 86_400_000).toISOString().slice(0, 10), 6), avoidTitles: avoid.slice(-120) });
@@ -127,4 +111,32 @@ export async function generateBulk(service: SupabaseClient, count: number, onPro
     }
   }
   return added;
+}
+
+export interface ImportReport { title: string; ok: boolean; reason?: string }
+
+/**
+ * Stores problems written outside the app (for example in a chat). Each one still has to prove itself: its reference and its
+ * brute-force solution are RUN on every test input and must agree, the starter must not already solve it, and the outputs stored are the
+ * ones the reference produced. No AI call is made. Already stored titles are skipped.
+ */
+export async function importProblems(service: SupabaseClient, items: readonly unknown[]): Promise<ImportReport[]> {
+  const { data: have } = await untyped(service).from("arena_challenges").select("title").eq("track", "stream").eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("kind", "leetcode").limit(2000);
+  const titles = new Set(((have ?? []) as { title: string }[]).map((t) => t.title.toLowerCase()));
+  const reports: ImportReport[] = [];
+  for (const raw of items) {
+    const parsed = GeneratedProblemSchema.safeParse(raw);
+    const brute = (raw as { brute_solution?: unknown })?.brute_solution;
+    const name = (raw as { title?: string })?.title ?? "(untitled)";
+    if (!parsed.success) { reports.push({ title: name, ok: false, reason: `schema: ${parsed.error.issues[0]?.path.join(".")} ${parsed.error.issues[0]?.message}` }); continue; }
+    if (typeof brute !== "string" || brute.length < 5) { reports.push({ title: name, ok: false, reason: "brute_solution missing" }); continue; }
+    if (titles.has(parsed.data.title.toLowerCase())) { reports.push({ title: name, ok: false, reason: "already stored" }); continue; }
+    if ((await bankSize(service)) >= STREAM_BANK_CAP) { reports.push({ title: name, ok: false, reason: "bank is full" }); continue; }
+    const v = await verifyProblem(parsed.data, {}, undefined, brute);
+    if (!v.ok) { reports.push({ title: name, ok: false, reason: v.reason }); continue; }
+    const stored = await store(service, null, v.value);
+    if (stored) titles.add(parsed.data.title.toLowerCase());
+    reports.push({ title: name, ok: stored, reason: stored ? undefined : "insert failed" });
+  }
+  return reports;
 }

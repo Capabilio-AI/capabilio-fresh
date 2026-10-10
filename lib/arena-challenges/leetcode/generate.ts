@@ -90,7 +90,7 @@ export interface VerifiedProblem {
 }
 
 /** Null when the problem cannot be trusted. `run` is injectable so the whole check is testable without the network. */
-export async function verifyProblem(p: GeneratedProblem, deps: GenerateDeps = {}, exec: Executor = wandboxExecutor): Promise<{ ok: true; value: VerifiedProblem } | { ok: false; reason: string }> {
+export async function verifyProblem(p: GeneratedProblem, deps: GenerateDeps = {}, exec: Executor = wandboxExecutor, independentSolution?: string): Promise<{ ok: true; value: VerifiedProblem } | { ok: false; reason: string }> {
   const inputs = [...p.sample_inputs, ...p.hidden_inputs].map((s) => s.replace(/\r/g, "").trimEnd() + "\n");
   if (new Set(inputs).size !== inputs.length) return { ok: false, reason: "duplicate test inputs" };
 
@@ -101,7 +101,8 @@ export async function verifyProblem(p: GeneratedProblem, deps: GenerateDeps = {}
   const clean = outputs as string[];
   if (new Set(clean).size < 2) return { ok: false, reason: "every test has the same answer" };
 
-  const independent = await solveIndependently(p, deps);
+  // an independent solution can be handed in (authored problems bring their own brute-force one); otherwise a second model call writes it
+  const independent = independentSolution ?? (await solveIndependently(p, deps));
   if (!independent) return { ok: false, reason: "no independent solution" };
   const second = await exec("python", independent, inputs).catch(() => null);
   if (!second || second.some((r, i) => !outputsMatch(r.stdout, clean[i]))) return { ok: false, reason: "independent solution disagrees with the reference" };
