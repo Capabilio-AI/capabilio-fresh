@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Briefcase, Clock, Flame, Trophy } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import { TrackWorkspaceView, type TrackState } from "./TrackWorkspaceView";
@@ -22,7 +22,7 @@ type Tab = "workspace" | "leaderboard" | "streak" | "history";
  * Stream vs Domain) -- this component only decides which already-separate
  * child to render, it never mixes their data.
  */
-export function TrackChallengesBoard({ track }: { track: "stream" | "domain" }) {
+export function TrackChallengesBoard({ track, workspace }: { track: "stream" | "domain"; workspace?: ReactNode }) {
   const [tab, setTab] = useState<Tab>("workspace");
   const [data, setData] = useState<TrackState | null>(null);
 
@@ -57,7 +57,7 @@ export function TrackChallengesBoard({ track }: { track: "stream" | "domain" }) 
       <div className="pt-6">
         {tab === "workspace" &&
           (track === "domain" ? (
-            <DomainWorkspace />
+            (workspace ?? <DomainWorkspace />)
           ) : !data ? (
             <div className="flex justify-center py-16">
               <ThinkingOrb state="connecting" size={64} theme="light" />

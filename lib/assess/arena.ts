@@ -13,6 +13,8 @@ export interface ArenaPass {
   attemptId: string;
   roleKey: string;
   skillId: string | null;
+  /** A catalog challenge can exercise several skills; each gets its own evidence row (the first reuses the attempt id as its key). */
+  extraSkillIds?: string[];
   difficulty: keyof typeof ARENA_DIFFICULTY_SCALE;
 }
 
@@ -34,10 +36,11 @@ export async function recordArenaPass(userId: string, pass: ArenaPass, db: Db = 
     const ev = data as { previous: number; change: number; newRating: number; replayed: boolean };
     if (ev.replayed) return { elo: ev.newRating, change: ev.change };
 
-    if (pass.skillId) {
-      const { data: skill } = await db.from("skills").select("name").eq("id", pass.skillId).maybeSingle();
+    const skillIds = [...new Set([pass.skillId, ...(pass.extraSkillIds ?? [])].filter((id): id is string => Boolean(id)))];
+    for (const [i, skillId] of skillIds.entries()) {
+      const { data: skill } = await db.from("skills").select("name").eq("id", skillId).maybeSingle();
       await db.from("student_skill_evidence").upsert(
-        { student_id: userId, career_id: career.id, skill_id: pass.skillId, skill_label: skill?.name ?? "Arena skill", source: "ARENA", source_id: pass.attemptId, correct: true, difficulty: pass.difficulty.toUpperCase() },
+        { student_id: userId, career_id: career.id, skill_id: skillId, skill_label: skill?.name ?? "Arena skill", source: "ARENA", source_id: i === 0 ? pass.attemptId : `${pass.attemptId}:${skillId}`, correct: true, difficulty: pass.difficulty.toUpperCase() },
         { onConflict: "source,source_id", ignoreDuplicates: true }
       );
     }

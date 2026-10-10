@@ -16,6 +16,7 @@
     "assess:pool": "node --env-file=.env.local --import tsx scripts/assess-pool.mts",
     "assess:author": "node --env-file=.env.local --import tsx scripts/assess-author.mts",
     "assess:import": "node --env-file=.env.local --import tsx scripts/assess-import.mts",
+    "arena:backfill-domain": "node --env-file=.env.local --import tsx scripts/arena-backfill-domain.mts",
     "stream:import": "node --env-file=.env.local --import tsx scripts/stream-import.mts",
     "stream:bulk": "node --env-file=.env.local --import tsx scripts/stream-bulk.mts",
     "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts"

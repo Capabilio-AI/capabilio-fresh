@@ -88,14 +88,19 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
           </Link>
         </div>
         {view.items.length > 0 ? (
-          <>
-            {view.shortfall > 0 && (
-              <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
-                Only {view.items.length} challenge{view.items.length === 1 ? " is" : "s are"} published for {view.career.name} so far.
-              </p>
-            )}
-            <DomainSetList items={view.items} />
-          </>
+          <TrackChallengesBoard
+            track="domain"
+            workspace={
+              <>
+                {view.shortfall > 0 && (
+                  <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
+                    Only {view.items.length} challenge{view.items.length === 1 ? " is" : "s are"} published for {view.career.name} so far.
+                  </p>
+                )}
+                <DomainSetList items={view.items} />
+              </>
+            }
+          />
         ) : hasLegacyWorkstation ? (
           <TrackChallengesBoard track="domain" />
         ) : (

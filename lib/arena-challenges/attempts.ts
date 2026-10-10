@@ -11,6 +11,7 @@ import { currentStreamWeek, currentWeekStart } from "./week";
 import { MAX_DRAFT_BYTES, expiresAtFor, hintPenalty, isFinal, isPastDeadline, timeSpentSeconds, type AttemptStatus } from "./attempt-state";
 import { SubmissionSchema, type CheckRow, type RunSql } from "./checks";
 import { GRADING_VERSION, gradeAttempt } from "./grade";
+import type { Db } from "@/lib/assess/db";
 import { AI_HELP_PENALTY, MAX_AI_HELP } from "./ai-help-rules";
 
 type Service = SupabaseClient<Database>;
@@ -81,13 +82,13 @@ const GATE_MESSAGE = {
   DAILY_COST_LIMIT: [429, "You've reached today's usage limit for this workstation. Come back tomorrow."],
 } as const;
 
-async function loadChallenge(service: Service, challengeId: string): Promise<ChallengeRow> {
+export async function loadChallenge(service: Service, challengeId: string): Promise<ChallengeRow> {
   const { data } = await untyped(service).from("arena_challenges").select(CHALLENGE_COLUMNS).eq("id", challengeId).eq("status", "PUBLISHED").is("user_id", null).maybeSingle();
   if (!data) throw new ChallengeAttemptError("Challenge not found.", 404);
   return data as ChallengeRow;
 }
 
-async function loadOwnAttempt(service: Service, userId: string, attemptId: string): Promise<AttemptRow> {
+export async function loadOwnAttempt(service: Service, userId: string, attemptId: string): Promise<AttemptRow> {
   const { data } = await untyped(service).from("challenge_attempts").select(ATTEMPT_COLUMNS).eq("id", attemptId).eq("student_id", userId).maybeSingle();
   if (!data) throw new ChallengeAttemptError("Attempt not found.", 404);
   return data as AttemptRow;
@@ -122,6 +123,31 @@ async function complete(service: Service, attemptId: string, result: Record<stri
   const { data, error } = await untyped(service).rpc("complete_challenge_attempt", { p_attempt_id: attemptId, p_result: result, p_streak: await streakFor(service, track, userId) });
   if (error) throw error;
   return data as { already_completed: boolean; status: AttemptStatus; points_awarded: number; elo_delta: number; evidence_status: string | null };
+}
+
+/**
+ * A verified Domain pass moves the ONE career ELO ledger, the skill graph and the roadmap (the same path the workstation passes use), so the
+ * dashboard, portfolio, passport and leaderboard all see it. Idempotent per attempt; never throws, the attempt result is already saved.
+ */
+export async function propagateDomainPass(service: Service, userId: string, attempt: AttemptRow, challenge: ChallengeRow): Promise<void> {
+  try {
+    const { recordArenaPass } = await import("@/lib/assess/arena"); // lazy: it pulls in the service client, which pure-logic tests must not need
+    const db = untyped(service);
+    const [{ intent }, { data: links }, { data: skills }] = await Promise.all([
+      getCareerIntent(service, userId),
+      db.from("challenge_careers").select("career_id").eq("challenge_id", challenge.id),
+      db.from("arena_challenge_skills").select("skill_id").eq("challenge_id", challenge.id),
+    ]);
+    const linked = new Set(((links ?? []) as { career_id: string }[]).map((l) => l.career_id));
+    const careerId = [intent.primary?.id, intent.secondary?.id].find((id): id is string => Boolean(id) && linked.has(id as string));
+    if (!careerId) return;
+    const { data: career } = await db.from("careers").select("key").eq("id", careerId).maybeSingle();
+    if (!career) return;
+    const skillIds = ((skills ?? []) as { skill_id: string }[]).map((s) => s.skill_id);
+    await recordArenaPass(userId, { attemptId: attempt.id, roleKey: (career as { key: string }).key, skillId: skillIds[0] ?? null, extraSkillIds: skillIds.slice(1), difficulty: challenge.difficulty as "easy" | "medium" | "hard" }, service as unknown as Db);
+  } catch (e) {
+    console.error("[arena] domain pass propagation failed:", e);
+  }
 }
 
 async function expire(service: Service, attempt: AttemptRow, challenge: ChallengeRow, now: Date): Promise<void> {
@@ -280,7 +306,7 @@ export async function submitChallengeAttempt(
     difficulty: challenge.difficulty,
   });
 
-  await complete(
+  const done = await complete(
     service,
     attemptId,
     {
@@ -302,6 +328,7 @@ export async function submitChallengeAttempt(
     userId
   );
   await closeUsage(service, attemptId, "COMPLETED", now);
+  if (challenge.track === "domain" && !done.already_completed && done.status === "PASSED" && done.evidence_status === "VERIFIED_AUTOMATED") await propagateDomainPass(service, userId, attempt, challenge);
   return resultOf(await loadOwnAttempt(service, userId, attemptId));
 }
 
