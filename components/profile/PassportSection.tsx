@@ -3,7 +3,7 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 import type { PassportSkill } from "@/lib/passport/badges";
 import { BadgeMark, NotEarnedMark } from "./Badge";
 import { PassportShareToggle } from "./PassportShareToggle";
-import { ReelPlayer } from "@/components/passport/reel/ReelPlayer";
+import { ReelDialog } from "@/components/passport/reel/ReelDialog";
 import type { ReelInput } from "@/lib/passport/reel";
 
 const CARD = "glass rounded-2xl p-5 sm:p-6";
@@ -63,7 +63,10 @@ export function PassportSection({ holderName, college, passportNo, qrSvg, url, s
             </dl>
           </div>
           <div className="shrink-0 self-start rounded-xl bg-white p-2.5 sm:self-center">
-            <div role="img" aria-label="QR code for your public skill passport" className={`h-36 w-36 sm:h-40 sm:w-40 [&>svg]:h-full [&>svg]:w-full ${shared ? "" : "opacity-40"}`} dangerouslySetInnerHTML={{ __html: qrSvg }} />
+            {/* An <img> with explicit pixel size: an inline SVG with only a viewBox collapsed to zero width in production. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`data:image/svg+xml;utf8,${encodeURIComponent(qrSvg)}`} width={160} height={160} alt="QR code for your public skill passport"
+              className={`block h-40 w-40 ${shared ? "" : "opacity-40"}`} />
           </div>
         </div>
         <div className="flex flex-col gap-3 border-t border-white/15! bg-white px-5 py-4 text-[var(--m-ink)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -83,7 +86,7 @@ export function PassportSection({ holderName, college, passportNo, qrSvg, url, s
     <aside aria-labelledby="reel-h" className="xl:sticky xl:top-4 xl:self-start">
       <h2 id="reel-h" className={H2}>Your proof reel</h2>
       <p className={`mt-1 mb-3 ${MUTED} text-[13.5px]`}>What people see first when they scan your QR: a short film made only from your verified evidence. It updates itself as you earn more.</p>
-      <ReelPlayer input={reel} />
+      <ReelDialog input={reel} />
     </aside>
     </div>
   );
