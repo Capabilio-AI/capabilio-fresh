@@ -6,6 +6,7 @@ import { getStatedCareerInterest } from "@/lib/career/interest-statement";
 import { buildCapabilityGroups, type CapabilityGroup, type PortfolioEvidence } from "@/lib/portfolio/view";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
+import { getEducationEntries, type EducationEntry } from "@/lib/dashboard/education";
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
 
 export interface ArenaTask {
@@ -41,7 +42,19 @@ export interface InterviewSummary {
   durationSeconds: number;
 }
 
+export interface PortfolioProfile {
+  headline: string | null;
+  bio: string | null;
+  location: string | null;
+  /** null on a public view unless the student switched contact sharing on: it never reaches the browser otherwise. */
+  contact: { email: string; phone: string | null } | null;
+  /** The student's own switch, so the owner can see what recruiters will see. */
+  contactShared: boolean;
+}
+
 export interface PortfolioData {
+  profile: PortfolioProfile;
+  education: EducationEntry[];
   viewer: ViewerSummary;
   statedRole: string | null;
   items: VaultItem[];
@@ -62,8 +75,8 @@ export interface PortfolioData {
  * + a manual `portfolio_public` gate) — same shape, same rules, only the
  * caller and the client differ.
  */
-export async function getPortfolioData(supabase: SupabaseClient<Database>, userId: string): Promise<PortfolioData> {
-  const [viewer, statedRole, items, evidenceResult, { data: github }, { data: completions }, elo, { data: interviewRows }] = await Promise.all([
+export async function getPortfolioData(supabase: SupabaseClient<Database>, userId: string, opts: { publicView?: boolean } = {}): Promise<PortfolioData> {
+  const [viewerRaw, statedRole, items, evidenceResult, { data: github }, { data: completions }, elo, { data: interviewRows }, education, { data: details }] = await Promise.all([
     getViewerSummary(supabase, userId),
     getStatedCareerInterest(supabase, userId),
     getVaultItems(supabase, userId),
@@ -78,7 +91,19 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
       .eq("status", "completed")
       .order("completed_at", { ascending: false })
       .limit(10),
+    getEducationEntries(supabase, userId),
+    supabase.from("profiles").select("headline, bio, location, phone, portfolio_show_contact").eq("id", userId).maybeSingle(),
   ]);
+  const contactShared = details?.portfolio_show_contact ?? false;
+  const showContact = !opts.publicView || contactShared;
+  const viewer = showContact ? viewerRaw : { ...viewerRaw, email: "" };
+  const profile: PortfolioProfile = {
+    headline: details?.headline ?? null,
+    bio: details?.bio ?? null,
+    location: details?.location ?? null,
+    contact: showContact && viewerRaw.email ? { email: viewerRaw.email, phone: details?.phone ?? null } : null,
+    contactShared,
+  };
 
   const evidence: PortfolioEvidence[] = (evidenceResult.data ?? []).map((r) => ({
     skill: r.skill,
@@ -152,6 +177,8 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
   ].filter((v): v is string => Boolean(v));
 
   return {
+    profile,
+    education,
     viewer,
     statedRole,
     items,

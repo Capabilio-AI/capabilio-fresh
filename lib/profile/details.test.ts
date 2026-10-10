@@ -25,4 +25,9 @@ describe("profileCompleteness", () => {
   it("is 100 when everything is there", () => {
     expect(profileCompleteness({ avatarUrl: "a", coverUrl: "c", headline: "h", bio: "b", aspiringFor: "Data Analyst", college: "VIT", branch: "CSE", graduatingYear: 2027, hasBadge: true, passportShared: true }).percent).toBe(100);
   });
+
+  it("accepts a normal mobile number and rejects letters", () => {
+    expect(ProfileDetailsSchema.parse({ ...base, phone: "+91 98765 43210" }).phone).toBe("+91 98765 43210");
+    expect(ProfileDetailsSchema.safeParse({ ...base, phone: "call me" }).success).toBe(false);
+  });
 });

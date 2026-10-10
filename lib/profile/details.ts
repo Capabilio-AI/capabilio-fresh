@@ -7,6 +7,8 @@ export const ProfileDetailsSchema = z.object({
   headline: text(120),
   bio: text(600),
   location: text(80),
+  phone: z.preprocess((v) => (v === undefined ? null : emptyToNull(v)), z.string().trim().regex(/^[+0-9 ()-]{7,20}$/, "Use digits, spaces, + ( ) or -, 7 to 20 characters").nullable()),
+  showContact: z.preprocess((v) => v === "on" || v === true, z.boolean()),
 });
 export type ProfileDetails = z.infer<typeof ProfileDetailsSchema>;
 

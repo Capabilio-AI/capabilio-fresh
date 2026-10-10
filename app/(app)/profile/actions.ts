@@ -21,7 +21,7 @@ export async function updateProfileDetails(_prev: ProfileFormState, formData: Fo
   const d = parsed.data;
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: d.fullName, headline: d.headline, bio: d.bio, location: d.location })
+    .update({ full_name: d.fullName, headline: d.headline, bio: d.bio, location: d.location, phone: d.phone, portfolio_show_contact: d.showContact })
     .eq("id", user.id);
   if (error) {
     console.error("[profile] update failed:", error.code, error.message);

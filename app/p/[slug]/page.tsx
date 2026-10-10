@@ -5,6 +5,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getPortfolioData } from "@/lib/portfolio/data";
 import { PortfolioBody } from "@/components/portfolio/PortfolioBody";
 
+export const dynamic = "force-dynamic"; // a live record: never serve a cached copy
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const service = createServiceClient();
@@ -26,7 +28,7 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
   const { data: profile } = await service.from("profiles").select("id, portfolio_public").eq("portfolio_slug", slug).maybeSingle();
   if (!profile?.portfolio_public) notFound();
 
-  const data = await getPortfolioData(service, profile.id);
+  const data = await getPortfolioData(service, profile.id, { publicView: true });
 
   return (
     <MetroScope>
@@ -37,6 +39,8 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
         <div>
           <PortfolioBody
             viewer={data.viewer}
+            profile={data.profile}
+            education={data.education}
             statedRole={data.statedRole}
             groups={data.groups}
             arenaTasks={data.arenaTasks}

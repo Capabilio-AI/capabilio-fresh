@@ -4119,6 +4119,8 @@ export type Database = {
           passport_code: string
           passport_no: string | null
           passport_public: boolean
+          phone: string | null
+          portfolio_show_contact: boolean
           created_at: string
           email: string
           full_name: string | null
@@ -4138,6 +4140,8 @@ export type Database = {
           passport_code?: string
           passport_no?: string | null
           passport_public?: boolean
+          phone?: string | null
+          portfolio_show_contact?: boolean
           created_at?: string
           email: string
           full_name?: string | null
@@ -4157,6 +4161,8 @@ export type Database = {
           passport_code?: string
           passport_no?: string | null
           passport_public?: boolean
+          phone?: string | null
+          portfolio_show_contact?: boolean
           created_at?: string
           email?: string
           full_name?: string | null

@@ -10,6 +10,8 @@ export interface EditableProfile {
   headline: string | null;
   bio: string | null;
   location: string | null;
+  phone: string | null;
+  showContact: boolean;
 }
 
 const INITIAL: ProfileFormState = { ok: false, message: null, fieldErrors: {} };
@@ -65,6 +67,13 @@ export function EditProfileDialog({ profile }: { profile: EditableProfile }) {
             <Field id={f("location")} label="Location" error={err.location}>
               <input id={f("location")} name="location" defaultValue={profile.location ?? ""} maxLength={80} autoComplete="address-level2" placeholder="City, State" className={INPUT} {...aria("location")} />
             </Field>
+            <Field id={f("phone")} label="Mobile number" error={err.phone} hint="Optional. Recruiters see it only if you switch contact sharing on below.">
+              <input id={f("phone")} name="phone" type="tel" defaultValue={profile.phone ?? ""} maxLength={20} autoComplete="tel" placeholder="+91 98765 43210" className={INPUT} {...aria("phone")} />
+            </Field>
+            <label className="flex items-start gap-2.5 font-lp-body text-[13px] text-[var(--m-ink)]">
+              <input type="checkbox" name="showContact" defaultChecked={profile.showContact} className="mt-0.5 h-4 w-4 accent-[var(--m-accent)]" />
+              <span><span className="font-bold">Show my email and mobile number on my public portfolio.</span> Off by default. Only people with your portfolio link can see them.</span>
+            </label>
             <Field id={f("bio")} label="About" error={err.bio} hint="Up to 600 characters: what you study, build and want next.">
               <textarea id={f("bio")} name="bio" defaultValue={profile.bio ?? ""} maxLength={600} rows={4} className={INPUT} {...aria("bio")} />
             </Field>

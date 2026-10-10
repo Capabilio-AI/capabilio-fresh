@@ -34,6 +34,8 @@ export default async function PortfolioPage() {
         </div>
         <PortfolioBody
           viewer={data.viewer}
+          profile={data.profile}
+          education={data.education}
           statedRole={data.statedRole}
           groups={data.groups}
           arenaTasks={data.arenaTasks}

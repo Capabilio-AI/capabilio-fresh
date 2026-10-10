@@ -26,7 +26,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const service = createServiceClient();
   const [viewer, { data: details }, educationEntries, { intent }, passport] = await Promise.all([
     getViewerSummary(supabase, user.id),
-    supabase.from("profiles").select("cover_url, headline, bio, location, passport_code, passport_public").eq("id", user.id).single(),
+    supabase.from("profiles").select("cover_url, headline, bio, location, phone, portfolio_show_contact, passport_code, passport_public").eq("id", user.id).single(),
     getEducationEntries(supabase, user.id),
     getCareerIntent(service, user.id),
     loadPassportSkills(service as unknown as Db, user.id),
@@ -43,6 +43,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     headline: details?.headline ?? null,
     bio: details?.bio ?? null,
     location: details?.location ?? null,
+    phone: details?.phone ?? null,
+    showContact: details?.portfolio_show_contact ?? false,
   };
   const completeness = profileCompleteness({
     avatarUrl: viewer.avatarUrl, coverUrl: details?.cover_url ?? null, headline: profile.headline, bio: profile.bio, aspiringFor,
