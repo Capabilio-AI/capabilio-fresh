@@ -20,7 +20,7 @@ export async function bankSize(service: SupabaseClient): Promise<number> {
   return count ?? 0;
 }
 
-export interface WeeklyPool { weekStart: string; counts: Record<Difficulty, number>; total: number; generating: boolean }
+export interface WeeklyPool { weekStart: string; counts: Record<Difficulty, number>; total: number; generating: boolean; failedRecently: boolean }
 
 /** Pure. Topics for a week: a rotating window, so consecutive weeks do not repeat the same mix. */
 export function topicsFor(weekStart: string, take = 5): string[] {
@@ -37,8 +37,10 @@ export async function weeklyPool(service: SupabaseClient): Promise<WeeklyPool> {
   ]);
   const counts = { easy: 0, medium: 0, hard: 0 };
   for (const r of (rows ?? []) as { difficulty: Difficulty }[]) counts[r.difficulty]++;
-  const generating = gen?.status === "RUNNING" && Date.now() - new Date(gen.started_at).getTime() < STALE_AFTER_MS;
-  return { weekStart, counts, total: counts.easy + counts.medium + counts.hard, generating };
+  const age = gen ? Date.now() - new Date(gen.started_at).getTime() : Infinity;
+  const generating = gen?.status === "RUNNING" && age < STALE_AFTER_MS;
+  const failedRecently = gen?.status === "FAILED" && age < RETRY_COOLDOWN_MS;
+  return { weekStart, counts, total: counts.easy + counts.medium + counts.hard, generating, failedRecently };
 }
 
 async function claim(service: SupabaseClient, weekStart: string, force: boolean): Promise<boolean> {
@@ -71,17 +73,19 @@ export async function store(service: SupabaseClient, weekStart: string | null, v
 }
 
 /**
- * Generates `need` more problems because a student's wheel number outran what the bank can give them. Safe to call from any request:
- * a second call while one is running (or right after a failed one) does nothing. Returns how many were added.
+ * Generates the problems a student's batch is missing, by difficulty, because the bank cannot give them their mix (their year of study and
+ * their wheel number decide it). Safe to call from any request: a second call while one is running (or right after a failed one) does
+ * nothing. Returns how many were added.
  */
-export async function generateOnDemand(service: SupabaseClient, need: number, budgetMs = 240_000): Promise<{ added: number; claimed: boolean }> {
+export async function generateOnDemand(service: SupabaseClient, wanted: Readonly<Record<Difficulty, number>>, budgetMs = 240_000): Promise<{ added: number; claimed: boolean }> {
+  const plan: Difficulty[] = (["hard", "medium", "easy"] as const).flatMap((d) => Array<Difficulty>(Math.min(9, Math.max(0, wanted[d]))).fill(d)).slice(0, 9);
   const room = STREAM_BANK_CAP - (await bankSize(service));
-  if (room <= 0 || need <= 0) return { added: 0, claimed: false }; // bank full: served from the database, no AI call
+  if (room <= 0 || plan.length === 0) return { added: 0, claimed: false }; // bank full: served from the database, no AI call
   const weekStart = currentStreamWeek();
   if (!(await claim(service, weekStart, false))) return { added: 0, claimed: false };
-  const goal = Math.min(need, room, 9);
+  const goal = Math.min(plan.length, room);
   let note = "";
-  const added = await generateBulk(service, goal, (_a, n) => { if (n) note = n; }, Date.now() + budgetMs);
+  const added = await generateBulk(service, goal, (_a, n) => { if (n) note = n; }, Date.now() + budgetMs, plan.slice(0, goal));
   await untyped(service).from("arena_weekly_generation").update({ status: added >= goal ? "DONE" : "FAILED", note }).eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("week_start", weekStart);
   return { added, claimed: true };
 }
@@ -90,7 +94,7 @@ export async function generateOnDemand(service: SupabaseClient, need: number, bu
  * Fills the bank outside the weekly run (a script, a long job): `count` more problems with the usual mix, no weekly target, stopping at the
  * bank cap, on a provider error, or when `shouldStop` says so. Returns how many were added.
  */
-export async function generateBulk(service: SupabaseClient, count: number, onProgress: (added: number, note: string) => void = () => {}, deadline = Infinity): Promise<number> {
+export async function generateBulk(service: SupabaseClient, count: number, onProgress: (added: number, note: string) => void = () => {}, deadline = Infinity, plan?: readonly Difficulty[]): Promise<number> {
   const room = Math.max(0, STREAM_BANK_CAP - (await bankSize(service)));
   const goal = Math.min(count, room);
   const { data: titles } = await untyped(service).from("arena_challenges").select("title").eq("track", "stream").eq("scope_key", IT_CLUSTER_SCOPE_KEY).eq("kind", "leetcode").limit(1500);
@@ -99,7 +103,7 @@ export async function generateBulk(service: SupabaseClient, count: number, onPro
   let added = 0;
   let failures = 0;
   for (let i = 0; added < goal && failures < 5 && Date.now() < deadline; i++) {
-    const d = mix[i % mix.length];
+    const d = plan ? plan[Math.min(added, plan.length - 1)] : mix[i % mix.length];
     try {
       const out = await generateAndVerify({ difficulty: d, count: 2, topics: topicsFor(new Date(Date.now() + i * 7 * 86_400_000).toISOString().slice(0, 10), 6), avoidTitles: avoid.slice(-120) });
       for (const v of out.verified) if (added < goal && (await store(service, null, v))) { added++; avoid.push(v.problem.title); }

@@ -9,6 +9,8 @@ import { loadStreamPool, loadStreamStudentContext } from "@/lib/arena-challenges
 import { getSpin } from "@/lib/arena-challenges/spin";
 import { IT_CLUSTER_SCOPE_KEY } from "@/lib/arena-challenges/branch-clusters";
 import { generateOnDemand, weeklyPool } from "@/lib/arena-challenges/leetcode/weekly";
+import { mixFor, scaleMix } from "@/lib/arena-challenges/select-stream";
+import { currentStreamWeek } from "@/lib/arena-challenges/week";
 import { timeLimitForDifficulty } from "@/lib/arena-challenges/timer";
 
 export const maxDuration = 300;
@@ -35,23 +37,32 @@ export async function GET() {
     return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: spinWeek, needsSpin: true, challenges: [], shortfall: 0, emptyReason: null });
   }
 
-  // IT students are served from the stored bank. Only when their wheel number is larger than the unsolved problems the bank can give them is
-  // the shortfall generated (never more than that), so the bank grows with real demand instead of being filled up front.
+  const student = await loadStreamStudentContext(service, auth.userId);
+
+  // IT students are served from the stored bank, in the difficulty mix that fits their year of study (first years get fundamentals, final
+  // years placement-level problems). Only what the bank cannot give them is generated, by difficulty and never more than that, so the
+  // bank grows with real demand. Once the week's batch exists it is fixed and none of this runs again.
   if (scope.scopeKey === IT_CLUSTER_SCOPE_KEY) {
-    const [pool, bank, { data: solvedRows }] = await Promise.all([
+    const [pool, bank, { data: solvedRows }, { data: stats }, { data: existingWeek }] = await Promise.all([
       weeklyPool(service),
       loadStreamPool(service, scope),
       service.from("arena_challenge_completions").select("challenge_id").eq("user_id", auth.userId).eq("track", "stream").eq("is_correct", true),
+      service.from("arena_stream_stats").select("points").eq("user_id", auth.userId).maybeSingle(),
+      service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", auth.userId).eq("week_start", currentStreamWeek()).maybeSingle(),
     ]);
-    const solved = new Set((solvedRows ?? []).map((r) => r.challenge_id));
-    const available = bank.filter((c) => !solved.has(c.id)).length;
-    if (available < spin.count) {
-      if (!pool.generating) after(() => generateOnDemand(service, spin.count - available));
-      return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: pool.weekStart, preparing: true, challenges: [], shortfall: 0, emptyReason: null });
+    if (!existingWeek?.challenge_ids?.length) {
+      const solved = new Set((solvedRows ?? []).map((r) => r.challenge_id));
+      const have = { easy: 0, medium: 0, hard: 0 };
+      for (const c of bank) if (!solved.has(c.id) && c.difficulty in have) have[c.difficulty as keyof typeof have]++;
+      const mix = scaleMix(mixFor(stats?.points ?? 0, student.currentYear), spin.count);
+      const missing = { easy: Math.max(0, mix.easy - have.easy), medium: Math.max(0, mix.medium - have.medium), hard: Math.max(0, mix.hard - have.hard) };
+      if (missing.easy + missing.medium + missing.hard > 0 && !pool.failedRecently) {
+        if (!pool.generating) after(() => generateOnDemand(service, missing));
+        return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: pool.weekStart, preparing: true, challenges: [], shortfall: 0, emptyReason: null });
+      }
     }
   }
 
-  const student = await loadStreamStudentContext(service, auth.userId);
   const batch = await getOrAssignWeeklyBatch(service, auth.userId, scope, student, spin.count);
 
   const [{ data: challenges }, { data: completions }] = await Promise.all([

@@ -50,6 +50,7 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
     courses: student.courses,
     currentYear: student.currentYear,
     points: stats?.points ?? 0,
+    year: student.currentYear,
     seed: `${userId}:${weekStart}`,
     size,
   });

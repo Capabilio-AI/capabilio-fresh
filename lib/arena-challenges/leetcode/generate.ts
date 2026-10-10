@@ -11,8 +11,8 @@ const MAX_OUTPUT_CHARS = 600;
 
 const DIFFICULTY_GUIDE = {
   easy: "a first-year student who knows loops, conditions, lists and strings can solve it in 10 minutes (counting, simple scans, basic string or array handling)",
-  medium: "a second-year student who knows hashing, sorting and two pointers can solve it in 20 minutes; one clear idea beyond brute force",
-  hard: "a strong second/third-year student needs 30 minutes: a known technique such as dynamic programming, binary search on the answer or BFS on a small grid; brute force must clearly be too slow for the constraints",
+  medium: "a second/third-year student who knows hashing, sorting, stacks and two pointers can solve it in 20 minutes; one clear idea beyond brute force",
+  hard: "final-year / placement-interview level (LeetCode medium-to-hard), 30 to 40 minutes: dynamic programming, graphs (BFS/DFS, shortest paths), binary search on the answer, monotonic stacks or sliding windows; brute force must clearly be too slow for the constraints",
 } as const;
 
 const SHAPE = `{

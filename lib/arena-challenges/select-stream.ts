@@ -32,6 +32,8 @@ export interface StreamSelectionInput {
   seed: string;
   /** how many to pick: the student's wheel number for the week (default BATCH_SIZE) */
   size?: number;
+  /** the student's current year of study, when known and confirmed: it sets the difficulty mix */
+  year?: number | null;
 }
 
 export interface StreamSelection {
@@ -61,6 +63,20 @@ export function scaleMix(mix: Record<Difficulty, number>, size: number): Record<
   for (const r of [...raw].sort((a, b) => (b.exact % 1) - (a.exact % 1))) if (left-- > 0) out[r.d]++;
   return out;
 }
+
+/**
+ * Difficulty mix by year of study (sums to BATCH_SIZE): first years get fundamentals, final years get placement-level problems, so the
+ * same easy set is never handed to someone about to sit interviews. A year past 4 counts as 4.
+ */
+export function yearMix(year: number): Record<Difficulty, number> {
+  if (year <= 1) return { easy: 5, medium: 3, hard: 0 };
+  if (year === 2) return { easy: 3, medium: 4, hard: 1 };
+  if (year === 3) return { easy: 2, medium: 3, hard: 3 };
+  return { easy: 1, medium: 3, hard: 4 };
+}
+
+/** The mix that applies: the student's year when it is known, otherwise their Stream points. */
+export const mixFor = (points: number, year: number | null | undefined): Record<Difficulty, number> => (year ? yearMix(year) : targetMix(points));
 
 /** How many easy/medium/hard to aim for, by the student's Stream points. */
 export function targetMix(points: number): Record<Difficulty, number> {
@@ -121,7 +137,7 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
   };
 
   const size = input.size ?? BATCH_SIZE;
-  const mix = scaleMix(targetMix(input.points), size);
+  const mix = scaleMix(mixFor(input.points, input.year), size);
   for (const d of DIFFICULTY_ORDER) {
     const ofDifficulty = candidates.filter((c) => c.difficulty === d);
     for (let i = 0; i < mix[d] && picked.length < size; i++) {

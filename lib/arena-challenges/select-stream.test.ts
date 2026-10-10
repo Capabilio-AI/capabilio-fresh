@@ -99,3 +99,22 @@ describe("stored bank", () => {
     expect(out.ids.sort()).toEqual(["fresh1", "old1", "old2"]);
   });
 });
+
+describe("year of study", () => {
+  it("mixes sum to the batch size and get harder every year", async () => {
+    const { yearMix, mixFor } = await import("./select-stream");
+    for (const y of [1, 2, 3, 4, 5]) { const m = yearMix(y); expect(m.easy + m.medium + m.hard).toBe(8); }
+    expect(yearMix(1).hard).toBe(0);
+    expect(yearMix(4).hard).toBeGreaterThan(yearMix(2).hard);
+    expect(yearMix(4).easy).toBeLessThan(yearMix(1).easy);
+    expect(mixFor(0, null)).toEqual(mixFor(0, undefined)); // unknown year falls back to points
+  });
+
+  it("a final-year student is given the hard problems and a first-year student is not", () => {
+    const pool = [...["e1", "e2", "e3", "e4", "e5"].map((id) => cand(id, "easy")), ...["m1", "m2", "m3"].map((id) => cand(id, "medium")), ...["h1", "h2", "h3", "h4"].map((id) => cand(id, "hard"))];
+    const first = selectStreamBatch(base({ pool, year: 1, size: 8 }));
+    const last = selectStreamBatch(base({ pool, year: 4, size: 8 }));
+    expect(first.ids.filter((id) => id.startsWith("h"))).toHaveLength(0);
+    expect(last.ids.filter((id) => id.startsWith("h"))).toHaveLength(4);
+  });
+});

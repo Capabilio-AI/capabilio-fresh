@@ -1,0 +1,1060 @@
+[
+ {
+  "title": "Most Frequent Digit",
+  "category": "Math",
+  "difficulty": "easy",
+  "statement": "Given a positive integer, find the digit (0 to 9) that appears most often in its decimal representation. If several digits tie, report the smallest of them.",
+  "input_format": "One line containing the integer n.",
+  "output_format": "Print the most frequent digit.",
+  "constraints": [
+   "1 <= n <= 10^18"
+  ],
+  "sample_inputs": [
+   "1223334444",
+   "1122"
+  ],
+  "sample_explanations": [
+   "The digit 4 appears four times, more than any other digit.",
+   "Digits 1 and 2 both appear twice; the smaller one is 1."
+  ],
+  "hidden_inputs": [
+   "7",
+   "9876543210",
+   "100000",
+   "5050505",
+   "3141592653589793"
+  ],
+  "reference_solution": "s = input().strip()\nprint(max(\"0123456789\", key=lambda d: (s.count(d), -int(d))))\n",
+  "brute_solution": "s = input().strip()\nbest, bestc = 0, -1\nfor d in range(10):\n    c = 0\n    for ch in s:\n        if ch == str(d):\n            c += 1\n    if c > bestc:\n        best, bestc = d, c\nprint(best)\n",
+  "starter_python": "s = input().strip()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char s[32];\n    scanf(\"%s\", s);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "math",
+   "strings"
+  ]
+ },
+ {
+  "title": "Clean Palindrome",
+  "category": "Strings",
+  "difficulty": "easy",
+  "statement": "A sentence is a palindrome if, after removing every character that is not a letter or a digit and ignoring upper and lower case, it reads the same forwards and backwards. Decide whether the given sentence is a palindrome.",
+  "input_format": "One line containing the sentence (letters, digits, spaces and punctuation).",
+  "output_format": "Print YES if it is a palindrome, otherwise NO.",
+  "constraints": [
+   "1 <= length <= 1000",
+   "the line has at least one letter or digit"
+  ],
+  "sample_inputs": [
+   "A man, a plan, a canal: Panama",
+   "race a car"
+  ],
+  "sample_explanations": [
+   "Ignoring spaces, commas, the colon and case it reads amanaplanacanalpanama in both directions.",
+   "It becomes raceacar, which is not symmetric."
+  ],
+  "hidden_inputs": [
+   "a",
+   "No lemon, no melon",
+   "Was it a car or a cat I saw?",
+   "12321",
+   "12 21 3",
+   "ab"
+  ],
+  "reference_solution": "s = [c.lower() for c in input() if c.isalnum()]\nprint(\"YES\" if s == s[::-1] else \"NO\")\n",
+  "brute_solution": "s = input()\nt = \"\"\nfor c in s:\n    if (\"a\" <= c <= \"z\") or (\"A\" <= c <= \"Z\") or (\"0\" <= c <= \"9\"):\n        t += c.lower()\ni, j = 0, len(t) - 1\nok = True\nwhile i < j:\n    if t[i] != t[j]:\n        ok = False\n    i += 1\n    j -= 1\nprint(\"YES\" if ok else \"NO\")\n",
+  "starter_python": "s = input()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char s[2048];\n    fgets(s, sizeof s, stdin);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "strings",
+   "two-pointers"
+  ]
+ },
+ {
+  "title": "Sum Not Divisible",
+  "category": "Math",
+  "difficulty": "easy",
+  "statement": "Add up all the integers from 1 to n that are divisible by neither 3 nor 5. Print the total.",
+  "input_format": "One line containing the integer n.",
+  "output_format": "Print the sum.",
+  "constraints": [
+   "1 <= n <= 10^6"
+  ],
+  "sample_inputs": [
+   "10",
+   "3"
+  ],
+  "sample_explanations": [
+   "The numbers 1, 2, 4, 7 and 8 qualify and add up to 22.",
+   "Only 1 and 2 qualify, so the sum is 3."
+  ],
+  "hidden_inputs": [
+   "1",
+   "15",
+   "100",
+   "1000",
+   "99999"
+  ],
+  "reference_solution": "n = int(input())\ndef s(k):\n    m = n // k\n    return k * m * (m + 1) // 2\nprint(n * (n + 1) // 2 - s(3) - s(5) + s(15))\n",
+  "brute_solution": "n = int(input())\nt = 0\nfor i in range(1, n + 1):\n    if i % 3 != 0 and i % 5 != 0:\n        t += i\nprint(t)\n",
+  "starter_python": "n = int(input())\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "math"
+  ]
+ },
+ {
+  "title": "Reverse the Words",
+  "category": "Strings",
+  "difficulty": "easy",
+  "statement": "Given a sentence made of words separated by single spaces, print the same words in reverse order, still separated by single spaces. The letters inside each word stay in their original order.",
+  "input_format": "One line of words separated by single spaces.",
+  "output_format": "Print the words in reverse order.",
+  "constraints": [
+   "1 <= number of words <= 100",
+   "each word has 1 to 20 characters, no leading or trailing spaces"
+  ],
+  "sample_inputs": [
+   "the quick brown fox",
+   "hello"
+  ],
+  "sample_explanations": [
+   "The words are written from last to first.",
+   "A single word is unchanged."
+  ],
+  "hidden_inputs": [
+   "a b",
+   "one two three four five",
+   "data structures and algorithms",
+   "x",
+   "sun moon star"
+  ],
+  "reference_solution": "print(\" \".join(input().split()[::-1]))\n",
+  "brute_solution": "w = input().split(\" \")\nout = []\ni = len(w) - 1\nwhile i >= 0:\n    out.append(w[i])\n    i -= 1\nprint(\" \".join(out))\n",
+  "starter_python": "words = input().split()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char line[4096];\n    fgets(line, sizeof line, stdin);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "strings"
+  ]
+ },
+ {
+  "title": "Count the Primes",
+  "category": "Math",
+  "difficulty": "easy",
+  "statement": "Count how many prime numbers are less than or equal to n. A prime is an integer greater than 1 whose only positive divisors are 1 and itself.",
+  "input_format": "One line containing the integer n.",
+  "output_format": "Print the number of primes from 2 to n.",
+  "constraints": [
+   "1 <= n <= 100000"
+  ],
+  "sample_inputs": [
+   "10",
+   "1"
+  ],
+  "sample_explanations": [
+   "The primes are 2, 3, 5 and 7.",
+   "There are no primes up to 1."
+  ],
+  "hidden_inputs": [
+   "2",
+   "30",
+   "100",
+   "1000",
+   "5000"
+  ],
+  "reference_solution": "n = int(input())\nif n < 2:\n    print(0)\nelse:\n    sieve = [True] * (n + 1)\n    sieve[0] = sieve[1] = False\n    for i in range(2, int(n ** 0.5) + 1):\n        if sieve[i]:\n            for j in range(i * i, n + 1, i):\n                sieve[j] = False\n    print(sum(sieve))\n",
+  "brute_solution": "n = int(input())\ncount = 0\nfor v in range(2, n + 1):\n    p = True\n    d = 2\n    while d * d <= v:\n        if v % d == 0:\n            p = False\n            break\n        d += 1\n    if p:\n        count += 1\nprint(count)\n",
+  "starter_python": "n = int(input())\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "math",
+   "sieve"
+  ]
+ },
+ {
+  "title": "Majority Element",
+  "category": "Arrays",
+  "difficulty": "easy",
+  "statement": "An element is a majority element if it appears strictly more than n/2 times in an array of n numbers. Find it if it exists.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated integers.",
+  "output_format": "Print the majority element, or -1 if there is none.",
+  "constraints": [
+   "1 <= n <= 100000",
+   "-10^9 <= a[i] <= 10^9"
+  ],
+  "sample_inputs": [
+   "7\n2 2 1 1 2 2 3",
+   "4\n1 2 1 2"
+  ],
+  "sample_explanations": [
+   "The value 2 appears 4 times out of 7.",
+   "No value appears more than twice, so there is no majority."
+  ],
+  "hidden_inputs": [
+   "1\n5",
+   "3\n3 3 4",
+   "5\n-1 -1 -1 2 3",
+   "6\n7 7 7 8 8 8",
+   "8\n9 1 9 2 9 3 9 9"
+  ],
+  "reference_solution": "n = int(input())\na = list(map(int, input().split()))\ncand, cnt = None, 0\nfor x in a:\n    if cnt == 0:\n        cand = x\n    cnt += 1 if x == cand else -1\nprint(cand if a.count(cand) * 2 > n else -1)\n",
+  "brute_solution": "n = int(input())\na = list(map(int, input().split()))\nfreq = {}\nfor x in a:\n    freq[x] = freq.get(x, 0) + 1\nans = -1\nfor k, v in freq.items():\n    if v * 2 > n:\n        ans = k\nprint(ans)\n",
+  "starter_python": "n = int(input())\na = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    static int a[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "arrays",
+   "hashing"
+  ]
+ },
+ {
+  "title": "Rotate Array Right",
+  "category": "Arrays",
+  "difficulty": "easy",
+  "statement": "Rotate an array to the right by k positions: each element moves k places to the right, and the elements that fall off the end re-enter at the front.",
+  "input_format": "Line 1: two integers n and k. Line 2: n space separated integers.",
+  "output_format": "Print the rotated array on one line, separated by single spaces.",
+  "constraints": [
+   "1 <= n <= 100000",
+   "0 <= k <= 10^9"
+  ],
+  "sample_inputs": [
+   "5 2\n1 2 3 4 5",
+   "3 3\n7 8 9"
+  ],
+  "sample_explanations": [
+   "The last two elements, 4 and 5, move to the front.",
+   "Rotating by the length returns the original array."
+  ],
+  "hidden_inputs": [
+   "1 100\n4",
+   "4 1\n1 2 3 4",
+   "6 4\n10 20 30 40 50 60",
+   "5 0\n9 8 7 6 5",
+   "7 13\n1 2 3 4 5 6 7"
+  ],
+  "reference_solution": "n, k = map(int, input().split())\na = input().split()\nk %= n\nprint(\" \".join(a[-k:] + a[:-k]) if k else \" \".join(a))\n",
+  "brute_solution": "n, k = map(int, input().split())\na = input().split()\nfor _ in range(k % n):\n    a.insert(0, a.pop())\nprint(\" \".join(a))\n",
+  "starter_python": "n, k = map(int, input().split())\na = input().split()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n; long long k;\n    scanf(\"%d %lld\", &n, &k);\n    static int a[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "arrays"
+  ]
+ },
+ {
+  "title": "Are They Anagrams",
+  "category": "Strings",
+  "difficulty": "easy",
+  "statement": "Two words are anagrams when one can be rearranged into the other using every letter exactly once. Decide whether the two given words are anagrams.",
+  "input_format": "Line 1: the first word. Line 2: the second word.",
+  "output_format": "Print YES if they are anagrams, otherwise NO.",
+  "constraints": [
+   "1 <= length <= 1000",
+   "lowercase English letters only"
+  ],
+  "sample_inputs": [
+   "listen\nsilent",
+   "apple\npaple"
+  ],
+  "sample_explanations": [
+   "Both words use the letters e, i, l, n, s, t once each.",
+   "Both words use a, e, l, p and p, so they are anagrams."
+  ],
+  "hidden_inputs": [
+   "a\nb",
+   "rat\ntar",
+   "abc\nabcc",
+   "aabbcc\nabcabc",
+   "night\nthing",
+   "hello\nbello"
+  ],
+  "reference_solution": "a = input().strip()\nb = input().strip()\nprint(\"YES\" if sorted(a) == sorted(b) else \"NO\")\n",
+  "brute_solution": "a = input().strip()\nb = input().strip()\ncounts = [0] * 26\nfor c in a:\n    counts[ord(c) - 97] += 1\nfor c in b:\n    counts[ord(c) - 97] -= 1\nprint(\"YES\" if all(x == 0 for x in counts) else \"NO\")\n",
+  "starter_python": "a = input().strip()\nb = input().strip()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char a[1005], b[1005];\n    scanf(\"%s %s\", a, b);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "strings",
+   "hashing"
+  ]
+ },
+ {
+  "title": "Subarray Sum Equals K",
+  "category": "Prefix Sums",
+  "difficulty": "medium",
+  "statement": "Count the contiguous, non-empty subarrays of an array whose elements add up to exactly k. Subarrays at different positions count separately even if their values match.",
+  "input_format": "Line 1: two integers n and k. Line 2: n space separated integers.",
+  "output_format": "Print the number of subarrays with sum k.",
+  "constraints": [
+   "1 <= n <= 100000",
+   "-1000 <= a[i] <= 1000",
+   "-10^9 <= k <= 10^9"
+  ],
+  "sample_inputs": [
+   "5 3\n1 2 1 2 1",
+   "3 0\n0 0 0"
+  ],
+  "sample_explanations": [
+   "The subarrays at positions 0-1, 1-2, 2-3 and 3-4 each add up to 3, so there are four.",
+   "Every non-empty subarray of zeros sums to 0, which gives 6 subarrays."
+  ],
+  "hidden_inputs": [
+   "1 5\n5",
+   "4 -1\n-1 1 -1 1",
+   "6 7\n3 4 7 2 -3 1",
+   "5 100\n1 2 3 4 5",
+   "7 2\n1 1 1 1 1 1 1"
+  ],
+  "reference_solution": "n, k = map(int, input().split())\na = list(map(int, input().split()))\nseen = {0: 1}\npre = 0\ncount = 0\nfor x in a:\n    pre += x\n    count += seen.get(pre - k, 0)\n    seen[pre] = seen.get(pre, 0) + 1\nprint(count)\n",
+  "brute_solution": "n, k = map(int, input().split())\na = list(map(int, input().split()))\ncount = 0\nfor i in range(n):\n    t = 0\n    for j in range(i, n):\n        t += a[j]\n        if t == k:\n            count += 1\nprint(count)\n",
+  "starter_python": "n, k = map(int, input().split())\na = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n; long long k;\n    scanf(\"%d %lld\", &n, &k);\n    static int a[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "prefix-sums",
+   "hashing"
+  ]
+ },
+ {
+  "title": "Product Except Self",
+  "category": "Arrays",
+  "difficulty": "medium",
+  "statement": "For every position of an array, compute the product of all the other elements (everything except the one at that position). Division is not required, and it is allowed that some elements are zero.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated integers.",
+  "output_format": "Print n integers on one line: the product of all elements except the one at each position.",
+  "constraints": [
+   "2 <= n <= 1000",
+   "-10 <= a[i] <= 10"
+  ],
+  "sample_inputs": [
+   "4\n1 2 3 4",
+   "3\n0 5 2"
+  ],
+  "sample_explanations": [
+   "Leaving out each element in turn gives 24, 12, 8 and 6.",
+   "Leaving out the zero gives 10; every other position still includes the zero, so 0 and 0."
+  ],
+  "hidden_inputs": [
+   "2\n3 4",
+   "3\n-1 2 -3",
+   "5\n1 1 1 1 1",
+   "4\n0 0 1 2",
+   "5\n2 -2 2 -2 2"
+  ],
+  "reference_solution": "n = int(input())\na = list(map(int, input().split()))\nout = [1] * n\nleft = 1\nfor i in range(n):\n    out[i] = left\n    left *= a[i]\nright = 1\nfor i in range(n - 1, -1, -1):\n    out[i] *= right\n    right *= a[i]\nprint(\" \".join(map(str, out)))\n",
+  "brute_solution": "n = int(input())\na = list(map(int, input().split()))\nout = []\nfor i in range(n):\n    p = 1\n    for j in range(n):\n        if j != i:\n            p *= a[j]\n    out.append(p)\nprint(\" \".join(map(str, out)))\n",
+  "starter_python": "n = int(input())\na = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    int a[1000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "arrays",
+   "prefix-sums"
+  ]
+ },
+ {
+  "title": "Anagram Groups",
+  "category": "Hashing",
+  "difficulty": "medium",
+  "statement": "You are given a list of lowercase words. Put two words in the same group when they are anagrams of each other. Report how many groups there are.",
+  "input_format": "Line 1: an integer n. Then n lines, one word each.",
+  "output_format": "Print the number of anagram groups.",
+  "constraints": [
+   "1 <= n <= 1000",
+   "each word has 1 to 20 lowercase letters"
+  ],
+  "sample_inputs": [
+   "5\neat\ntea\ntan\nate\nnat",
+   "3\nab\ncd\nef"
+  ],
+  "sample_explanations": [
+   "The groups are {eat, tea, ate} and {tan, nat}, so there are 2.",
+   "No two words are anagrams, so every word is alone: 3 groups."
+  ],
+  "hidden_inputs": [
+   "1\nabc",
+   "4\nabc\nbca\ncab\ncba",
+   "6\na\nb\na\nc\nb\nd",
+   "5\nlisten\nsilent\nenlist\ngoogle\ngogole",
+   "4\nxy\nyx\nxx\nyy"
+  ],
+  "reference_solution": "n = int(input())\nprint(len({\"\".join(sorted(input().strip())) for _ in range(n)}))\n",
+  "brute_solution": "n = int(input())\nw = [input().strip() for _ in range(n)]\nparent = list(range(n))\ndef find(x):\n    while parent[x] != x:\n        parent[x] = parent[parent[x]]\n        x = parent[x]\n    return x\nfor i in range(n):\n    for j in range(i + 1, n):\n        if sorted(w[i]) == sorted(w[j]):\n            parent[find(i)] = find(j)\nprint(len({find(i) for i in range(n)}))\n",
+  "starter_python": "n = int(input())\nwords = [input().strip() for _ in range(n)]\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    static char w[1000][25];\n    for (int i = 0; i < n; i++) scanf(\"%s\", w[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "hashing",
+   "strings"
+  ]
+ },
+ {
+  "title": "First Occurrence",
+  "category": "Binary Search",
+  "difficulty": "medium",
+  "statement": "An array of integers is sorted in non-decreasing order and may contain repeated values. For each query value, report the first (smallest) position where it appears, counting positions from 0, or -1 if it does not appear.",
+  "input_format": "Line 1: two integers n and q. Line 2: n sorted integers. Line 3: q query integers.",
+  "output_format": "Print q integers on one line: the first position of each query, or -1.",
+  "constraints": [
+   "1 <= n, q <= 100000",
+   "-10^9 <= values <= 10^9"
+  ],
+  "sample_inputs": [
+   "6 3\n1 2 2 2 5 9\n2 5 4",
+   "3 2\n7 7 7\n7 8"
+  ],
+  "sample_explanations": [
+   "Value 2 first appears at index 1, 5 at index 4, and 4 is absent.",
+   "Value 7 starts at index 0; 8 is absent."
+  ],
+  "hidden_inputs": [
+   "1 1\n3\n3",
+   "5 5\n1 2 3 4 5\n1 5 0 6 3",
+   "6 4\n-5 -5 -1 0 0 4\n-5 0 4 100",
+   "4 3\n2 2 2 2\n2 1 3",
+   "7 4\n1 1 2 3 3 3 4\n3 1 4 2"
+  ],
+  "reference_solution": "from bisect import bisect_left\nn, q = map(int, input().split())\na = list(map(int, input().split()))\nout = []\nfor x in map(int, input().split()):\n    i = bisect_left(a, x)\n    out.append(i if i < n and a[i] == x else -1)\nprint(\" \".join(map(str, out)))\n",
+  "brute_solution": "n, q = map(int, input().split())\na = list(map(int, input().split()))\nout = []\nfor x in map(int, input().split()):\n    idx = -1\n    for i in range(n):\n        if a[i] == x:\n            idx = i\n            break\n    out.append(idx)\nprint(\" \".join(map(str, out)))\n",
+  "starter_python": "n, q = map(int, input().split())\na = list(map(int, input().split()))\nqueries = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n, q;\n    scanf(\"%d %d\", &n, &q);\n    static int a[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "binary-search"
+  ]
+ },
+ {
+  "title": "Count the Islands",
+  "category": "Graphs",
+  "difficulty": "medium",
+  "statement": "A grid is made of 1 (land) and 0 (water) cells. An island is a group of land cells connected horizontally or vertically (not diagonally). Count the islands.",
+  "input_format": "Line 1: two integers r and c. Then r lines, each a string of c characters, 0 or 1.",
+  "output_format": "Print the number of islands.",
+  "constraints": [
+   "1 <= r, c <= 50"
+  ],
+  "sample_inputs": [
+   "4 5\n11000\n11000\n00100\n00011",
+   "2 3\n101\n010"
+  ],
+  "sample_explanations": [
+   "The top-left block, the single middle cell and the bottom-right pair are three islands.",
+   "Cells touch only diagonally, so there are three separate single-cell islands."
+  ],
+  "hidden_inputs": [
+   "1 1\n1",
+   "1 4\n0000",
+   "3 3\n111\n111\n111",
+   "3 4\n1010\n0101\n1010",
+   "5 5\n10001\n01010\n00100\n01010\n10001"
+  ],
+  "reference_solution": "from collections import deque\nr, c = map(int, input().split())\ng = [list(input().strip()) for _ in range(r)]\ncount = 0\nfor i in range(r):\n    for j in range(c):\n        if g[i][j] == \"1\":\n            count += 1\n            q = deque([(i, j)])\n            g[i][j] = \"0\"\n            while q:\n                x, y = q.popleft()\n                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n                    nx, ny = x + dx, y + dy\n                    if 0 <= nx < r and 0 <= ny < c and g[nx][ny] == \"1\":\n                        g[nx][ny] = \"0\"\n                        q.append((nx, ny))\nprint(count)\n",
+  "brute_solution": "r, c = map(int, input().split())\ng = [input().strip() for _ in range(r)]\nparent = list(range(r * c))\ndef find(x):\n    while parent[x] != x:\n        parent[x] = parent[parent[x]]\n        x = parent[x]\n    return x\nfor i in range(r):\n    for j in range(c):\n        if g[i][j] == \"1\":\n            if i + 1 < r and g[i + 1][j] == \"1\":\n                parent[find(i * c + j)] = find((i + 1) * c + j)\n            if j + 1 < c and g[i][j + 1] == \"1\":\n                parent[find(i * c + j)] = find(i * c + j + 1)\nprint(len({find(i * c + j) for i in range(r) for j in range(c) if g[i][j] == \"1\"}))\n",
+  "starter_python": "r, c = map(int, input().split())\ngrid = [input().strip() for _ in range(r)]\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int r, c;\n    scanf(\"%d %d\", &r, &c);\n    static char g[50][60];\n    for (int i = 0; i < r; i++) scanf(\"%s\", g[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "graphs",
+   "bfs"
+  ]
+ },
+ {
+  "title": "Wait for a Warmer Day",
+  "category": "Stack",
+  "difficulty": "medium",
+  "statement": "You are given the temperature of each day in order. For every day, find how many days you must wait until a strictly warmer day arrives. If no warmer day ever comes, the wait is 0.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated integers (temperatures).",
+  "output_format": "Print n integers on one line: the number of days to wait for each day.",
+  "constraints": [
+   "1 <= n <= 100000",
+   "-50 <= temperature <= 60"
+  ],
+  "sample_inputs": [
+   "6\n73 74 75 71 69 76",
+   "3\n30 20 10"
+  ],
+  "sample_explanations": [
+   "Day 0 waits 1 day for 74, day 1 waits 1, day 2 waits 3 for 76, and so on; the last day waits 0.",
+   "The temperatures only fall, so every wait is 0."
+  ],
+  "hidden_inputs": [
+   "1\n20",
+   "4\n10 20 30 40",
+   "5\n50 40 30 40 50",
+   "6\n30 60 90 60 30 90",
+   "7\n5 5 5 6 5 5 7"
+  ],
+  "reference_solution": "n = int(input())\nt = list(map(int, input().split()))\nout = [0] * n\nst = []\nfor i, x in enumerate(t):\n    while st and t[st[-1]] < x:\n        j = st.pop()\n        out[j] = i - j\n    st.append(i)\nprint(\" \".join(map(str, out)))\n",
+  "brute_solution": "n = int(input())\nt = list(map(int, input().split()))\nout = []\nfor i in range(n):\n    w = 0\n    for j in range(i + 1, n):\n        if t[j] > t[i]:\n            w = j - i\n            break\n    out.append(w)\nprint(\" \".join(map(str, out)))\n",
+  "starter_python": "n = int(input())\nt = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    static int t[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &t[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "stack",
+   "arrays"
+  ]
+ },
+ {
+  "title": "Longest Palindromic Substring",
+  "category": "Strings",
+  "difficulty": "medium",
+  "statement": "Find the length of the longest substring of the given string that reads the same forwards and backwards. A substring is a contiguous part of the string.",
+  "input_format": "One line containing the string.",
+  "output_format": "Print the length of the longest palindromic substring.",
+  "constraints": [
+   "1 <= length <= 1000",
+   "lowercase English letters only"
+  ],
+  "sample_inputs": [
+   "babad",
+   "cbbd"
+  ],
+  "sample_explanations": [
+   "'bab' and 'aba' are both palindromes of length 3.",
+   "'bb' is the longest palindrome, with length 2."
+  ],
+  "hidden_inputs": [
+   "a",
+   "abcde",
+   "aaaa",
+   "forgeeksskeegfor",
+   "abacdfgdcaba",
+   "xyzzyxabc"
+  ],
+  "reference_solution": "s = input().strip()\nbest = 1\nfor c in range(len(s)):\n    for l, r in ((c, c), (c, c + 1)):\n        while l >= 0 and r < len(s) and s[l] == s[r]:\n            best = max(best, r - l + 1)\n            l -= 1\n            r += 1\nprint(best)\n",
+  "brute_solution": "s = input().strip()\nbest = 0\nfor i in range(len(s)):\n    for j in range(i, len(s)):\n        part = s[i:j + 1]\n        if part == part[::-1]:\n            best = max(best, len(part))\nprint(best)\n",
+  "starter_python": "s = input().strip()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    static char s[1005];\n    scanf(\"%s\", s);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "strings",
+   "two-pointers"
+  ]
+ },
+ {
+  "title": "Container With Most Water",
+  "category": "Two Pointers",
+  "difficulty": "medium",
+  "statement": "Vertical lines stand at positions 1, 2, ..., n with the given heights. Choose two of them as the walls of a container; its water holds (distance between the walls) times (the shorter wall's height). Find the largest amount of water any pair can hold.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated non-negative integers (heights).",
+  "output_format": "Print the maximum amount of water.",
+  "constraints": [
+   "2 <= n <= 100000",
+   "0 <= height <= 10000"
+  ],
+  "sample_inputs": [
+   "9\n1 8 6 2 5 4 8 3 7",
+   "2\n1 1"
+  ],
+  "sample_explanations": [
+   "The walls of height 8 at positions 2 and 9 are 7 apart and hold 7 * 7 = 49.",
+   "Only one pair: distance 1 times height 1."
+  ],
+  "hidden_inputs": [
+   "3\n5 0 5",
+   "4\n1 2 4 3",
+   "5\n0 0 0 0 0",
+   "6\n3 9 3 4 7 2",
+   "8\n6 1 1 1 1 1 1 6"
+  ],
+  "reference_solution": "n = int(input())\nh = list(map(int, input().split()))\nl, r = 0, n - 1\nbest = 0\nwhile l < r:\n    best = max(best, (r - l) * min(h[l], h[r]))\n    if h[l] < h[r]:\n        l += 1\n    else:\n        r -= 1\nprint(best)\n",
+  "brute_solution": "n = int(input())\nh = list(map(int, input().split()))\nbest = 0\nfor i in range(n):\n    for j in range(i + 1, n):\n        best = max(best, (j - i) * min(h[i], h[j]))\nprint(best)\n",
+  "starter_python": "n = int(input())\nh = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    static int h[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &h[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "two-pointers",
+   "greedy"
+  ]
+ },
+ {
+  "title": "Kth Largest Element",
+  "category": "Sorting",
+  "difficulty": "medium",
+  "statement": "Find the k-th largest element of an array, counting repeated values separately: in [5, 5, 3] the first largest is 5, the second largest is 5 and the third is 3.",
+  "input_format": "Line 1: two integers n and k. Line 2: n space separated integers.",
+  "output_format": "Print the k-th largest element.",
+  "constraints": [
+   "1 <= k <= n <= 100000",
+   "-10^9 <= a[i] <= 10^9"
+  ],
+  "sample_inputs": [
+   "6 2\n3 2 1 5 6 4",
+   "3 2\n5 5 3"
+  ],
+  "sample_explanations": [
+   "Sorted from largest: 6, 5, 4, ... so the 2nd largest is 5.",
+   "Sorted from largest: 5, 5, 3; the 2nd is 5."
+  ],
+  "hidden_inputs": [
+   "1 1\n42",
+   "5 5\n9 8 7 6 5",
+   "5 1\n-1 -2 -3 -4 -5",
+   "8 4\n4 4 4 1 1 9 9 2",
+   "6 3\n10 -10 0 10 -10 0"
+  ],
+  "reference_solution": "import heapq\nn, k = map(int, input().split())\na = list(map(int, input().split()))\nprint(heapq.nlargest(k, a)[-1])\n",
+  "brute_solution": "n, k = map(int, input().split())\na = list(map(int, input().split()))\nfor _ in range(k - 1):\n    a.remove(max(a))\nprint(max(a))\n",
+  "starter_python": "n, k = map(int, input().split())\na = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n, k;\n    scanf(\"%d %d\", &n, &k);\n    static int a[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "sorting",
+   "heap"
+  ]
+ },
+ {
+  "title": "Climbing Stairs 1 2 3",
+  "category": "Dynamic Programming",
+  "difficulty": "medium",
+  "statement": "You climb a staircase of n steps and each move takes 1, 2 or 3 steps. Count the different sequences of moves that reach exactly step n, and print the count modulo 1000000007.",
+  "input_format": "One line containing the integer n.",
+  "output_format": "Print the number of ways modulo 1000000007.",
+  "constraints": [
+   "1 <= n <= 100000"
+  ],
+  "sample_inputs": [
+   "4",
+   "1"
+  ],
+  "sample_explanations": [
+   "The ways are 1111, 112, 121, 211, 22, 13 and 31: seven in total.",
+   "Only one move of 1 step."
+  ],
+  "hidden_inputs": [
+   "2",
+   "3",
+   "10",
+   "20",
+   "30"
+  ],
+  "reference_solution": "n = int(input())\nM = 1000000007\nf = [0] * (n + 4)\nf[0] = 1\nfor i in range(1, n + 1):\n    f[i] = (f[i - 1] + (f[i - 2] if i >= 2 else 0) + (f[i - 3] if i >= 3 else 0)) % M\nprint(f[n])\n",
+  "brute_solution": "import sys\nfrom functools import lru_cache\nsys.setrecursionlimit(10000)\nn = int(input())\n@lru_cache(maxsize=None)\ndef ways(k):\n    if k < 0:\n        return 0\n    if k == 0:\n        return 1\n    return ways(k - 1) + ways(k - 2) + ways(k - 3)\nprint(ways(n) % 1000000007)\n",
+  "starter_python": "n = int(input())\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "dynamic-programming"
+  ]
+ },
+ {
+  "title": "Fire Spread",
+  "category": "Graphs",
+  "difficulty": "medium",
+  "statement": "A grid has empty cells (.), trees (T) and burning trees (F). Every minute, each tree that touches a burning tree horizontally or vertically catches fire. Find the number of minutes until no more trees can catch fire, or -1 if some tree never burns.",
+  "input_format": "Line 1: two integers r and c. Then r lines of c characters from . T F.",
+  "output_format": "Print the number of minutes until the fire stops spreading, or -1 if a tree is left unburnt.",
+  "constraints": [
+   "1 <= r, c <= 30"
+  ],
+  "sample_inputs": [
+   "3 3\nFTT\nT.T\n..T",
+   "1 3\nF.T"
+  ],
+  "sample_explanations": [
+   "The fire reaches the far corner after 4 minutes.",
+   "The tree is separated from the fire by an empty cell, so it never burns."
+  ],
+  "hidden_inputs": [
+   "1 1\n.",
+   "1 1\nT",
+   "1 1\nF",
+   "2 2\nFT\nTT",
+   "3 4\nF..T\n.TTT\nT..F",
+   "2 3\nTTT\nTTF"
+  ],
+  "reference_solution": "from collections import deque\nr, c = map(int, input().split())\ng = [list(input().strip()) for _ in range(r)]\nq = deque((i, j, 0) for i in range(r) for j in range(c) if g[i][j] == \"F\")\nt = sum(row.count(\"T\") for row in g)\nlast = 0\nwhile q:\n    x, y, d = q.popleft()\n    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n        nx, ny = x + dx, y + dy\n        if 0 <= nx < r and 0 <= ny < c and g[nx][ny] == \"T\":\n            g[nx][ny] = \"F\"\n            t -= 1\n            last = d + 1\n            q.append((nx, ny, d + 1))\nprint(-1 if t else last)\n",
+  "brute_solution": "r, c = map(int, input().split())\ng = [list(input().strip()) for _ in range(r)]\nminutes = 0\nwhile True:\n    burn = []\n    for i in range(r):\n        for j in range(c):\n            if g[i][j] == \"T\":\n                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n                    x, y = i + dx, j + dy\n                    if 0 <= x < r and 0 <= y < c and g[x][y] == \"F\":\n                        burn.append((i, j))\n                        break\n    if not burn:\n        break\n    for i, j in burn:\n        g[i][j] = \"F\"\n    minutes += 1\nprint(-1 if any(\"T\" in row for row in g) else minutes)\n",
+  "starter_python": "r, c = map(int, input().split())\ngrid = [input().strip() for _ in range(r)]\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int r, c;\n    scanf(\"%d %d\", &r, &c);\n    static char g[30][40];\n    for (int i = 0; i < r; i++) scanf(\"%s\", g[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "graphs",
+   "bfs"
+  ]
+ },
+ {
+  "title": "Can You Finish All Courses",
+  "category": "Graphs",
+  "difficulty": "medium",
+  "statement": "There are n courses numbered 0 to n-1. Some courses need another course finished first, given as pairs 'a b' meaning b must be done before a. Decide whether it is possible to finish all courses.",
+  "input_format": "Line 1: two integers n and m. Then m lines, each with two integers a and b.",
+  "output_format": "Print YES if all courses can be finished, otherwise NO.",
+  "constraints": [
+   "1 <= n <= 1000",
+   "0 <= m <= 5000"
+  ],
+  "sample_inputs": [
+   "2 1\n1 0",
+   "2 2\n1 0\n0 1"
+  ],
+  "sample_explanations": [
+   "Course 0 first, then course 1: possible.",
+   "Each course needs the other, so a cycle blocks both."
+  ],
+  "hidden_inputs": [
+   "1 0",
+   "3 2\n1 0\n2 1",
+   "3 3\n0 1\n1 2\n2 0",
+   "4 3\n1 0\n2 0\n3 1",
+   "5 5\n1 0\n2 1\n3 2\n4 3\n1 4",
+   "4 0"
+  ],
+  "reference_solution": "from collections import deque\nn, m = map(int, input().split())\nadj = [[] for _ in range(n)]\ndeg = [0] * n\nfor _ in range(m):\n    a, b = map(int, input().split())\n    adj[b].append(a)\n    deg[a] += 1\nq = deque(i for i in range(n) if deg[i] == 0)\ndone = 0\nwhile q:\n    u = q.popleft()\n    done += 1\n    for v in adj[u]:\n        deg[v] -= 1\n        if deg[v] == 0:\n            q.append(v)\nprint(\"YES\" if done == n else \"NO\")\n",
+  "brute_solution": "import sys\nsys.setrecursionlimit(10000)\nn, m = map(int, input().split())\nadj = [[] for _ in range(n)]\nfor _ in range(m):\n    a, b = map(int, input().split())\n    adj[b].append(a)\nstate = [0] * n\ndef cyc(u):\n    state[u] = 1\n    for v in adj[u]:\n        if state[v] == 1:\n            return True\n        if state[v] == 0 and cyc(v):\n            return True\n    state[u] = 2\n    return False\nprint(\"NO\" if any(state[i] == 0 and cyc(i) for i in range(n)) else \"YES\")\n",
+  "starter_python": "n, m = map(int, input().split())\npairs = [tuple(map(int, input().split())) for _ in range(m)]\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n, m;\n    scanf(\"%d %d\", &n, &m);\n    static int a[5000], b[5000];\n    for (int i = 0; i < m; i++) scanf(\"%d %d\", &a[i], &b[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "graphs",
+   "topological-sort"
+  ]
+ },
+ {
+  "title": "Longest Increasing Subsequence",
+  "category": "Dynamic Programming",
+  "difficulty": "hard",
+  "statement": "A subsequence keeps some elements of an array in their original order. Find the length of the longest subsequence whose values are strictly increasing.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated integers.",
+  "output_format": "Print the length of the longest strictly increasing subsequence.",
+  "constraints": [
+   "1 <= n <= 100000",
+   "-10^9 <= a[i] <= 10^9"
+  ],
+  "sample_inputs": [
+   "8\n10 9 2 5 3 7 101 18",
+   "4\n5 4 3 2"
+  ],
+  "sample_explanations": [
+   "One longest choice is 2, 3, 7, 18 (or 2, 5, 7, 101), of length 4.",
+   "The array only decreases, so the best is a single element."
+  ],
+  "hidden_inputs": [
+   "1\n7",
+   "6\n1 2 3 4 5 6",
+   "7\n3 1 4 1 5 9 2",
+   "8\n0 8 4 12 2 10 6 14",
+   "10\n5 5 5 5 5 6 6 6 7 7",
+   "9\n-1 3 4 5 2 2 2 2 3"
+  ],
+  "reference_solution": "from bisect import bisect_left\nn = int(input())\na = list(map(int, input().split()))\ntails = []\nfor x in a:\n    i = bisect_left(tails, x)\n    if i == len(tails):\n        tails.append(x)\n    else:\n        tails[i] = x\nprint(len(tails))\n",
+  "brute_solution": "n = int(input())\na = list(map(int, input().split()))\nbest = [1] * n\nfor i in range(n):\n    for j in range(i):\n        if a[j] < a[i] and best[j] + 1 > best[i]:\n            best[i] = best[j] + 1\nprint(max(best))\n",
+  "starter_python": "n = int(input())\na = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    static int a[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "dynamic-programming",
+   "binary-search"
+  ]
+ },
+ {
+  "title": "Shortest Route",
+  "category": "Graphs",
+  "difficulty": "hard",
+  "statement": "A country has n cities and m two-way roads, each with a positive length. Find the length of the shortest route from city 1 to city n, or report that there is none.",
+  "input_format": "Line 1: two integers n and m. Then m lines, each with three integers u v w (a road between cities u and v of length w).",
+  "output_format": "Print the shortest distance from city 1 to city n, or -1 if city n cannot be reached.",
+  "constraints": [
+   "2 <= n <= 1000",
+   "0 <= m <= 5000",
+   "1 <= w <= 10^6"
+  ],
+  "sample_inputs": [
+   "4 4\n1 2 1\n2 4 5\n1 3 2\n3 4 2",
+   "3 1\n1 2 4"
+  ],
+  "sample_explanations": [
+   "Going 1 -> 3 -> 4 costs 2 + 2 = 4, cheaper than 1 -> 2 -> 4 which costs 6.",
+   "City 3 has no road, so it cannot be reached."
+  ],
+  "hidden_inputs": [
+   "2 1\n1 2 9",
+   "3 3\n1 2 1\n2 3 1\n1 3 5",
+   "5 4\n1 2 3\n2 3 3\n3 4 3\n4 5 3",
+   "4 5\n1 2 10\n1 3 3\n3 2 4\n2 4 2\n3 4 9",
+   "6 7\n1 2 7\n1 3 9\n1 6 14\n2 3 10\n2 4 15\n3 4 11\n3 6 2",
+   "4 2\n1 2 1\n3 4 1"
+  ],
+  "reference_solution": "import heapq\nn, m = map(int, input().split())\nadj = [[] for _ in range(n + 1)]\nfor _ in range(m):\n    u, v, w = map(int, input().split())\n    adj[u].append((v, w))\n    adj[v].append((u, w))\nINF = float(\"inf\")\ndist = [INF] * (n + 1)\ndist[1] = 0\npq = [(0, 1)]\nwhile pq:\n    d, u = heapq.heappop(pq)\n    if d > dist[u]:\n        continue\n    for v, w in adj[u]:\n        if d + w < dist[v]:\n            dist[v] = d + w\n            heapq.heappush(pq, (dist[v], v))\nprint(-1 if dist[n] == INF else dist[n])\n",
+  "brute_solution": "n, m = map(int, input().split())\nedges = [tuple(map(int, input().split())) for _ in range(m)]\nINF = float(\"inf\")\ndist = [INF] * (n + 1)\ndist[1] = 0\nfor _ in range(n):\n    for u, v, w in edges:\n        if dist[u] + w < dist[v]:\n            dist[v] = dist[u] + w\n        if dist[v] + w < dist[u]:\n            dist[u] = dist[v] + w\nprint(-1 if dist[n] == INF else dist[n])\n",
+  "starter_python": "n, m = map(int, input().split())\nroads = [tuple(map(int, input().split())) for _ in range(m)]\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n, m;\n    scanf(\"%d %d\", &n, &m);\n    static int u[5000], v[5000], w[5000];\n    for (int i = 0; i < m; i++) scanf(\"%d %d %d\", &u[i], &v[i], &w[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "graphs",
+   "dijkstra"
+  ]
+ },
+ {
+  "title": "Smallest Window",
+  "category": "Two Pointers",
+  "difficulty": "hard",
+  "statement": "Given a text and a pattern, find the length of the shortest substring of the text that contains every character of the pattern, counting repeats (if the pattern has two a's, the window needs two a's). If no such substring exists, report 0.",
+  "input_format": "Line 1: the text. Line 2: the pattern.",
+  "output_format": "Print the length of the shortest valid window, or 0 if there is none.",
+  "constraints": [
+   "1 <= length of text, pattern <= 10000",
+   "lowercase English letters only"
+  ],
+  "sample_inputs": [
+   "adobecodebanc\nabc",
+   "a\naa"
+  ],
+  "sample_explanations": [
+   "The shortest window containing a, b and c is 'banc', of length 4.",
+   "The text has only one a, so no window works."
+  ],
+  "hidden_inputs": [
+   "a\na",
+   "abc\nd",
+   "aab\nab",
+   "xyzzyx\nzz",
+   "cabwefgewcwaefgcf\ncae",
+   "bba\nab"
+  ],
+  "reference_solution": "from collections import Counter\ns = input().strip()\nt = input().strip()\nneed = Counter(t)\nmissing = len(t)\nbest = 0\nleft = 0\nfor right, c in enumerate(s):\n    if need[c] > 0:\n        missing -= 1\n    need[c] -= 1\n    while missing == 0:\n        size = right - left + 1\n        if best == 0 or size < best:\n            best = size\n        need[s[left]] += 1\n        if need[s[left]] > 0:\n            missing += 1\n        left += 1\nprint(best)\n",
+  "brute_solution": "s = input().strip()\nt = input().strip()\ndef covers(part):\n    for ch in set(t):\n        if part.count(ch) < t.count(ch):\n            return False\n    return True\nbest = 0\nfor i in range(len(s)):\n    for j in range(i + 1, len(s) + 1):\n        if covers(s[i:j]):\n            if best == 0 or j - i < best:\n                best = j - i\n            break\nprint(best)\n",
+  "starter_python": "s = input().strip()\nt = input().strip()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    static char s[10005], t[10005];\n    scanf(\"%s %s\", s, t);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "two-pointers",
+   "hashing"
+  ]
+ },
+ {
+  "title": "Trapped Rain Water",
+  "category": "Two Pointers",
+  "difficulty": "hard",
+  "statement": "An elevation map is given as the height of unit-width bars. After rain, water collects in the dips between bars. Compute the total volume of water the bars can trap.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated non-negative integers (bar heights).",
+  "output_format": "Print the total trapped water.",
+  "constraints": [
+   "1 <= n <= 100000",
+   "0 <= height <= 10000"
+  ],
+  "sample_inputs": [
+   "12\n0 1 0 2 1 0 1 3 2 1 2 1",
+   "3\n3 0 3"
+  ],
+  "sample_explanations": [
+   "The dips hold 6 units of water altogether.",
+   "The dip of depth 3 between the bars holds 3 units."
+  ],
+  "hidden_inputs": [
+   "1\n5",
+   "4\n1 2 3 4",
+   "5\n4 2 0 3 2",
+   "6\n2 0 2 0 2 0",
+   "7\n5 4 1 2 1 4 5",
+   "8\n0 0 0 0 0 0 0 0"
+  ],
+  "reference_solution": "n = int(input())\nh = list(map(int, input().split()))\nl, r = 0, n - 1\nlm = rm = 0\ntotal = 0\nwhile l < r:\n    if h[l] < h[r]:\n        lm = max(lm, h[l])\n        total += lm - h[l]\n        l += 1\n    else:\n        rm = max(rm, h[r])\n        total += rm - h[r]\n        r -= 1\nprint(total)\n",
+  "brute_solution": "n = int(input())\nh = list(map(int, input().split()))\ntotal = 0\nfor i in range(n):\n    left = max(h[:i + 1])\n    right = max(h[i:])\n    total += min(left, right) - h[i]\nprint(total)\n",
+  "starter_python": "n = int(input())\nh = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    static int h[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &h[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "two-pointers",
+   "arrays"
+  ]
+ },
+ {
+  "title": "Word Break Count",
+  "category": "Dynamic Programming",
+  "difficulty": "hard",
+  "statement": "You are given a dictionary of words and a target string. Count the ways to split the target into a sequence of dictionary words, where each word may be used any number of times. Two ways differ when the cut positions differ.",
+  "input_format": "Line 1: an integer k. Line 2: k dictionary words. Line 3: the target string.",
+  "output_format": "Print the number of ways to split the target.",
+  "constraints": [
+   "1 <= k <= 20",
+   "1 <= length of each word <= 10",
+   "1 <= length of target <= 60",
+   "lowercase English letters only"
+  ],
+  "sample_inputs": [
+   "3\nab a b\nabab",
+   "2\nab cd\nabc"
+  ],
+  "sample_explanations": [
+   "The splits are a|b|a|b, ab|a|b, a|b|ab and ab|ab: four ways.",
+   "'abc' cannot be built from the words, so there are zero ways."
+  ],
+  "hidden_inputs": [
+   "1\na\naaa",
+   "2\na aa\naaaa",
+   "3\ncat cats and\ncatsand",
+   "4\nx y xy yx\nxyxy",
+   "2\nab ba\nabab",
+   "3\na b c\nabcabc"
+  ],
+  "reference_solution": "k = int(input())\nwords = input().split()\ns = input().strip()\ndp = [0] * (len(s) + 1)\ndp[0] = 1\nfor i in range(1, len(s) + 1):\n    for w in words:\n        if i >= len(w) and s[i - len(w):i] == w:\n            dp[i] += dp[i - len(w)]\nprint(dp[len(s)])\n",
+  "brute_solution": "import sys\nsys.setrecursionlimit(10000)\nk = int(input())\nwords = input().split()\ns = input().strip()\ndef go(pos):\n    if pos == len(s):\n        return 1\n    total = 0\n    for w in words:\n        if s.startswith(w, pos):\n            total += go(pos + len(w))\n    return total\nprint(go(0))\n",
+  "starter_python": "k = int(input())\nwords = input().split()\ntarget = input().strip()\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int k;\n    scanf(\"%d\", &k);\n    char words[20][12], target[64];\n    for (int i = 0; i < k; i++) scanf(\"%s\", words[i]);\n    scanf(\"%s\", target);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "dynamic-programming",
+   "strings"
+  ]
+ },
+ {
+  "title": "Coin Change Ways",
+  "category": "Dynamic Programming",
+  "difficulty": "hard",
+  "statement": "Given coin denominations (unlimited supply of each) and an amount, count the different combinations of coins that sum to the amount. Combinations that use the same coins in a different order count once.",
+  "input_format": "Line 1: two integers k and amount. Line 2: k coin values.",
+  "output_format": "Print the number of combinations.",
+  "constraints": [
+   "1 <= k <= 15",
+   "1 <= coin <= 1000",
+   "0 <= amount <= 1000"
+  ],
+  "sample_inputs": [
+   "3 5\n1 2 5",
+   "1 3\n2"
+  ],
+  "sample_explanations": [
+   "The combinations are 5, 2+2+1, 2+1+1+1 and 1+1+1+1+1: four ways.",
+   "The coin 2 cannot make 3, so there are zero ways."
+  ],
+  "hidden_inputs": [
+   "2 0\n3 5",
+   "2 10\n2 5",
+   "3 12\n1 5 10",
+   "4 15\n2 3 5 6",
+   "3 20\n3 7 9",
+   "2 8\n1 2"
+  ],
+  "reference_solution": "k, amount = map(int, input().split())\ncoins = list(map(int, input().split()))\ndp = [1] + [0] * amount\nfor c in coins:\n    for v in range(c, amount + 1):\n        dp[v] += dp[v - c]\nprint(dp[amount])\n",
+  "brute_solution": "import sys\nsys.setrecursionlimit(10000)\nk, amount = map(int, input().split())\ncoins = sorted(set(map(int, input().split())))\ndef go(rem, start):\n    if rem == 0:\n        return 1\n    total = 0\n    for i in range(start, len(coins)):\n        if coins[i] <= rem:\n            total += go(rem - coins[i], i)\n    return total\nprint(go(amount, 0))\n",
+  "starter_python": "k, amount = map(int, input().split())\ncoins = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int k, amount;\n    scanf(\"%d %d\", &k, &amount);\n    int coins[15];\n    for (int i = 0; i < k; i++) scanf(\"%d\", &coins[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "dynamic-programming"
+  ]
+ },
+ {
+  "title": "Maximum Product Subarray",
+  "category": "Dynamic Programming",
+  "difficulty": "hard",
+  "statement": "Find the largest product of any contiguous, non-empty subarray of an array of integers. The array may contain negatives and zeros.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated integers.",
+  "output_format": "Print the maximum product.",
+  "constraints": [
+   "1 <= n <= 20",
+   "-10 <= a[i] <= 10"
+  ],
+  "sample_inputs": [
+   "4\n2 3 -2 4",
+   "3\n-2 0 -1"
+  ],
+  "sample_explanations": [
+   "The subarray [2, 3] has product 6, the best available.",
+   "The zero splits the array; the best product is 0."
+  ],
+  "hidden_inputs": [
+   "1\n-5",
+   "3\n-2 3 -4",
+   "5\n0 2 0 3 0",
+   "6\n1 -2 -3 4 -1 2",
+   "4\n-1 -1 -1 -1",
+   "7\n2 -5 -2 -4 3 1 -1"
+  ],
+  "reference_solution": "n = int(input())\na = list(map(int, input().split()))\nhi = lo = best = a[0]\nfor x in a[1:]:\n    cand = (x, hi * x, lo * x)\n    hi, lo = max(cand), min(cand)\n    best = max(best, hi)\nprint(best)\n",
+  "brute_solution": "n = int(input())\na = list(map(int, input().split()))\nbest = a[0]\nfor i in range(n):\n    p = 1\n    for j in range(i, n):\n        p *= a[j]\n        best = max(best, p)\nprint(best)\n",
+  "starter_python": "n = int(input())\na = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    int a[20];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "dynamic-programming",
+   "arrays"
+  ]
+ },
+ {
+  "title": "Sliding Window Maximum",
+  "category": "Deque",
+  "difficulty": "hard",
+  "statement": "A window of size w slides one position at a time from the left end of an array to the right end. Report the maximum value inside the window at every position.",
+  "input_format": "Line 1: two integers n and w. Line 2: n space separated integers.",
+  "output_format": "Print the n - w + 1 window maximums on one line, separated by single spaces.",
+  "constraints": [
+   "1 <= w <= n <= 100000",
+   "-10^9 <= a[i] <= 10^9"
+  ],
+  "sample_inputs": [
+   "8 3\n1 3 -1 -3 5 3 6 7",
+   "3 3\n9 8 7"
+  ],
+  "sample_explanations": [
+   "The windows are [1,3,-1], [3,-1,-3], ... with maximums 3 3 5 5 6 7.",
+   "One window covers everything and its maximum is 9."
+  ],
+  "hidden_inputs": [
+   "1 1\n4",
+   "5 1\n5 4 3 2 1",
+   "6 2\n1 1 1 1 1 1",
+   "7 4\n2 7 1 8 2 8 1",
+   "9 3\n-5 -1 -9 -2 -8 -3 -7 -4 -6"
+  ],
+  "reference_solution": "from collections import deque\nn, w = map(int, input().split())\na = list(map(int, input().split()))\ndq = deque()\nout = []\nfor i, x in enumerate(a):\n    while dq and a[dq[-1]] <= x:\n        dq.pop()\n    dq.append(i)\n    if dq[0] <= i - w:\n        dq.popleft()\n    if i >= w - 1:\n        out.append(a[dq[0]])\nprint(\" \".join(map(str, out)))\n",
+  "brute_solution": "n, w = map(int, input().split())\na = list(map(int, input().split()))\nprint(\" \".join(str(max(a[i:i + w])) for i in range(n - w + 1)))\n",
+  "starter_python": "n, w = map(int, input().split())\na = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n, w;\n    scanf(\"%d %d\", &n, &w);\n    static int a[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "deque",
+   "sliding-window"
+  ]
+ },
+ {
+  "title": "Largest Rectangle in a Histogram",
+  "category": "Stack",
+  "difficulty": "hard",
+  "statement": "A histogram has n bars of width 1 and the given heights. Find the area of the largest rectangle that fits entirely inside the histogram, with its base on the bottom line.",
+  "input_format": "Line 1: an integer n. Line 2: n space separated non-negative integers (bar heights).",
+  "output_format": "Print the largest rectangle area.",
+  "constraints": [
+   "1 <= n <= 100000",
+   "0 <= height <= 10000"
+  ],
+  "sample_inputs": [
+   "6\n2 1 5 6 2 3",
+   "2\n2 4"
+  ],
+  "sample_explanations": [
+   "The bars of heights 5 and 6 form a rectangle of width 2 and height 5: area 10.",
+   "Either the bar of 4 alone (area 4) or both bars at height 2 (area 4)."
+  ],
+  "hidden_inputs": [
+   "1\n7",
+   "5\n1 1 1 1 1",
+   "4\n6 2 5 4",
+   "6\n2 4 2 1 10 6",
+   "7\n3 0 3 3 0 4 4",
+   "5\n5 4 3 2 1"
+  ],
+  "reference_solution": "n = int(input())\nh = list(map(int, input().split())) + [0]\nst = []\nbest = 0\nfor i, x in enumerate(h):\n    while st and h[st[-1]] >= x:\n        top = st.pop()\n        width = i if not st else i - st[-1] - 1\n        best = max(best, h[top] * width)\n    st.append(i)\nprint(best)\n",
+  "brute_solution": "n = int(input())\nh = list(map(int, input().split()))\nbest = 0\nfor i in range(n):\n    low = h[i]\n    for j in range(i, n):\n        low = min(low, h[j])\n        best = max(best, low * (j - i + 1))\nprint(best)\n",
+  "starter_python": "n = int(input())\nh = list(map(int, input().split()))\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    static int h[100000];\n    for (int i = 0; i < n; i++) scanf(\"%d\", &h[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "stack",
+   "arrays"
+  ]
+ },
+ {
+  "title": "Knapsack Best Value",
+  "category": "Dynamic Programming",
+  "difficulty": "hard",
+  "statement": "You have a bag that holds at most W units of weight and a set of items, each with a weight and a value. Choose some of the items (each at most once) so that the total weight does not exceed W and the total value is as large as possible.",
+  "input_format": "Line 1: two integers n and W. Then n lines, each with the weight and the value of an item.",
+  "output_format": "Print the maximum total value.",
+  "constraints": [
+   "1 <= n <= 15",
+   "1 <= weight <= 100",
+   "1 <= value <= 1000",
+   "1 <= W <= 1000"
+  ],
+  "sample_inputs": [
+   "3 50\n10 60\n20 100\n30 120",
+   "2 5\n10 99\n20 98"
+  ],
+  "sample_explanations": [
+   "Taking the items of weight 20 and 30 gives value 220 within the limit.",
+   "Neither item fits in the bag, so the value is 0."
+  ],
+  "hidden_inputs": [
+   "1 10\n10 5",
+   "4 7\n1 1\n3 4\n4 5\n5 7",
+   "5 10\n5 10\n4 40\n6 30\n3 50\n2 15",
+   "3 100\n50 60\n50 70\n50 80",
+   "6 15\n3 8\n4 9\n5 12\n6 14\n7 20\n8 22"
+  ],
+  "reference_solution": "n, W = map(int, input().split())\nitems = [tuple(map(int, input().split())) for _ in range(n)]\ndp = [0] * (W + 1)\nfor w, v in items:\n    for c in range(W, w - 1, -1):\n        dp[c] = max(dp[c], dp[c - w] + v)\nprint(dp[W])\n",
+  "brute_solution": "n, W = map(int, input().split())\nitems = [tuple(map(int, input().split())) for _ in range(n)]\nbest = 0\nfor mask in range(1 << n):\n    tw = tv = 0\n    for i in range(n):\n        if mask >> i & 1:\n            tw += items[i][0]\n            tv += items[i][1]\n    if tw <= W and tv > best:\n        best = tv\nprint(best)\n",
+  "starter_python": "n, W = map(int, input().split())\nitems = [tuple(map(int, input().split())) for _ in range(n)]\n# TODO: solve the problem and print the answer\n",
+  "starter_c": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    int n, W;\n    scanf(\"%d %d\", &n, &W);\n    int w[15], v[15];\n    for (int i = 0; i < n; i++) scanf(\"%d %d\", &w[i], &v[i]);\n    /* TODO: solve the problem and print the answer */\n    return 0;\n}\n",
+  "skill_tags": [
+   "dynamic-programming",
+   "knapsack"
+  ]
+ }
+]
