@@ -129,7 +129,7 @@ async function complete(service: Service, attemptId: string, result: Record<stri
  * A verified Domain pass moves the ONE career ELO ledger, the skill graph and the roadmap (the same path the workstation passes use), so the
  * dashboard, portfolio, passport and leaderboard all see it. Idempotent per attempt; never throws, the attempt result is already saved.
  */
-export async function propagateDomainPass(service: Service, userId: string, attempt: AttemptRow, challenge: ChallengeRow): Promise<void> {
+export async function propagateDomainPass(service: Service, userId: string, attempt: AttemptRow, challenge: ChallengeRow, elo: number): Promise<void> {
   try {
     const { recordArenaPass } = await import("@/lib/assess/arena"); // lazy: it pulls in the service client, which pure-logic tests must not need
     const db = untyped(service);
@@ -144,7 +144,7 @@ export async function propagateDomainPass(service: Service, userId: string, atte
     const { data: career } = await db.from("careers").select("key").eq("id", careerId).maybeSingle();
     if (!career) return;
     const skillIds = ((skills ?? []) as { skill_id: string }[]).map((s) => s.skill_id);
-    await recordArenaPass(userId, { attemptId: attempt.id, roleKey: (career as { key: string }).key, skillId: skillIds[0] ?? null, extraSkillIds: skillIds.slice(1), difficulty: challenge.difficulty as "easy" | "medium" | "hard" }, service as unknown as Db);
+    await recordArenaPass(userId, { attemptId: attempt.id, roleKey: (career as { key: string }).key, skillId: skillIds[0] ?? null, extraSkillIds: skillIds.slice(1), difficulty: challenge.difficulty as "easy" | "medium" | "hard", elo }, service as unknown as Db);
   } catch (e) {
     console.error("[arena] domain pass propagation failed:", e);
   }
@@ -328,7 +328,7 @@ export async function submitChallengeAttempt(
     userId
   );
   await closeUsage(service, attemptId, "COMPLETED", now);
-  if (challenge.track === "domain" && !done.already_completed && done.status === "PASSED" && done.evidence_status === "VERIFIED_AUTOMATED") await propagateDomainPass(service, userId, attempt, challenge);
+  if (challenge.track === "domain" && !done.already_completed && done.status === "PASSED" && done.evidence_status === "VERIFIED_AUTOMATED") await propagateDomainPass(service, userId, attempt, challenge, done.elo_delta);
   return resultOf(await loadOwnAttempt(service, userId, attemptId));
 }
 

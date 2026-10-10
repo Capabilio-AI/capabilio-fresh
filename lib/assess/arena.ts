@@ -7,7 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { syncSkillGraph } from "./graph-sync";
 import { refreshRoadmap } from "./roadmap";
 import { track, type Db } from "./db";
-import { ARENA_DIFFICULTY_SCALE, crossedMilestone } from "./arena-rules";
+import { ARENA_DIFFICULTY_SCALE, crossedMilestone, scaleForElo } from "./arena-rules";
 
 export interface ArenaPass {
   attemptId: string;
@@ -16,6 +16,8 @@ export interface ArenaPass {
   /** A catalog challenge can exercise several skills; each gets its own evidence row (the first reuses the attempt id as its key). */
   extraSkillIds?: string[];
   difficulty: keyof typeof ARENA_DIFFICULTY_SCALE;
+  /** The ELO the challenge advertised and awarded; when set it is applied exactly, instead of the generic difficulty scale. */
+  elo?: number;
 }
 
 /**
@@ -30,7 +32,7 @@ export async function recordArenaPass(userId: string, pass: ArenaPass, db: Db = 
 
     const { data, error } = await db.rpc("apply_elo_event", {
       p_student: userId, p_career: career.id, p_source: "ARENA", p_source_id: pass.attemptId, p_correct: true,
-      p_reason: `Arena ${pass.difficulty} challenge passed`, p_scale: ARENA_DIFFICULTY_SCALE[pass.difficulty],
+      p_reason: `Arena ${pass.difficulty} challenge passed`, p_scale: pass.elo && pass.elo > 0 ? scaleForElo(pass.elo) : ARENA_DIFFICULTY_SCALE[pass.difficulty],
     });
     if (error) throw error;
     const ev = data as { previous: number; change: number; newRating: number; replayed: boolean };

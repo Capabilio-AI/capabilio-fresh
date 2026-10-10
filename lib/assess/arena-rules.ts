@@ -7,3 +7,7 @@ export const ROADMAP_ELO_MILESTONE = 50;
 
 export const crossedMilestone = (previous: number, next: number, step = ROADMAP_ELO_MILESTONE) => Math.floor(next / step) > Math.floor(previous / step);
 
+
+/** The ARENA rule's base delta in elo_rules. A pass worth N ELO on its ticket is applied with scale N / this, so the ledger moves by exactly what the student was shown. */
+export const ARENA_BASE_DELTA = 4;
+export const scaleForElo = (elo: number) => elo / ARENA_BASE_DELTA;
