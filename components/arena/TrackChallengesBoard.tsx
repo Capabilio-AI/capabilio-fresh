@@ -10,6 +10,7 @@ import { DomainLeaderboard } from "./DomainLeaderboard";
 import { ChallengeHistory } from "./ChallengeHistory";
 import { DomainHistory } from "./DomainHistory";
 import { ChallengeStreak } from "./ChallengeStreak";
+import { ChallengeWheel } from "./ChallengeWheel";
 
 const EMPTY_STATE: TrackState = { scopeKey: null, scopeLabel: null, challenges: [] };
 
@@ -54,6 +55,8 @@ export function TrackChallengesBoard({ track }: { track: "stream" | "domain" }) 
             <div className="flex justify-center py-16">
               <ThinkingOrb state="connecting" size={64} theme="light" />
             </div>
+          ) : data.needsSpin ? (
+            <ChallengeWheel onStart={load} />
           ) : (
             <TrackWorkspaceView state={data} emptyHint="Add your branch in Education to unlock Stream challenges." onRefresh={load} />
           ))}

@@ -36,10 +36,10 @@ export default async function ArenaChallengesPage() {
           title="Stream Challenges"
           description={
             scope
-              ? "A fresh batch of 8 every Monday, drawn straight from your own branch and subjects. Practice regularly, build subject skills, and get better every week."
-              : "Add your branch in Education to unlock a fresh batch of 8 challenges from your own curriculum, every Monday."
+              ? "Spin the wheel every Sunday to get 4 to 9 fresh challenges, drawn straight from your own branch and subjects. Practice regularly, build subject skills, and get better every week."
+              : "Add your branch in Education to unlock a weekly wheel spin and 4 to 9 challenges from your own curriculum."
           }
-          count="8 challenges"
+          count="4–9 challenges"
           timing="8–15 min each"
           reward="Earn points"
           context={scope ? { text: `Your stream: ${scope.branch}`, href: "/profile", label: "change" } : { text: "No branch on your profile yet", href: "/profile", label: "Add your branch" }}

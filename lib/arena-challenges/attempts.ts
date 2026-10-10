@@ -7,7 +7,7 @@ import { evaluateRuntimeGate, loadRuntimeSetting, loadStudentUsageToday } from "
 import type { RuntimeType } from "@/lib/arena-runtime/types";
 import { runSqlQueries } from "@/lib/arena-workstations/engines/sql-runner";
 import { advanceStreak } from "./streak";
-import { currentWeekStart } from "./week";
+import { currentStreamWeek, currentWeekStart } from "./week";
 import { MAX_DRAFT_BYTES, expiresAtFor, hintPenalty, isFinal, isPastDeadline, timeSpentSeconds, type AttemptStatus } from "./attempt-state";
 import { SubmissionSchema, type CheckRow, type RunSql } from "./checks";
 import { GRADING_VERSION, gradeAttempt } from "./grade";
@@ -103,7 +103,7 @@ async function assertEligible(service: Service, userId: string, challenge: Chall
     if (!data?.length) throw new ChallengeAttemptError("This challenge isn't part of your target career.", 403);
     return;
   }
-  const { data: week } = await service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).eq("week_start", currentWeekStart()).maybeSingle();
+  const { data: week } = await service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).eq("week_start", currentStreamWeek()).maybeSingle();
   if (!week?.challenge_ids.includes(challenge.id)) throw new ChallengeAttemptError("This challenge isn't in your batch this week.", 403);
 }
 

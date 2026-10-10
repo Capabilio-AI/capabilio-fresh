@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/api/require-user";
 import { resolveStreamScope } from "@/lib/arena-challenges/resolve-scope";
 import { getOrAssignWeeklyBatch } from "@/lib/arena-challenges/weekly-batch";
 import { loadStreamStudentContext } from "@/lib/arena-challenges/stream-context";
+import { getSpin } from "@/lib/arena-challenges/spin";
 import { timeLimitForDifficulty } from "@/lib/arena-challenges/timer";
 
 const DIFFICULTY_RANK: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
@@ -22,8 +23,14 @@ export async function GET() {
     return NextResponse.json({ scopeKey: null, scopeLabel: null, weekStart: null, challenges: [], shortfall: 0, emptyReason: "no_branch" });
   }
 
+  // the week's challenges open only after the student has spun the wheel and scratched their card
+  const { weekStart: spinWeek, spin } = await getSpin(service, auth.userId);
+  if (!spin?.revealed) {
+    return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: spinWeek, needsSpin: true, challenges: [], shortfall: 0, emptyReason: null });
+  }
+
   const student = await loadStreamStudentContext(service, auth.userId);
-  const batch = await getOrAssignWeeklyBatch(service, auth.userId, scope, student);
+  const batch = await getOrAssignWeeklyBatch(service, auth.userId, scope, student, spin.count);
 
   const [{ data: challenges }, { data: completions }] = await Promise.all([
     batch.challengeIds.length

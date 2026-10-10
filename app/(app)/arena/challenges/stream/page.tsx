@@ -19,7 +19,7 @@ export default async function StreamChallengesPage() {
         Challenges
       </Link>
       <h1 className="mt-2 font-lp-display text-[26px] font-bold text-[var(--m-ink)]">Stream Challenges</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">A fresh batch of 8 every Monday, from your own branch curriculum.</p>
+      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Spin the wheel every Sunday at 12:00 AM to get 4 to 9 fresh challenges from your own branch curriculum.</p>
       <div className="pt-6">
         <TrackChallengesBoard track="stream" />
       </div>

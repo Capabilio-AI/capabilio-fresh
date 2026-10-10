@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 const W = 340;
@@ -31,10 +30,11 @@ interface Props {
   /** already revealed on an earlier visit */
   revealed: boolean;
   onReveal: () => void;
-  href: string;
+  /** the student pressed "Start" after revealing */
+  onStart: () => void;
 }
 
-export function ScratchCard({ value, revealed, onReveal, href }: Props) {
+export function ScratchCard({ value, revealed, onReveal, onStart }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const moves = useRef(0);
@@ -87,10 +87,10 @@ export function ScratchCard({ value, revealed, onReveal, href }: Props) {
         )}
       </div>
       {done ? (
-        <Link href={href} className="mt-5 inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold text-white"
+        <button type="button" onClick={onStart} className="mt-5 inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold text-white"
           style={{ background: "linear-gradient(135deg,#d95d39,#e8844f)", boxShadow: "0 10px 30px rgba(217,93,57,.45)" }}>
           Start your {value} challenges <ArrowRight size={16} />
-        </Link>
+        </button>
       ) : (
         <p className="mt-4 text-[12.5px]" style={{ color: "rgba(255,255,255,.65)" }}>Use your finger or mouse to scratch the silver.</p>
       )}

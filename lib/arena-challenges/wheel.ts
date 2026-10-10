@@ -1,16 +1,9 @@
-// Weekly challenge-count wheel: every Sunday the student spins once and the card it lands on is that week's challenge count.
+// Weekly challenge-count wheel: every Sunday (IST) the student spins once and the card it lands on is that week's challenge count.
 export const WHEEL_COUNTS = [4, 5, 6, 7, 8, 9] as const;
 export const SEGMENT_DEGREES = 360 / WHEEL_COUNTS.length;
 export const FULL_TURNS = 6;
 
-/** Pure. Local-date key (YYYY-MM-DD) of the Sunday on or before `date`: the spin for a week opens at that Sunday's 00:00. */
-export function spinWeekKey(date: Date): string {
-  const sunday = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${sunday.getFullYear()}-${p(sunday.getMonth() + 1)}-${p(sunday.getDate())}`;
-}
-
-/** Server-side pick in the real feature; the prototype calls it on the client with Math.random. */
+/** Index of the card the wheel lands on. The server calls it with a CSPRNG; the client only animates to the stored result. */
 export function pickIndex(rand: (max: number) => number = (n) => Math.floor(Math.random() * n)): number {
   return rand(WHEEL_COUNTS.length);
 }

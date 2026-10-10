@@ -78,3 +78,15 @@ describe("selectStreamBatch", () => {
     expect(selectStreamBatch(base({}))).toMatchObject({ ids: [], shortfall: BATCH_SIZE });
   });
 });
+
+describe("scaleMix and batch size", () => {
+  it("keeps the total exact for every wheel number", async () => {
+    const { scaleMix, targetMix } = await import("./select-stream");
+    for (const size of [4, 5, 6, 7, 8, 9]) {
+      for (const points of [0, 150, 500]) {
+        const m = scaleMix(targetMix(points), size);
+        expect(m.easy + m.medium + m.hard).toBe(size);
+      }
+    }
+  });
+});

@@ -2,6 +2,7 @@ export type Difficulty = "easy" | "medium" | "hard";
 export type CurriculumTier = "CURRENT_YEAR" | "ADJACENT_YEAR" | "GENERAL";
 
 export const BATCH_SIZE = 8;
+const DIFFICULTY_ORDER: Difficulty[] = ["easy", "medium", "hard"];
 
 export interface StreamCandidate {
   id: string;
@@ -27,6 +28,8 @@ export interface StreamSelectionInput {
   points: number;
   /** same seed -> same batch (user id + week start) */
   seed: string;
+  /** how many to pick: the student's wheel number for the week (default BATCH_SIZE) */
+  size?: number;
 }
 
 export interface StreamSelection {
@@ -48,6 +51,15 @@ export function stableHash(text: string): number {
   return h;
 }
 
+/** Scales a mix (which sums to BATCH_SIZE) to `size` challenges, largest remainder first, keeping the total exact. */
+export function scaleMix(mix: Record<Difficulty, number>, size: number): Record<Difficulty, number> {
+  const raw = DIFFICULTY_ORDER.map((d) => ({ d, exact: (mix[d] * size) / BATCH_SIZE }));
+  const out = Object.fromEntries(raw.map((r) => [r.d, Math.floor(r.exact)])) as Record<Difficulty, number>;
+  let left = size - DIFFICULTY_ORDER.reduce((a, d) => a + out[d], 0);
+  for (const r of [...raw].sort((a, b) => (b.exact % 1) - (a.exact % 1))) if (left-- > 0) out[r.d]++;
+  return out;
+}
+
 /** How many easy/medium/hard to aim for, by the student's Stream points. */
 export function targetMix(points: number): Record<Difficulty, number> {
   if (points < 100) return { easy: 4, medium: 3, hard: 1 };
@@ -55,7 +67,6 @@ export function targetMix(points: number): Record<Difficulty, number> {
   return { easy: 1, medium: 3, hard: 4 };
 }
 
-const DIFFICULTY_ORDER: Difficulty[] = ["easy", "medium", "hard"];
 const rankOf = (d: string) => Math.max(0, DIFFICULTY_ORDER.indexOf(d as Difficulty));
 
 /** Pure. Which year of the student's curriculum a challenge belongs to, via its course tags matching real course titles. */
@@ -78,7 +89,7 @@ const TIER_RANK: Record<CurriculumTier, number> = { CURRENT_YEAR: 0, ADJACENT_YE
 /**
  * Pure and deterministic. From PUBLISHED, unsolved challenges: prefer the student's current-year subjects, then adjacent years, then
  * general fundamentals; avoid what they were just served; aim for a difficulty mix fitting their points; spread across subjects.
- * Returns fewer than BATCH_SIZE (with `shortfall`) rather than padding.
+ * Returns fewer than `size` (with `shortfall`) rather than padding.
  */
 export function selectStreamBatch(input: StreamSelectionInput): StreamSelection {
   const tiers: Record<string, CurriculumTier> = {};
@@ -107,24 +118,25 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
     return left.filter((c) => bucketOf.get(c.id) === best).sort((a, b) => (perCategory.get(a.category) ?? 0) - (perCategory.get(b.category) ?? 0))[0];
   };
 
-  const mix = targetMix(input.points);
+  const size = input.size ?? BATCH_SIZE;
+  const mix = scaleMix(targetMix(input.points), size);
   for (const d of DIFFICULTY_ORDER) {
     const ofDifficulty = candidates.filter((c) => c.difficulty === d);
-    for (let i = 0; i < mix[d] && picked.length < BATCH_SIZE; i++) {
+    for (let i = 0; i < mix[d] && picked.length < size; i++) {
       const c = next(ofDifficulty);
       if (!c) break;
       take(c);
     }
   }
   // a difficulty ran short: fill from whatever real content remains, nearest to the student's target level first
-  const targetRank = mix.hard >= 4 ? 2 : mix.easy >= 4 ? 0 : 1;
+  const targetRank = mix.hard > mix.easy && mix.hard >= mix.medium ? 2 : mix.easy > mix.hard && mix.easy >= mix.medium ? 0 : 1;
   const rest = candidates.filter((c) => !picked.includes(c)).sort((a, b) => Math.abs(rankOf(a.difficulty) - targetRank) - Math.abs(rankOf(b.difficulty) - targetRank));
-  while (picked.length < BATCH_SIZE) {
+  while (picked.length < size) {
     const c = next(rest);
     if (!c) break;
     take(c);
   }
 
   picked.sort((a, b) => rankOf(a.difficulty) - rankOf(b.difficulty));
-  return { ids: picked.map((c) => c.id), tiers, shortfall: BATCH_SIZE - picked.length };
+  return { ids: picked.map((c) => c.id), tiers, shortfall: size - picked.length };
 }

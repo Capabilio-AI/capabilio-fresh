@@ -10,7 +10,9 @@ import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 export interface TrackState {
   scopeKey: string | null;
   scopeLabel: string | null;
-  /** how many of the weekly 8 could not be filled from published content */
+  /** this week's wheel has not been spun and scratched yet */
+  needsSpin?: boolean;
+  /** how many of this week's wheel number could not be filled from published content */
   shortfall?: number;
   challenges: (ChallengeDetail & { solved: boolean })[];
 }

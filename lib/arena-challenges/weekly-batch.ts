@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { currentWeekStart, weekStartOf } from "./week";
+import { currentStreamWeek, weekStartOf } from "./week";
 import { ensureChallengePool } from "./generate";
 import type { StreamScope } from "./resolve-scope";
 import { BATCH_SIZE, selectStreamBatch } from "./select-stream";
@@ -9,22 +9,22 @@ import { loadStreamPool, type StreamStudentContext } from "./stream-context";
 export interface WeeklyBatch {
   weekStart: string;
   challengeIds: string[];
-  /** BATCH_SIZE minus what could be filled from real published content */
+  /** size minus what could be filled from real published content */
   shortfall: number;
 }
 
 const RECENT_WEEKS = 2;
 
 /**
- * One batch of up to BATCH_SIZE challenges per (user, Monday week), chosen by selectStreamBatch from PUBLISHED content only and then fixed
+ * One batch of up to `size` (the student's wheel number) challenges per (user, Sunday-IST week), chosen by selectStreamBatch from PUBLISHED content only and then fixed
  * for the week. An empty batch is not frozen: it is re-picked on the next request so newly published challenges appear.
- * ponytail: a week with a short (non-empty) batch stays short until Monday; re-pick on publish if that proves annoying.
+ * ponytail: a week with a short (non-empty) batch stays short until next Sunday; re-pick on publish if that proves annoying.
  */
-export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, userId: string, scope: StreamScope, student: StreamStudentContext): Promise<WeeklyBatch> {
-  const weekStart = currentWeekStart();
+export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, userId: string, scope: StreamScope, student: StreamStudentContext, size: number = BATCH_SIZE): Promise<WeeklyBatch> {
+  const weekStart = currentStreamWeek();
 
   const { data: existing } = await service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).eq("week_start", weekStart).maybeSingle();
-  if (existing && existing.challenge_ids.length > 0) return { weekStart, challengeIds: existing.challenge_ids, shortfall: Math.max(0, BATCH_SIZE - existing.challenge_ids.length) };
+  if (existing && existing.challenge_ids.length > 0) return { weekStart, challengeIds: existing.challenge_ids, shortfall: Math.max(0, size - existing.challenge_ids.length) };
   if (existing) await service.from("arena_stream_weeks").delete().eq("user_id", userId).eq("week_start", weekStart);
 
   // Best-effort: new AI output is stored as DRAFT for admin review and is never served from here; an outage never blocks the batch.
@@ -50,6 +50,7 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
     currentYear: student.currentYear,
     points: stats?.points ?? 0,
     seed: `${userId}:${weekStart}`,
+    size,
   });
 
   const { error } = await service.from("arena_stream_weeks").insert({ user_id: userId, week_start: weekStart, scope_key: scope.scopeKey, challenge_ids: selection.ids });
@@ -59,5 +60,5 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
   if (error.code !== "23505") throw error;
   const { data: winner, error: refetchError } = await service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).eq("week_start", weekStart).single();
   if (refetchError || !winner) throw refetchError ?? new Error("Weekly batch missing after conflict");
-  return { weekStart, challengeIds: winner.challenge_ids, shortfall: Math.max(0, BATCH_SIZE - winner.challenge_ids.length) };
+  return { weekStart, challengeIds: winner.challenge_ids, shortfall: Math.max(0, size - winner.challenge_ids.length) };
 }

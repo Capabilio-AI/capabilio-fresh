@@ -1,24 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RotateCcw } from "lucide-react";
-import { SEGMENT_DEGREES, WHEEL_COUNTS, pickIndex, rotationFor, segmentAt, spinWeekKey } from "@/lib/arena-challenges/wheel";
+import { SEGMENT_DEGREES, WHEEL_COUNTS, rotationFor, segmentAt } from "@/lib/arena-challenges/wheel";
 import { ScratchCard } from "./ScratchCard";
 
-// PROTOTYPE: the result is picked and remembered in this browser (localStorage) so the flow can be tried out.
-// In the real feature the server picks the number once per week and stores it; the client only animates to it.
+// The server draws the week's number (POST /api/arena/wheel); this component only animates to it, then runs the scratch-card reveal.
 const SPIN_MS = 6500;
 const REDUCED_SPIN_MS = 900;
 const SIZE = 440;
 const R = 196;
-const CHALLENGES_HREF = "/arena/challenges/stream"; // the common (stream) challenges tab
 // [rim colour, inner colour, numeral colour]
 const SEGMENTS: readonly (readonly [string, string, string])[] = [
   ["#ff7a45", "#c2410c", "#fff"], ["#5b7cff", "#2f45c9", "#fff"], ["#22c58b", "#0f7a55", "#fff"],
   ["#ffc83d", "#d98a00", "#2a1a00"], ["#a678ff", "#6a35d6", "#fff"], ["#ff5a76", "#c0243f", "#fff"],
 ];
 const bulbs = Array.from({ length: 30 }, (_, i) => i);
-const storeKey = (week: string) => `capabilio:wheel-proto:v2:${week}`;
 const ink = "#ffffff", soft = "rgba(255,255,255,.68)";
 
 const polar = (deg: number, r: number) => {
@@ -32,19 +28,17 @@ const wedge = (i: number) => {
 };
 const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
 
-interface Saved { value: number; scratched: boolean }
-function readSaved(week: string): Saved | null {
-  try {
-    const s = JSON.parse(localStorage.getItem(storeKey(week)) ?? "null") as Saved | null;
-    return s && WHEEL_COUNTS.includes(s.value as never) ? s : null;
-  } catch { return null; }
+interface WheelState { weekStart: string; spin: { count: number; revealed: boolean } | null }
+async function callWheel(action?: "spin" | "reveal"): Promise<WheelState> {
+  const res = await fetch("/api/arena/wheel", action ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) } : undefined);
+  if (!res.ok) throw new Error("wheel request failed");
+  return res.json();
 }
-const writeSaved = (week: string, s: Saved | null) => {
-  try { if (s) localStorage.setItem(storeKey(week), JSON.stringify(s)); else localStorage.removeItem(storeKey(week)); } catch { /* prototype only */ }
-};
 
-export function ChallengeWheel() {
-  const week = useMemo(() => spinWeekKey(new Date()), []);
+/** `onStart` runs after the card is revealed and the student presses Start: the caller then loads the week's challenges. */
+export function ChallengeWheel({ onStart }: { onStart: () => void }) {
+  const [week, setWeek] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const disc = useRef<SVGGElement>(null);
   const flap = useRef<SVGGElement>(null);
   const raf = useRef(0);
@@ -65,30 +59,43 @@ export function ChallengeWheel() {
   };
 
   useEffect(() => {
-    queueMicrotask(() => { // localStorage is browser-only, so the saved spin is applied after mount
-      const saved = readSaved(week);
-      if (saved) {
-        rotation.current = rotationFor(WHEEL_COUNTS.indexOf(saved.value as never), 0) % 360;
+    let alive = true;
+    callWheel().then((st) => {
+      if (!alive) return;
+      setWeek(st.weekStart);
+      if (st.spin) {
+        rotation.current = rotationFor(WHEEL_COUNTS.indexOf(st.spin.count as never), 0) % 360;
         paint(rotation.current, 0);
-        setValue(saved.value);
-        setEarlier(saved.scratched);
-        setPhase(saved.scratched ? "done" : "scratch");
+        setValue(st.spin.count);
+        setEarlier(st.spin.revealed);
+        setPhase(st.spin.revealed ? "done" : "scratch");
       }
       setReady(true);
-    });
-    return () => cancelAnimationFrame(raf.current);
-  }, [week]);
+    }).catch(() => { if (alive) setError("Could not load your wheel. Refresh to try again."); });
+    return () => { alive = false; cancelAnimationFrame(raf.current); };
+  }, []);
 
-  function spin() {
-    if (phase !== "idle") return;
-    const index = pickIndex();
+  async function spin() {
+    if (phase !== "idle" || !ready) return;
+    setPhase("spinning");
+    setError(null);
+    let count: number;
+    try {
+      const st = await callWheel("spin");
+      if (!st.spin) throw new Error("no spin");
+      count = st.spin.count;
+      setWeek(st.weekStart);
+    } catch {
+      setError("The wheel could not start. Please try again.");
+      setPhase("idle");
+      return;
+    }
+    const index = WHEEL_COUNTS.indexOf(count as never);
     const from = rotation.current % 360;
     const to = rotationFor(index, from, (Math.random() - 0.5) * 0.7);
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const ms = reduce ? REDUCED_SPIN_MS : SPIN_MS;
+    const ms = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? REDUCED_SPIN_MS : SPIN_MS;
     const t0 = performance.now();
     let prev = from;
-    setPhase("spinning");
     const tick = (now: number) => {
       const t = Math.min(1, (now - t0) / ms);
       const deg = from + (to - from) * easeOutQuart(t);
@@ -97,17 +104,17 @@ export function ChallengeWheel() {
       prev = deg;
       if (t < 1) { raf.current = requestAnimationFrame(tick); return; }
       paint(deg, 0);
-      const v = WHEEL_COUNTS[index];
-      writeSaved(week, { value: v, scratched: false });
-      setValue(v);
+      setValue(count);
       setPhase("scratch");
     };
     raf.current = requestAnimationFrame(tick);
   }
 
-  const reset = () => { writeSaved(week, null); setValue(null); setEarlier(false); setPhase("idle"); };
-  const onReveal = () => { if (value !== null) writeSaved(week, { value, scratched: true }); setPhase("done"); };
-  const [rim, inner] = SEGMENTS[lit];
+  const onReveal = () => {
+    setPhase("done");
+    callWheel("reveal").catch(() => setError("Your reveal could not be saved; pressing Start will retry."));
+  };
+  const [rim] = SEGMENTS[lit];
 
   return (
     <div className="relative overflow-hidden rounded-3xl px-4 py-10"
@@ -119,12 +126,12 @@ export function ChallengeWheel() {
       {phase === "done" && <Confetti />}
 
       <div className="relative mx-auto flex max-w-[480px] flex-col items-center">
-        <p style={{ color: rim, font: "700 12px Inter, sans-serif", letterSpacing: ".24em", textTransform: "uppercase" }}>Week of {week}</p>
+        <p style={{ color: rim, font: "700 12px Inter, sans-serif", letterSpacing: ".24em", textTransform: "uppercase" }}>{week ? `Week of ${week}` : "This week"}</p>
         <h2 className="mt-2 text-center" style={{ font: "800 32px/1.15 var(--font-lp-display, Inter, sans-serif)", color: ink }}>
           {phase === "idle" || phase === "spinning" ? "Spin for your week" : phase === "scratch" ? "Scratch your card" : `${value} challenges unlocked`}
         </h2>
         <p className="mt-1 text-center" style={{ color: soft, font: "400 13.5px/1.5 Inter, sans-serif" }}>
-          {phase === "idle" ? "One spin every Sunday decides how many challenges you get this week." :
+          {phase === "idle" ? "A new spin opens every Sunday at 12:00 AM. It decides how many Stream challenges you get this week." :
            phase === "spinning" ? "Hold your breath…" :
            phase === "scratch" ? "The wheel has chosen. Scratch to see your number." : "Locked in until next Sunday."}
         </p>
@@ -178,13 +185,10 @@ export function ChallengeWheel() {
           </button>
         )}
         {(phase === "scratch" || phase === "done") && value !== null && (
-          <div className="mt-8"><ScratchCard value={value} revealed={earlier} onReveal={onReveal} href={CHALLENGES_HREF} /></div>
+          <div className="mt-8"><ScratchCard value={value} revealed={earlier} onReveal={onReveal} onStart={onStart} /></div>
         )}
 
-        <button type="button" onClick={reset} className="mt-8 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
-          style={{ border: "1px solid rgba(255,255,255,.25)", color: soft, font: "500 12px Inter, sans-serif" }}>
-          <RotateCcw size={13} /> Reset spin (testing only)
-        </button>
+        {error && <p role="alert" className="mt-6" style={{ color: "#ff9aa8", font: "500 13px Inter, sans-serif" }}>{error}</p>}
       </div>
     </div>
   );
