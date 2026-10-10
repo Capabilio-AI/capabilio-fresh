@@ -33,7 +33,7 @@ export function anthropicAdapter(o: AnthropicOptions): LlmAdapter {
           body: JSON.stringify({
             model: req.model,
             max_tokens: req.maxTokens,
-            temperature: req.temperature,
+            // no temperature: current Claude models reject it as deprecated
             system: req.system,
             messages: [{ role: "user", content: req.user }],
             tools: [{ name: "answer", description: "Return the structured answer.", input_schema: req.jsonSchema }],

@@ -7,12 +7,13 @@ const reply = (status: number, body: unknown, headers: Record<string, string> = 
 
 describe("anthropicAdapter", () => {
   it("forces one tool call and returns its input as JSON text", async () => {
-    let sent: { model: string; tool_choice: unknown } | null = null;
+    let sent: { model: string; tool_choice: unknown; temperature?: number } | null = null;
     const f = (async (_u: unknown, init: RequestInit) => { sent = JSON.parse(init.body as string); return new Response(JSON.stringify({ content: [{ type: "tool_use", input: { a: 1 } }], usage: { input_tokens: 5, output_tokens: 7 } })); }) as unknown as typeof fetch;
     const out = await anthropicAdapter({ apiKey: "k", fetchImpl: f }).complete(req);
     expect(JSON.parse(out.text)).toEqual({ a: 1 });
     expect(out.usage).toEqual({ inputTokens: 5, outputTokens: 7 });
     expect(sent!.model).toBe("claude-haiku-5-5");
+    expect(sent!.temperature).toBeUndefined();
     expect(sent!.tool_choice).toEqual({ type: "tool", name: "answer" });
   });
 
