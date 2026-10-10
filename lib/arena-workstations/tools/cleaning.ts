@@ -54,7 +54,7 @@ Allowed steps (exact JSON):
 {"op":"drop_missing","column"}  {"op":"dedupe","columns":[...]}  {"op":"filter","column","operator":">"|">="|"<"|"<="|"="|"!=","value"}
 Every step must actually change the data, and the mess must be realistic (typos a CRM or form export really produces).`;
 
-  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn));
+  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn), { task: "arena_task" });
   const problems = problemsIn(raw);
   if (problems.length) throw new GenerationRejected(problems.join("; "));
   const expectedRows = applySteps(raw.dataset, raw.steps).rows.length; // server applies the steps — the key is computed, not asserted

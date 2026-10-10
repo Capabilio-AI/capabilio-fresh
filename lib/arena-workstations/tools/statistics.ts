@@ -58,7 +58,7 @@ Ask 1-${ctx.difficulty === "easy" ? 2 : 3} questions that genuinely help the sta
     return problems;
   };
 
-  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn));
+  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn), { task: "arena_task" });
   const problems = problemsIn(raw);
   if (problems.length) throw new GenerationRejected(problems.join("; "));
 

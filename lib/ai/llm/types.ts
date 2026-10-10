@@ -5,7 +5,7 @@ import type { z } from "zod";
  * everything provider-specific lives in an adapter. The older completeStructured() in ../provider.ts (roadmap generation) is left
  * as a facade and is not a second abstraction: it predates this and is migrated by adding a task, not by changing callers.
  */
-export type LlmTask = "question" | "question_verify" | "feedback" | "role_profile" | "role_resolve" | "challenge" | "challenge_verify" | "general";
+export type LlmTask = "question" | "question_verify" | "feedback" | "role_profile" | "role_resolve" | "challenge" | "challenge_verify" | "general" | "arena_task";
 
 export type LlmErrorKind = "rate_limit" | "timeout" | "invalid_output" | "provider_down" | "config";
 

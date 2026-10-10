@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/lib/supabase/types";
-import { cryptoRandomIndex, reconcileRotation, type RandomIndex, type RotationSnapshot } from "./rotation";
+import { cryptoRandomIndex, orderByWeakness, reconcileRotation, type RandomIndex, type RotationSnapshot } from "./rotation";
 import { logArenaEvent } from "./log";
 
 export interface Reservation {
@@ -10,6 +10,8 @@ export interface Reservation {
 }
 
 const MAX_RESERVE_TRIES = 4;
+/** An area the student has no rating for yet counts as an average one. */
+const DEFAULT_RATING = 1200;
 
 /**
  * Picks the area the next attempt will use WITHOUT consuming it. Persists a
@@ -22,7 +24,9 @@ export async function reserveNextArea(
   userId: string,
   roleKey: string,
   activeAreaKeys: string[],
-  randomIndex: RandomIndex = cryptoRandomIndex
+  randomIndex: RandomIndex = cryptoRandomIndex,
+  /** Arena rating per area; the lowest is served first. Omit to keep the plain rotation order. */
+  ratings?: Readonly<Record<string, number>>
 ): Promise<Reservation> {
   const { error: seedError } = await service.from("arena_rotation_state").upsert({ user_id: userId, role_key: roleKey }, { onConflict: "user_id,role_key", ignoreDuplicates: true });
   if (seedError) throw seedError;
@@ -32,7 +36,13 @@ export async function reserveNextArea(
     if (error || !row) throw error ?? new Error("Rotation state missing");
 
     const current: RotationSnapshot = { cycleNumber: row.cycle_number, remaining: row.remaining, served: row.served, lastServed: row.last_served };
-    const { next, changed } = reconcileRotation(current, activeAreaKeys, randomIndex);
+    const reconciled = reconcileRotation(current, activeAreaKeys, randomIndex);
+    const next = reconciled.next;
+    let changed = reconciled.changed;
+    if (ratings) {
+      const ordered = orderByWeakness(next.remaining, (area) => ratings[area] ?? DEFAULT_RATING, next.lastServed);
+      if (ordered.some((a, i) => a !== next.remaining[i])) { next.remaining = ordered; changed = true; }
+    }
     if (!changed) return { areaKey: next.remaining[0], version: row.version, cycleNumber: next.cycleNumber };
 
     const { data: updated, error: updateError } = await service

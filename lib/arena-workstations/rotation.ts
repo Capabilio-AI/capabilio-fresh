@@ -70,3 +70,14 @@ export function reconcileRotation(state: RotationSnapshot, active: readonly stri
   };
   return { next, changed: true };
 }
+
+/**
+ * Pure. Puts the student's weakest skill area at the head of the bag (lowest Arena rating first; equal ratings keep their current order).
+ * Every area is still served once per cycle, so nothing is starved: weakness only decides the ORDER within the cycle. The area just served
+ * is never drawn twice in a row.
+ */
+export function orderByWeakness(remaining: readonly string[], ratingOf: (area: string) => number, lastServed: string | null): string[] {
+  const ordered = remaining.map((area, i) => ({ area, i })).sort((a, b) => ratingOf(a.area) - ratingOf(b.area) || a.i - b.i).map((x) => x.area);
+  if (ordered.length > 1 && ordered[0] === lastServed) [ordered[0], ordered[1]] = [ordered[1], ordered[0]];
+  return ordered;
+}

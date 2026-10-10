@@ -57,7 +57,7 @@ Task types (exact JSON):
 The data is a clean business table (8-25 rows, numbers as JSON numbers, no zero denominators). Tasks must be what the
 stakeholder actually needs (e.g. line revenue, margin %, regional totals, tax rate lookup).`;
 
-  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn));
+  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn), { task: "arena_task" });
   const problems = problemsIn(raw);
   if (problems.length) throw new GenerationRejected(problems.join("; "));
 

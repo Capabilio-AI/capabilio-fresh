@@ -44,10 +44,10 @@ export async function completeJsonDetailed<T>(
   prompt: string,
   systemPrompt: string,
   schema: z.ZodType<T>,
-  opts: { maxTokens?: number; temperature?: number } = {}
+  opts: { maxTokens?: number; temperature?: number; task?: "general" | "arena_task" } = {}
 ): Promise<JsonCompletion<T>> {
   const startedAt = Date.now();
-  const out = await generateStructured({ task: "general", system: systemPrompt, user: prompt, schema, maxTokens: opts.maxTokens ?? 6000, temperature: opts.temperature ?? 0.4, promptVersion: "general.v1" });
+  const out = await generateStructured({ task: opts.task ?? "general", system: systemPrompt, user: prompt, schema, maxTokens: opts.maxTokens ?? 6000, temperature: opts.temperature ?? 0.4, promptVersion: "general.v1" });
   const { inputTokens, outputTokens } = out.usage;
   return {
     value: out.value,
@@ -59,6 +59,6 @@ export async function completeJsonDetailed<T>(
 }
 
 /** Same as completeJsonDetailed, for callers that only need the value. */
-export async function completeJson<T>(prompt: string, systemPrompt: string, schema: z.ZodType<T>): Promise<T> {
-  return (await completeJsonDetailed(prompt, systemPrompt, schema)).value;
+export async function completeJson<T>(prompt: string, systemPrompt: string, schema: z.ZodType<T>, opts: { task?: "general" | "arena_task" } = {}): Promise<T> {
+  return (await completeJsonDetailed(prompt, systemPrompt, schema, opts)).value;
 }

@@ -135,15 +135,15 @@ export async function startNextAttempt(service: Service, userId: string, statedR
     }
   }
 
-  const reservation = await reserveNextArea(service, userId, roleKey, enabled.map((a) => a.area_key));
+  // weakest skill first: the lowest current Arena rating among the role's areas is served next (read fresh, so it follows every completed task)
+  const { data: allRatings } = await service.from("arena_skill_ratings").select("area_key, rating").eq("user_id", userId).eq("role_key", roleKey);
+  const ratingByArea = Object.fromEntries((allRatings ?? []).map((r) => [r.area_key, r.rating]));
+  const reservation = await reserveNextArea(service, userId, roleKey, enabled.map((a) => a.area_key), undefined, ratingByArea);
   const area = enabled.find((a) => a.area_key === reservation.areaKey)!;
   const tool = toolFor(area.tool_type);
 
-  const [{ data: rating }, { data: previous }] = await Promise.all([
-    service.from("arena_skill_ratings").select("rating").eq("user_id", userId).eq("role_key", roleKey).eq("area_key", area.area_key).maybeSingle(),
-    service.from("arena_challenges").select("title").eq("user_id", userId).eq("scope_key", roleKey).order("generated_at", { ascending: false }).limit(20),
-  ]);
-  const difficulty = difficultyForRating(rating?.rating ?? 1200);
+  const { data: previous } = await service.from("arena_challenges").select("title").eq("user_id", userId).eq("scope_key", roleKey).order("generated_at", { ascending: false }).limit(20);
+  const difficulty = difficultyForRating(ratingByArea[area.area_key] ?? 1200);
 
   const generated = await generateWithRetries(
     area,

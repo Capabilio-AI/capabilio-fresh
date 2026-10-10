@@ -76,7 +76,7 @@ Shape:
 The result must contain at least one computed number (count, sum, average, rate…), have 1–20 rows, and be fully
 specified by "deliverable" (column meaning, rounding, sort order) so a competent analyst gets the same numbers.`;
 
-  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn));
+  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn), { task: "arena_task" });
   const problems = problemsIn(raw);
   if (problems.length) throw new GenerationRejected(problems.join("; "));
 
@@ -85,7 +85,8 @@ specified by "deliverable" (column meaning, rounding, sort order) so a competent
   const independent = await completeJson(
     `Schema (SQLite):\n${schemaText(raw.tables)}\n\nRequest:\n${raw.deliverable}`,
     `You are a careful senior data analyst. Write ONE SQLite SELECT query that produces exactly what the request asks for. Respond with JSON only: {"query": string}.`,
-    z.object({ query: z.string().min(10).max(3000) })
+    z.object({ query: z.string().min(10).max(3000) }),
+    { task: "arena_task" }
   );
   if (!isSingleReadOnlyStatement(independent.query)) throw new GenerationRejected("independent query was not a single SELECT");
 

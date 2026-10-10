@@ -122,3 +122,15 @@ describe("rotation", () => {
     expect([...bag].sort()).toEqual(["a", "b", "c"]);
   });
 });
+
+import { orderByWeakness } from "./rotation";
+describe("orderByWeakness", () => {
+  const rating = (r: Record<string, number>) => (a: string) => r[a] ?? 1200;
+  it("serves the lowest-rated area first and keeps the rest in their order on ties", () => {
+    expect(orderByWeakness(["sql", "stats", "clean"], rating({ sql: 1300, stats: 1100, clean: 1100 }), null)).toEqual(["stats", "clean", "sql"]);
+  });
+  it("never repeats the area just served", () => {
+    expect(orderByWeakness(["sql", "stats"], rating({ sql: 1000, stats: 1500 }), "sql")).toEqual(["stats", "sql"]);
+    expect(orderByWeakness(["sql"], rating({}), "sql")).toEqual(["sql"]);
+  });
+});

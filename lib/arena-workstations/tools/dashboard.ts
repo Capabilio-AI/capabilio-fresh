@@ -48,7 +48,7 @@ Shape:
 The dataset is clean (30-80 rows, dates "YYYY-MM-DD", real numbers) and the spec is the ONE chart that answers the
 stakeholder's question. Use "month" grain only with a date dimension; a time trend should be a line chart.`;
 
-  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn));
+  const raw = await completeJson(`Create the task.${avoidLine(ctx)}`, system, withProblems(GenerationSchema, problemsIn), { task: "arena_task" });
   const problems = problemsIn(raw);
   if (problems.length) throw new GenerationRejected(problems.join("; "));
 
