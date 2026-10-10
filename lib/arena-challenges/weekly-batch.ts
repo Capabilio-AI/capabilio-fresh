@@ -4,6 +4,7 @@ import { currentStreamWeek, weekStartOf } from "./week";
 import { ensureChallengePool } from "./generate";
 import type { StreamScope } from "./resolve-scope";
 import { BATCH_SIZE, selectStreamBatch } from "./select-stream";
+import { IT_CLUSTER_SCOPE_KEY } from "./branch-clusters";
 import { loadStreamPool, type StreamStudentContext } from "./stream-context";
 
 export interface WeeklyBatch {
@@ -29,7 +30,7 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
 
   // Best-effort: new AI output is stored as DRAFT for admin review and is never served from here; an outage never blocks the batch.
   try {
-    await ensureChallengePool(service, scope.scopeKey, scope.promptLabel);
+    if (scope.scopeKey !== IT_CLUSTER_SCOPE_KEY) await ensureChallengePool(service, scope.scopeKey, scope.promptLabel); // IT is filled by the weekly AI run instead
   } catch (generationError) {
     console.error(`[arena-challenges/weekly-batch] AI top-up failed for ${scope.scopeKey}:`, generationError);
   }

@@ -8,6 +8,8 @@ const TASK_PREFIX: Record<LlmTask, string> = {
   feedback: "FEEDBACK",
   role_profile: "ROLE_PROFILE",
   role_resolve: "ROLE_PROFILE",
+  challenge: "CHALLENGE",
+  challenge_verify: "CHALLENGE",
 };
 
 // openai/gpt-oss-120b is the largest chat model this account's Groq key can reach (see lib/ai/groq.ts).

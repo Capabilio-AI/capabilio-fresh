@@ -4,6 +4,8 @@ import { untyped } from "@/lib/org/db";
 import { getStudentDirection, needsYearConfirmation } from "@/lib/career/direction";
 import { loadPublishedCurriculum } from "@/lib/roadmap-engine/curriculum";
 import type { StreamScope } from "./resolve-scope";
+import { IT_CLUSTER_SCOPE_KEY } from "./branch-clusters";
+import { currentStreamWeek } from "./week";
 import type { StreamCandidate, StudentCourse } from "./select-stream";
 
 type Service = SupabaseClient<Database>;
@@ -35,6 +37,12 @@ interface PoolRow {
  * (branch-cluster content that predates explicit branch targeting). Drafts and retired content are never returned.
  */
 export async function loadStreamPool(service: Service, scope: Pick<StreamScope, "scopeKey" | "branchKey">): Promise<StreamCandidate[]> {
+  if (scope.scopeKey === IT_CLUSTER_SCOPE_KEY) {
+    // IT students get only this week's LeetCode-style set (generated once a week, see leetcode/weekly.ts)
+    const { data, error } = await untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags").eq("track", "stream").eq("status", "PUBLISHED").eq("kind", "leetcode").eq("week_start", currentStreamWeek());
+    if (error) throw error;
+    return ((data ?? []) as PoolRow[]).map((r) => ({ id: r.id, difficulty: r.difficulty, category: r.category, courseTags: r.course_tags ?? [] }));
+  }
   const base = () => untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags").eq("track", "stream").eq("status", "PUBLISHED").is("user_id", null);
   const [explicit, legacy] = await Promise.all([base().contains("branch_keys", [scope.branchKey]), base().eq("scope_key", scope.scopeKey).eq("branch_keys", "{}")]);
   if (explicit.error) throw explicit.error;

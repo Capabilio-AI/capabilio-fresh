@@ -18,6 +18,14 @@
     {
       "path": "/api/cron/roadmap-refresh",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/stream-weekly",
+      "schedule": "30 18 * * 6"
+    },
+    {
+      "path": "/api/cron/stream-weekly",
+      "schedule": "0 1 * * 0"
     }
   ]
 }

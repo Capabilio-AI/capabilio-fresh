@@ -15,6 +15,7 @@
     "ai:check": "node --env-file=.env.local --import tsx scripts/check-bedrock.mts",
     "assess:pool": "node --env-file=.env.local --import tsx scripts/assess-pool.mts",
     "assess:import": "node --env-file=.env.local --import tsx scripts/assess-import.mts",
+    "stream:weekly": "node --env-file=.env.local --import tsx scripts/stream-weekly.mts",
     "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts"
   },
   "dependencies": {

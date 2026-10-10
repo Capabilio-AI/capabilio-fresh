@@ -31,6 +31,13 @@ export function TrackChallengesBoard({ track }: { track: "stream" | "domain" }) 
     load();
   }, [track]);
 
+  // while the week's problems are still being written, check again every 10 seconds
+  useEffect(() => {
+    if (!data?.preparing) return;
+    const id = setInterval(load, 10_000);
+    return () => clearInterval(id);
+  }, [data?.preparing]);
+
   function load() {
     fetch("/api/arena/challenges")
       .then((res) => res.json())

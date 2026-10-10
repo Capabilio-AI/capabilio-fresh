@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Clock, Lock } from "lucide-react";
 import { ChallengeSolvePanel, type ChallengeDetail } from "./ChallengeSolvePanel";
+import { LeetcodeScreen } from "./LeetcodeScreen";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 
 export interface TrackState {
@@ -12,6 +13,8 @@ export interface TrackState {
   scopeLabel: string | null;
   /** this week's wheel has not been spun and scratched yet */
   needsSpin?: boolean;
+  /** this week's problems are still being written; the board polls until they exist */
+  preparing?: boolean;
   /** how many of this week's wheel number could not be filled from published content */
   shortfall?: number;
   challenges: (ChallengeDetail & { solved: boolean })[];
@@ -45,12 +48,25 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
     else setStartError(body.error ?? "Could not start this challenge.");
   }
 
+  if (state.preparing) {
+    return (
+      <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
+        <p className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Your challenges are being prepared</p>
+        <p className="mt-1 font-lp-body text-[13px] text-app-muted">This week&apos;s problems are written fresh every Sunday. It takes a few minutes. This page updates by itself.</p>
+      </div>
+    );
+  }
+
   if (!state.scopeKey) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
         <p className="font-lp-body text-[13.5px] text-app-muted">{emptyHint}</p>
       </div>
     );
+  }
+
+  if (openChallenge?.kind === "leetcode" && openChallenge.problem) {
+    return <LeetcodeScreen challenge={openChallenge} problem={openChallenge.problem} onDone={() => { setOpenChallenge(null); onRefresh(); }} />;
   }
 
   if (openChallenge) {

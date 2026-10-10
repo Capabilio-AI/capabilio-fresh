@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Countdown } from "./workstations/Countdown";
+import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
 
 export interface ChallengeDetail {
   id: string;
@@ -21,6 +22,8 @@ export interface ChallengeDetail {
   solved?: boolean;
   /** set for ticket-style challenges that run in a workstation (opened on their own page) */
   workstation_template_id?: string | null;
+  /** LeetCode-style problem (kind "leetcode"): opens in the full-screen workspace */
+  problem?: PublicProblem | null;
 }
 
 export const DIFFICULTY_CLASS: Record<string, string> = {

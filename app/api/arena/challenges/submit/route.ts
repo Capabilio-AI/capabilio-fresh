@@ -10,10 +10,15 @@ import { isNumericAnswerCorrect } from "@/lib/arena-challenges/numeric-answer";
 import { addChallengePoints } from "@/lib/arena-challenges/award";
 import { deriveArenaChallengeEvidence, ARENA_CHALLENGES_ANALYSIS_VERSION } from "@/lib/evidence/from-arena-challenges";
 import { recordEvidence } from "@/lib/evidence/record";
+import { judge, type TestVerdict } from "@/lib/arena-challenges/leetcode/judge";
+import { loadLeetcodeForStudent } from "@/lib/arena-challenges/leetcode/access";
+
+export const maxDuration = 120;
 
 const BodySchema = z.object({
   challengeId: z.string().uuid(),
   code: z.string().min(1).max(20000).optional(),
+  language: z.string().optional(),
   answer: z.string().min(1).max(100).optional(),
   working: z.string().max(5000).optional(),
 });
@@ -45,11 +50,32 @@ export async function POST(request: Request) {
   }
 
   let isCorrect: boolean;
+  let tests: { index: number; passed: boolean; hidden: boolean; input?: string; expected?: string; actual?: string; error?: string }[] | undefined;
   let stdout = "";
   let stderr = "";
   let submission: string;
 
-  if (challenge.kind === "numeric") {
+  if (challenge.kind === "leetcode") {
+    // LeetCode-style: judged on every test, hidden ones included. Once passed it is locked: no resubmission, no second award.
+    if (!parsed.data.code) return NextResponse.json({ error: "Write your code first." }, { status: 400 });
+    const lc = await loadLeetcodeForStudent(service, auth.userId, challenge.id);
+    if (!lc) return NextResponse.json({ error: "This challenge isn't in your batch this week." }, { status: 403 });
+    const { data: solved } = await service.from("arena_challenge_completions").select("is_correct").eq("user_id", auth.userId).eq("challenge_id", challenge.id).maybeSingle();
+    if (solved?.is_correct) return NextResponse.json({ error: "You've already passed this challenge. It is locked." }, { status: 409 });
+    let verdicts: TestVerdict[];
+    try {
+      verdicts = await judge(parsed.data.language ?? "python", parsed.data.code, lc.tests);
+    } catch {
+      return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
+    }
+    if (verdicts.some((v) => v.error.startsWith("Code execution service is unavailable"))) return NextResponse.json({ error: "Code execution service is unavailable. Try again." }, { status: 502 });
+    isCorrect = verdicts.every((v) => v.passed);
+    tests = verdicts.map((v, i) => {
+      const hidden = i >= lc.sampleCount;
+      return hidden ? { index: i, passed: v.passed, hidden } : { index: i, passed: v.passed, hidden, input: lc.tests[i].input.trimEnd(), expected: lc.tests[i].output, actual: v.actual.trimEnd(), error: v.error };
+    });
+    submission = parsed.data.code;
+  } else if (challenge.kind === "numeric") {
     if (!parsed.data.answer) return NextResponse.json({ error: "Enter your answer." }, { status: 400 });
     isCorrect = isNumericAnswerCorrect(parsed.data.answer, challenge.expected_output);
     submission = `Answer: ${parsed.data.answer} ${challenge.answer_unit ?? ""}`.trim() + (parsed.data.working ? `\n\nWorking:\n${parsed.data.working}` : "");
@@ -118,5 +144,5 @@ export async function POST(request: Request) {
     console.error("[arena/challenges/submit] evidence write failed (submission itself is unaffected):", evidenceError);
   }
 
-  return NextResponse.json({ isCorrect, stdout, stderr, pointsEarned });
+  return NextResponse.json({ isCorrect, stdout, stderr, pointsEarned, tests });
 }
