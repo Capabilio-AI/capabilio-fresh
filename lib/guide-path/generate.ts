@@ -72,6 +72,15 @@ function buildUserPrompt(
  * deterministic computation, re-attached after the AI response comes back
  * so a hallucinated number can never reach storage.
  */
+/** The AI narrative of a skill-gap path is written at most once a month per student; in between only the numbers are recomputed. */
+export const NARRATIVE_REFRESH_DAYS = 30;
+
+/** Pure. Reuse the stored narrative when it is for the same career and younger than the refresh window. */
+export function canReuseNarrative(existing: { target_career: string; generated_at: string } | null, targetCareer: string, now: Date = new Date()): boolean {
+  if (!existing || existing.target_career !== targetCareer) return false;
+  return now.getTime() - new Date(existing.generated_at).getTime() < NARRATIVE_REFRESH_DAYS * 86_400_000;
+}
+
 export async function generateGuidePathForCareer(
   supabase: SupabaseClient<Database>,
   serviceClient: SupabaseClient<Database>,
@@ -103,7 +112,11 @@ export async function generateGuidePathForCareer(
   );
   const gaps = match.skillGaps.filter((g) => g.gap > 0);
 
-  const narrative = await completeJson(
+  const { data: stored } = await serviceClient.from("guide_paths").select("version, target_career, generated_at, phases").eq("user_id", userId).eq("is_primary", isPrimary).maybeSingle();
+  const reuse = canReuseNarrative(stored, targetCareer);
+  const storedPhases = reuse ? ((stored?.phases ?? []) as unknown as GuidePathPhase[]) : [];
+  // within the month: no AI call, the stored sequencing and wording are kept (a skill that is new since then gets the plain default text)
+  const narrative = reuse ? { phases: storedPhases.map((p) => ({ skill: p.skill, phase_label: p.phaseLabel, why: p.why, projects: p.projects, milestones: p.milestones })) } : await completeJson(
     buildUserPrompt(
       targetCareer,
       branchContext.branch,
@@ -131,13 +144,7 @@ export async function generateGuidePathForCareer(
     };
   });
 
-  const { data: existing } = await serviceClient
-    .from("guide_paths")
-    .select("version")
-    .eq("user_id", userId)
-    .eq("is_primary", isPrimary)
-    .maybeSingle();
-  const version = (existing?.version ?? 0) + 1;
+  const version = (stored?.version ?? 0) + 1;
 
   const { error } = await serviceClient.from("guide_paths").upsert(
     {
@@ -146,7 +153,7 @@ export async function generateGuidePathForCareer(
       is_primary: isPrimary,
       phases: phases as unknown as Database["public"]["Tables"]["guide_paths"]["Row"]["phases"],
       version,
-      generated_at: new Date().toISOString(),
+      generated_at: reuse && stored ? stored.generated_at : new Date().toISOString(), // the narrative's age, so the month is counted from when the AI wrote it
     },
     { onConflict: "user_id,is_primary" }
   );

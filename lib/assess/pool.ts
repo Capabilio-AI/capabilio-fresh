@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { POOL_TARGET_PER_SECTION, POOL_TARGET_PER_SKILL, DIFFICULTIES, type Difficulty } from "./config";
+import { CAREER_BANK_CAP, CAREER_BANK_MIX, POOL_TARGET_PER_SECTION, DIFFICULTIES, type Difficulty } from "./config";
 import type { Db, CareerSkillRow, CareerRef } from "./db";
 import { difficultyFallbacks } from "./engine";
 import { GENERAL_SECTIONS } from "./general";
@@ -79,6 +79,18 @@ export const careerSlot = (career: CareerRef, s: CareerSkillRow): CareerSlot => 
   skillId: s.skillId, skillKey: s.key, skillName: s.name, skillDescription: s.description, category: s.category,
 });
 
+/** Pure. Per-skill, per-difficulty targets that add up to the career's bank size. */
+export function careerPoolTarget(skillCount: number, cap = CAREER_BANK_CAP): Record<Difficulty, number> {
+  const perSkill = cap / Math.max(1, skillCount);
+  return { EASY: Math.ceil(perSkill * CAREER_BANK_MIX.EASY), MEDIUM: Math.ceil(perSkill * CAREER_BANK_MIX.MEDIUM), HARD: Math.ceil(perSkill * CAREER_BANK_MIX.HARD) };
+}
+
+/** True once this career has its full bank: from then on its questions come from the database and the AI is not called. */
+export async function careerBankFull(db: Db, careerId: string): Promise<boolean> {
+  const { count } = await db.from("assess_question_pool").select("id", { count: "exact", head: true }).eq("layer", "CAREER").eq("career_id", careerId).eq("is_active", true);
+  return (count ?? 0) >= CAREER_BANK_CAP;
+}
+
 async function countByDifficulty(db: Db, filter: PoolFilter): Promise<Record<Difficulty, number>> {
   let q = db.from("assess_question_pool").select("difficulty").eq("is_active", true);
   q = filter.layer === "CAREER" ? q.eq("layer", "CAREER").eq("career_id", filter.careerId).eq("skill_id", filter.skillId) : q.eq("layer", "GENERAL").eq("section", filter.section);
@@ -105,8 +117,9 @@ export async function warmPool(db: Db, scope: { career: CareerRef; skills: reado
   const cells: { slot: Slot; filter: PoolFilter; label: string; target: Record<Difficulty, number> }[] =
     "general" in scope
       ? GENERAL_SECTIONS.map((g) => ({ slot: g, filter: { layer: "GENERAL", section: g.section }, label: g.section, target: POOL_TARGET_PER_SECTION }))
-      : scope.skills.map((s) => ({ slot: careerSlot(scope.career, s), filter: { layer: "CAREER", careerId: scope.career.id, skillId: s.skillId }, label: s.key, target: POOL_TARGET_PER_SKILL }));
+      : scope.skills.map((s) => ({ slot: careerSlot(scope.career, s), filter: { layer: "CAREER", careerId: scope.career.id, skillId: s.skillId }, label: s.key, target: careerPoolTarget(scope.skills.length) }));
 
+  if ("career" in scope && (await careerBankFull(db, scope.career.id))) return [];
   const reports: WarmReport[] = [];
   // The account allows ~8k tokens a minute, so cells are generated one at a time; a failed cell is retried on later passes.
   let calls = 0;

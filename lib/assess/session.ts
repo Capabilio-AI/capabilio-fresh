@@ -15,7 +15,7 @@ import { fitTargets, planNext, type Obs, type Plan, type Target } from "./engine
 import { GENERAL_SECTIONS, commonDifficulty, generalTargets, planFromAvailability } from "./general";
 import { topUp } from "./generate";
 import type { LlmDeps } from "./generate";
-import { careerSlot, chooseFrom, fetchCandidates, pickFromPool, shuffledOrder, warmPool, type PoolFilter, type PoolPick } from "./pool";
+import { careerBankFull, careerSlot, chooseFrom, fetchCandidates, pickFromPool, shuffledOrder, warmPool, type PoolFilter, type PoolPick } from "./pool";
 import { AssessError, PoolUnavailableError, type Feedback, type Layer, type QuestionPayload, type SessionStart, type SessionState } from "./types";
 
 /** An assessment may end early (pool ran dry) only after this share of it has been answered. */
@@ -242,6 +242,8 @@ async function liveGenerate(db: Db, ctx: Context, targetId: string, difficulty: 
     ? (() => { const s = ctx.skills.find((k) => k.skillId === targetId); return s && ctx.career ? careerSlot(ctx.career, s) : null; })()
     : GENERAL_SECTIONS.find((g) => g.section === targetId) ?? null;
   if (!slot) return null;
+  // a career with its full bank is served from the database only
+  if (ctx.session.layer === "CAREER" && ctx.career && (await careerBankFull(db, ctx.career.id))) return pickFromPool(db, filterFor(ctx, targetId), difficulty, used);
   try {
     await Promise.race([
       topUp(db, slot, difficulty, 2, { rounds: 1, deps: deps.retry }),

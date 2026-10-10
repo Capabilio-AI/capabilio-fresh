@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Hash, Newspaper, UserPlus } from "lucide-react";
+import { Flame, Hash, Newspaper, UserPlus } from "lucide-react";
 import type { Suggestion, TrendingTag } from "@/lib/pulse/sidebar";
 import type { NewsItem } from "@/lib/pulse/news";
 import { GRAPH_CHANGED, onAnnounce } from "@/lib/pulse/live";
@@ -21,7 +21,7 @@ const CARD = "rounded-2xl border border-[var(--m-rule)] bg-white p-5";
 export function PulseSidebar() {
   const [data, setData] = useState<SidebarData | null>(null);
   const [failed, setFailed] = useState(false);
-  const [news, setNews] = useState<{ role: string | null; items: NewsItem[] } | null>(null);
+  const [news, setNews] = useState<{ role: string | null; items: NewsItem[]; trending: NewsItem[] } | null>(null);
 
   const loadSidebar = useCallback(() => {
     fetch("/api/pulse/sidebar")
@@ -32,7 +32,7 @@ export function PulseSidebar() {
 
   useEffect(() => {
     loadSidebar();
-    fetch("/api/pulse/news").then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad")))).then((d: { role: string | null; items: NewsItem[] }) => setNews(d)).catch(() => setNews({ role: null, items: [] }));
+    fetch("/api/pulse/news").then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad")))).then((d: { role: string | null; items: NewsItem[]; trending?: NewsItem[] }) => setNews({ ...d, trending: d.trending ?? [] })).catch(() => setNews({ role: null, items: [], trending: [] }));
     // someone was followed or unfollowed anywhere on the page: the suggestions change, so re-read them
     return onAnnounce(GRAPH_CHANGED, loadSidebar);
   }, [loadSidebar]);
@@ -96,6 +96,22 @@ export function PulseSidebar() {
           <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{news.role ? "No big stories for your field right now. Check back soon." : "Choose a career direction and the latest technical news for it shows up here."}</p>
         )}
       </section>
+
+      {news !== null && news.trending.length > 0 && (
+        <section className={CARD} aria-label="Trending in tech today">
+          <h2 className="flex items-center gap-2 font-lp-display text-[15px] font-bold text-[var(--m-ink)]"><Flame size={15} className="text-app-orange" aria-hidden="true" /> Trending today</h2>
+          <ul className="mt-3 flex flex-col gap-3">
+            {news.trending.map((n) => (
+              <li key={n.id}>
+                <a href={n.url} target="_blank" rel="noopener noreferrer" className="group block rounded-lg px-2 py-1.5 hover:bg-app-background">
+                  <span className="block font-lp-body text-[13px] font-semibold leading-snug text-[var(--m-ink)] group-hover:underline">{n.title}</span>
+                  <span className="mt-0.5 block font-lp-mono text-[11px] text-app-muted">{n.source} · {n.points} points</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </aside>
   );
 }

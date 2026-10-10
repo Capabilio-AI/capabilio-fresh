@@ -10,6 +10,7 @@ const TASK_PREFIX: Record<LlmTask, string> = {
   role_resolve: "ROLE_PROFILE",
   challenge: "CHALLENGE",
   challenge_verify: "CHALLENGE",
+  general: "GENERAL",
 };
 
 // openai/gpt-oss-120b is the largest chat model this account's Groq key can reach (see lib/ai/groq.ts).

@@ -33,6 +33,14 @@ export const PREFETCH_BUFFER = 3;
 export const POOL_TARGET_PER_SKILL: Record<Difficulty, number> = { EASY: 2, MEDIUM: 3, HARD: 2 };
 export const POOL_TARGET_PER_SECTION: Record<Difficulty, number> = { EASY: 4, MEDIUM: 6, HARD: 4 };
 
+/**
+ * Once a career holds this many active questions, the AI is never called for it again: every student is served from the database.
+ * Until then the pool keeps growing (per skill and difficulty, see careerPoolTarget).
+ */
+export const CAREER_BANK_CAP = 500;
+/** Share of a career's bank per difficulty. */
+export const CAREER_BANK_MIX: Record<Difficulty, number> = { EASY: 0.3, MEDIUM: 0.4, HARD: 0.3 };
+
 /** Questions requested from Groq per call. Small batches validate far more reliably than one big request. */
 export const GENERATION_BATCH_SIZE = 4;
 

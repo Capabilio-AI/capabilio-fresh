@@ -5,7 +5,6 @@ import { getStudentDirection, needsYearConfirmation } from "@/lib/career/directi
 import { loadPublishedCurriculum } from "@/lib/roadmap-engine/curriculum";
 import type { StreamScope } from "./resolve-scope";
 import { IT_CLUSTER_SCOPE_KEY } from "./branch-clusters";
-import { currentStreamWeek } from "./week";
 import type { StreamCandidate, StudentCourse } from "./select-stream";
 
 type Service = SupabaseClient<Database>;
@@ -38,12 +37,12 @@ interface PoolRow {
  */
 export async function loadStreamPool(service: Service, scope: Pick<StreamScope, "scopeKey" | "branchKey">): Promise<StreamCandidate[]> {
   if (scope.scopeKey === IT_CLUSTER_SCOPE_KEY) {
-    // IT students: this week's AI-written LeetCode-style set first; every older stored one stays available as a bank (marked stale)
-    // so a week the AI could not fill (quota, outage) is still served from the database. Solved ones are excluded by the selector.
-    const week = currentStreamWeek();
-    const { data, error } = await untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags, week_start").eq("track", "stream").eq("status", "PUBLISHED").eq("kind", "leetcode").order("week_start", { ascending: false }).limit(400);
+    // IT students are served from the whole stored bank of LeetCode-style problems (up to STREAM_BANK_CAP). Each student's pick is spread by
+    // a per-student hash, problems they solved are excluded and ones they were just served rank last (the selector does both), so a
+    // problem they failed or skipped can come back but a solved one never does.
+    const { data, error } = await untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags, week_start").eq("track", "stream").eq("status", "PUBLISHED").eq("kind", "leetcode").limit(1500);
     if (error) throw error;
-    return ((data ?? []) as (PoolRow & { week_start: string | null })[]).map((r) => ({ id: r.id, difficulty: r.difficulty, category: r.category, courseTags: r.course_tags ?? [], stale: r.week_start !== week }));
+    return ((data ?? []) as (PoolRow & { week_start: string | null })[]).map((r) => ({ id: r.id, difficulty: r.difficulty, category: r.category, courseTags: r.course_tags ?? [] }));
   }
   const base = () => untyped(service).from("arena_challenges").select("id, difficulty, category, course_tags").eq("track", "stream").eq("status", "PUBLISHED").is("user_id", null);
   const [explicit, legacy] = await Promise.all([base().contains("branch_keys", [scope.branchKey]), base().eq("scope_key", scope.scopeKey).eq("branch_keys", "{}")]);

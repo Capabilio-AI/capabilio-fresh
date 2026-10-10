@@ -1,5 +1,8 @@
 // Technical news for the student's own career, live from the Hacker News search API (free, no key). Each skill phrase of the role is searched
-// for stories from the last two weeks with real engagement; results are merged, de-duplicated and cached for half an hour.
+// for stories from the last two weeks with real engagement; results are merged and de-duplicated. The source API is called at most once a
+// day per topic: the result is stored in pulse_news_cache and shared by every student with the same topic.
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { untyped } from "@/lib/org/db";
 import type { CareerContext } from "./relevance";
 
 export interface NewsItem {
@@ -18,7 +21,7 @@ const PHRASES = 3;
 const PER_QUERY = 8;
 export const NEWS_COUNT = 5;
 const TIMEOUT_MS = 4000;
-const CACHE_SECONDS = 1800;
+const CACHE_SECONDS = 86_400;
 
 interface Hit { objectID: string; title: string | null; url: string | null; points: number | null; num_comments: number | null; created_at: string }
 
@@ -44,18 +47,41 @@ export const hostOf = (url: string): string => {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
 };
 
-export async function loadCareerNews(ctx: Pick<CareerContext, "keywords">, now = Date.now()): Promise<NewsItem[]> {
+/** Pure. The cache key of a topic: its search phrases, so students with the same role share one fetch. */
+export const newsCacheKey = (queries: readonly string[]) => queries.map((q) => q.toLowerCase().trim()).sort().join("|") || "none";
+const todayKey = (now: number) => new Date(now + 5.5 * 3_600_000).toISOString().slice(0, 10); // the day in India, matching the weekly schedule
+
+/** Stored result for today, else fetch once and store it (an empty result is stored too, so a quiet topic is not re-fetched all day). */
+async function cachedDaily(service: SupabaseClient, key: string, now: number, fetchItems: () => Promise<NewsItem[]>): Promise<NewsItem[]> {
+  const db = untyped(service);
+  const day = todayKey(now);
+  const { data } = await db.from("pulse_news_cache").select("items").eq("cache_key", key).eq("day", day).maybeSingle();
+  if (data) return data.items as NewsItem[];
+  const items = await fetchItems();
+  await db.from("pulse_news_cache").upsert({ cache_key: key, day, items }, { onConflict: "cache_key,day", ignoreDuplicates: true });
+  return items;
+}
+
+async function hnSearch(url: string): Promise<Hit[]> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), next: { revalidate: CACHE_SECONDS } });
+    return res.ok ? (((await res.json()) as { hits?: Hit[] }).hits ?? []) : [];
+  } catch {
+    return []; // news is a nicety: a slow or failing source must never break the page
+  }
+}
+
+export async function loadCareerNews(service: SupabaseClient, ctx: Pick<CareerContext, "keywords">, now = Date.now()): Promise<NewsItem[]> {
   const queries = newsQueries(ctx);
   if (queries.length === 0) return [];
-  const since = Math.floor((now - DAYS * 86_400_000) / 1000);
-  const results = await Promise.all(queries.map(async (q): Promise<Hit[]> => {
-    const url = `https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=${PER_QUERY}&query=${encodeURIComponent(q)}&numericFilters=${encodeURIComponent(`created_at_i>${since},points>${MIN_POINTS}`)}`;
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), next: { revalidate: CACHE_SECONDS } });
-      return res.ok ? (((await res.json()) as { hits?: Hit[] }).hits ?? []) : [];
-    } catch {
-      return []; // news is a nicety: a slow or failing source must never break the page
-    }
-  }));
-  return mergeHits(results.flat());
+  return cachedDaily(service, `career:${newsCacheKey(queries)}`, now, async () => {
+    const since = Math.floor((now - DAYS * 86_400_000) / 1000);
+    const results = await Promise.all(queries.map((q) => hnSearch(`https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=${PER_QUERY}&query=${encodeURIComponent(q)}&numericFilters=${encodeURIComponent(`created_at_i>${since},points>${MIN_POINTS}`)}`)));
+    return mergeHits(results.flat());
+  });
+}
+
+/** What is trending in tech today, the same for everyone: the source's front page, fetched once a day. */
+export async function loadTrendingNews(service: SupabaseClient, now = Date.now()): Promise<NewsItem[]> {
+  return cachedDaily(service, "trending", now, async () => mergeHits(await hnSearch(`https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20`)));
 }

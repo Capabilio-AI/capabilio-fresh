@@ -44,6 +44,7 @@ export async function GET() {
       loadStreamPool(service, scope),
       service.from("arena_challenge_completions").select("challenge_id").eq("user_id", auth.userId).eq("track", "stream").eq("is_correct", true),
     ]);
+    // the weekly run adds new problems only while the bank is below its cap; a full bank is served from the database
     if (pool.total < WEEKLY_TARGET && !pool.generating) after(() => generateWeeklyChallenges(service));
     const solved = new Set((solvedRows ?? []).map((r) => r.challenge_id));
     if (bank.filter((c) => !solved.has(c.id)).length < spin.count) {
