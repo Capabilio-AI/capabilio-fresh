@@ -1,17 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles, RotateCcw } from "lucide-react";
-import { SEGMENT_DEGREES, WHEEL_COUNTS, pickIndex, rotationFor, spinWeekKey } from "@/lib/arena-challenges/wheel";
+import { RotateCcw } from "lucide-react";
+import { SEGMENT_DEGREES, WHEEL_COUNTS, pickIndex, rotationFor, segmentAt, spinWeekKey } from "@/lib/arena-challenges/wheel";
+import { ScratchCard } from "./ScratchCard";
 
-// PROTOTYPE: the result is decided and remembered in this browser (localStorage) so the wheel can be tried out.
+// PROTOTYPE: the result is picked and remembered in this browser (localStorage) so the flow can be tried out.
 // In the real feature the server picks the number once per week and stores it; the client only animates to it.
-const SPIN_MS = 6200;
-const SIZE = 420;
-const R = 190;
-const SEGMENT_FILL = ["#d95d39", "#111315", "#4361ee", "#1a7d4d", "#b8431f", "#30312e"];
-const bulbs = Array.from({ length: 24 }, (_, i) => i);
-const storeKey = (week: string) => `capabilio:wheel-proto:${week}`;
+const SPIN_MS = 6500;
+const REDUCED_SPIN_MS = 900;
+const SIZE = 440;
+const R = 196;
+const CHALLENGES_HREF = "/arena/challenges/stream"; // the common (stream) challenges tab
+// [rim colour, inner colour, numeral colour]
+const SEGMENTS: readonly (readonly [string, string, string])[] = [
+  ["#ff7a45", "#c2410c", "#fff"], ["#5b7cff", "#2f45c9", "#fff"], ["#22c58b", "#0f7a55", "#fff"],
+  ["#ffc83d", "#d98a00", "#2a1a00"], ["#a678ff", "#6a35d6", "#fff"], ["#ff5a76", "#c0243f", "#fff"],
+];
+const bulbs = Array.from({ length: 30 }, (_, i) => i);
+const storeKey = (week: string) => `capabilio:wheel-proto:v2:${week}`;
+const ink = "#ffffff", soft = "rgba(255,255,255,.68)";
 
 const polar = (deg: number, r: number) => {
   const a = ((deg - 90) * Math.PI) / 180;
@@ -22,112 +30,159 @@ const wedge = (i: number) => {
   const [x2, y2] = polar(i * SEGMENT_DEGREES + SEGMENT_DEGREES / 2, R);
   return `M${SIZE / 2},${SIZE / 2} L${x1},${y1} A${R},${R} 0 0 1 ${x2},${y2} Z`;
 };
+const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
 
-function readStored(week: string): number | null {
+interface Saved { value: number; scratched: boolean }
+function readSaved(week: string): Saved | null {
   try {
-    const v = Number(localStorage.getItem(storeKey(week)));
-    return WHEEL_COUNTS.includes(v as never) ? v : null;
-  } catch {
-    return null;
-  }
+    const s = JSON.parse(localStorage.getItem(storeKey(week)) ?? "null") as Saved | null;
+    return s && WHEEL_COUNTS.includes(s.value as never) ? s : null;
+  } catch { return null; }
 }
+const writeSaved = (week: string, s: Saved | null) => {
+  try { if (s) localStorage.setItem(storeKey(week), JSON.stringify(s)); else localStorage.removeItem(storeKey(week)); } catch { /* prototype only */ }
+};
 
 export function ChallengeWheel() {
   const week = useMemo(() => spinWeekKey(new Date()), []);
-  const [rotation, setRotation] = useState(0);
-  const [spinning, setSpinning] = useState(false);
-  const [result, setResult] = useState<number | null>(null);
+  const disc = useRef<SVGGElement>(null);
+  const flap = useRef<SVGGElement>(null);
+  const raf = useRef(0);
+  const rotation = useRef(0);
+  const [phase, setPhase] = useState<"idle" | "spinning" | "scratch" | "done">("idle");
+  const [value, setValue] = useState<number | null>(null);
+  const [lit, setLit] = useState(0);
   const [ready, setReady] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [earlier, setEarlier] = useState(false); // scratched on an earlier visit, so no foil to show
+
+  const paint = (deg: number, speed: number) => {
+    disc.current?.setAttribute("transform", `rotate(${deg} ${SIZE / 2} ${SIZE / 2})`);
+    // the flapper is kicked back by every peg (segment boundary) that passes under it, harder when the wheel is fast
+    const phaseInPeg = ((deg + SEGMENT_DEGREES / 2) % SEGMENT_DEGREES) / SEGMENT_DEGREES;
+    const kick = Math.min(32, speed * 2.2) * Math.pow(1 - phaseInPeg, 2);
+    flap.current?.setAttribute("transform", `rotate(${-kick} ${SIZE / 2} 14)`);
+    setLit((cur) => { const next = segmentAt(deg); return next === cur ? cur : next; });
+  };
 
   useEffect(() => {
-    // localStorage only exists in the browser, so the saved spin is applied after mount (in a microtask, not during render)
-    queueMicrotask(() => {
-      const saved = readStored(week);
-      if (saved !== null) {
-        setResult(saved);
-        setRotation(rotationFor(WHEEL_COUNTS.indexOf(saved as never), 0) % 360);
+    queueMicrotask(() => { // localStorage is browser-only, so the saved spin is applied after mount
+      const saved = readSaved(week);
+      if (saved) {
+        rotation.current = rotationFor(WHEEL_COUNTS.indexOf(saved.value as never), 0) % 360;
+        paint(rotation.current, 0);
+        setValue(saved.value);
+        setEarlier(saved.scratched);
+        setPhase(saved.scratched ? "done" : "scratch");
       }
       setReady(true);
     });
-    return () => clearTimeout(timer.current);
+    return () => cancelAnimationFrame(raf.current);
   }, [week]);
 
   function spin() {
-    if (spinning || result !== null) return;
+    if (phase !== "idle") return;
     const index = pickIndex();
-    const jitter = (Math.random() - 0.5) * 0.7;
-    setSpinning(true);
-    setRotation((cur) => rotationFor(index, cur, jitter));
-    timer.current = setTimeout(() => {
-      const value = WHEEL_COUNTS[index];
-      try { localStorage.setItem(storeKey(week), String(value)); } catch { /* prototype only */ }
-      setResult(value);
-      setSpinning(false);
-    }, SPIN_MS);
+    const from = rotation.current % 360;
+    const to = rotationFor(index, from, (Math.random() - 0.5) * 0.7);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ms = reduce ? REDUCED_SPIN_MS : SPIN_MS;
+    const t0 = performance.now();
+    let prev = from;
+    setPhase("spinning");
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - t0) / ms);
+      const deg = from + (to - from) * easeOutQuart(t);
+      rotation.current = deg;
+      paint(deg, deg - prev);
+      prev = deg;
+      if (t < 1) { raf.current = requestAnimationFrame(tick); return; }
+      paint(deg, 0);
+      const v = WHEEL_COUNTS[index];
+      writeSaved(week, { value: v, scratched: false });
+      setValue(v);
+      setPhase("scratch");
+    };
+    raf.current = requestAnimationFrame(tick);
   }
 
-  function resetForTesting() {
-    try { localStorage.removeItem(storeKey(week)); } catch { /* prototype only */ }
-    setResult(null);
-  }
+  const reset = () => { writeSaved(week, null); setValue(null); setEarlier(false); setPhase("idle"); };
+  const onReveal = () => { if (value !== null) writeSaved(week, { value, scratched: true }); setPhase("done"); };
+  const [rim, inner] = SEGMENTS[lit];
 
   return (
-    <div className="wheel-stage relative overflow-hidden rounded-3xl border border-[#2a2b2e] bg-[#0f1012] px-4 py-10 text-white">
+    <div className="relative overflow-hidden rounded-3xl px-4 py-10"
+      style={{ background: "radial-gradient(120% 80% at 50% 0%, #1d1f2b 0%, #0b0c10 70%)", color: ink, border: "1px solid rgba(255,255,255,.1)" }}>
       <style>{CSS}</style>
-      <div className="wheel-glow" aria-hidden />
-      {result !== null && !spinning && <Confetti />}
+      <div aria-hidden className="absolute inset-0 transition-[background] duration-500"
+        style={{ background: `radial-gradient(46% 38% at 50% 34%, ${rim}55, transparent 72%)` }} />
+      <div aria-hidden className="wheel-stars" />
+      {phase === "done" && <Confetti />}
 
-      <div className="relative mx-auto flex max-w-[460px] flex-col items-center">
-        <p className="font-lp-body text-[12px] font-semibold uppercase tracking-[0.22em] text-[#f2a58c]">Week of {week}</p>
-        <h2 className="mt-2 text-center font-lp-display text-[30px] font-bold leading-tight">
-          {result === null ? "Spin for your week" : `${result} challenges this week`}
+      <div className="relative mx-auto flex max-w-[480px] flex-col items-center">
+        <p style={{ color: rim, font: "700 12px Inter, sans-serif", letterSpacing: ".24em", textTransform: "uppercase" }}>Week of {week}</p>
+        <h2 className="mt-2 text-center" style={{ font: "800 32px/1.15 var(--font-lp-display, Inter, sans-serif)", color: ink }}>
+          {phase === "idle" || phase === "spinning" ? "Spin for your week" : phase === "scratch" ? "Scratch your card" : `${value} challenges unlocked`}
         </h2>
-        <p className="mt-1 text-center font-lp-body text-[13px] text-white/60">
-          {result === null ? "One spin every Sunday decides how many challenges you get until next Sunday." : "Locked in. Come back next Sunday for a new spin."}
+        <p className="mt-1 text-center" style={{ color: soft, font: "400 13.5px/1.5 Inter, sans-serif" }}>
+          {phase === "idle" ? "One spin every Sunday decides how many challenges you get this week." :
+           phase === "spinning" ? "Hold your breath…" :
+           phase === "scratch" ? "The wheel has chosen. Scratch to see your number." : "Locked in until next Sunday."}
         </p>
 
         <div className="relative mt-8" style={{ width: SIZE, maxWidth: "100%" }}>
-          <div className="wheel-pointer" aria-hidden />
-          <div className={`wheel-rim ${spinning ? "is-spinning" : ""}`}>
+          <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="block w-full overflow-visible" role="img" aria-label={`Wheel: ${WHEEL_COUNTS.join(", ")}`}>
+            <defs>
+              {SEGMENTS.map(([a, b], i) => (
+                <radialGradient key={i} id={`seg${i}`} cx="50%" cy="50%" r="50%"><stop offset="25%" stopColor={b} /><stop offset="100%" stopColor={a} /></radialGradient>
+              ))}
+              <radialGradient id="hub" cx="50%" cy="35%" r="70%"><stop offset="0%" stopColor="#fff" /><stop offset="100%" stopColor="#e6e1d6" /></radialGradient>
+            </defs>
+            <circle cx={SIZE / 2} cy={SIZE / 2} r={R + 22} fill="#15161b" stroke="#2c2e38" strokeWidth={4} />
+            <circle cx={SIZE / 2} cy={SIZE / 2} r={R + 22} fill="none" stroke={rim} strokeOpacity={0.6} strokeWidth={2} className="wheel-ring" />
+            <g ref={disc}>
+              {WHEEL_COUNTS.map((n, i) => {
+                const [tx, ty] = polar(i * SEGMENT_DEGREES, R * 0.66);
+                return (
+                  <g key={n}>
+                    <path d={wedge(i)} fill={`url(#seg${i})`} stroke="#0b0c10" strokeWidth={3} />
+                    <text x={tx} y={ty} fill={SEGMENTS[i][2]} fontSize={62} fontWeight={900} textAnchor="middle" dominantBaseline="central"
+                      transform={`rotate(${i * SEGMENT_DEGREES - 90} ${tx} ${ty})`} style={{ fontFamily: "Inter, sans-serif", paintOrder: "stroke", stroke: "rgba(0,0,0,.25)", strokeWidth: 2 }}>{n}</text>
+                  </g>
+                );
+              })}
+              {WHEEL_COUNTS.map((n, i) => { // pegs on the rim, one per boundary
+                const [x, y] = polar(i * SEGMENT_DEGREES + SEGMENT_DEGREES / 2, R + 1);
+                return <circle key={n} cx={x} cy={y} r={7} fill="#ffe29a" stroke="#8a5a00" strokeWidth={2} />;
+              })}
+            </g>
             {bulbs.map((i) => {
-              const [x, y] = polar((i * 360) / bulbs.length, 207);
-              return <span key={i} className="wheel-bulb" style={{ left: `${(x / SIZE) * 100}%`, top: `${(y / SIZE) * 100}%`, animationDelay: `${(i % 2) * 0.35}s` }} />;
+              const [x, y] = polar((i * 360) / bulbs.length, R + 12);
+              return <circle key={i} cx={x} cy={y} r={3.2} fill={i % 2 ? "#fff" : rim} className={phase === "spinning" ? "wheel-bulb fast" : "wheel-bulb"} style={{ animationDelay: `${(i % 2) * 0.4}s` }} />;
             })}
-            <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="block w-full" role="img" aria-label={`Wheel with ${WHEEL_COUNTS.join(", ")}`}>
-              <g style={{ transform: `rotate(${rotation}deg)`, transformOrigin: "50% 50%", transition: spinning ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.72, 0.1, 1)` : "none" }}>
-                {WHEEL_COUNTS.map((n, i) => {
-                  const [tx, ty] = polar(i * SEGMENT_DEGREES, R * 0.68);
-                  return (
-                    <g key={n}>
-                      <path d={wedge(i)} fill={SEGMENT_FILL[i]} stroke="#faf9f5" strokeWidth={3} />
-                      <text x={tx} y={ty} fill="#fff" fontSize={54} fontWeight={800} textAnchor="middle" dominantBaseline="central"
-                        transform={`rotate(${i * SEGMENT_DEGREES} ${tx} ${ty})`} style={{ fontFamily: "var(--font-lp-display, Inter, sans-serif)" }}>{n}</text>
-                    </g>
-                  );
-                })}
-              </g>
-              <circle cx={SIZE / 2} cy={SIZE / 2} r={52} fill="#faf9f5" stroke="#d95d39" strokeWidth={6} />
-            </svg>
-            <button type="button" onClick={spin} disabled={spinning || result !== null || !ready}
-              className="wheel-hub" aria-label={result === null ? "Spin the wheel" : "Already spun this week"}>
-              {spinning ? "…" : result === null ? "SPIN" : result}
-            </button>
-          </div>
+            <circle cx={SIZE / 2} cy={SIZE / 2} r={58} fill="#15161b" stroke={rim} strokeWidth={4} />
+            <circle cx={SIZE / 2} cy={SIZE / 2} r={48} fill="url(#hub)" />
+            <image href="/brand/icon-light.png" x={SIZE / 2 - 24} y={SIZE / 2 - 24} width={48} height={48} />
+            <g ref={flap}>
+              <path d={`M${SIZE / 2 - 15},-8 L${SIZE / 2 + 15},-8 L${SIZE / 2},44 Z`} fill="#faf9f5" stroke="#15161b" strokeWidth={3} strokeLinejoin="round" />
+              <circle cx={SIZE / 2} cy={4} r={6} fill="#d95d39" />
+            </g>
+          </svg>
+          <button type="button" onClick={spin} disabled={phase !== "idle" || !ready}
+            aria-label="Spin the wheel" className="absolute rounded-full" style={{ left: "50%", top: "50%", width: 104, height: 104, margin: "-52px 0 0 -52px", background: "transparent", cursor: phase === "idle" ? "pointer" : "default" }} />
         </div>
 
-        {result !== null && !spinning && (
-          <div className="wheel-result mt-8 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 px-5 py-4">
-            <Sparkles className="text-[#f2a58c]" size={22} />
-            <div>
-              <p className="font-lp-display text-[18px] font-bold">{result} challenges unlocked</p>
-              <p className="font-lp-body text-[12.5px] text-white/60">Finish one and it locks, so no edits after submit.</p>
-            </div>
-          </div>
+        {phase === "idle" && (
+          <button type="button" onClick={spin} disabled={!ready} className="wheel-cta mt-8 rounded-full px-9 py-3.5"
+            style={{ background: "linear-gradient(135deg,#ff7a45,#ff4f6e)", color: "#fff", font: "800 16px Inter, sans-serif", letterSpacing: ".08em" }}>
+            SPIN THE WHEEL
+          </button>
+        )}
+        {(phase === "scratch" || phase === "done") && value !== null && (
+          <div className="mt-8"><ScratchCard value={value} revealed={earlier} onReveal={onReveal} href={CHALLENGES_HREF} /></div>
         )}
 
-        <button type="button" onClick={resetForTesting}
-          className="mt-8 inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3.5 py-1.5 font-lp-body text-[12px] text-white/70 hover:bg-white/10">
+        <button type="button" onClick={reset} className="mt-8 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
+          style={{ border: "1px solid rgba(255,255,255,.25)", color: soft, font: "500 12px Inter, sans-serif" }}>
           <RotateCcw size={13} /> Reset spin (testing only)
         </button>
       </div>
@@ -137,34 +192,27 @@ export function ChallengeWheel() {
 
 function Confetti() {
   // deterministic scatter (pure render): a golden-ratio sequence looks random enough for confetti
-  const pieces = Array.from({ length: 46 }, (_, i) => {
+  const pieces = Array.from({ length: 56 }, (_, i) => {
     const f = (k: number) => (i * 0.618034 * k) % 1;
-    return { left: f(1) * 100, delay: f(2) * 0.6, dur: 2.2 + f(3) * 1.6, color: SEGMENT_FILL[i % SEGMENT_FILL.length], drift: (f(5) - 0.5) * 120 };
+    return { left: f(1) * 100, delay: f(2) * 0.7, dur: 2.4 + f(3) * 1.6, color: SEGMENTS[i % SEGMENTS.length][0], drift: (f(5) - 0.5) * 140 };
   });
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden>
-      {pieces.map((p, i) => (
-        <span key={i} className="wheel-confetti" style={{ left: `${p.left}%`, background: p.color === "#111315" ? "#faf9f5" : p.color, animationDelay: `${p.delay}s`, animationDuration: `${p.dur}s`, ["--drift" as string]: `${p.drift}px` }} />
-      ))}
+      {pieces.map((p, i) => <span key={i} className="wheel-confetti" style={{ left: `${p.left}%`, background: p.color, animationDelay: `${p.delay}s`, animationDuration: `${p.dur}s`, ["--drift" as string]: `${p.drift}px` }} />)}
     </div>
   );
 }
 
 const CSS = `
-.wheel-glow{position:absolute;inset:0;background:radial-gradient(60% 45% at 50% 38%,rgba(217,93,57,.28),transparent 70%),radial-gradient(40% 30% at 85% 90%,rgba(67,97,238,.2),transparent 70%)}
-.wheel-rim{position:relative;border-radius:50%;padding:0;background:radial-gradient(circle,#1b1c1f 0 62%,#2c2d31 63% 100%);box-shadow:0 0 0 6px #2c2d31,0 24px 70px rgba(0,0,0,.55),0 0 80px rgba(217,93,57,.25)}
-.wheel-bulb{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#ffd9a0;box-shadow:0 0 10px 2px rgba(255,200,120,.8);animation:wheel-blink 1.4s ease-in-out infinite;z-index:2}
-.wheel-rim.is-spinning .wheel-bulb{animation-duration:.25s}
-.wheel-pointer{position:absolute;left:50%;top:-14px;z-index:5;width:0;height:0;margin-left:-17px;border-left:17px solid transparent;border-right:17px solid transparent;border-top:42px solid #faf9f5;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6))}
-.wheel-pointer::after{content:"";position:absolute;left:-7px;top:-38px;width:14px;height:14px;border-radius:50%;background:#d95d39}
-.wheel-hub{position:absolute;left:50%;top:50%;z-index:4;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;border:0;background:transparent;color:#111315;font:800 20px/1 var(--font-lp-display,Inter,sans-serif);letter-spacing:.06em;cursor:pointer}
-.wheel-hub:not(:disabled){animation:wheel-pulse 1.6s ease-in-out infinite;color:#d95d39}
-.wheel-hub:disabled{cursor:default}
-.wheel-result{animation:wheel-pop .5s cubic-bezier(.2,1.4,.4,1) both}
+.wheel-stars{position:absolute;inset:0;opacity:.5;background-image:radial-gradient(1.5px 1.5px at 12% 20%,#fff,transparent),radial-gradient(1.5px 1.5px at 80% 14%,#fff,transparent),radial-gradient(1px 1px at 30% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 90% 60%,#fff,transparent),radial-gradient(1px 1px at 55% 90%,#fff,transparent),radial-gradient(1px 1px at 6% 82%,#fff,transparent)}
+.wheel-bulb{animation:wheel-blink 1.5s ease-in-out infinite;filter:drop-shadow(0 0 4px currentColor)}
+.wheel-bulb.fast{animation-duration:.22s}
+.wheel-ring{animation:wheel-glow 2.4s ease-in-out infinite}
+.wheel-cta{animation:wheel-pulse 1.6s ease-in-out infinite;box-shadow:0 12px 34px rgba(255,90,110,.5)}
 .wheel-confetti{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;animation:wheel-fall linear forwards}
-@keyframes wheel-blink{0%,100%{opacity:.35}50%{opacity:1}}
-@keyframes wheel-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-@keyframes wheel-pop{from{opacity:0;transform:translateY(12px) scale(.94)}to{opacity:1;transform:none}}
-@keyframes wheel-fall{to{transform:translate(var(--drift),520px) rotate(540deg);opacity:0}}
-@media (prefers-reduced-motion:reduce){.wheel-bulb,.wheel-hub,.wheel-confetti{animation:none}.wheel-hub{transform:none}}
+@keyframes wheel-blink{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes wheel-glow{0%,100%{stroke-opacity:.35}50%{stroke-opacity:.9}}
+@keyframes wheel-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes wheel-fall{to{transform:translate(var(--drift),640px) rotate(540deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.wheel-bulb,.wheel-ring,.wheel-cta,.wheel-confetti{animation:none}}
 `;
