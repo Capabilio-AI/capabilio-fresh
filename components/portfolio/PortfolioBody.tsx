@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Award, Download, ExternalLink, FileText, GitBranch, GraduationCap, Link2, Mail, MapPin, Phone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
@@ -11,6 +11,7 @@ import { buildPortfolioSummary } from "@/lib/portfolio/summary";
 import type { ArenaTask, GithubEvidence, InterviewSummary, PortfolioData } from "@/lib/portfolio/data";
 import type { EducationEntry } from "@/lib/dashboard/education";
 import { SkillSignal } from "@/components/portfolio/SkillSignal";
+import { LiveNumber } from "@/components/portfolio/LiveNumber";
 import { LiveStatus } from "@/components/portfolio/LiveStatus";
 import type { PortfolioElo } from "@/lib/portfolio/elo";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
@@ -51,6 +52,8 @@ export interface PortfolioBodyProps {
   items: VaultItem[];
   keyEvidence: string[];
   mostRecent: string | null;
+  /** Endpoint the live status polls for a change fingerprint. */
+  pulseUrl: string;
   elo: PortfolioElo;
   graph: PortfolioData["graph"];
   isOwner: boolean;
@@ -62,8 +65,19 @@ export interface PortfolioBodyProps {
  * The portfolio a student hands a recruiter, laid out like a professional profile: who they are, a factual summary, the work they have
  * completed (each piece opens its full evidence), their measured skills, GitHub, and projects. Everything comes from verified records.
  */
-export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, github, items, elo, graph, mostRecent, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
+  // Work that arrives while the page is open (live updates) is marked "New" for a few seconds so a watching recruiter sees what just landed.
+  const seen = useRef(new Set(arenaTasks.map((t) => t.attemptId)));
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    const added = arenaTasks.filter((t) => !seen.current.has(t.attemptId)).map((t) => t.attemptId);
+    if (added.length === 0) return;
+    added.forEach((id) => seen.current.add(id));
+    setFresh(new Set(added));
+    const t = setTimeout(() => setFresh(new Set()), 6000);
+    return () => clearTimeout(t);
+  }, [arenaTasks]);
   const githubVerified = github?.verified ?? false;
   const role = graph?.careerName ?? statedRole;
 
@@ -75,12 +89,12 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
     readiness: graph?.readiness ?? null, skills: measured, verifiedChallenges: arenaTasks.length, averageScore,
     githubVerified, githubRepos: github?.repositoriesAnalyzed ?? null, projects: items.length,
   });
-  const facts: [string, string][] = [
-    ...(role ? [["Target role", role] as [string, string]] : []),
-    ["ELO score", String(elo.rating)],
-    ...(graph ? [["Role readiness", `${graph.readiness}%`] as [string, string]] : []),
-    ["Verified tickets", String(arenaTasks.length)],
-    ...(averageScore !== null ? [["Average score", `${averageScore}%`] as [string, string]] : []),
+  const facts: [string, React.ReactNode][] = [
+    ...(role ? [["Target role", role] as [string, React.ReactNode]] : []),
+    ["ELO score", <LiveNumber key="elo" value={elo.rating} />],
+    ...(graph ? [["Role readiness", <LiveNumber key="ready" value={graph.readiness} suffix="%" />] as [string, React.ReactNode]] : []),
+    ["Verified tickets", <LiveNumber key="tickets" value={arenaTasks.length} />],
+    ...(averageScore !== null ? [["Average score", <LiveNumber key="avg" value={averageScore} suffix="%" />] as [string, React.ReactNode]] : []),
   ];
   const empty = education.length === 0 && measured.length === 0 && arenaTasks.length === 0 && items.length === 0 && !github && groups.length === 0;
 
@@ -108,7 +122,7 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
         </div>
         <div className="flex flex-col items-end gap-2 print:hidden">
         <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded-lg border border-[var(--m-rule)] px-3.5 py-2 font-lp-body text-[13px] font-bold text-[var(--m-ink)] hover:bg-[var(--m-ground)]"><Download size={14} aria-hidden />Download PDF</button>
-        <LiveStatus latestActivity={mostRecent} />
+        <LiveStatus pulseUrl={pulseUrl} initialLatest={mostRecent} />
         </div>
       </header>
 
@@ -152,9 +166,9 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
             <Section title="Verified work">
               <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
                 {arenaTasks.slice(0, MAX_TASKS).map((t) => (
-                  <li key={t.attemptId} className="flex items-start justify-between gap-4 py-3.5 first:pt-0">
+                  <li key={t.attemptId} className={`flex items-start justify-between gap-4 py-3.5 transition-colors duration-700 first:pt-0 ${fresh.has(t.attemptId) ? "-mx-2 rounded-lg bg-[var(--m-ground)] px-2" : ""}`}>
                     <div className="min-w-0">
-                      <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{t.title}</p>
+                      <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{t.title}{fresh.has(t.attemptId) && <span className="ml-2 rounded-full bg-[var(--m-accent)] px-2 py-0.5 align-middle font-lp-mono text-[11px] font-bold text-white">New</span>}</p>
                       <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.score !== undefined ? `Score ${t.score}%` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
                     </div>
                     <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>

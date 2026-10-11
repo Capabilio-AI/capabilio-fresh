@@ -45,6 +45,7 @@ export default async function PortfolioPage() {
           keyEvidence={data.keyEvidence}
           mostRecent={data.mostRecent}
           elo={data.elo}
+          pulseUrl="/api/portfolio/pulse"
           graph={data.graph}
           isOwner
           evidenceBaseUrl="/api/arena/attempts"
