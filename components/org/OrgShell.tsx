@@ -120,7 +120,7 @@ export function OrgShell({
               <Fragment key={group.label}>
                 {gi > 0 && <span aria-hidden className="mx-1 h-5 w-px bg-[var(--m-soft)]" />}
                 {group.items.map((item) => {
-                  const active = isActive(pathname, item.href);
+                  const active = isActive(pathname, item.href) || (item.alsoActiveFor ?? []).some((h) => isActive(pathname, h));
                   const Icon = ICONS[item.href] ?? LayoutDashboard;
                   return (
                     <Link

@@ -5,6 +5,8 @@ import { loadStudentRows } from "@/lib/curriculum/cohorts";
 import { branchKey } from "@/lib/org/branch-scope";
 import { PageHeader, Panel, EmptyState } from "@/components/org/ui";
 import { JsonForm } from "@/components/org/JsonForm";
+import { SectionTabs } from "@/components/org/SectionTabs";
+import { can } from "@/lib/org/roles";
 
 export const metadata: Metadata = { title: "Academic calendar — Capabilio AI" };
 
@@ -20,6 +22,7 @@ export default async function OrgCalendarPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <SectionTabs label="Curriculum sections" active="/org/calendar" tabs={[{ label: "Curriculum", href: "/org/curriculum", show: can(ctx, "manageCurriculum") }, { label: "Academic calendar", href: "/org/calendar", show: true }]} />
       <PageHeader
         title="Academic calendar"
         subtitle={`${ctx.institutionName}. Enter when each semester starts and ends. Students' semester updates automatically from the start dates, so they never need to set it. Choose a branch and year, or all branches and all years; a specific row overrides an "all" row.`}

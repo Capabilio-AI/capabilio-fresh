@@ -313,3 +313,18 @@ describe("setup checklist and event split are real-data only", async () => {
     expect(past.map((e) => e.event_starts_at)).toEqual(["2026-09-01T00:00:00Z", "2026-08-01T00:00:00Z"]);
   });
 });
+
+describe("calendar and chat live as tabs under their parent entry", () => {
+  const labels = (role: string, custom: string[] | null = null) => orgNavFor(effectivePermissions(role, custom)).map((n) => n.label);
+  it("admins reach them through Curriculum and Team & access, not separate entries", () => {
+    const l = labels("principal");
+    expect(l).toContain("Curriculum");
+    expect(l).toContain("Team & access");
+    expect(l).not.toContain("Academic calendar");
+    expect(l).not.toContain("Team chat");
+  });
+  it("someone who has the permission but not the parent page keeps their own link", () => {
+    expect(labels("faculty")).toContain("Team chat");
+    expect(labels("faculty", ["page"])).toContain("Academic calendar");
+  });
+});

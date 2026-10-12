@@ -3,6 +3,8 @@ import type { OrgPermissionKey } from "./roles";
 export interface OrgNavItem {
   label: string;
   href: string;
+  /** other pages that live under this entry as tabs: the entry stays highlighted on them */
+  alsoActiveFor?: string[];
 }
 
 export interface OrgNavGroup {
@@ -13,6 +15,8 @@ export interface OrgNavGroup {
 interface Candidate extends OrgNavItem {
   /** null = every organisation member */
   needs: OrgPermissionKey | null;
+  /** this page is a tab inside the entry that needs this permission: its own link is hidden for anyone who can open that entry */
+  tabOf?: OrgPermissionKey;
 }
 
 // Grouped like the reference Institution OS (Visibility / Operations / Intelligence / Team). An item appears only
@@ -32,9 +36,9 @@ const GROUPS: { label: string; items: Candidate[] }[] = [
       { label: "Materials", href: "/org/materials", needs: "classroom" },
       { label: "Projects", href: "/org/projects", needs: "classroom" },
       { label: "Company visits", href: "/org/placements", needs: "placements" },
-      { label: "Curriculum", href: "/org/curriculum", needs: "curriculum" },
-      { label: "Academic calendar", href: "/org/calendar", needs: "page" },
-      { label: "Team & access", href: "/org/team", needs: "members" },
+      { label: "Curriculum", href: "/org/curriculum", needs: "curriculum", alsoActiveFor: ["/org/calendar"] },
+      { label: "Academic calendar", href: "/org/calendar", needs: "page", tabOf: "curriculum" },
+      { label: "Team & access", href: "/org/team", needs: "members", alsoActiveFor: ["/org/chat"] },
     ],
   },
   {
@@ -45,13 +49,15 @@ const GROUPS: { label: string; items: Candidate[] }[] = [
       { label: "Outcomes", href: "/org/outcomes", needs: "outcomes" },
     ],
   },
-  { label: "Collaboration", items: [{ label: "Team chat", href: "/org/chat", needs: "chat" }] },
+  { label: "Collaboration", items: [{ label: "Team chat", href: "/org/chat", needs: "chat", tabOf: "members" }] },
 ];
 
 export function orgNavGroupsFor(permissions: ReadonlySet<OrgPermissionKey>): OrgNavGroup[] {
   return GROUPS.map((g) => ({
     label: g.label,
-    items: g.items.filter((i) => i.needs === null || permissions.has(i.needs)).map(({ label, href }) => ({ label, href })),
+    items: g.items
+      .filter((i) => (i.needs === null || permissions.has(i.needs)) && !(i.tabOf && permissions.has(i.tabOf)))
+      .map(({ label, href, alsoActiveFor }) => (alsoActiveFor ? { label, href, alsoActiveFor } : { label, href })),
   })).filter((g) => g.items.length > 0);
 }
 

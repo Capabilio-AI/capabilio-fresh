@@ -7,6 +7,8 @@ import { latestExtraction } from "@/lib/roadmap/extract/store";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/org/ui";
+import { SectionTabs } from "@/components/org/SectionTabs";
+import { can } from "@/lib/org/roles";
 import { Fact, GroupTitle } from "@/components/org/widgets";
 import { BranchBoards } from "@/components/curriculum/BranchBoards";
 import { buildBoards, loadStudentRows } from "@/lib/curriculum/cohorts";
@@ -47,6 +49,7 @@ export default async function OrgCurriculumPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <SectionTabs label="Curriculum sections" active="/org/curriculum" tabs={[{ label: "Curriculum", href: "/org/curriculum", show: true }, { label: "Academic calendar", href: "/org/calendar", show: can(ctx, "manageCalendar") }]} />
       <PageHeader
         title="Curriculum"
         subtitle={`${ctx.institutionName}. Keep one curriculum per branch and regulation. Upload the syllabus, review what was read, confirm the skills each course builds, publish, then link your students to their regulation. Students see a roadmap built from what you confirm.`}

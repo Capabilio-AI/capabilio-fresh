@@ -6,6 +6,8 @@ import { canAccessChannel, listChannels, listChatMembers, loadMessages, markRead
 import { ChatPanel } from "@/components/org/ChatPanel";
 import { NewChannelForm } from "@/components/org/NewChannelForm";
 import { PageHeader } from "@/components/org/ui";
+import { SectionTabs } from "@/components/org/SectionTabs";
+import { can } from "@/lib/org/roles";
 
 export const metadata: Metadata = { title: "Team chat — Capabilio AI" };
 
@@ -20,6 +22,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
 
   return (
     <div>
+      <SectionTabs label="Team sections" active="/org/chat" tabs={[{ label: "Team & access", href: "/org/team", show: can(ctx, "approveMembers") }, { label: "Team chat", href: "/org/chat", show: true }]} />
       <PageHeader title="Team chat" subtitle="A private space for your college's staff. Only people you've given chat access can see it — students never can." />
       <div className="grid grid-cols-1 gap-5 md:grid-cols-[230px_1fr]">
         <aside aria-label="Channels" className="flex flex-col gap-3">

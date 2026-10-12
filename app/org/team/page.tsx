@@ -3,11 +3,12 @@ import { headers } from "next/headers";
 import { orgPageContext } from "@/lib/org/page";
 import { loadJoinLinks, loadTeam } from "@/lib/org/team-data";
 import { grantablePermissions, joinUrl } from "@/lib/org/team";
-import { ORG_PERMISSIONS } from "@/lib/org/roles";
+import { can, ORG_PERMISSIONS } from "@/lib/org/roles";
 import { ROLE_LABEL } from "@/lib/org/nav";
 import { ActionButton } from "@/components/org/ActionButton";
 import { JsonForm } from "@/components/org/JsonForm";
 import { InvitationActions, InviteStaffForm, JoinLinkActions, MemberActions } from "@/components/org/TeamClient";
+import { SectionTabs } from "@/components/org/SectionTabs";
 import { Collapsible, EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Team & access — Capabilio AI" };
@@ -25,6 +26,7 @@ export default async function TeamPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <SectionTabs label="Team sections" active="/org/team" tabs={[{ label: "Team & access", href: "/org/team", show: true }, { label: "Team chat", href: "/org/chat", show: can(ctx, "useChat") }]} />
       <PageHeader
         title="Team & access"
         subtitle="Bring your students in with a link, invite staff by email, and decide exactly what each person can do. Nobody gets a separate login system — everyone uses the same sign-in."
