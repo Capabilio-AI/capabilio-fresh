@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { isLaunchpadOpen, isPlanBTerm } from "./term";
 
 describe("isPlanBTerm", () => {
-  it("is true only in 3-1", () => {
+  it("opens in 3-1 and stays open, never before", () => {
     expect(isPlanBTerm(3, 1)).toBe(true);
-    expect(isPlanBTerm(3, 2)).toBe(false);
+    expect(isPlanBTerm(3, 2)).toBe(true);
+    expect(isPlanBTerm(4, 1)).toBe(true);
+    expect(isPlanBTerm(2, 2)).toBe(false);
     expect(isPlanBTerm(2, 1)).toBe(false);
-    expect(isPlanBTerm(4, 1)).toBe(false);
     expect(isPlanBTerm(null, 1)).toBe(false);
     expect(isPlanBTerm(3, null)).toBe(false);
   });

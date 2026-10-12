@@ -21,7 +21,8 @@ const ACCENT = {
 export default async function ArenaChallengesPage() {
   const { supabase, user } = await requireAuthedUser();
   const [scope, { intent }] = await Promise.all([resolveStreamScope(supabase, user.id), getCareerIntent(createServiceClient(), user.id)]);
-  const target = intent.primary?.name ?? null;
+  // Domain follows the Plan B answer: same role keeps the onboarding role, change role uses the new one, anything else has no Domain yet.
+  const target = intent.planBKind === "same_role" ? intent.primary?.name ?? null : intent.planBKind === "change_role" ? intent.secondary?.name ?? null : null;
 
   return (
     <div>
@@ -42,7 +43,7 @@ export default async function ArenaChallengesPage() {
           count="4–9 challenges"
           timing="8–15 min each"
           reward="Earn points"
-          context={scope ? { text: `Your stream: ${scope.branch}`, href: "/profile", label: "change" } : { text: "No branch on your profile yet", href: "/profile", label: "Add your branch" }}
+          context={scope ? { text: `Your stream: ${scope.branch}` } : { text: "No branch on your profile yet", href: "/profile", label: "Add your branch" }}
         />
         <TrackCard
           href="/arena/challenges/domain"
@@ -50,15 +51,11 @@ export default async function ArenaChallengesPage() {
           accent="blue"
           badge="Domain"
           title="Domain Challenges"
-          description="Work on real-world tickets for your target career role. Solve problems with industry-style datasets and tools."
-          count="8 challenges"
+          description={target ? "Work on a real-world ticket for your career role. Finish it, and the next one unlocks a day later." : "Real-world tickets for your career role. They begin once you answer Plan B in 3rd year; until then, Stream challenges build your base."}
+          count="One ticket at a time"
           timing="8–15 min each"
           reward="Earn ELO"
-          context={
-            target
-              ? { text: `Your target: ${target}`, href: "/dashboard/roadmap", label: "change" }
-              : { text: intent.isExploring ? "You are still exploring" : "No target career set", href: "/dashboard/roadmap", label: "Set your career" }
-          }
+          context={{ text: target ? `Your role: ${target}` : "Starts after Plan B in 3rd year" }}
         />
       </div>
     </div>
@@ -86,7 +83,7 @@ function TrackCard({
   count: string;
   timing: string;
   reward: string;
-  context: { text: string; href: string; label: string };
+  context: { text: string; href?: string; label?: string };
 }) {
   const a = ACCENT[accent];
   return (
@@ -128,10 +125,15 @@ function TrackCard({
       </div>
     </Link>
     <p className="px-2 font-lp-body text-[12.5px] text-app-muted">
-      {context.text} ·{" "}
-      <Link href={context.href} className="font-semibold text-[var(--m-ink)] hover:underline">
-        {context.label}
-      </Link>
+      {context.text}
+      {context.href && context.label && (
+        <>
+          {" "}·{" "}
+          <Link href={context.href} className="font-semibold text-[var(--m-ink)] hover:underline">
+            {context.label}
+          </Link>
+        </>
+      )}
     </p>
     </div>
   );

@@ -4,7 +4,7 @@ import { saveCareerIntent } from "@/lib/careers/intent";
 import { untyped } from "@/lib/org/db";
 import { loadGraphContext } from "./context";
 import { explainNode } from "./explain-node";
-import { NodeStateBody, NodeStateError, confirmSemester, setNodeState } from "./node-state";
+import { NodeStateBody, NodeStateError, setNodeState } from "./node-state";
 import { getRoadmapGraph } from "./service";
 
 // Live: the visual roadmap assembled from the real published tree, a real student's evidence, node state and a published syllabus.
@@ -118,10 +118,8 @@ describe("the student's own marks and semester", () => {
     await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: group.key, careerId: careerIds["data-analyst"], status: "LEARNING" }))).rejects.toMatchObject({ status: 400 });
     await expect(setNodeState(service, userId, NodeStateBody.parse({ nodeKey: group.key, careerId: careerIds["product-designer"], status: "LEARNING" }))).rejects.toMatchObject({ status: 404 });
   });
-  it("shows an estimated semester until the student confirms it", async () => {
+  it("shows an estimated semester until the college sets its calendar", async () => {
     expect((await ready()).header.position).toMatchObject({ year: 3, semesterEstimated: true });
-    await confirmSemester(service, userId, 2);
-    expect((await ready()).header.position).toMatchObject({ year: 3, semester: 2, semesterEstimated: false });
   });
 });
 

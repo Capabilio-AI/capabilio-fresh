@@ -23,7 +23,7 @@ export interface IntentView {
   /** how sure the interpretation of the goal text was (0–1); not a statement about the student */
   goalConfidence: number | null;
   isExploring: boolean;
-  /** how the student answered the one-time Plan B question (3-1); null until they do */
+  /** how the student answered the one-time Plan B question (3rd year onward); null until they do */
   planBKind: PlanBKind | null;
   lastUpdated: string | null;
 }
@@ -101,7 +101,7 @@ export async function saveCareerIntent(service: Service, userId: string, body: {
     secondaryCareerId: body.primaryCareerId === null ? null : body.secondaryCareerId !== undefined ? body.secondaryCareerId : now.secondaryCareerId,
     isExploring: body.isExploring !== undefined ? body.isExploring : now.isExploring,
   };
-  // Plan B can be added or changed in 3-1 only; clearing it, or leaving it as is, is always allowed.
+  // Plan B can be added or changed from 3rd year onward only; clearing it, or leaving it as is, is always allowed.
   if (next.secondaryCareerId && next.secondaryCareerId !== now.secondaryCareerId && !(await isPlanBOpen(service, userId))) return fail(403, PLAN_B_CLOSED_MESSAGE);
   const saved = await write(service, userId, next);
   if (saved.ok && next.primaryCareerId && next.primaryCareerId !== now.primaryCareerId) {
@@ -150,8 +150,8 @@ export async function resolveSuggestion(service: Service, userId: string, sugges
 }
 
 /**
- * The one-time Plan B answer, allowed only in 3-1. "change_role" also stores the chosen career as the Plan B career (so its roadmap
- * and baseline check work); every other kind clears it. Asked once: a real choice is final, while "undecided" can still be replaced during 3-1.
+ * The one-time Plan B answer, allowed from 3rd year onward. "change_role" also stores the chosen career as the Plan B career (so its roadmap
+ * and baseline check work); every other kind clears it. Asked once: a real choice is final, while "undecided" can still be replaced later.
  */
 export async function savePlanB(service: Service, userId: string, body: { kind: PlanBKind; careerId?: string }): Promise<Result> {
   if (!(await isPlanBOpen(service, userId))) return fail(403, PLAN_B_CLOSED_MESSAGE);

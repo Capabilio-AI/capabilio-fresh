@@ -9,8 +9,7 @@ import { RUNTIMES } from "@/lib/arena-runtime/registry";
 import type { RuntimeType } from "@/lib/arena-runtime/types";
 import { ELO_BY_DIFFICULTY, type Difficulty } from "@/lib/arena-workstations/types";
 import { chooseDomainCareer, type CareerChoice, type DomainCareerState } from "./career-state";
-import { DOMAIN_SET_SIZE, explainPick, recommendForSkill, selectDomainSet, type DomainCandidate, type SkillGap } from "./select-domain";
-import { weekStartOf } from "./week";
+import { domainUnlockAt, explainPick, recommendForSkill, selectDomainSet, type DomainCandidate, type SkillGap } from "./select-domain";
 
 type Service = SupabaseClient<Database>;
 
@@ -32,7 +31,7 @@ export interface DomainSetItem {
 
 export type DomainSetView =
   | Exclude<DomainCareerState, { state: "ready" }>
-  | { state: "ready"; which: CareerChoice; career: { id: string; key: string; name: string }; planB: string | null; primary: string; items: DomainSetItem[]; shortfall: number };
+  | { state: "ready"; which: CareerChoice; career: { id: string; key: string; name: string }; planB: string | null; primary: string; items: DomainSetItem[]; /** ISO time the next ticket unlocks; null when a ticket is available now */ unlockAt: string | null };
 
 interface CatalogRow {
   id: string;
@@ -90,45 +89,55 @@ async function loadPublishedDomainPool(service: Service, careerIds: string[] | n
   };
 }
 
-async function loadAttemptState(service: Service, userId: string, since: string) {
+async function loadAttemptState(service: Service, userId: string) {
   const { data } = await untyped(service).from("challenge_attempts").select("challenge_id, status, started_at, submitted_at").eq("student_id", userId).order("started_at", { ascending: false });
   const rows = (data ?? []) as { challenge_id: string; status: string; started_at: string; submitted_at: string | null }[];
   const latest = new Map<string, string>();
   for (const r of rows) if (!latest.has(r.challenge_id)) latest.set(r.challenge_id, r.status);
   const passedEver = new Set(rows.filter((r) => r.status === "PASSED").map((r) => r.challenge_id));
-  const passedThisWeek = new Set(rows.filter((r) => r.status === "PASSED" && (r.submitted_at ?? r.started_at) >= since).map((r) => r.challenge_id));
-  return { latest, passedEver, passedThisWeek };
+  return { rows, latest, passedEver };
 }
 
 const statusOf = (latest: string | undefined): ItemStatus => (latest === "IN_PROGRESS" || latest === "PASSED" || latest === "FAILED" || latest === "NEEDS_REVIEW" ? latest : "NOT_STARTED");
 
 /**
- * The student's Domain set for their primary career (or Plan B): the challenges they passed this week stay listed so the set does not shift
- * under them, and the rest are chosen by selectDomainSet from their real skill gaps. Never invents a career or a challenge.
+ * The student's current Domain ticket. Domain starts only after the Plan B answer (same role or change role). One ticket at a time: an unfinished ticket stays until it is passed,
+ * and the next one unlocks 24h after a pass (`unlockAt`). Never rotates weekly -- only Stream does. Never invents a career or a challenge.
  */
 export async function loadDomainSet(service: Service, userId: string, which: CareerChoice, now: Date = new Date()): Promise<DomainSetView> {
   const { intent } = await getCareerIntent(service, userId);
-  const chosen = chooseDomainCareer(intent, which);
-  if (chosen.state !== "ready") return chosen;
+  const base = chooseDomainCareer(intent, which);
+  if (base.state !== "ready") return base;
+  // Domain starts only after the Plan B answer: "same role" practises the main career, "change role" the new one. Anything else stays on Stream.
+  const kind = intent.planBKind;
+  const career = kind === "same_role" ? intent.primary : kind === "change_role" ? intent.secondary : null;
+  if (!career) return { state: "no_plan_b", primary: base.primary };
+  const target = { ...base, career };
 
-  const [careers, skillNames, caps, pool, attempts] = await Promise.all([
+  const [careers, skillNames, caps, pool, attempts, { data: domainRows }] = await Promise.all([
     loadCareers(service),
     loadSkillNames(service),
     loadStudentCapabilities(service, userId),
-    loadPublishedDomainPool(service, [chosen.career.id]),
-    loadAttemptState(service, userId, weekStartOf(now)),
+    loadPublishedDomainPool(service, [target.career.id]),
+    loadAttemptState(service, userId),
+    untyped(service).from("arena_challenges").select("id").eq("track", "domain"),
   ]);
 
-  const requirements = careers.find((c) => c.id === chosen.career.id)?.requirements ?? [];
+  const domainIds = new Set(((domainRows ?? []) as { id: string }[]).map((r) => r.id));
+  const lastPassAt = attempts.rows.filter((r) => r.status === "PASSED" && domainIds.has(r.challenge_id)).map((r) => r.submitted_at ?? r.started_at).sort().pop() ?? null;
+  const unlockAt = domainUnlockAt(lastPassAt, now);
+  if (unlockAt) return { ...target, items: [], unlockAt };
+
+  const requirements = careers.find((c) => c.id === target.career.id)?.requirements ?? [];
   const gaps: SkillGap[] = requirements.map((r) => {
     const cap = caps.bySkill.get(r.skillId);
     const current = cap ? effectiveLevel({ level: cap.level ?? 0, assessed: cap.level !== null, confidence: cap.confidence, verified: cap.verified, verifiedLevel: cap.verifiedLevel, selfDeclaredLevel: cap.selfDeclaredLevel }) : 0;
     return { skillId: r.skillId, skillName: skillNames.get(r.skillId) ?? "this skill", current, hasData: Boolean(cap), target: r.targetLevel, importance: r.importance };
   });
 
-  const kept = pool.candidates.filter((c) => attempts.passedThisWeek.has(c.id));
-  const fresh = selectDomainSet(pool.candidates, attempts.passedEver, gaps, Math.max(0, DOMAIN_SET_SIZE - kept.length));
-  const picks = [...kept.map((c) => ({ id: c.id, reason: null })), ...fresh];
+  // rows are newest-first: a started-but-unpassed ticket is the one to finish before any other is offered
+  const openId = attempts.rows.find((r) => pool.rows.has(r.challenge_id) && !attempts.passedEver.has(r.challenge_id))?.challenge_id;
+  const picks = openId ? [{ id: openId, reason: null }] : selectDomainSet(pool.candidates, attempts.passedEver, gaps, 1);
 
   const items = picks.flatMap((p): DomainSetItem[] => {
     const row = pool.rows.get(p.id);
@@ -147,18 +156,18 @@ export async function loadDomainSet(service: Service, userId: string, which: Car
         eloAvailable: ELO_BY_DIFFICULTY[row.difficulty as Difficulty] ?? 0,
         runtimeType,
         startable: runtimeType !== null && RUNTIMES[runtimeType].status === "available" && pool.enabledRuntimes.has(runtimeType),
-        why: status === "PASSED" ? "Completed this week." : explainPick(p.reason, chosen.career.name),
+        why: !p.reason && status !== "NOT_STARTED" ? "Finish this ticket to unlock the next one." : explainPick(p.reason, target.career.name),
       },
     ];
   });
   const order = { easy: 0, medium: 1, hard: 2 } as Record<string, number>;
   items.sort((a, b) => (order[a.difficulty] ?? 0) - (order[b.difficulty] ?? 0));
-  return { ...chosen, items, shortfall: DOMAIN_SET_SIZE - items.length };
+  return { ...target, items, unlockAt: null };
 }
 
 /** "Recommended challenges for skill X (and career Y)" -- the stable query the Roadmap page can use for its Arena section. */
 export async function recommendChallengesForSkill(service: Service, userId: string, skillId: string, careerId: string | null, limit = 5) {
-  const [caps, pool, attempts] = await Promise.all([loadStudentCapabilities(service, userId), loadPublishedDomainPool(service, null), loadAttemptState(service, userId, "0000-00-00")]);
+  const [caps, pool, attempts] = await Promise.all([loadStudentCapabilities(service, userId), loadPublishedDomainPool(service, null), loadAttemptState(service, userId)]);
   const cap = caps.bySkill.get(skillId);
   const ids = recommendForSkill({ pool: pool.candidates, solvedIds: attempts.passedEver, skillId, careerId, level: cap?.level ?? null, limit });
   return ids.flatMap((id) => {

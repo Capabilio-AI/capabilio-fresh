@@ -1,6 +1,7 @@
 import type { Difficulty } from "./select-stream";
 
 export const DOMAIN_SET_SIZE = 8;
+export const DOMAIN_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 export interface DomainCandidate {
   id: string;
@@ -31,6 +32,13 @@ export interface DomainPick {
   id: string;
   /** null when the challenge is linked to the career but to no skill the student currently has a gap in */
   reason: DomainReason | null;
+}
+
+/** Pure. When the next Domain ticket unlocks (ISO), or null if it is available now. The clock starts when the last ticket was passed. */
+export function domainUnlockAt(lastPassAt: string | null, now: Date): string | null {
+  if (!lastPassAt) return null;
+  const at = new Date(lastPassAt).getTime() + DOMAIN_COOLDOWN_MS;
+  return at > now.getTime() ? new Date(at).toISOString() : null;
 }
 
 const IMPORTANCE_WEIGHT: Record<string, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };

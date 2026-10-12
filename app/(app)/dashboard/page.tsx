@@ -71,7 +71,7 @@ export default async function DashboardPage() {
   const service = createServiceClient();
   const [rollNotice, direction, careerProfile] = await Promise.all([loadRollNumberNotice(service, user.id), getStudentDirection(service, user.id), getCareerProfile(service as unknown as Db, user.id)]);
   const overview = buildOverview(careerProfile);
-  // Plan B is asked once, in 3-1, and never again after one is saved.
+  // Plan B is asked from 3rd year onward, and never again once a real choice is saved.
   const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;
   const askPlanB = planBAsk && !planBAsk.intent.planBKind ? planBAsk : null;
   const topMatch = careerMatches[0] ?? null;
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white p-4">
           <div className="max-w-[60ch]">
             <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">Choose your Plan B</p>
-            <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">You&apos;re in 3rd year, 1st semester. Tell us what you would do if your main plan changes. You are asked once.</p>
+            <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">You&apos;re in 3rd year. Tell us what you would do if your main plan changes. You are asked once.</p>
           </div>
           <PlanBDialog autoOpen mainCareer={askPlanB.intent.primary?.name ?? null} careers={askPlanB.careers.filter((c) => c.id !== askPlanB.intent.primary?.id)} />
         </div>

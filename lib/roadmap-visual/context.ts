@@ -32,19 +32,14 @@ interface NodeDb {
   side: "LEFT" | "RIGHT" | "CENTER";
 }
 
-/** The student's position: year from their confirmed academic year, semester from what they confirmed or else an estimate from the calendar. */
+/** The student's position: year from their confirmed academic year, semester from the college's academic calendar, else an estimate. */
 async function loadPosition(service: Service, userId: string, now: Date): Promise<{ position: Position; institutionId: string | null; branch: string | null; regulation: string | null; membershipId: string | null }> {
   const direction = await getStudentDirection(service, userId, now);
   if (!direction) return { position: { year: null, semester: null, semesterEstimated: true, totalYears: null }, institutionId: null, branch: null, regulation: null, membershipId: null };
-  const [{ data: membership }, { data: institution }] = await Promise.all([
-    untyped(service).from("institution_memberships").select("current_semester, semester_confirmed_at").eq("id", direction.membershipId).maybeSingle(),
-    direction.institutionId ? service.from("institutions").select("academic_start_month").eq("id", direction.institutionId).maybeSingle() : Promise.resolve({ data: null }),
-  ]);
   const year = needsYearConfirmation(direction, now) ? null : direction.academicYear?.year ?? null;
-  const confirmed = (membership as { current_semester: number | null; semester_confirmed_at: string | null } | null) ?? null;
-  const semester = year === null ? null : confirmed?.current_semester ?? estimateSemester(now, institution?.academic_start_month ?? DEFAULT_ACADEMIC_START_MONTH);
+  const semester = year === null ? null : direction.semester;
   return {
-    position: { year, semester, semesterEstimated: !(confirmed?.current_semester && confirmed.semester_confirmed_at), totalYears: direction.startYear && direction.endYear ? totalYearsOf(direction.startYear, direction.endYear) : null },
+    position: { year, semester, semesterEstimated: !direction.semesterFromCollege, totalYears: direction.startYear && direction.endYear ? totalYearsOf(direction.startYear, direction.endYear) : null },
     institutionId: direction.institutionId, branch: direction.branch, regulation: direction.regulation, membershipId: direction.membershipId,
   };
 }

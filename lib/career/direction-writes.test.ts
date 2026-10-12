@@ -84,8 +84,17 @@ describe("program years writes", () => {
     const { client, updates } = fakeService([MEMBERSHIP()]);
     expect(await saveProgramYears(client, "u-own", { startYear: 2028, endYear: 2024, currentYearOverride: null }, NOW)).toMatchObject({ ok: false, status: 400 });
     expect(updates).toHaveLength(0);
-    await saveProgramYears(client, "u-own", { startYear: 2024, endYear: 2028, currentYearOverride: 5 }, NOW);
-    expect(updates[0].patch).toMatchObject({ start_year: 2024, end_year: 2028, year_override: 5, year_confirmed_at: NOW.toISOString() });
+  });
+  it("saves years only while none are on file, and never writes an override", async () => {
+    const empty = fakeService([MEMBERSHIP({ start_year: null, end_year: null })]);
+    await saveProgramYears(empty.client, "u-own", { startYear: 2024, endYear: 2028, currentYearOverride: 5 }, NOW);
+    expect(empty.updates[0].patch).toMatchObject({ start_year: 2024, end_year: 2028, year_confirmed_at: NOW.toISOString() });
+    expect(empty.updates[0].patch).not.toHaveProperty("year_override");
+  });
+  it("refuses a student changing years already on file", async () => {
+    const { client, updates } = fakeService([MEMBERSHIP()]);
+    expect(await saveProgramYears(client, "u-own", { startYear: 2023, endYear: 2027, currentYearOverride: null }, NOW)).toMatchObject({ ok: false, status: 403 });
+    expect(updates).toHaveLength(0);
   });
 });
 

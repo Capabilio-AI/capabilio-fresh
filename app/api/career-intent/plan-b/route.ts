@@ -5,7 +5,7 @@ import { savePlanB } from "@/lib/careers/intent";
 import { PlanBBodySchema } from "@/lib/careers/plan-b-rules";
 import { parseBody, respond } from "@/lib/careers/route";
 
-/** The student's one-time Plan B answer (3-1 only). The student is always the caller; a body cannot name one. */
+/** The student's one-time Plan B answer (3rd year onward). The student is always the caller; a body cannot name one. */
 export async function PUT(request: Request) {
   const auth = await requireUser(await createClient());
   if ("error" in auth) return auth.error;

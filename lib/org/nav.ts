@@ -33,6 +33,7 @@ const GROUPS: { label: string; items: Candidate[] }[] = [
       { label: "Projects", href: "/org/projects", needs: "classroom" },
       { label: "Company visits", href: "/org/placements", needs: "placements" },
       { label: "Curriculum", href: "/org/curriculum", needs: "curriculum" },
+      { label: "Academic calendar", href: "/org/calendar", needs: "page" },
       { label: "Team & access", href: "/org/team", needs: "members" },
     ],
   },

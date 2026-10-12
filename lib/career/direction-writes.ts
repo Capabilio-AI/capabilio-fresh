@@ -6,8 +6,8 @@ import { validateProgramYears } from "./years";
 export type WriteResult = { ok: true } | { ok: false; status: number; message: string };
 
 /**
- * Student-declared program years (validated) and the manual current-year
- * override. Always resolves the membership from the authenticated user id, so
+ * Student-declared program years (validated), accepted only while none are on file: once set they are fixed by the college's records,
+ * and there is no manual current-year override. Always resolves the membership from the authenticated user id, so
  * a caller can only ever change their own row. `service` bypasses RLS on
  * purpose: institution_memberships has no UPDATE policy for clients.
  */
@@ -21,12 +21,12 @@ export async function saveProgramYears(
   if (!years.ok) return { ok: false, status: 400, message: years.message };
   const direction = await getStudentDirection(service, userId, now);
   if (!direction) return { ok: false, status: 404, message: "No student program found for your account." };
+  if (direction.startYear != null && direction.endYear != null) return { ok: false, status: 403, message: "Your program years are set by your college and can't be changed here." };
   const { error } = await service
     .from("institution_memberships")
     .update({
       start_year: years.startYear,
       end_year: years.endYear,
-      year_override: input.currentYearOverride,
       year_confirmed_at: now.toISOString(),
     })
     .eq("id", direction.membershipId)

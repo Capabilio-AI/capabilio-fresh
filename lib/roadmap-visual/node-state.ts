@@ -39,14 +39,3 @@ export async function setNodeState(service: Service, userId: string, body: z.inf
   if (error) throw error;
 }
 
-export const SemesterBody = z.object({ semester: z.union([z.literal(1), z.literal(2)]) }).strict();
-
-/** The student confirms their current semester (1 or 2 of their year). Their own active student membership only. */
-export async function confirmSemester(service: Service, userId: string, semester: 1 | 2): Promise<void> {
-  const db = untyped(service);
-  const { data: rows } = await db.from("institution_memberships").select("id, branch, status").eq("user_id", userId).eq("role", "student").eq("status", "active").order("created_at", { ascending: false });
-  const membership = ((rows ?? []) as { id: string; branch: string | null }[]).find((m) => m.branch);
-  if (!membership) throw new NodeStateError("Add your college and branch first.", 409);
-  const { error } = await db.from("institution_memberships").update({ current_semester: semester, semester_confirmed_at: new Date().toISOString() }).eq("id", membership.id);
-  if (error) throw error;
-}

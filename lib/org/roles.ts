@@ -71,6 +71,7 @@ const ACTION_PERMISSION = {
   gradeProject: "classroom",
   publishPost: "posts",
   manageProfile: "page",
+  manageCalendar: "page",
   approveMembers: "members",
   postPlacement: "placements",
   viewInsights: "insights",

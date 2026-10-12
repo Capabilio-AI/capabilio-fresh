@@ -101,7 +101,7 @@ export async function loadRoadmapContext(service: Service, userId: string, now: 
     status: "READY",
     input: {
       career: { id: primary.id, name: primary.name }, requirements, courses: curriculum.courses, capability, hasAnyCapabilityData: caps.bySkill.size > 0,
-      position: { year, semester: estimateSemester(now, (institution?.academic_start_month ?? DEFAULT_ACADEMIC_START_MONTH)), totalYears: totalYearsOf(direction.startYear, direction.endYear) },
+      position: { year, semester: direction.semester, totalYears: totalYearsOf(direction.startYear, direction.endYear) },
       student: { id: userId, institutionId: direction.institutionId }, catalogs: { learning, certifications, projects, arena },
     },
     meta: {

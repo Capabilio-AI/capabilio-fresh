@@ -3,6 +3,7 @@ import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary, initialsOf } from "@/lib/dashboard/viewer";
 import { getEducationEntries } from "@/lib/dashboard/education";
 import { formatAcademicYear } from "@/lib/career/academic-year";
+import { PlanBDialog } from "@/components/direction/PlanBDialog";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { createServiceClient } from "@/lib/supabase/service";
 import { profileCompleteness } from "@/lib/profile/details";
@@ -24,7 +25,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const tab = tabOf(rawTab);
 
   const service = createServiceClient();
-  const [viewer, { data: details }, educationEntries, { intent }, passport] = await Promise.all([
+  const [viewer, { data: details }, educationEntries, { intent, careers }, passport] = await Promise.all([
     getViewerSummary(supabase, user.id),
     supabase.from("profiles").select("cover_url, headline, bio, location, phone, portfolio_show_contact, passport_code, passport_public").eq("id", user.id).single(),
     getEducationEntries(supabase, user.id),
@@ -64,6 +65,15 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-4">
           <ProfileTabs active={tab} />
+          {tab === "about" && viewer.direction?.planBOpen && intent.planBKind === "undecided" && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white p-4">
+              <div className="max-w-[56ch]">
+                <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">Plan B: not decided yet</p>
+                <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">Take your time. When you know where you are heading, choose it here.</p>
+              </div>
+              <PlanBDialog mainCareer={intent.primary?.name ?? null} careers={careers.filter((c) => c.id !== intent.primary?.id)} triggerLabel="Decide Plan B" />
+            </div>
+          )}
           {tab === "about" && <AboutSection profile={profile} aspiringFor={aspiringFor} location={profile.location} email={viewer.email} />}
           {tab === "academic" && <AcademicSection college={viewer.collegeName} branch={viewer.branch} graduatingYear={graduatingYear} yearLabel={yearLabel} entries={educationEntries} />}
           {tab === "passport" && reel && (

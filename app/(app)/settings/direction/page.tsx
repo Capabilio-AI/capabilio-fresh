@@ -5,11 +5,10 @@ import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { formatAcademicYear } from "@/lib/career/academic-year";
 import { goalLabel } from "@/lib/career/goal-copy";
 import { GoalStateOptions } from "@/components/direction/GoalStateOptions";
-import { YearConfirmCard } from "@/components/direction/YearConfirmCard";
 
 export const metadata: Metadata = { title: "Career direction — Capabilio AI" };
 
-/** Always-accessible: view and change goal state and program years, any time, no re-onboarding. */
+/** Always-accessible: change goal state any time. Stream and program years are set by your college and shown read-only. */
 export default async function DirectionSettingsPage() {
   const { supabase, user } = await requireAuthedUser();
   const { direction } = await getViewerSummary(supabase, user.id);
@@ -48,18 +47,14 @@ export default async function DirectionSettingsPage() {
         </div>
       </section>
 
-      <section className="mt-6">
-        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Your program years</h2>
-        <p className="mt-1 mb-3 font-lp-body text-[12.5px] text-app-muted">
-          {formatAcademicYear(year, direction.startYear, direction.endYear) ?? "Not set"}. Correct this if you have a backlog, gap year or repeated year.
-        </p>
-        <YearConfirmCard
-          startYear={direction.startYear}
-          endYear={direction.endYear}
-          computedYear={year}
-          overrideYear={direction.academicYear?.source === "override" ? year : null}
-          startEditing
-        />
+      <section className="mt-6 rounded-xl border border-app-border bg-white p-5">
+        <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Your stream and years</h2>
+        <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">These are set by your college and stay the same through your degree. Your semester updates by itself when your college publishes its academic calendar.</p>
+        <dl className="mt-4 grid grid-cols-1 gap-4 font-lp-body text-[13px] sm:grid-cols-3">
+          <div><dt className="text-app-muted">Stream</dt><dd className="mt-0.5 font-semibold text-app-charcoal">{direction.branch ?? "Not set"}</dd></div>
+          <div><dt className="text-app-muted">Program years</dt><dd className="mt-0.5 font-semibold text-app-charcoal">{direction.startYear && direction.endYear ? `${direction.startYear}–${direction.endYear}` : "Not set"}</dd></div>
+          <div><dt className="text-app-muted">Now</dt><dd className="mt-0.5 font-semibold text-app-charcoal">{formatAcademicYear(year, direction.startYear, direction.endYear) ?? "Not set"}{year ? `, semester ${direction.semester}` : ""}</dd></div>
+        </dl>
       </section>
     </div>
   );

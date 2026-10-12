@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { difficultyForLevel, DOMAIN_SET_SIZE, explainPick, recommendForSkill, selectDomainSet, type DomainCandidate, type SkillGap } from "./select-domain";
+import { difficultyForLevel, domainUnlockAt, DOMAIN_SET_SIZE, explainPick, recommendForSkill, selectDomainSet, type DomainCandidate, type SkillGap } from "./select-domain";
 import { chooseDomainCareer } from "./career-state";
 
 const gap = (skillId: string, current: number, target: number, importance = "HIGH", hasData = true): SkillGap => ({ skillId, skillName: skillId.toUpperCase(), current, target, importance, hasData });

@@ -3,10 +3,12 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getStudentDirection } from "@/lib/career/direction";
 import { loadDomainSet } from "@/lib/arena-challenges/domain-set";
 import { listEnabledRoles, matchRoleForStatedCareer } from "@/lib/arena-workstations/taxonomy";
 import { TrackChallengesBoard } from "@/components/arena/TrackChallengesBoard";
 import { DomainSetList } from "@/components/arena/domain/DomainSetList";
+import { DomainCountdown } from "@/components/arena/domain/DomainCountdown";
 
 export const metadata: Metadata = {
   title: "Domain Challenges — Arena — Capabilio AI",
@@ -34,7 +36,7 @@ function Notice({ title, body, cta }: { title: string; body: string; cta?: { hre
 export default async function DomainChallengesPage({ searchParams }: { searchParams: Promise<{ career?: string; sample?: string }> }) {
   const { user } = await requireAuthedUser();
   const params = await searchParams;
-  const which = "primary"; // students choose one target career; Plan B is no longer offered
+  const which = "primary"; // Domain tickets follow the main career; a Plan B must be set to unlock them
   const service = createServiceClient();
   const view = await loadDomainSet(service, user.id, which);
 
@@ -57,11 +59,12 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
       />
     );
   } else if (view.state === "no_plan_b") {
+    const planBOpen = Boolean((await getStudentDirection(service, user.id))?.planBOpen);
     body = (
       <Notice
-        title="No Plan B career set"
-        body={`Your main career is ${view.primary}. Add a Plan B in Career Path to practise for it too.`}
-        cta={[{ href: SET_CAREER_HREF, label: "Add a Plan B" }, { href: "/arena/challenges/domain", label: `Back to ${view.primary}` }]}
+        title="Domain challenges start with your Plan B"
+        body={`Until then Arena gives you Stream challenges, so you can learn about ${view.primary} and build your base. Domain tickets begin once you choose to continue in your role or move to another in 3rd year.`}
+        cta={[...(planBOpen ? [{ href: "/dashboard/roadmap", label: "Answer Plan B" }] : []), { href: "/arena/challenges/stream", label: "Go to Stream challenges" }]}
       />
     );
   } else {
@@ -70,27 +73,13 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
     body = (
       <>
         <div className="mb-5 flex flex-wrap items-center gap-2 font-lp-body text-[13px]">
-          <span className="text-app-muted">Your target:</span>
-          <Link href="/arena/challenges/domain" className={`rounded-full px-3 py-1 font-semibold ${view.which === "primary" ? "bg-app-blue-container text-app-blue" : "border border-[var(--m-rule)] text-app-muted"}`}>
-            {view.primary}
-          </Link>
-          <Link href={SET_CAREER_HREF} className="ml-auto text-app-muted hover:text-[var(--m-ink)]">
-            change
-          </Link>
+          <span className="text-app-muted">Your role:</span>
+          <span className="rounded-full bg-app-blue-container px-3 py-1 font-semibold text-app-blue">{view.career.name}</span>
         </div>
-        {view.items.length > 0 ? (
+        {view.items.length > 0 || view.unlockAt ? (
           <TrackChallengesBoard
             track="domain"
-            workspace={
-              <>
-                {view.shortfall > 0 && (
-                  <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
-                    Only {view.items.length} challenge{view.items.length === 1 ? " is" : "s are"} published for {view.career.name} so far.
-                  </p>
-                )}
-                <DomainSetList items={view.items} />
-              </>
-            }
+            workspace={view.unlockAt ? <DomainCountdown unlockAt={view.unlockAt} /> : <DomainSetList items={view.items} />}
           />
         ) : hasLegacyWorkstation ? (
           <TrackChallengesBoard track="domain" />

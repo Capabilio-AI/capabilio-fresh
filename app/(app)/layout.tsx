@@ -26,12 +26,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   const banner =
     direction && askYear ? (
-      <YearConfirmCard
-        startYear={direction.startYear}
-        endYear={direction.endYear}
-        computedYear={direction.academicYear?.year ?? null}
-        overrideYear={direction.academicYear?.source === "override" ? direction.academicYear.year : null}
-      />
+      <YearConfirmCard />
     ) : null;
   const banners = (
     <>

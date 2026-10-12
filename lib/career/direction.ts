@@ -5,6 +5,7 @@ import { computeCurrentAcademicYear, DEFAULT_ACADEMIC_START_MONTH, type Academic
 import { isCareerDirectionWindow } from "./trigger";
 import { estimateSemester } from "@/lib/roadmap-engine/position";
 import { isLaunchpadOpen, isPlanBTerm } from "./term";
+import { loadCalendarSemester } from "@/lib/org/academic-calendar";
 
 export const GOAL_STATES = ["job", "higher_studies", "entrepreneur", "not_sure"] as const;
 export type GoalState = (typeof GOAL_STATES)[number];
@@ -35,8 +36,11 @@ export interface StudentDirection {
   inDirectionWindow: boolean;
   /** final year (4-1 onward): Launchpad is visible */
   launchpadOpen: boolean;
-  /** exactly 3-1: Plan B can be chosen and its baseline questions asked */
+  /** 3rd year onward: Plan B can be chosen and its baseline questions asked */
   planBOpen: boolean;
+  /** current semester: from the college's academic calendar when set, else estimated from the cycle start month. Students never set it. */
+  semester: 1 | 2;
+  semesterFromCollege: boolean;
   goalStateUpdatedAt: string | null;
   goalStatePromptedAt: string | null;
   higherStudiesCheckinAt: string | null;
@@ -59,15 +63,16 @@ type MembershipRow = Pick<
     current_semester?: number | null;
   };
 
-export function buildDirection(row: MembershipRow, cycleStartMonth: number, now: Date = new Date()): StudentDirection {
+export function buildDirection(row: MembershipRow, cycleStartMonth: number, now: Date = new Date(), calendarSemester: 1 | 2 | null = null): StudentDirection {
   const goalState = isGoalState(row.goal_state) ? row.goal_state : null;
   const academicYear = computeCurrentAcademicYear({
     startYear: row.start_year,
     endYear: row.end_year,
     cycleStartMonth,
-    override: row.year_override,
+    override: null, // years are fixed by the college's records; a student-set override is ignored
     now,
   });
+  const semester = calendarSemester ?? estimateSemester(now, cycleStartMonth);
   return {
     membershipId: row.id,
     startYear: row.start_year,
@@ -78,7 +83,9 @@ export function buildDirection(row: MembershipRow, cycleStartMonth: number, now:
     track: trackFor(goalState),
     inDirectionWindow: isCareerDirectionWindow(row.end_year, now),
     launchpadOpen: isLaunchpadOpen(academicYear?.year ?? null, row.start_year, row.end_year),
-    planBOpen: isPlanBTerm(academicYear?.year ?? null, row.current_semester ?? estimateSemester(now, cycleStartMonth)),
+    planBOpen: isPlanBTerm(academicYear?.year ?? null, semester),
+    semester,
+    semesterFromCollege: calendarSemester !== null,
     goalStateUpdatedAt: row.goal_state_updated_at,
     goalStatePromptedAt: row.goal_state_prompted_at,
     higherStudiesCheckinAt: row.higher_studies_checkin_at,
@@ -138,5 +145,10 @@ export async function getStudentDirection(
   const best = rows.find((r) => r.status === "active" && r.branch) ?? null;
   if (!best) return null;
   const institution = best.institutions as { academic_start_month: number } | null;
-  return buildDirection(best, institution?.academic_start_month ?? DEFAULT_ACADEMIC_START_MONTH, now);
+  const month = institution?.academic_start_month ?? DEFAULT_ACADEMIC_START_MONTH;
+  const built = buildDirection(best, month, now);
+  const year = built.academicYear?.year ?? null;
+  if (!best.institution_id || !best.branch || year === null) return built;
+  const fromCollege = await loadCalendarSemester(supabase, best.institution_id, best.branch, year, now);
+  return fromCollege ? buildDirection(best, month, now, fromCollege) : built;
 }

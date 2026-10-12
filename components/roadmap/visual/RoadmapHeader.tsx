@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import type { RoadmapGraph } from "@/lib/roadmap-visual/graph-types";
-import { send } from "@/components/roadmap/v2/api";
 
 const timeAgo = (iso: string) => {
   const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -11,13 +9,6 @@ const timeAgo = (iso: string) => {
 
 export function RoadmapHeader({ graph, generatedAt, which, planB, onWhich, onRefresh, loading, stale, onChanged }: { graph: RoadmapGraph; generatedAt: string; which: "primary" | "plan-b"; planB: string | null; onWhich: (w: "primary" | "plan-b") => void; onRefresh: () => void; loading: boolean; stale: boolean; onChanged: () => void }) {
   const h = graph.header;
-  const [error, setError] = useState<string | null>(null);
-  const setSemester = async (semester: 1 | 2) => {
-    setError(null);
-    const r = await send("PUT", "/api/roadmap/semester", { semester });
-    if (!r.ok) return setError(r.error ?? "Could not save.");
-    onChanged();
-  };
   const c = h.curriculum;
   return (
     <header className="space-y-4 rounded-xl bg-[var(--m-ink)] p-5 text-white">
@@ -45,11 +36,7 @@ export function RoadmapHeader({ graph, generatedAt, which, planB, onWhich, onRef
           <dd className="font-lp-body text-[14px] font-bold">{h.position.year ? `Year ${h.position.year}${h.position.totalYears ? ` of ${h.position.totalYears}` : ""}` : "Year not confirmed"}</dd>
           {h.position.year && (
             <dd className="font-lp-body text-[12px] text-[var(--m-soft)]">
-              <label htmlFor="sem" className="sr-only">Current semester</label>
-              Semester <select id="sem" value={h.position.semester ?? 1} onChange={(e) => void setSemester(Number(e.target.value) as 1 | 2)} className="rounded border border-white/40 bg-white px-1 py-0.5 text-[var(--m-ink)]">
-                <option value={1}>1</option><option value={2}>2</option>
-              </select>{h.position.semesterEstimated ? " (estimated: confirm yours)" : ""}
-            </dd>
+Semester {h.position.semester ?? 1}{h.position.semesterEstimated ? " (estimated until your college sets its calendar)" : " · set by your college"}</dd>
           )}
         </div>
         <div>
@@ -62,7 +49,6 @@ export function RoadmapHeader({ graph, generatedAt, which, planB, onWhich, onRef
       <p aria-live="polite" className="font-lp-body text-[12px] text-[var(--m-soft)]">
         {stale ? <span className="text-[#ffd699]">Couldn’t refresh just now; showing what we last loaded. </span> : null}{loading ? "Refreshing… " : ""}Updated {timeAgo(generatedAt)}. Levels come only from your verified evidence; topics without evidence say “not assessed”.
       </p>
-      {error && <p role="alert" className="font-lp-body text-[12px] text-[#ffb4a8]">{error}</p>}
     </header>
   );
 }
