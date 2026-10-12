@@ -14,6 +14,11 @@ import { deriveNotifications, type Notification } from "@/lib/notifications/deri
 
 export const metadata: Metadata = { title: "Notifications — Capabilio AI" };
 
+/** Whole days from now until `iso`, never negative. Server-rendered per request, so reading the clock here is intended. */
+function daysUntil(iso: string): number {
+  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+}
+
 const TONE_ICON: Record<Notification["tone"], typeof AlertTriangle> = {
   attention: AlertTriangle,
   info: Info,
@@ -50,7 +55,7 @@ export default async function NotificationsPage() {
     topGapSkill: nextAction?.skill ?? null,
     vaultItemCount: vaultItems.length,
     hasGuidePath: guidePaths.primary !== null,
-    rollNumber: roll ? { collegeName: roll.collegeName, kind: roll.kind, daysLeft: roll.dueAt ? Math.max(0, Math.ceil((new Date(roll.dueAt).getTime() - Date.now()) / 86_400_000)) : null } : null,
+    rollNumber: roll ? { collegeName: roll.collegeName, kind: roll.kind, daysLeft: roll.dueAt ? daysUntil(roll.dueAt) : null } : null,
   });
 
   return (
