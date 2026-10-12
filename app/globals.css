@@ -280,3 +280,41 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- Landing "Daybreak" tokens (components/landing) ---- */
+:root {
+  --cap-ink: #0c1020;
+  --cap-night: #121634;
+  --cap-night-2: #1b2150;
+  --cap-indigo: #4a58f0;
+  --cap-indigo-soft: #e9ebff;
+  --cap-orange: #ff5701;
+  --cap-apricot: #ffb27a;
+  --cap-peach: #ffe6d6;
+  --cap-paper: #fcfcfb;
+  --cap-mist: #f3f4fa;
+  --cap-line: rgba(12, 16, 32, 0.12);
+  --cap-muted: #555a70;
+  --cap-ok: #17784a;
+  --cap-warn: #a5560a;
+}
+
+@theme inline {
+  --color-cap-ink: var(--cap-ink);
+  --color-cap-night: var(--cap-night);
+  --color-cap-night-2: var(--cap-night-2);
+  --color-cap-indigo: var(--cap-indigo);
+  --color-cap-indigo-soft: var(--cap-indigo-soft);
+  --color-cap-orange: var(--cap-orange);
+  --color-cap-apricot: var(--cap-apricot);
+  --color-cap-peach: var(--cap-peach);
+  --color-cap-paper: var(--cap-paper);
+  --color-cap-mist: var(--cap-mist);
+  --color-cap-line: var(--cap-line);
+  --color-cap-muted: var(--cap-muted);
+  --color-cap-ok: var(--cap-ok);
+  --color-cap-warn: var(--cap-warn);
+  --font-cap-display: var(--font-bricolage), "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-cap-body: "Geist", ui-sans-serif, system-ui, sans-serif;
+}
+/* ---- End landing tokens ---- */

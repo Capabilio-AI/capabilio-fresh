@@ -20,11 +20,12 @@ async function loadJoinLink(code: string | undefined): Promise<JoinLinkInfo | nu
   return inst ? { code, collegeName: inst.name, branch: link.branch, endYear: link.end_year } : null;
 }
 
-export default async function SignupPage({ searchParams }: { searchParams: Promise<{ join?: string }> }) {
-  const join = await loadJoinLink((await searchParams).join);
+export default async function SignupPage({ searchParams }: { searchParams: Promise<{ join?: string; as?: string }> }) {
+  const params = await searchParams;
+  const join = await loadJoinLink(params.join);
   return (
     <AuthLayout>
-      <SignupForm join={join} />
+      <SignupForm join={join} initialStatus={params.as === "graduate" ? "graduate" : "student"} />
     </AuthLayout>
   );
 }

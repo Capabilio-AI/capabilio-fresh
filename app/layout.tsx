@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Capabilio AI — Your Career Needs More Than a Resume",
+  title: "Capabilio AI — The Career Operating System Where Proof Beats Resume",
   description:
-    "Capabilio AI is an AI Career Operating System. Build skills, practice on real challenges, and turn your work into verified career evidence.",
+    "Capabilio AI is the career operating system for India and the rest of the world. Build skills, practice on real challenges, and carry a Skill Passport anyone can verify.",
   // transparent "C." mark: dark letter on light browser chrome, white letter on dark chrome
   icons: {
     icon: [

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, GraduationCap, Loader2 } from "lucide-react";
 import { CardChrome } from "./CardChrome";
 import { CollegeAutocomplete, CollegeMatch } from "./CollegeAutocomplete";
 import { BranchAutocomplete } from "./BranchAutocomplete";
@@ -23,7 +23,15 @@ export interface JoinLinkInfo {
   endYear: number | null;
 }
 
-export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
+type StudentStatus = "student" | "graduate";
+
+const STATUS_OPTIONS: { id: StudentStatus; title: string; hint: string; Icon: typeof BookOpen }[] = [
+  { id: "student", title: "I'm a student", hint: "Currently studying", Icon: BookOpen },
+  { id: "graduate", title: "Recently graduated", hint: "Finished in the last few years", Icon: GraduationCap },
+];
+
+export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLinkInfo | null; initialStatus?: StudentStatus }) {
+  const [status, setStatus] = useState<StudentStatus>(initialStatus);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [collegeName, setCollegeName] = useState(join?.collegeName ?? "");
@@ -71,6 +79,7 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
       rollNumber,
       startYear: years.startYear,
       endYear: years.endYear,
+      studentStatus: status,
       email,
       password,
       joinCode: join?.code,
@@ -118,6 +127,30 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
       <p className="mt-1.5 font-lp-body text-lp-body-sm text-lp-text-muted">
         Start building your verified career profile.
       </p>
+
+      <fieldset className="mt-6">
+        <legend className={FIELD_LABEL}>Which describes you?</legend>
+        <div className="grid grid-cols-2 gap-3">
+          {STATUS_OPTIONS.map(({ id, title, hint, Icon }) => {
+            const on = status === id;
+            return (
+              <label
+                key={id}
+                className={`relative flex cursor-pointer flex-col gap-2 rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-0.5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-cap-indigo ${
+                  on ? "border-cap-indigo! bg-cap-indigo-soft shadow-[0_8px_20px_-10px_rgba(74,88,240,0.6)]" : "border-cap-ink/20! bg-white"
+                }`}
+              >
+                <input type="radio" name="student-status" value={id} checked={on} onChange={() => setStatus(id)} className="sr-only" />
+                <span className={`grid h-9 w-9 place-items-center rounded-xl transition-colors ${on ? "bg-cap-indigo text-white" : "bg-cap-mist text-cap-muted"}`}>
+                  <Icon size={18} strokeWidth={1.75} />
+                </span>
+                <span className="font-lp-body text-lp-body-sm font-semibold text-cap-ink">{title}</span>
+                <span className="font-lp-body text-lp-label-sm leading-snug text-lp-text-muted">{hint}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5" noValidate>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -221,7 +254,7 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
             </div>
             <div>
               <label htmlFor="end-year" className={FIELD_LABEL}>
-                End year
+                {status === "graduate" ? "Graduation year" : "End year"}
               </label>
               <input
                 id="end-year"
@@ -232,7 +265,7 @@ export function SignupForm({ join }: { join?: JoinLinkInfo | null }) {
                 max={2100}
                 value={endYear}
                 onChange={(e) => setEndYear(e.target.value)}
-                placeholder="2028"
+                placeholder={status === "graduate" ? String(new Date().getFullYear()) : "2028"}
                 className={FIELD_INPUT}
               />
             </div>

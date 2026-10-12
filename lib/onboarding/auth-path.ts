@@ -9,3 +9,6 @@ export function parseAuthPath(value: string | string[] | undefined): AuthPath {
 
 export const loginHref = (path: AuthPath) => (path === "student" ? "/login" : `/login?path=${path}`);
 export const verifiedNext = (path: AuthPath) => (path === "student" ? "/verified" : `/verified?path=${path}`);
+
+// Pages that wear the auth shell without being login paths: Professional and Executive early-access pages.
+export type ShellPath = AuthPath | "professional" | "executive";

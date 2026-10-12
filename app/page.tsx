@@ -1,39 +1,35 @@
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import ProblemSection from "@/components/ProblemSection";
-import ProductLoop from "@/components/ProductLoop";
-import CareerPath from "@/components/CareerPath";
-import Curriculum from "@/components/Curriculum";
-import ProjectLab from "@/components/ProjectLab";
-import DomainWorkspaces from "@/components/DomainWorkspaces";
-import Arena from "@/components/Arena";
-import Portfolio from "@/components/Portfolio";
-import StudentJourney from "@/components/StudentJourney";
-import Stakeholders from "@/components/Stakeholders";
-import Pillars from "@/components/Pillars";
-import FinalCTA from "@/components/FinalCTA";
-import Footer from "@/components/Footer";
+import { display } from "@/components/landing/fonts";
+import "@/components/landing/landing.css";
+import Nav from "@/components/landing/Nav";
+import Hero from "@/components/landing/Hero";
+import EvidenceStrip from "@/components/landing/EvidenceStrip";
+import Statement from "@/components/landing/Statement";
+import WorldSays from "@/components/landing/WorldSays";
+import Ecosystem from "@/components/landing/Ecosystem";
+import Showcase from "@/components/landing/Showcase";
+import Paths from "@/components/landing/Paths";
+import Principles from "@/components/landing/Principles";
+import Institutions from "@/components/landing/Institutions";
+import Closing from "@/components/landing/Closing";
+import CommandPalette from "@/components/landing/CommandPalette";
 
 export default function Home() {
   return (
-    <>
-      <Navbar />
-      <main className="pt-16">
+    <div className={`${display.variable} cap`}>
+      <CommandPalette />
+      <Nav />
+      <main>
         <Hero />
-        <ProblemSection />
-        <ProductLoop />
-        <CareerPath />
-        <Curriculum />
-        <ProjectLab />
-        <DomainWorkspaces />
-        <Arena />
-        <Portfolio />
-        <StudentJourney />
-        <Stakeholders />
-        <Pillars />
-        <FinalCTA />
+        <EvidenceStrip />
+        <Statement />
+        <WorldSays />
+        <Ecosystem />
+        <Showcase />
+        <Paths />
+        <Principles />
+        <Institutions />
+        <Closing />
       </main>
-      <Footer />
-    </>
+    </div>
   );
 }

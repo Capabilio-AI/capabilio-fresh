@@ -1,0 +1,420 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-12T12:00:00Z",
+  "title": "Design System: Capabilio Landing (Daybreak plus OS)",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink Navy",
+        "canonical": "#0c1020",
+        "tonalRamp": [
+          "#0c1020",
+          "#1d2236",
+          "#33384d",
+          "#555a70",
+          "#7d8196",
+          "#a6a9b8",
+          "#d0d2dc",
+          "#f3f4fa"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night Indigo",
+        "canonical": "#121634",
+        "tonalRamp": [
+          "#070916",
+          "#121634",
+          "#1b2150",
+          "#2a3170",
+          "#4650b8",
+          "#7b84d6",
+          "#9aa4ff",
+          "#e9ebff"
+        ]
+      },
+      "indigo": {
+        "role": "primary",
+        "displayName": "Evidence Indigo",
+        "canonical": "#4a58f0",
+        "tonalRamp": [
+          "#14185e",
+          "#232a9a",
+          "#3340d0",
+          "#4a58f0",
+          "#7480f4",
+          "#9ea7f8",
+          "#c8cdfb",
+          "#e9ebff"
+        ]
+      },
+      "orange": {
+        "role": "primary",
+        "displayName": "Dawn Orange",
+        "canonical": "#ff5701",
+        "tonalRamp": [
+          "#5c1f00",
+          "#9a3500",
+          "#d44a00",
+          "#ff5701",
+          "#ff8040",
+          "#ffa874",
+          "#ffd0b3",
+          "#ffe6d6"
+        ]
+      },
+      "apricot": {
+        "role": "secondary",
+        "displayName": "Apricot",
+        "canonical": "#ffb27a",
+        "tonalRamp": [
+          "#5a2c0b",
+          "#8f4a1a",
+          "#c76d2e",
+          "#ff9548",
+          "#ffb27a",
+          "#ffc9a1",
+          "#ffe0c8",
+          "#fff1e6"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#fcfcfb",
+        "tonalRamp": [
+          "#555a70",
+          "#8a8e9f",
+          "#b8bac6",
+          "#d9dae1",
+          "#ececf0",
+          "#f3f4fa",
+          "#f9f9f9",
+          "#fcfcfb"
+        ]
+      },
+      "peach": {
+        "role": "secondary",
+        "displayName": "Peach",
+        "canonical": "#ffe6d6",
+        "tonalRamp": [
+          "#5c2a10",
+          "#8f4a1a",
+          "#c7772f",
+          "#ffa874",
+          "#ffc4a0",
+          "#ffd6bd",
+          "#ffe6d6",
+          "#fff4ec"
+        ]
+      },
+      "night-deep": {
+        "role": "neutral",
+        "displayName": "Night Deep",
+        "canonical": "#070916",
+        "tonalRamp": [
+          "#030409",
+          "#070916",
+          "#0c1020",
+          "#121634",
+          "#1b2150",
+          "#2a3170",
+          "#4650b8",
+          "#9aa4ff"
+        ]
+      },
+      "mist": {
+        "role": "neutral",
+        "displayName": "Mist",
+        "canonical": "#f3f4fa",
+        "tonalRamp": [
+          "#555a70",
+          "#8a8e9f",
+          "#b8bac6",
+          "#d9dae1",
+          "#e5e7f0",
+          "#eceef6",
+          "#f3f4fa",
+          "#fcfcfb"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headline only; light first line over a bold second line."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles, balanced wrapping."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card, tab and principle titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Lead and running copy in Geist."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Flag labels, state captions, table heads."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "JetBrains Mono for numbers, stream and ledger lines, key hints and the Sample tag only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "window",
+        "value": "0 1px 0 rgba(12,16,32,.06), 0 18px 40px -12px rgba(12,16,32,.28), 0 4px 10px -2px rgba(12,16,32,.12)",
+        "purpose": "Product windows, the hero skill card and the command palette."
+      },
+      {
+        "name": "flag",
+        "value": "0 8px 18px -6px rgba(12,16,32,.4), 0 2px 5px rgba(12,16,32,.15)",
+        "purpose": "Skill flags on the ridgeline."
+      },
+      {
+        "name": "glass-dock",
+        "value": "backdrop-filter: blur(24px); background rgba(255,255,255,.15); border 1px rgba(255,255,255,.25)",
+        "purpose": "Dock only; depth through translucency, not shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-soft",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Hero rise, skill card swap, path accordion, scroll reveal and ledger counter."
+      },
+      {
+        "name": "rise",
+        "value": "28px lift, blur 8-10px, 0.8s; 70ms stagger in groups of four",
+        "purpose": "Hero entrance and below-fold [data-rise] reveal (pure CSS scroll-driven animation, view() timeline); content stays visible without JS or when unsupported."
+      },
+      {
+        "name": "marquee",
+        "value": "46s linear infinite; reverse row 58s",
+        "purpose": "Two evidence marquees; pause on hover; off under reduced motion."
+      },
+      {
+        "name": "scan-line",
+        "value": "8s linear infinite, translateX -10vw to 110vw",
+        "purpose": "Peach band crossing the hero terrain; hidden under reduced motion."
+      },
+      {
+        "name": "ridge-parallax",
+        "value": "far layers offset by scrollY (capped at 1000)",
+        "purpose": "Hero ridgeline depth; disabled under reduced motion."
+      },
+      {
+        "name": "dock-advance",
+        "value": "7s linear (--cap-dur)",
+        "purpose": "OS desktop auto-advance bar; paused on hold; full under reduced motion."
+      },
+      {
+        "name": "hero-cycle",
+        "value": "3800ms interval",
+        "purpose": "Skill flag auto-cycle; pauses on pointer over terrain; off under reduced motion."
+      },
+      {
+        "name": "live-pulse",
+        "value": "2.2s ease-out infinite",
+        "purpose": "Proof-stream live dot."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Orange pill with ink text and a sliding arrow; the page's single action color.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Get started <span class=\"ds-arrow\">&rarr;</span></a>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; background: var(--cap-orange, #ff5701); color: var(--cap-ink, #0c1020); padding: 14px 28px; border-radius: 9999px; font: 600 16px Geist, system-ui, sans-serif; text-decoration: none; transition: transform .2s; } .ds-btn-primary:hover { transform: translateY(-2px); } .ds-btn-primary:active { transform: none; } .ds-btn-primary:focus-visible { outline: 2px solid var(--cap-indigo, #4a58f0); outline-offset: 3px; } .ds-arrow { transition: transform .2s; } .ds-btn-primary:hover .ds-arrow { transform: translateX(4px); }"
+    },
+    {
+      "name": "Ink Button",
+      "kind": "button",
+      "refersTo": "button-ink",
+      "description": "Ink pill used in the nav, institutions and dawn close.",
+      "html": "<a class=\"ds-btn-ink\" href=\"#\">Get started</a>",
+      "css": ".ds-btn-ink { display: inline-flex; background: var(--cap-ink, #0c1020); color: var(--cap-paper, #fcfcfb); padding: 14px 28px; border-radius: 9999px; font: 600 16px Geist, system-ui, sans-serif; text-decoration: none; transition: transform .2s; } .ds-btn-ink:hover { transform: translateY(-2px); } .ds-btn-ink:focus-visible { outline: 2px solid var(--cap-indigo, #4a58f0); outline-offset: 3px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary pill with a hairline ink border.",
+      "html": "<a class=\"ds-btn-outline\" href=\"#\">Bring your organisation</a>",
+      "css": ".ds-btn-outline { display: inline-flex; border: 1px solid rgba(12,16,32,.3); color: var(--cap-ink, #0c1020); padding: 14px 28px; border-radius: 9999px; font: 600 16px Geist, system-ui, sans-serif; text-decoration: none; transition: background .2s, border-color .2s; } .ds-btn-outline:hover { border-color: var(--cap-ink, #0c1020); background: rgba(12,16,32,.05); } .ds-btn-outline:focus-visible { outline: 2px solid var(--cap-indigo, #4a58f0); outline-offset: 3px; }"
+    },
+    {
+      "name": "Product Window",
+      "kind": "card",
+      "refersTo": "window",
+      "description": "White app window with Mist title bar and the Sample data tag.",
+      "html": "<div class=\"ds-window\"><div class=\"ds-window-bar\"><span>Skill Passport</span><span class=\"ds-tag\">Sample data</span></div><div class=\"ds-window-body\">Window content</div></div>",
+      "css": ".ds-window { background: #fff; color: var(--cap-ink, #0c1020); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 0 rgba(12,16,32,.06), 0 18px 40px -12px rgba(12,16,32,.28), 0 4px 10px -2px rgba(12,16,32,.12); font-family: Geist, system-ui, sans-serif; } .ds-window-bar { display: flex; justify-content: space-between; align-items: center; background: var(--cap-mist, #f3f4fa); border-bottom: 1px solid rgba(12,16,32,.12); padding: 10px 16px; font-size: 14px; font-weight: 600; } .ds-tag { background: var(--cap-ink, #0c1020); color: var(--cap-paper, #fcfcfb); border-radius: 9999px; padding: 2px 10px; font: 500 10px 'JetBrains Mono', monospace; letter-spacing: .05em; text-transform: uppercase; } .ds-window-body { padding: 16px; font-size: 14px; }"
+    },
+    {
+      "name": "Skill Flag",
+      "kind": "custom",
+      "refersTo": "window",
+      "description": "Pill label with a state glyph on a stem; inverts when active.",
+      "html": "<div class=\"ds-flag\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#0c1020\"/><path d=\"M4.8 8.2l2.2 2.2 4.2-4.6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>Python</div>",
+      "css": ".ds-flag { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--cap-ink, #0c1020); border-radius: 9999px; padding: 4px 10px 4px 6px; font: 600 12px Geist, system-ui, sans-serif; box-shadow: 0 8px 18px -6px rgba(12,16,32,.4), 0 2px 5px rgba(12,16,32,.15); transition: transform .3s; } .ds-flag:hover { background: var(--cap-ink, #0c1020); color: var(--cap-paper, #fcfcfb); transform: scale(1.1); }"
+    },
+    {
+      "name": "Evidence Chip",
+      "kind": "chip",
+      "refersTo": "evidence-chip",
+      "description": "White hairline pill with an indigo line icon, used in the marquee.",
+      "html": "<div class=\"ds-chip\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#4a58f0\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"6\" cy=\"6\" r=\"2.5\"/><circle cx=\"6\" cy=\"18\" r=\"2.5\"/><path d=\"M6 8.5v7M18 6a6 6 0 0 1-6 6\"/></svg>Git commits</div>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 12px; background: #fff; color: var(--cap-ink, #0c1020); border: 1px solid rgba(12,16,32,.12); border-radius: 9999px; padding: 14px 24px; font: 500 16px Geist, system-ui, sans-serif; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "button-ink",
+      "description": "Fixed header: wordmark, quiet links, ink action pill, orange progress line.",
+      "html": "<header class=\"ds-nav\"><span class=\"ds-nav-brand\">Capabilio</span><nav class=\"ds-nav-links\"><a href=\"#\">Ecosystem</a><a href=\"#\">Apps</a><a href=\"#\">Paths</a><a href=\"#\">Principles</a></nav><a class=\"ds-nav-cta\" href=\"#\">Get started</a></header>",
+      "css": ".ds-nav { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 24px; background: rgba(252,252,251,.95); border-bottom: 1px solid rgba(12,16,32,.12); border-top: 3px solid var(--cap-orange, #ff5701); font-family: Geist, system-ui, sans-serif; } .ds-nav-brand { font: 600 20px 'Bricolage Grotesque', Geist, sans-serif; letter-spacing: -.02em; color: var(--cap-ink, #0c1020); } .ds-nav-links { display: flex; gap: 32px; } .ds-nav-links a { font-size: 14px; font-weight: 500; color: rgba(12,16,32,.75); text-decoration: none; } .ds-nav-links a:hover { color: var(--cap-ink, #0c1020); } .ds-nav-cta { background: var(--cap-ink, #0c1020); color: var(--cap-paper, #fcfcfb); border-radius: 9999px; padding: 10px 20px; font-size: 14px; font-weight: 600; text-decoration: none; } .ds-nav-cta:hover { transform: translateY(-1px); } .ds-nav-cta:focus-visible { outline: 2px solid var(--cap-indigo, #4a58f0); outline-offset: 3px; }"
+    },
+    {
+      "name": "Dock",
+      "kind": "custom",
+      "refersTo": "dock",
+      "description": "Glass dock of app tiles on the Night OS desktop; open app shows an apricot dot.",
+      "html": "<div class=\"ds-dock\"><button class=\"ds-dock-tile ds-on\">A<i></i></button><button class=\"ds-dock-tile\">B</button><button class=\"ds-dock-tile\">C</button></div>",
+      "css": ".ds-dock { display: inline-flex; gap: 6px; padding: 8px; border-radius: 24px; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(24px); } .ds-dock-tile { position: relative; display: grid; place-items: center; width: 56px; height: 56px; border: 0; border-radius: 16px; background: rgba(255,255,255,.12); color: var(--cap-paper, #fcfcfb); font: 600 16px Geist, system-ui, sans-serif; transition: transform .2s; } .ds-dock-tile:hover { transform: translateY(-4px); } .ds-dock-tile:focus-visible { outline: 2px solid var(--cap-apricot, #ffb27a); outline-offset: 3px; } .ds-on { background: rgba(255,255,255,.28); } .ds-on i { position: absolute; bottom: -6px; width: 4px; height: 4px; border-radius: 9999px; background: var(--cap-apricot, #ffb27a); }"
+    },
+    {
+      "name": "Orbit Node",
+      "kind": "custom",
+      "refersTo": "path-card",
+      "description": "Ecosystem map nodes: path (paper), app (night raised), selected (orange with ink text), soon (dashed outline).",
+      "html": "<div class=\"ds-orbit\"><span class=\"ds-node ds-path\">Student</span><span class=\"ds-node ds-app\">Arena</span><span class=\"ds-node ds-on\">Mentor</span><span class=\"ds-node ds-path ds-soon\">Executive</span></div>",
+      "css": ".ds-orbit { display: flex; gap: 10px; padding: 20px; background: var(--cap-night, #121634); border-radius: 24px; font-family: Geist, system-ui, sans-serif; } .ds-node { padding: 10px 18px; border-radius: 9999px; font-size: 14px; font-weight: 600; border: 1.2px solid rgba(255,255,255,.28); } .ds-path { background: var(--cap-paper, #fcfcfb); color: var(--cap-ink, #0c1020); } .ds-app { background: var(--cap-night-2, #1b2150); color: var(--cap-paper, #fcfcfb); } .ds-on { background: var(--cap-orange, #ff5701); color: var(--cap-ink, #0c1020); border-color: var(--cap-apricot, #ffb27a); } .ds-soon { border-style: dashed; }"
+    },
+    {
+      "name": "Path Card",
+      "kind": "card",
+      "refersTo": "path-card",
+      "description": "24px accordion card; Student on Indigo with white text, Organisation on Apricot with ink.",
+      "html": "<div class=\"ds-path-card\"><strong>Student</strong><p>A diagnostic first, then a career map.</p><a href=\"#\">Get started</a></div>",
+      "css": ".ds-path-card { background: var(--cap-indigo, #4a58f0); color: #fff; border-radius: 24px; padding: 24px; font-family: Geist, system-ui, sans-serif; } .ds-path-card strong { font: 600 24px 'Bricolage Grotesque', Geist, sans-serif; letter-spacing: -.02em; } .ds-path-card p { margin: 8px 0 20px; font-size: 18px; font-weight: 500; } .ds-path-card a { display: inline-block; background: var(--cap-ink, #0c1020); color: var(--cap-paper, #fcfcfb); border-radius: 9999px; padding: 10px 20px; font-size: 14px; font-weight: 600; text-decoration: none; } .ds-path-card a:focus-visible { outline: 2px solid var(--cap-apricot, #ffb27a); outline-offset: 3px; }"
+    },
+    {
+      "name": "Ledger",
+      "kind": "custom",
+      "refersTo": "path-card",
+      "description": "Night Raised panel with rating, orange correct action and a mono log.",
+      "html": "<div class=\"ds-ledger\"><div class=\"ds-num\">404</div><button class=\"ds-ok\">Correct +4</button><button class=\"ds-no\">Incorrect -2</button><ul><li>+4 -> 404</li></ul></div>",
+      "css": ".ds-ledger { background: var(--cap-night-2, #1b2150); color: var(--cap-paper, #fcfcfb); border: 1px solid rgba(255,255,255,.15); border-radius: 24px; padding: 24px; font-family: Geist, system-ui, sans-serif; } .ds-num { font: 600 60px 'Bricolage Grotesque', Geist, sans-serif; letter-spacing: -.02em; font-variant-numeric: tabular-nums; } .ds-ok, .ds-no { margin: 12px 8px 0 0; border-radius: 9999px; padding: 10px 20px; font: 600 14px Geist, system-ui, sans-serif; } .ds-ok { background: var(--cap-orange, #ff5701); color: var(--cap-ink, #0c1020); border: 0; } .ds-no { background: transparent; color: inherit; border: 1px solid rgba(255,255,255,.3); } .ds-ledger ul { margin: 16px 0 0; padding: 0; list-style: none; font: 12px 'JetBrains Mono', monospace; color: rgba(255,255,255,.7); } .ds-ledger li { border-bottom: 1px solid rgba(255,255,255,.1); padding-bottom: 6px; }"
+    },
+    {
+      "name": "Command Palette",
+      "kind": "custom",
+      "refersTo": "palette",
+      "description": "Cmd/Ctrl+K dialog: white window, search field, Mist selected row.",
+      "html": "<div class=\"ds-pal\"><div class=\"ds-pal-in\">Jump to a section or page <kbd>esc</kbd></div><div class=\"ds-row ds-sel\"><span>Four paths</span><small>Section</small></div><div class=\"ds-row\"><span>Log in</span><small>Go</small></div></div>",
+      "css": ".ds-pal { background: #fff; color: var(--cap-ink, #0c1020); border-radius: 16px; box-shadow: 0 1px 0 rgba(12,16,32,.06), 0 18px 40px -12px rgba(12,16,32,.28), 0 4px 10px -2px rgba(12,16,32,.12); font-family: Geist, system-ui, sans-serif; padding-bottom: 8px; } .ds-pal-in { display: flex; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid rgba(12,16,32,.12); color: var(--cap-muted, #555a70); } .ds-pal kbd { font: 11px 'JetBrains Mono', monospace; border: 1px solid rgba(12,16,32,.12); border-radius: 4px; padding: 2px 6px; } .ds-row { display: flex; justify-content: space-between; margin: 4px 8px 0; padding: 10px 12px; border-radius: 12px; font-size: 15px; font-weight: 500; } .ds-row small { font-size: 12px; font-weight: 400; color: var(--cap-muted, #555a70); } .ds-sel { background: var(--cap-mist, #f3f4fa); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Daybreak, running as an operating system",
+    "overview": "Skills are terrain. Evidence raises the ground; \"not assessed\" stays flat. The page opens on a pale periwinkle sky falling to apricot and brand orange, with a canvas ridgeline in atmospheric perspective (far rose to near night-indigo). The same ridgeline returns in three moods: day (hero), night (ecosystem, OS desktop wallpaper, ledger), dawn (close). Between them sit paper (calm reading ground), crisp white product windows (proof), and drenched night sections that carry the OS metaphor.\n\nThe OS metaphor is literal and structural: an orbiting ecosystem map around a Skill Passport core, a desktop with a glass dock of eight apps, a live proof stream, a playable rating ledger, and a Cmd/Ctrl+K command palette. Orange is the verb (action and the single emphasis colour); indigo is evidence (what is read or measured). Type is ink-navy on warm-white paper, white on night. The voice is confident and plain. Headline: \"Resumes tell. Proof wins.\" Demonstration data is always labelled Sample; quotes and figures are real and link to their source.",
+    "keyCharacteristics": [
+      "One living ridgeline illustration at three moods, with scan line and scroll parallax in the hero.",
+      "Night OS sections: orbit map, desktop plus glass dock, proof stream, ledger, command palette.",
+      "White app windows (title bar plus \"Sample data\" tag) as the unit of proof.",
+      "Big Bricolage display type; hero headline is light over bold on two lines.",
+      "Pill actions, 16px windows, 24px stages; four path cards that expand as an accordion.",
+      "Content rises on scroll (blur, lift, 28px) and the manifesto fills word by word.",
+      "Status never rests on colour alone: five distinct glyph shapes."
+    ],
+    "rules": [
+      {
+        "name": "The Orange Is Action Rule",
+        "body": "Orange marks what to do next (buttons, progress, the selected node) and, sparingly, the one number or quote mark a section wants read first. It never encodes status or state.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink On Orange Rule",
+        "body": "Text on orange is Ink Navy. White on orange fails the contrast the build holds.",
+        "section": "colors"
+      },
+      {
+        "name": "The Evidence Is Indigo Rule",
+        "body": "Indigo means \"this is read or measured\". Do not use it for decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Night Is Where The System Runs Rule",
+        "body": "Dark Night sections hold the live, interactive OS pieces (orbit, dock, stream, ledger); light sections hold reading and claims.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Is Data Rule",
+        "body": "JetBrains Mono appears only where a number, a log line, a key hint or a \"Sample\" status is shown.",
+        "section": "typography"
+      },
+      {
+        "name": "The Balanced Headline Rule",
+        "body": "Every display and headline sets `text-wrap: balance`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Windows Lift Rule",
+        "body": "Only product windows, the palette, and map flags carry a shadow. Section cards, tables and chips use a hairline border.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Glass Is The Dock Rule",
+        "body": "Blur-and-translucency belongs to the dock and the sticky nav; it is not a card style.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep orange for the next action (and rare one-figure emphasis) and indigo for evidence.",
+      "**Do** put Ink text on orange and Paper or white text on night.",
+      "**Do** label every demonstration surface \"Sample data\" or \"Sample profile\".",
+      "**Do** pair every status color with its glyph shape and a text label.",
+      "**Do** link every external quote and figure to its real source.",
+      "**Do** show the ridgeline in one of its moods (day, night, dawn) when a section needs scale.",
+      "**Do** keep interactive OS pieces on Night and reading on Paper.",
+      "**Do** honour `prefers-reduced-motion` and keep `[data-rise]` content visible without JS.",
+      "**Do** set display and headline text with balanced wrapping.",
+      "**Do** spell \"resume\" (no accent) and capitalise \"Skill Passport\"."
+    ],
+    "donts": [
+      "**Don't** use these tokens or this shell in the dashboard, org workspace or roadmap.",
+      "**Don't** invent customers, counts, testimonials or compliance badges.",
+      "**Don't** put a shadow on ordinary cards, tables or chips.",
+      "**Don't** use JetBrains Mono for prose or headings.",
+      "**Don't** convey state by color alone.",
+      "**Don't** use blur-and-translucency as a general card style."
+    ]
+  }
+}

@@ -122,6 +122,8 @@ export interface SignUpInput {
   rollNumber?: string;
   startYear: number;
   endYear: number;
+  /** "student" is currently studying; "graduate" finished recently. Recorded on the account, nothing reads it yet. */
+  studentStatus?: "student" | "graduate";
   email: string;
   password: string;
   /** set when the student arrived through their college's join link (attribution only — the college is fixed by the link) */
@@ -146,6 +148,7 @@ export async function signUp(input: SignUpInput): Promise<SignUpOutcome> {
         start_year: String(input.startYear),
         end_year: String(input.endYear),
         role: "student",
+        ...(input.studentStatus ? { student_status: input.studentStatus } : {}),
         ...(input.joinCode ? { join_code: input.joinCode } : {}),
       },
       emailRedirectTo: `${window.location.origin}/auth/confirm?next=/verified`,

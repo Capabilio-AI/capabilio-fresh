@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { CardChrome } from "./CardChrome";
-import { RoleSelector } from "./RoleSelector";
 import { PasswordField } from "./PasswordField";
 import { AuthErrorBanner } from "./AuthErrorBanner";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
@@ -65,7 +64,6 @@ function AuthModals({
 export function AuthCard({ path = "student" }: { path?: AuthPath }) {
   const isOrg = path === "organisation";
   const router = useRouter();
-  const [role, setRole] = useState<RoleId>("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -166,8 +164,6 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
         </p>
 
         <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5" noValidate>
-          {!isOrg && <RoleSelector value={role} onChange={setRole} />}
-
           {authError && (
             <AuthErrorBanner
               status={authError}

@@ -24,10 +24,23 @@ describe("path selector", () => {
     }
   });
 
-  it("Professional/Executive stubs take no input and persist nothing", () => {
-    for (const f of ["app/get-started/professional/page.tsx", "app/get-started/executive/page.tsx", "components/onboarding/ComingSoon.tsx"]) {
-      expect(read(f), f).not.toMatch(/<form|<input|<textarea|type="file"|supabase|fetch\(|localStorage|"use client"/);
+  it("Professional/Executive pages only join an early-access list: no account, no direct database access in the browser", () => {
+    for (const f of ["app/get-started/professional/page.tsx", "app/get-started/executive/page.tsx", "components/onboarding/WaitlistPage.tsx"]) {
+      expect(read(f), f).not.toMatch(/supabase|localStorage|auth\.signUp/);
     }
+    const form = read("components/onboarding/WaitlistForm.tsx");
+    expect(form).toContain('fetch("/api/waitlist"');
+    expect(form).not.toMatch(/supabase|type="password"|type="file"/);
+  });
+
+  it("the waitlist route accepts only the two coming-soon paths and the table is private", () => {
+    const route = read("app/api/waitlist/route.ts");
+    expect(route).toMatch(/z\.enum\(\["professional", "executive"\]\)/);
+    expect(route).toContain(".strict()");
+    const sql = read("supabase/migrations/097_path_waitlist.sql");
+    expect(sql).toMatch(/alter table public\.path_waitlist enable row level security/i);
+    expect(sql).toMatch(/revoke all on public\.path_waitlist from anon, authenticated/i);
+    expect(sql).not.toMatch(/create policy/i);
   });
 
   it("student signup form is untouched by this task (still student-only metadata)", () => {
