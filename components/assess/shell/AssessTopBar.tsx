@@ -17,7 +17,7 @@ export interface BackAction {
  * The room's chrome. Back is ALWAYS here and always says where it goes ("Back to role", "Back to dashboard", "Save & exit" mid-run,
  * where the honest answer is that answered questions are final and cannot be revisited).
  */
-export function AssessTopBar({ stage, back, trailing }: { stage: Stage; back: BackAction | null; trailing?: ReactNode }) {
+export function AssessTopBar({ stage, back, trailing, graduate = false }: { stage: Stage; back: BackAction | null; trailing?: ReactNode; graduate?: boolean }) {
   const inner = back && (
     <>
       <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" aria-hidden />
@@ -36,7 +36,7 @@ export function AssessTopBar({ stage, back, trailing }: { stage: Stage; back: Ba
             ))}
           <span className="ml-1 hidden font-lp-display text-[17px] font-bold tracking-tight text-[var(--m-ink)] lg:inline">Capabilio<span className="text-[var(--m-accent)]"> AI</span></span>
         </div>
-        <Stepper current={stage} />
+        <Stepper current={stage} graduate={graduate} />
         <div className="flex min-w-[2.5rem] justify-end">{trailing}</div>
       </div>
     </header>

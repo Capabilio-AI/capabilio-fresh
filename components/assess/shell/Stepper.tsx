@@ -1,16 +1,24 @@
 import { Check } from "lucide-react";
 import type { Stage } from "./AssessScope";
 
-export const STEPS: { stage: Stage; label: string }[] = [
+export const COMMON_STEPS: { stage: Stage; label: string }[] = [
   { stage: "role", label: "Role" },
   { stage: "common", label: "Common" },
   { stage: "career", label: "Career" },
   { stage: "results", label: "Results" },
 ];
 
+export const GRADUATE_STEPS: { stage: Stage; label: string }[] = [
+  { stage: "resume", label: "Resume" },
+  { stage: "role", label: "Role" },
+  { stage: "career", label: "Assessment" },
+  { stage: "results", label: "Results" },
+];
+
 /** Four rooms in order. Completed steps are checked, the current one is lit; the compact form shows "Step n of 4". */
-export function Stepper({ current }: { current: Stage }) {
-  const at = STEPS.findIndex((s) => s.stage === current);
+export function Stepper({ current, graduate = false }: { current: Stage; graduate?: boolean }) {
+  const STEPS = graduate ? GRADUATE_STEPS : COMMON_STEPS;
+  const at = Math.max(0, STEPS.findIndex((s) => s.stage === current));
   return (
     <>
       <ol className="hidden items-center gap-1 md:flex" aria-label="Assessment progress">

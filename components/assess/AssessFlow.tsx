@@ -10,6 +10,7 @@ import type { AssessmentResult } from "@/lib/assess/types";
 import { AssessScope, type Stage } from "./shell/AssessScope";
 import { AssessTopBar, type BackAction } from "./shell/AssessTopBar";
 import { RoleEntryStep } from "./steps/RoleEntryStep";
+import { ResumeStep } from "./steps/ResumeStep";
 import { StartFlow, type StartedSession } from "./steps/StartFlow";
 import { QuestionRunner } from "./runner/QuestionRunner";
 import { ResultPopup } from "./result/ResultPopup";
@@ -21,7 +22,7 @@ type View =
   | { kind: "common-done"; result: AssessmentResult }
   | { kind: "career-done"; sessionId: string; result: AssessmentResult };
 
-const STAGE_OF: Record<FlowSnapshot["stage"], Stage> = { "career-interest": "role", general: "common", career: "career", done: "results" };
+const STAGE_OF: Record<FlowSnapshot["stage"], Stage> = { resume: "resume", "career-interest": "role", general: "common", career: "career", done: "results" };
 
 /**
  * The assessment room. It owns three things only: which screen is showing, what the Back button means on it, and the leave-safely
@@ -46,13 +47,13 @@ export function AssessFlow({ snapshot }: { snapshot: FlowSnapshot }) {
   if (view.kind === "run") back = { label: "Back", onClick: () => setLeaving(true) };
   else if (view.kind === "career-done") back = null;
   // Until the assessment is finished the dashboard is locked, so there is nowhere useful to go "back" to on the first steps.
-  else if (view.kind === "common-done" || snapshot.stage === "career-interest") back = null;
+  else if (view.kind === "common-done" || snapshot.stage === "career-interest" || snapshot.stage === "resume") back = null;
   else if (snapshot.stage === "done") back = { label: "Back to dashboard", href: "/dashboard" };
   else back = { label: "Change role", href: "/assessment?step=role" };
 
   return (
     <AssessScope stage={stage}>
-      <AssessTopBar stage={stage} back={back} />
+      <AssessTopBar stage={stage} back={back} graduate={!!snapshot.graduate} trailing={snapshot.graduate && snapshot.stage !== "done" && view.kind === "start" ? <Link href="/dashboard" className="rounded-full px-3.5 py-2 text-[14px] font-bold text-[var(--m-muted)] transition-colors hover:bg-white/70 hover:text-[var(--m-ink)]">Skip to dashboard</Link> : undefined} />
       <main id="main">
         <Screen snapshot={snapshot} view={view} setView={setView} onSubmitted={onSubmitted} advance={advance} />
       </main>
@@ -67,8 +68,10 @@ function Screen({ snapshot, view, setView, onSubmitted, advance }: { snapshot: F
   if (view.kind === "common-done") return <CommonDone result={view.result} onContinue={advance} />;
 
   switch (snapshot.stage) {
+    case "resume":
+      return <ResumeStep onContinue={advance} />;
     case "career-interest":
-      return <RoleEntryStep roles={snapshot.roleOptions} onConfirmed={advance} />;
+      return <RoleEntryStep roles={snapshot.roleOptions} onConfirmed={advance} graduate={!!snapshot.graduate} />;
     case "general":
       return (
         <StartFlow
@@ -88,6 +91,7 @@ function Screen({ snapshot, view, setView, onSubmitted, advance }: { snapshot: F
           careerId={snapshot.assess.career.id}
           careerName={snapshot.assess.career.name}
           items={snapshot.assess.skills}
+          focus={snapshot.graduate?.focus}
           total={snapshot.assess.total}
           resuming={snapshot.hasOpenCareerSession}
           onReady={(session) => setView({ kind: "run", session })}

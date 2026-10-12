@@ -1,4 +1,4 @@
-import type { Db } from "./db";
+import { dashboardUnlocked, type Db } from "./db";
 import { ONBOARDING_STATUSES } from "./config";
 import { studentGate } from "./gate";
 
@@ -13,7 +13,8 @@ export interface BannerState {
  */
 export async function bannerState(db: Db, userId: string): Promise<BannerState> {
   const gate = await studentGate(db, userId);
-  if (!gate.locked || !gate.status) return { show: false, cta: "Start Assessment" };
+  const nudge = gate.graduate && gate.status !== null && !dashboardUnlocked(gate.status);
+  if ((!gate.locked && !nudge) || !gate.status) return { show: false, cta: "Start Assessment" };
   const [{ count: open }, { data: intent }] = await Promise.all([
     db.from("assess_sessions").select("id", { count: "exact", head: true }).eq("student_id", userId).eq("status", "IN_PROGRESS"),
     db.from("student_career_intent").select("primary_career_id").eq("student_id", userId).maybeSingle(),

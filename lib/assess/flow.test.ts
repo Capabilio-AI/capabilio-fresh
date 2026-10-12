@@ -18,3 +18,20 @@ describe("decideStage", () => {
     expect(decideStage("COMMON_ASSESSMENT_COMPLETE", exploring)).toBe("career-interest");
   });
 });
+
+describe("decideStage for recently graduated accounts", () => {
+  const grad = (hasResume: boolean) => ({ isGraduate: true, hasResume });
+  it("asks for the resume first, then the role, then goes straight to the one role assessment (no general layer)", () => {
+    expect(decideStage("ASSESSMENT_REQUIRED", none, grad(false))).toBe("resume");
+    expect(decideStage("ASSESSMENT_REQUIRED", none, grad(true))).toBe("career-interest");
+    expect(decideStage("ASSESSMENT_REQUIRED", { primary: true, exploring: false }, grad(true))).toBe("career");
+  });
+  it("is done once the role assessment is finished, whatever else is missing", () => {
+    expect(decideStage("PROFILE_READY", none, grad(false))).toBe("done");
+    expect(decideStage("CAREER_ASSESSMENT_COMPLETE", none, grad(true))).toBe("done");
+  });
+  it("does not change anything for current students", () => {
+    expect(decideStage("ASSESSMENT_REQUIRED", { primary: true, exploring: false }, { isGraduate: false, hasResume: false })).toBe("general");
+  });
+});
+

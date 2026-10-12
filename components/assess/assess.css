@@ -29,6 +29,7 @@
   --hue-b: #ffc15e;
   --hue-c: #ff4d6d;
 }
+[data-area="assess"][data-stage="resume"] { --hue-a: #8a5cff; --hue-b: #ff8ad8; --hue-c: #5bc8ff; }
 [data-area="assess"][data-stage="role"] { --hue-a: #ff7a3d; --hue-b: #ffc15e; --hue-c: #ff4d6d; }
 [data-area="assess"][data-stage="common"] { --hue-a: #19b5b0; --hue-b: #6ec6ff; --hue-c: #7be0b5; }
 [data-area="assess"][data-stage="career"] { --hue-a: #5b6cff; --hue-b: #a06bff; --hue-c: #2fb4ff; }

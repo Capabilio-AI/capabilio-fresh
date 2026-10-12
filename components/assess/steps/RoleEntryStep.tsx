@@ -19,6 +19,11 @@ const NEXT = [
   { icon: BarChart3, title: "Your skill graph", body: "We analyse your results and build it. It keeps updating as you complete role challenges in Capabilio." },
   { icon: GitFork, title: "Plan B, in 3rd year", body: "We'll ask whether you want to continue with this role or switch to another." },
 ];
+const NEXT_GRADUATE = [
+  { icon: ClipboardCheck, title: "One role assessment", body: "It asks a little more about the skills your resume claims, so we test what it says." },
+  { icon: BarChart3, title: "AI feedback and your rating", body: "You get written feedback, your skill graph and your role rating." },
+  { icon: GitFork, title: "Everything unlocked", body: "Dashboard, Arena, SkillStudio, Pulse and Launchpad are open to you from the start." },
+];
 
 type View =
   | { kind: "input" }
@@ -32,7 +37,7 @@ type View =
  * wait to see its skills). Only a role we have never seen goes to the server, which builds its profile once for everyone after.
  * Doing this FIRST lets the server warm the role's question pool while the student does the common assessment.
  */
-export function RoleEntryStep({ roles, onConfirmed }: { roles: RoleOption[]; onConfirmed: () => void }) {
+export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles: RoleOption[]; onConfirmed: () => void; graduate?: boolean }) {
   const reduce = useReducedMotion();
   const [text, setText] = useState("");
   const [view, setView] = useState<View>({ kind: "input" });
@@ -150,7 +155,7 @@ export function RoleEntryStep({ roles, onConfirmed }: { roles: RoleOption[]; onC
       )}
 
       <ol className="a-rise mt-10 grid gap-3 sm:grid-cols-3" style={{ animationDelay: "200ms" }} aria-label="What happens next">
-        {NEXT.map((n) => (
+        {(graduate ? NEXT_GRADUATE : NEXT).map((n) => (
           <li key={n.title} className="flex gap-3 px-1">
             <span className="a-glass-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[var(--m-accent-ink)]"><n.icon className="h-4 w-4" aria-hidden /></span>
             <span><span className="block text-[14px] font-bold text-[var(--m-ink)]">{n.title}</span><span className="block text-[13px] leading-snug text-[var(--m-muted)]">{n.body}</span></span>

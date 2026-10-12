@@ -3,7 +3,7 @@ import "@/components/metro/metro.css";
 import "../assess.css";
 import { metroFontVars } from "@/components/metro/font";
 
-export type Stage = "role" | "common" | "career" | "results";
+export type Stage = "resume" | "role" | "common" | "career" | "results";
 
 /** The assessment's room: metro fonts and tokens, the assessment palette, and the aurora whose hue follows the stage. */
 export function AssessScope({ stage, children }: { stage: Stage; children: ReactNode }) {

@@ -14,6 +14,7 @@ import { getOnboardingStatus, startRating, loadCareer, loadCareerSkills, toTarge
 import { fitTargets, planNext, type Obs, type Plan, type Target } from "./engine";
 import { GENERAL_SECTIONS, commonDifficulty, generalTargets, planFromAvailability } from "./general";
 import { topUp } from "./generate";
+import { boostTargets, focusSkillIdsFor, isGraduate } from "@/lib/graduate/focus";
 import type { LlmDeps } from "./generate";
 import { careerBankFull, careerSlot, chooseFrom, fetchCandidates, pickFromPool, shuffledOrder, warmPool, type PoolFilter, type PoolPick } from "./pool";
 import { AssessError, PoolUnavailableError, type Feedback, type Layer, type QuestionPayload, type SessionStart, type SessionState } from "./types";
@@ -36,8 +37,10 @@ export interface SessionRow {
   started_at: string;
   result: unknown;
   section_plan: Record<string, number> | null;
+  /** role skills the graduate's resume claims; tested a little more. null for everyone else. */
+  focus_skill_ids: string[] | null;
 }
-const SESSION_COLUMNS = "id, student_id, layer, career_id, status, total_questions, starting_elo, started_at, result, section_plan";
+const SESSION_COLUMNS = "id, student_id, layer, career_id, status, total_questions, starting_elo, started_at, result, section_plan, focus_skill_ids";
 
 interface RowInfo {
   id: string;
@@ -97,7 +100,7 @@ async function fetchRows(db: Db, sessionId: string) {
 async function loadContext(db: Db, session: SessionRow, prefetched?: Promise<RawRow[]>): Promise<Context> {
   const [career, rawRows] = await Promise.all([session.career_id ? loadCareer(db, session.career_id) : null, prefetched ?? fetchRows(db, session.id)]);
   const skills = career ? await loadCareerSkills(db, career.id) : [];
-  const targets = fitTargets(career ? toTargets(skills) : generalTargets(session.section_plan), session.total_questions);
+  const targets = fitTargets(career ? boostTargets(toTargets(skills), session.focus_skill_ids) : generalTargets(session.section_plan), session.total_questions);
   const rows: RowInfo[] = rawRows.map((r) => {
     const pool = one(r.pool)!;
     const resp = one(r.resp);
@@ -502,7 +505,8 @@ export async function startSession(db: Db, userId: string, layer: Layer, opts: {
   let skills: CareerSkillRow[] = [];
 
   if (layer === "CAREER") {
-    if (ONBOARDING_STATUSES.indexOf(status) < ONBOARDING_STATUSES.indexOf("COMMON_ASSESSMENT_COMPLETE")) {
+    // recently graduated accounts take one role assessment and skip the general layer
+    if (ONBOARDING_STATUSES.indexOf(status) < ONBOARDING_STATUSES.indexOf("COMMON_ASSESSMENT_COMPLETE") && !(await isGraduate(db, userId))) {
       throw new AssessError("GENERAL_REQUIRED", "Complete the general assessment first.", 409);
     }
     careerId = await assessableCareer(db, userId, opts.careerId);
@@ -543,7 +547,7 @@ export async function startSession(db: Db, userId: string, layer: Layer, opts: {
     }
     const { data: created, error } = await db
       .from("assess_sessions")
-      .insert({ student_id: userId, layer, career_id: careerId, total_questions: layer === "CAREER" ? careerSessionLength(skills) : Object.values(plan ?? {}).reduce((a, b) => a + b, 0), starting_elo: startingElo, section_plan: plan })
+      .insert({ student_id: userId, layer, career_id: careerId, total_questions: layer === "CAREER" ? careerSessionLength(skills) : Object.values(plan ?? {}).reduce((a, b) => a + b, 0), starting_elo: startingElo, section_plan: plan, focus_skill_ids: careerId ? await focusSkillIdsFor(db, userId, skills) : null })
       .select(SESSION_COLUMNS)
       .single();
     if (error) {

@@ -1,6 +1,7 @@
 import type { AssessmentResult, Feedback, QuestionPayload, SessionStart, SessionState } from "@/lib/assess/types";
 import type { ResolveOutcome } from "@/lib/assess/roles";
 import type { StoredFeedback } from "@/lib/assess/feedback";
+import type { ResumeSummary } from "@/lib/graduate/summary";
 
 export class ApiError extends Error {
   constructor(message: string, readonly code: string, readonly status: number, readonly retryable: boolean) {
@@ -22,7 +23,25 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
   return body;
 }
 
+async function callForm<T>(url: string, body?: FormData): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, { method: "POST", body });
+  } catch {
+    throw new NetworkError("Network unavailable");
+  }
+  const json = (await res.json().catch(() => ({}))) as { error?: string; code?: string; retryable?: boolean } & T;
+  if (!res.ok) throw new ApiError(json.error ?? "Something went wrong.", json.code ?? "ERROR", res.status, json.retryable ?? res.status >= 500);
+  return json;
+}
+
 export const assessApi = {
+  uploadResume: (file: File) => {
+    const form = new FormData();
+    form.set("resume", file);
+    return callForm<{ summary: ResumeSummary }>("/api/graduate/resume", form);
+  },
+  skipResume: () => callForm<{ summary: ResumeSummary }>("/api/graduate/resume?skip=1"),
   start: (layer: "GENERAL" | "CAREER", careerId?: string) => call<SessionStart & { state: SessionState }>("/api/assess/start", { method: "POST", body: JSON.stringify({ layer, careerId }) }),
   state: (sessionId: string) => call<SessionState>(`/api/assess/session/${sessionId}`),
   next: (sessionId: string) => call<{ question: QuestionPayload | null; ended: boolean }>(`/api/assess/session/${sessionId}/next`, { method: "POST" }),

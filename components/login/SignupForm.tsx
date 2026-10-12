@@ -6,7 +6,7 @@ import { CardChrome } from "./CardChrome";
 import { CollegeAutocomplete, CollegeMatch } from "./CollegeAutocomplete";
 import { BranchAutocomplete } from "./BranchAutocomplete";
 import { PasswordField } from "./PasswordField";
-import { signUp } from "./auth";
+import { signUp, signUpGraduate } from "./auth";
 import { validateProgramYears } from "@/lib/career/years";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -52,8 +52,9 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
     e.preventDefault();
     setError(undefined);
 
-    const years = validateProgramYears(startYear, endYear);
-    if (!years.ok) {
+    const graduate = status === "graduate";
+    const years = graduate ? null : validateProgramYears(startYear, endYear);
+    if (years && !years.ok) {
       setError(years.message);
       return;
     }
@@ -71,19 +72,22 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
     }
 
     setSubmitting(true);
-    const outcome = await signUp({
-      firstName,
-      lastName,
-      collegeName,
-      branch,
-      rollNumber,
-      startYear: years.startYear,
-      endYear: years.endYear,
-      studentStatus: status,
-      email,
-      password,
-      joinCode: join?.code,
-    });
+    const outcome =
+      graduate || !years || !years.ok
+        ? await signUpGraduate({ firstName, lastName, email, password })
+        : await signUp({
+            firstName,
+            lastName,
+            collegeName,
+            branch,
+            rollNumber,
+            startYear: years.startYear,
+            endYear: years.endYear,
+            studentStatus: status,
+            email,
+            password,
+            joinCode: join?.code,
+          });
     setSubmitting(false);
 
     if (outcome.status === "error") {
@@ -125,7 +129,7 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
         Create your account
       </h1>
       <p className="mt-1.5 font-lp-body text-lp-body-sm text-lp-text-muted">
-        Start building your verified career profile.
+        {status === "graduate" ? "Just your name, email and a password. You will upload your resume and choose your target role after you sign in." : "Start building your verified career profile."}
       </p>
 
       <fieldset className="mt-6">
@@ -186,6 +190,8 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
           </div>
         </div>
 
+        {status === "student" && (
+          <>
         <div>
           <label htmlFor="college-name" className={FIELD_LABEL}>
             College name
@@ -254,7 +260,7 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
             </div>
             <div>
               <label htmlFor="end-year" className={FIELD_LABEL}>
-                {status === "graduate" ? "Graduation year" : "End year"}
+                End year
               </label>
               <input
                 id="end-year"
@@ -265,12 +271,15 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
                 max={2100}
                 value={endYear}
                 onChange={(e) => setEndYear(e.target.value)}
-                placeholder={status === "graduate" ? String(new Date().getFullYear()) : "2028"}
+                placeholder="2028"
                 className={FIELD_INPUT}
               />
             </div>
           </div>
         </div>
+
+          </>
+        )}
 
         <div>
           <label htmlFor="signup-email" className={FIELD_LABEL}>

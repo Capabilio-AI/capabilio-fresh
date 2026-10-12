@@ -22,6 +22,8 @@ interface Props {
   /** common: questions per section label */
   sectionQuestions?: Record<string, number>;
   total: number;
+  /** recently graduated: the role skills the resume claims, which are asked about a little more */
+  focus?: string[];
   resuming?: boolean;
   onReady: (session: StartedSession) => void;
 }
@@ -35,7 +37,7 @@ const SECTION_ICON: Record<string, typeof Languages> = { Communication: Language
  * and choosing the first questions from the stored pool) starts the moment the button is pressed, and the status line only ever says
  * which of those two things is actually true right now. Cancel returns to the intro; the session simply stays open to resume.
  */
-export function StartFlow({ layer, careerId, careerName, items, sectionQuestions, total, resuming, onReady }: Props) {
+export function StartFlow({ layer, careerId, careerName, items, sectionQuestions, total, focus, resuming, onReady }: Props) {
   const reduce = useReducedMotion();
   const isCareer = layer === "CAREER";
   const [step, setStep] = useState<number | null>(null);
@@ -115,7 +117,7 @@ export function StartFlow({ layer, careerId, careerName, items, sectionQuestions
           {isCareer ? (
             <ul className="mt-4 flex flex-wrap gap-2">
               {items.map((s) => (
-                <li key={s.name} className={`rounded-full px-3 py-1.5 text-[13.5px] font-bold ${s.importance === "CRITICAL" ? "bg-white text-[var(--m-ink)]" : "bg-white/12 text-white ring-1 ring-white/15"}`}>{s.name}</li>
+                <li key={s.name} className={`rounded-full px-3 py-1.5 text-[13.5px] font-bold ${s.importance === "CRITICAL" ? "bg-white text-[var(--m-ink)]" : "bg-white/12 text-white ring-1 ring-white/15"} ${focus?.includes(s.name) ? "outline outline-2 outline-offset-2 outline-[var(--m-accent)]" : ""}`}>{s.name}{focus?.includes(s.name) ? " ✓" : ""}</li>
               ))}
             </ul>
           ) : (
@@ -134,6 +136,7 @@ export function StartFlow({ layer, careerId, careerName, items, sectionQuestions
               })}
             </ul>
           )}
+          {isCareer && focus && focus.length > 0 && <p className="mt-5 text-[12.5px] leading-relaxed text-white/80">Outlined skills are on your resume, so we test them a little more.</p>}
           {isCareer && <p className="mt-5 text-[12.5px] leading-relaxed text-white/65">White skills carry the most weight in your role. Every skill appears on your skill graph, even those with too little evidence to score.</p>}
         </motion.aside>
       </div>

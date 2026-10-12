@@ -166,6 +166,28 @@ export async function signUp(input: SignUpInput): Promise<SignUpOutcome> {
   return { status: "success" };
 }
 
+export interface GraduateSignUpInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+/** Recently graduated: name, email, password. College, years and the rest come from the resume they upload after signing in. */
+export async function signUpGraduate(input: GraduateSignUpInput): Promise<SignUpOutcome> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signUp({
+    email: input.email,
+    password: input.password,
+    options: {
+      data: { full_name: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(), role: "student", student_status: "graduate" },
+      emailRedirectTo: `${window.location.origin}/auth/confirm?next=/verified`,
+    },
+  });
+  if (error) return { status: "error", message: error.message };
+  return { status: "success" };
+}
+
 export async function requestPasswordReset(email: string): Promise<void> {
   const supabase = createClient();
   await supabase.auth.resetPasswordForEmail(email, {
