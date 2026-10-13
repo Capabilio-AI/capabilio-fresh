@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { CardChrome } from "@/components/login/CardChrome";
+import { CollegeAutocomplete } from "@/components/login/CollegeAutocomplete";
 import { PasswordField } from "@/components/login/PasswordField";
 import { MIN_PASSWORD_LENGTH, type InstitutionDesignation, type OrgType } from "@/lib/org/signup";
 
@@ -18,17 +19,6 @@ const DESIGNATIONS: { value: InstitutionDesignation; label: string }[] = [
   { value: "faculty", label: "Faculty" },
 ];
 
-const CONFIRMATION: Record<OrgType, { title: string; body: string }> = {
-  institution: {
-    title: "Application received",
-    body: "Check your email to confirm your address. Your institution account then stays pending until we manually verify it — you can sign in at any time to see its status.",
-  },
-  company: {
-    title: "Thanks — we'll be in touch",
-    body: "Check your email to confirm your address. Company accounts aren't open yet; we've recorded your details and will contact you.",
-  },
-};
-
 export function OrganisationSignupForm() {
   const [orgType, setOrgType] = useState<OrgType>("institution");
   const [orgName, setOrgName] = useState("");
@@ -40,7 +30,7 @@ export function OrganisationSignupForm() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
-  const [doneType, setDoneType] = useState<OrgType | null>(null);
+  const [done, setDone] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -65,7 +55,7 @@ export function OrganisationSignupForm() {
       });
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) return setError(body?.error ?? "Something went wrong. Please try again.");
-      setDoneType(orgType);
+      setDone(true);
     } catch {
       setError("Connection problem. Please check your network and try again.");
     } finally {
@@ -73,21 +63,23 @@ export function OrganisationSignupForm() {
     }
   };
 
-  if (doneType) {
-    const copy = CONFIRMATION[doneType];
+  if (done) {
     return (
       <CardChrome label="capabilio / organisation">
-        <div className="pt-1 text-center" data-testid="org-confirmation">
+        <div className="pt-1 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lp-surface-subtle text-lp-accent-indigo">
             <CheckCircle2 size={20} />
           </div>
-          <h1 className="mt-4 font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">{copy.title}</h1>
-          <p className="mt-2 font-lp-body text-lp-body-sm leading-relaxed text-lp-text-muted">{copy.body}</p>
+          <h1 className="mt-4 font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Check your email</h1>
+          <p className="mt-2 font-lp-body text-lp-body-sm leading-relaxed text-lp-text-muted">
+            We&apos;ve sent a confirmation link to <strong className="text-lp-text-ink">{email}</strong>.
+            Confirm your account to continue your Capabilio AI journey.
+          </p>
           <a
             href="/login?path=organisation"
-            className="mt-6 inline-flex w-full items-center justify-center rounded bg-lp-text-ink py-3 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card hover:bg-lp-inverse-surface"
+            className="mt-6 inline-flex w-full items-center justify-center rounded bg-lp-text-ink py-3 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card transition-colors hover:bg-lp-inverse-surface"
           >
-            Go to sign in
+            Back to sign in
           </a>
         </div>
       </CardChrome>
@@ -118,7 +110,11 @@ export function OrganisationSignupForm() {
           <label htmlFor="org-name" className={FIELD_LABEL}>
             {orgType === "institution" ? "Institution name" : "Company name"}
           </label>
-          <input id="org-name" required value={orgName} onChange={(e) => setOrgName(e.target.value)} className={FIELD_INPUT} autoComplete="organization" />
+          {orgType === "institution" ? (
+            <CollegeAutocomplete id="org-name" value={orgName} onChange={setOrgName} onSelect={() => {}} />
+          ) : (
+            <input id="org-name" required value={orgName} onChange={(e) => setOrgName(e.target.value)} className={FIELD_INPUT} autoComplete="organization" />
+          )}
         </div>
 
         <div>
