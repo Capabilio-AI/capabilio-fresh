@@ -3,7 +3,7 @@ import type { ExtractionErrorCode } from "./types";
 
 /** The real JNTUK R23 CSE syllabus is 2.2 MB / 158 pages; 15 MB is the cap for resumes; syllabus uploads use the larger MAX_SYLLABUS_BYTES (limits.ts). */
 export const MAX_PDF_BYTES = 15 * 1024 * 1024;
-export const MAX_PDF_PAGES = 400;
+export const MAX_PDF_PAGES = 600;
 /** Below this many characters per page there is no usable text layer (a scan). */
 const MIN_CHARS_PER_PAGE = 80;
 
