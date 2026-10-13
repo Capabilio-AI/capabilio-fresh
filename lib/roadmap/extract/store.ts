@@ -72,6 +72,7 @@ export async function createExtraction(service: Service, v: { institutionId: str
     .insert({ institution_id: v.institutionId, created_by: v.userId, branch: v.branch, role_key: v.roleKey, file_name: v.fileName.slice(0, 300), file_bytes: v.fileBytes })
     .select("id")
     .single();
+  if (error) console.error("[curriculum-extraction] insert failed", error.message);
   return error || !data ? null : (data as { id: string }).id;
 }
 

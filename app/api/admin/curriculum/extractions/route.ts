@@ -18,6 +18,15 @@ export const maxDuration = 300;
  * returns 202 immediately; the extraction runs in the background. Nothing here writes to the curriculum tables.
  */
 export async function POST(request: Request) {
+  try {
+    return await startExtraction(request);
+  } catch (e) {
+    console.error("[curriculum-extraction] start failed", e);
+    return NextResponse.json({ error: "Could not start the extraction." }, { status: 500 });
+  }
+}
+
+async function startExtraction(request: Request) {
   const supabase = await createClient();
   const admin = await requireOrgAdmin(supabase);
   if ("error" in admin) return admin.error;
