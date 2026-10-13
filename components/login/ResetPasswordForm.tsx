@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PasswordField } from "./PasswordField";
+import { MfaStep } from "./MfaStep";
+import { verifyTotpOnly } from "./auth";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -13,6 +15,7 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [factorId, setFactorId] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,17 +31,38 @@ export function ResetPasswordForm() {
     }
 
     setSubmitting(true);
+    await saveNewPassword();
+    setSubmitting(false);
+  };
+
+  /** Accounts with two-step verification must prove the second factor before the auth server will change the password. */
+  const saveNewPassword = async () => {
     const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({ password });
-    setSubmitting(false);
-
-    if (updateError) {
-      setError("This reset link has expired or already been used. Request a new one.");
-      return;
+    if (!updateError) return setDone(true);
+    if (updateError.code === "insufficient_aal") {
+      const { data } = await supabase.auth.mfa.listFactors();
+      const factor = data?.totp.find((f) => f.status === "verified");
+      if (factor) return setFactorId(factor.id);
     }
-
-    setDone(true);
+    setError("This reset link has expired or already been used. Request a new one.");
   };
+
+  if (factorId) {
+    return (
+      <MfaStep
+        verify={(code) => verifyTotpOnly(factorId, code)}
+        onVerified={async () => {
+          setFactorId(null);
+          setSubmitting(true);
+          await saveNewPassword();
+          setSubmitting(false);
+        }}
+        onCancel={() => setFactorId(null)}
+        cancelLabel="Back"
+      />
+    );
+  }
 
   if (done) {
     return (

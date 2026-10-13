@@ -1,3 +1,4 @@
+import { getVerifiedUser } from "@/lib/supabase/aal";
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -56,9 +57,9 @@ export async function orgRoute<S extends z.ZodTypeAny>(
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
 
   const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const ctx = await getOrgContext(supabase, data.user.id);
+  const user = await getVerifiedUser(supabase);
+  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const ctx = await getOrgContext(supabase, user.id);
   if (!ctx || !can(ctx, permission)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
@@ -72,9 +73,9 @@ export async function orgRoute<S extends z.ZodTypeAny>(
 /** For non-JSON handlers (multipart uploads, downloads): the same auth + permission gate as orgRoute. */
 export async function authorizeOrg(permission: Permission): Promise<RouteEnv | NextResponse> {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const ctx = await getOrgContext(supabase, data.user.id);
+  const user = await getVerifiedUser(supabase);
+  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const ctx = await getOrgContext(supabase, user.id);
   if (!ctx || !can(ctx, permission)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   return { ctx, supabase, service: createServiceClient() };
 }

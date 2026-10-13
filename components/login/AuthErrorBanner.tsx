@@ -3,7 +3,7 @@
 import { AlertCircle, WifiOff } from "lucide-react";
 import { AuthOutcome } from "./auth";
 
-type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval">;
+type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval" | "mfa-required" | "invalid-code">;
 
 interface AuthErrorBannerProps {
   status: ErrorStatus;

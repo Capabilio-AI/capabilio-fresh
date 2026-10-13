@@ -14,13 +14,16 @@ import {
   portalFor,
   resendVerificationEmail,
   signIn,
+  verifySecondFactor,
 } from "./auth";
 import { RoleId } from "./roles";
+import { createClient } from "@/lib/supabase/client";
 import { PendingApprovalCard } from "./PendingApprovalCard";
+import { MfaStep } from "./MfaStep";
 import { landingFor } from "@/lib/org/roles";
 import type { AuthPath } from "@/lib/onboarding/auth-path";
 
-type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval">;
+type ErrorStatus = Exclude<AuthOutcome["status"], "success" | "pending-approval" | "mfa-required" | "invalid-code">;
 
 // Only the student flow has a real destination built (the assessment).
 // Every other role's portal doesn't exist yet — this app has never had
@@ -76,25 +79,27 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
   const [redirectPortal, setRedirectPortal] = useState<string | null>(null);
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
   const [pendingOrg, setPendingOrg] = useState<Extract<AuthOutcome, { status: "pending-approval" }> | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   useEffect(() => {
     if (redirectPath) router.push(redirectPath);
   }, [redirectPath, router]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setAuthError(undefined);
-    setLoading(true);
-
-    const outcome = await signIn(email, password);
-    setLoading(false);
-
+  /** Shared by the password step and the second-factor step: both end in the same outcomes. */
+  const handleOutcome = (outcome: AuthOutcome) => {
+    if (outcome.status === "mfa-required") {
+      setMfaFactorId(outcome.factorId);
+      return;
+    }
     if (outcome.status === "pending-approval") {
+      setMfaFactorId(null);
       setPendingOrg(outcome);
       return;
     }
+    if (outcome.status === "invalid-code") return;
     if (outcome.status !== "success") {
+      setMfaFactorId(null);
       setAuthError(outcome.status);
       return;
     }
@@ -110,11 +115,40 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
     setRedirectPath(routeFor(outcome.resolvedRole));
   };
 
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setAuthError(undefined);
+    setLoading(true);
+    const outcome = await signIn(email, password);
+    setLoading(false);
+    handleOutcome(outcome);
+  };
+
   const handleResend = async () => {
     setResendState("sending");
     await resendVerificationEmail(email);
     setResendState("sent");
   };
+
+  if (mfaFactorId && !redirectPortal) {
+    return (
+      <CardChrome label="capabilio / two-step-check">
+        <MfaStep
+          verify={async (code) => {
+            const outcome = await verifySecondFactor(mfaFactorId, code);
+            if (outcome.status === "invalid-code") return "invalid";
+            handleOutcome(outcome);
+            return "ok";
+          }}
+          onCancel={() => {
+            setMfaFactorId(null);
+            setPassword("");
+            void createClient().auth.signOut();
+          }}
+        />
+      </CardChrome>
+    );
+  }
 
   if (pendingOrg) {
     return (

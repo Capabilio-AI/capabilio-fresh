@@ -2,7 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { createClient as createVerifier } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/lib/supabase/env";
 import { PasswordField } from "@/components/login/PasswordField";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -25,13 +27,15 @@ export function ChangePasswordForm({ email }: { email: string }) {
     if (next === current) return setError("Choose a password different from your current one.");
 
     setSaving(true);
-    const supabase = createClient();
-    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: current });
+    // Check the current password on a throwaway client: signing in on the live one would replace a two-step session with a password-only one.
+    const verifier = createVerifier(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { error: verifyError } = await verifier.auth.signInWithPassword({ email, password: current });
+    if (!verifyError) await verifier.auth.signOut(); // the check opened a real session; close it
     if (verifyError) {
       setSaving(false);
       return setError("Your current password is incorrect.");
     }
-    const { error: updateError } = await supabase.auth.updateUser({ password: next });
+    const { error: updateError } = await createClient().auth.updateUser({ password: next });
     setSaving(false);
     if (updateError) return setError("Couldn't update your password. Please try again.");
     setCurrent("");

@@ -1,89 +1,60 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GraduationCap, Lock, LogOut, Mail, School, ShieldCheck, User } from "lucide-react";
+import { GraduationCap, Mail, School, ShieldCheck, User } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { formatAcademicYear } from "@/lib/career/academic-year";
 import { EditableNameForm } from "@/components/settings/EditableNameForm";
-import { SettingsRow, SettingsSection } from "@/components/settings/SettingsRow";
-import { PulsePrivacy } from "@/components/settings/PulsePrivacy";
+import { SettingsRow } from "@/components/settings/SettingsRow";
+import { SettingsCard } from "@/components/settings/SettingsCard";
 import { SignOutButton } from "@/components/settings/SignOutButton";
 
-export const metadata: Metadata = { title: "Settings — Capabilio AI" };
+export const metadata: Metadata = { title: "Account settings — Capabilio AI" };
+
+const LINK = "font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline";
 
 export default async function SettingsPage() {
   const { supabase, user } = await requireAuthedUser();
-
   const viewer = await getViewerSummary(supabase, user.id);
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Settings</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">Manage your account, profile, and security.</p>
+    <div className="flex flex-col gap-5">
+      <SettingsCard id="profile-h" title="Profile" description="How you appear across your dashboard and Vault." bare>
+        <SettingsRow icon={User} title="Full name" description="Shown across your dashboard and Vault.">
+          <EditableNameForm initialName={viewer.fullName ?? ""} />
+        </SettingsRow>
+        <SettingsRow icon={User} title="Photo and headline" description="Manage how you appear to others.">
+          <Link href="/profile" className={LINK}>Go to profile →</Link>
+        </SettingsRow>
+      </SettingsCard>
 
-      <div className="mt-6 flex flex-col gap-6">
-        <SettingsSection title="Profile">
-          <SettingsRow icon={User} title="Full name" description="Shown across your dashboard and Vault.">
-            <EditableNameForm initialName={viewer.fullName ?? ""} />
-          </SettingsRow>
-          <SettingsRow icon={User} title="Profile picture & headline" description="Manage how you appear to others.">
-            <Link href="/profile" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
-              Go to profile →
-            </Link>
-          </SettingsRow>
-        </SettingsSection>
+      <SettingsCard id="acct-h" title="Sign-in email" bare>
+        <SettingsRow icon={Mail} title={viewer.email ?? "No email on file"} description="This is the address you sign in with. To change it, contact support.">
+          <Link href="/settings/security" className={LINK}>Security →</Link>
+        </SettingsRow>
+      </SettingsCard>
 
-        <SettingsSection title="Account">
-          <SettingsRow icon={Mail} title="Email" description="Contact support to change your email.">
-            <span className="font-lp-body text-[13px] text-app-charcoal">{viewer.email}</span>
-          </SettingsRow>
-        </SettingsSection>
+      <SettingsCard id="acad-h" title="Academic" bare>
+        <SettingsRow icon={School} title="Institution" description={viewer.collegeName ?? "Not set"} />
+        <SettingsRow
+          icon={GraduationCap}
+          title="Branch and year"
+          description={
+            [viewer.branch, formatAcademicYear(viewer.direction?.academicYear?.year ?? null, viewer.direction?.startYear ?? null, viewer.direction?.endYear ?? null)].filter(Boolean).join(" · ") || "Not set"
+          }
+        >
+          <Link href="/dashboard/vault" className={LINK}>Manage →</Link>
+        </SettingsRow>
+        <SettingsRow icon={GraduationCap} title="Career direction" description="Job, higher studies, entrepreneurship, or not sure yet. Change it any time.">
+          <Link href="/settings/direction" className={LINK}>Open →</Link>
+        </SettingsRow>
+      </SettingsCard>
 
-        <SettingsSection title="Academic">
-          <SettingsRow icon={School} title="Institution" description={viewer.collegeName ?? "Not set"} />
-          <SettingsRow
-            icon={GraduationCap}
-            title="Branch & year"
-            description={
-              [
-                viewer.branch,
-                formatAcademicYear(
-                  viewer.direction?.academicYear?.year ?? null,
-                  viewer.direction?.startYear ?? null,
-                  viewer.direction?.endYear ?? null
-                ),
-              ]
-                .filter(Boolean)
-                .join(" · ") || "Not set"
-            }
-          >
-            <Link href="/dashboard/vault" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
-              Manage →
-            </Link>
-          </SettingsRow>
-          <SettingsRow icon={GraduationCap} title="Career direction" description="Job, higher studies, entrepreneurship, or not sure yet — change it any time.">
-            <Link href="/settings/direction" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
-              Open →
-            </Link>
-          </SettingsRow>
-        </SettingsSection>
-
-        <SettingsSection title="Pulse privacy">
-          <div className="px-5"><PulsePrivacy /></div>
-        </SettingsSection>
-
-        <SettingsSection title="Security">
-          <SettingsRow icon={Lock} title="Password" description="Change it any time from your profile settings.">
-            <Link href="/profile?tab=settings" className="font-lp-mono text-[11.5px] text-app-blue hover:underline">
-              Change password →
-            </Link>
-          </SettingsRow>
-          <SettingsRow icon={ShieldCheck} title="Data access" description="Only you can see your assessment, Vault, and capability data — staff at your institution can view it only where your role's permissions explicitly allow it." />
-          <SettingsRow icon={LogOut} title="Sign out" description="End your session on this device." tone="warning">
-            <SignOutButton />
-          </SettingsRow>
-        </SettingsSection>
-      </div>
+      <SettingsCard id="session-h" title="This session" bare>
+        <SettingsRow icon={ShieldCheck} title="Sign out" description="End your session on this device.">
+          <SignOutButton />
+        </SettingsRow>
+      </SettingsCard>
     </div>
   );
 }

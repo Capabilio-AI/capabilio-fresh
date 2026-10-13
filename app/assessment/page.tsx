@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { AssessFlow } from "@/components/assess/AssessFlow";
 import { getFlowSnapshot } from "@/lib/assess/flow";
@@ -12,10 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default async function AssessmentPage({ searchParams }: { searchParams: Promise<{ plan?: string; retake?: string; step?: string }> }) {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const userId = data?.claims?.sub;
-  if (!userId) redirect("/login");
+  const { user } = await requireAuthedUser();
+  const userId = user.id;
 
   const sp = await searchParams;
   const snapshot = await getFlowSnapshot(createServiceClient() as unknown as Db, userId, { plan: sp.plan === "b" ? "b" : null, retake: sp.retake === "1", changeRole: sp.step === "role" });

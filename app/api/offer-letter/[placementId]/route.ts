@@ -1,3 +1,4 @@
+import { getVerifiedUser } from "@/lib/supabase/aal";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -15,17 +16,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pla
   const { placementId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(placementId)) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const authUser = await getVerifiedUser(supabase);
+  if (!authUser) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const service = createServiceClient();
   const { data } = await untyped(service).from("org_placements").select("institution_id, student_user_id, offer_letter_path").eq("id", placementId).maybeSingle();
   const placement = data as { institution_id: string; student_user_id: string; offer_letter_path: string | null } | null;
   if (!placement?.offer_letter_path) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  let allowed = placement.student_user_id === auth.user.id;
+  let allowed = placement.student_user_id === authUser.id;
   if (!allowed) {
-    const ctx = await getOrgContext(supabase, auth.user.id);
+    const ctx = await getOrgContext(supabase, authUser.id);
     allowed = Boolean(ctx && ctx.institutionId === placement.institution_id && (can(ctx, "postPlacement") || can(ctx, "viewOutcomes")));
   }
   if (!allowed) return NextResponse.json({ error: "Not found." }, { status: 404 });

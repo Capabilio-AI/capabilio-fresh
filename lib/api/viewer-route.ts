@@ -1,3 +1,4 @@
+import { getVerifiedUser } from "@/lib/supabase/aal";
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -14,8 +15,8 @@ export async function viewerRoute<S extends z.ZodTypeAny>(
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
-  const out = await handler({ userId: data.user.id, service: createServiceClient() }, parsed.data);
+  const user = await getVerifiedUser(supabase);
+  if (!user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 });
+  const out = await handler({ userId: user.id, service: createServiceClient() }, parsed.data);
   return out instanceof NextResponse ? out : NextResponse.json({ ok: true, ...out });
 }

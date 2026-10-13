@@ -14,7 +14,7 @@ export function SettingsRow({
   tone?: "neutral" | "warning";
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-app-border px-5 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className="flex flex-col gap-3 border-b border-app-border px-5 py-4 last:border-b-0 sm:px-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="flex items-start gap-3">
         <span
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${

@@ -12,7 +12,10 @@ export type AuthOutcome =
   | { status: "unverified" }
   | { status: "pending-approval"; organisationName: string | null; orgType: "institution" | "company" | null }
   | { status: "access-removed"; organisationName: string | null }
-  | { status: "network-error" };
+  | { status: "network-error" }
+  /** The password was right and the account has an authenticator app; nothing else has run yet. */
+  | { status: "mfa-required"; factorId: string }
+  | { status: "invalid-code" };
 
 const SELF_SERVE_ROLES: RoleId[] = ["student", "professional"];
 
@@ -40,10 +43,40 @@ export async function signIn(email: string, password: string): Promise<AuthOutco
     return { status: "invalid-credentials" };
   }
 
+  // The factor list in the sign-in response comes from the auth server, not from anything the browser stores.
+  const factor = (user.factors ?? []).find((f) => f.factor_type === "totp" && f.status === "verified");
+  if (factor) return { status: "mfa-required", factorId: factor.id };
+
+  return finishSignIn(supabase, user.id);
+}
+
+/** Second step of sign-in for accounts with an authenticator app. Wrong or expired codes never reveal anything else. */
+export async function verifySecondFactor(factorId: string, code: string): Promise<AuthOutcome> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
+  if (error) {
+    return error.message.toLowerCase().includes("invalid") ? { status: "invalid-code" } : { status: "network-error" };
+  }
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return { status: "network-error" };
+  return finishSignIn(supabase, data.user.id);
+}
+
+export type CodeCheck = "ok" | "invalid" | "error";
+
+/** Checks an authenticator code and nothing else; used where the session is already known (password reset). */
+export async function verifyTotpOnly(factorId: string, code: string): Promise<CodeCheck> {
+  const { error } = await createClient().auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
+  if (!error) return "ok";
+  return error.message.toLowerCase().includes("invalid") ? "invalid" : "error";
+}
+
+/** Everything that follows a fully authenticated session: role resolution and the organisation approval checks. */
+async function finishSignIn(supabase: ReturnType<typeof createClient>, userId: string): Promise<AuthOutcome> {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("primary_role, full_name")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single();
 
   if (profileError || !profile) {
@@ -62,7 +95,7 @@ export async function signIn(email: string, password: string): Promise<AuthOutco
   const { data: memberships, error: membershipError } = await supabase
     .from("institution_memberships")
     .select("status, institutions ( id, name )")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("status", "active");
 
   if (membershipError) {
@@ -74,7 +107,7 @@ export async function signIn(email: string, password: string): Promise<AuthOutco
     const { data: removed } = await supabase
       .from("institution_memberships")
       .select("institutions ( name )")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "revoked")
       .order("created_at", { ascending: false })
       .limit(1);
@@ -88,7 +121,7 @@ export async function signIn(email: string, password: string): Promise<AuthOutco
     const { data: pending } = await supabase
       .from("institution_memberships")
       .select("institutions ( name, org_type )")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(1);

@@ -1,5 +1,6 @@
 "use server";
 
+import { getVerifiedUser } from "@/lib/supabase/aal";
 import { createClient } from "@/lib/supabase/server";
 
 interface DismissInput {
@@ -17,9 +18,7 @@ interface DismissInput {
  */
 export async function dismissCareerDirectionIntro(input: DismissInput): Promise<void> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getVerifiedUser(supabase);
   if (!user) return;
 
   await supabase.from("profiles").update({ has_seen_career_direction_intro: true }).eq("id", user.id);

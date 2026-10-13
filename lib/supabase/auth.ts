@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { secondFactorPending } from "@/lib/supabase/aal";
 
 /**
  * The (app) layout and every page under it each need the authed user — a
@@ -14,7 +15,9 @@ export const getAuthedUser = cache(async () => {
   // getClaims() verifies the JWT locally against the cached JWKS (asymmetric keys) —
   // getUser() was a network round trip to the Supabase region on every navigation.
   const { data } = await supabase.auth.getClaims();
-  const user = data?.claims?.sub ? { id: data.claims.sub, email: data.claims.email ?? null } : null;
+  const claims = data?.claims;
+  const stepUpPending = claims?.sub ? await secondFactorPending(supabase, claims.aal) : false;
+  const user = claims?.sub && !stepUpPending ? { id: claims.sub, email: claims.email ?? null } : null;
   return { supabase, user };
 });
 
