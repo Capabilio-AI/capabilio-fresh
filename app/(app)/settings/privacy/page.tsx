@@ -30,7 +30,7 @@ export default async function PrivacySettingsPage() {
         <Link href="/profile?tab=passport" className="mt-3 inline-block font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline">Open your passport →</Link>
       </SettingsCard>
 
-      <SettingsCard id="access-h" title="Who can see your data" description="Only you can see your assessments, Vault and capability data. Staff at your institution can view it only where their role's permissions explicitly allow it." />
+      <SettingsCard id="access-h" title="Who can see your data" description="Your assessment answers, Vault and capability data are yours. Staff at your institution can see your ELO rating, your target career and counts of your activity, and anything else only where their role's permissions explicitly allow it." />
 
       <SettingsCard id="export-h" title="Download your data" description="A JSON file with your profile, assessments, Vault, roadmap, posts and the other records tied to your account.">
         <a href="/api/account/export" download className={BTN_QUIET}>

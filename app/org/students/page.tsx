@@ -35,7 +35,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Students"
-        subtitle="Find a cohort, not a long list. Pick a branch and class on the grid, or search by name or roll number. Figures are counts of real activity; Arena results stay private to each student."
+        subtitle="Find a cohort, not a long list. Pick a branch and class on the grid, or search by name or roll number. ELO is each student's rating on their target career, so you can read performance before opening any task. The other figures are counts of real activity."
         action={
           <form method="get" role="search" className="flex items-center gap-2">
             {sp.branch && <input type="hidden" name="branch" value={sp.branch} />}
@@ -151,7 +151,16 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                     {r.branch ?? "Branch not set"}
                     {r.endYear ? ` · Class of ${r.endYear}` : ""}
                   </p>
-                  <p className="col-span-2 flex flex-wrap gap-1.5 md:col-span-1 md:justify-end">
+                  <p className="col-span-2 flex flex-wrap items-center gap-1.5 md:col-span-1 md:justify-end">
+                    {r.elo ? (
+                      <span className="inline-flex items-baseline gap-1.5 rounded-full bg-[var(--m-accent-soft)] px-3 py-1 text-[var(--m-accent-ink)]" title={r.elo.career ? `ELO on ${r.elo.career}` : "ELO"}>
+                        <span className="text-[10.5px] font-extrabold">ELO</span>
+                        <span className="text-[15px] font-black leading-none tabular-nums">{r.elo.rating}</span>
+                        <span className="text-[11px] font-bold">{r.elo.tier}</span>
+                      </span>
+                    ) : (
+                      <Pill tone="neutral">Not rated yet</Pill>
+                    )}
                     <Pill tone={r.groups ? "info" : "neutral"}>{r.groups} group{r.groups === 1 ? "" : "s"}</Pill>
                     <Pill tone={r.gradedProjects ? "ok" : "neutral"}>{r.gradedProjects} graded</Pill>
                     <Pill tone={r.arenaLast30 ? "ok" : "neutral"}>{r.arenaLast30} Arena · 30d</Pill>

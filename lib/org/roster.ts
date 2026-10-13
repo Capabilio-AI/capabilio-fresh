@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import type { OrgContext } from "./context";
 import { untyped } from "./db";
+import { getTier } from "@/lib/portfolio/elo";
 
 export interface RosterRow {
   userId: string;
@@ -17,6 +18,29 @@ export interface RosterRow {
   gradedProjects: number;
   /** Arena challenges completed in the last 30 days */
   arenaLast30: number;
+  /** The student's one ELO (rating on their target career, same number as their dashboard); null until they have been rated */
+  elo: { rating: number; tier: string; career: string | null } | null;
+}
+
+/** The one ELO per student: the ledger row for their primary career. No target career or no row yet = not rated (never a made-up 400). */
+async function loadElos(service: SupabaseClient<Database>, ids: string[]): Promise<Map<string, NonNullable<RosterRow["elo"]>>> {
+  const db = untyped(service);
+  const { data: intents } = await db.from("student_career_intent").select("student_id, primary_career_id").in("student_id", ids).not("primary_career_id", "is", null);
+  const picks = (intents ?? []) as { student_id: string; primary_career_id: string }[];
+  if (picks.length === 0) return new Map();
+  const careerIds = [...new Set(picks.map((p) => p.primary_career_id))];
+  const [{ data: ratings }, { data: careers }] = await Promise.all([
+    db.from("student_career_elo").select("student_id, career_id, rating").in("student_id", picks.map((p) => p.student_id)).in("career_id", careerIds),
+    db.from("careers").select("id, name").in("id", careerIds),
+  ]);
+  const rating = new Map(((ratings ?? []) as { student_id: string; career_id: string; rating: number }[]).map((r) => [`${r.student_id}:${r.career_id}`, r.rating]));
+  const career = new Map(((careers ?? []) as { id: string; name: string }[]).map((c) => [c.id, c.name]));
+  const out = new Map<string, NonNullable<RosterRow["elo"]>>();
+  for (const p of picks) {
+    const r = rating.get(`${p.student_id}:${p.primary_career_id}`);
+    if (typeof r === "number") out.set(p.student_id, { rating: Math.round(r), tier: getTier(Math.round(r)).label, career: career.get(p.primary_career_id) ?? null });
+  }
+  return out;
 }
 
 export interface RosterFilters {
@@ -28,8 +52,8 @@ const MAX_ROWS = 500;
 const DAY = 86_400_000;
 
 /**
- * A college's own students, for the staff who teach them and for admins. Real counts only — no rating is
- * shown (Arena ratings belong to the student's own Portfolio). Faculty whose membership names a branch see
+ * A college's own students, for the staff who teach them and for admins. Real counts plus each student's ELO, so staff
+ * can read performance at a glance before opening any task. Faculty whose membership names a branch see
  * that branch by default scope; admins and unscoped staff see the whole institution.
  */
 export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgContext, filters: RosterFilters): Promise<{ rows: RosterRow[]; branches: string[]; years: number[]; truncated: boolean }> {
@@ -56,11 +80,12 @@ export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgCont
   if (ids.length === 0) return { rows: [], branches, years, truncated };
 
   const since = new Date(Date.now() - 30 * DAY).toISOString();
-  const [profiles, members, evidence, arena] = await Promise.all([
+  const [profiles, members, evidence, arena, elos] = await Promise.all([
     service.from("profiles").select("id, full_name, email").in("id", ids),
     untyped(service).from("class_project_group_members").select("user_id").in("user_id", ids),
     service.from("evidence").select("user_id").in("user_id", ids).eq("evidence_type", "staff_graded_project"),
     service.from("arena_attempt_completions").select("user_id").in("user_id", ids).gte("completed_at", since),
+    loadElos(service, ids),
   ]);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
   const tally = (rows: { user_id: string }[] | null) => {
@@ -83,6 +108,7 @@ export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgCont
       groups: groups.get(m.user_id) ?? 0,
       gradedProjects: graded.get(m.user_id) ?? 0,
       arenaLast30: arenaCounts.get(m.user_id) ?? 0,
+      elo: elos.get(m.user_id) ?? null,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
   return { rows, branches, years, truncated };
@@ -177,11 +203,12 @@ export async function loadRosterOverview(service: SupabaseClient<Database>, ctx:
   if (ids.length === 0) return { total, matrix: { branches, years, cells, branchTotals, yearTotals }, rollFlagged, incomplete, matched, rows: [], page, pageCount };
 
   const since = new Date(Date.now() - 30 * DAY).toISOString();
-  const [profiles, groupRows, evidence, arena] = await Promise.all([
+  const [profiles, groupRows, evidence, arena, elos] = await Promise.all([
     service.from("profiles").select("id, full_name, email").in("id", ids),
     untyped(service).from("class_project_group_members").select("user_id").in("user_id", ids),
     service.from("evidence").select("user_id").in("user_id", ids).eq("evidence_type", "staff_graded_project"),
     service.from("arena_attempt_completions").select("user_id").in("user_id", ids).gte("completed_at", since),
+    loadElos(service, ids),
   ]);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
   const tally = (rows: { user_id: string }[] | null) => {
@@ -202,6 +229,7 @@ export async function loadRosterOverview(service: SupabaseClient<Database>, ctx:
     groups: groups.get(m.user_id) ?? 0,
     gradedProjects: graded.get(m.user_id) ?? 0,
     arenaLast30: arenaCounts.get(m.user_id) ?? 0,
+    elo: elos.get(m.user_id) ?? null,
   }));
   return { total, matrix: { branches, years, cells, branchTotals, yearTotals }, rollFlagged, incomplete, matched, rows, page, pageCount };
 }
