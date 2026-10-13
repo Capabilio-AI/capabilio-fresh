@@ -37,7 +37,7 @@ export function SettingsSection({ title, children }: { title: string; children: 
   return (
     <section>
       <h2 className="mb-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-app-muted">{title}</h2>
-      <div className="rounded-xl border border-app-border bg-white">{children}</div>
+      <div className="rounded-xl border border-app-border bg-[var(--m-sheet)]">{children}</div>
     </section>
   );
 }

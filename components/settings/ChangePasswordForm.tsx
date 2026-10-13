@@ -50,7 +50,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
       <PasswordField label="New password" value={next} onChange={setNext} placeholder="At least 8 characters" autoComplete="new-password" />
       <PasswordField label="Confirm new password" value={confirm} onChange={setConfirm} placeholder="Repeat the new password" autoComplete="new-password" error={error} />
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={saving || !current || !next || !confirm} className="inline-flex items-center gap-2 rounded-lg bg-[var(--m-ink)] px-4 py-2 font-lp-body text-[13px] font-bold text-white hover:opacity-90 disabled:opacity-50">
+        <button type="submit" disabled={saving || !current || !next || !confirm} className="inline-flex items-center gap-2 rounded-lg bg-[var(--m-ink)] px-4 py-2 font-lp-body text-[13px] font-bold text-[#fff] hover:opacity-90 disabled:opacity-50">
           {saving && <Loader2 size={14} className="animate-spin" aria-hidden />}
           {saving ? "Updating…" : "Update password"}
         </button>

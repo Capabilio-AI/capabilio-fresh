@@ -70,7 +70,6 @@ export function OrgShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const hasTeam = groups.some((g) => g.items.some((i) => i.href === "/org/team"));
   const hasCollege = groups.some((g) => g.items.some((i) => i.href === "/org/college"));
 
   return (
@@ -102,11 +101,9 @@ export function OrgShell({
                 <School size={18} strokeWidth={2.2} />
               </Dock>
             )}
-            {hasTeam && (
-              <Dock href="/org/team" label="Settings">
-                <Settings size={18} strokeWidth={2.2} />
-              </Dock>
-            )}
+            <Dock href="/org/settings" label="Settings">
+              <Settings size={18} strokeWidth={2.2} />
+            </Dock>
             <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
             <OrgAccountMenu institutionName={institutionName} roleLabel={roleLabel} publicHref={publicHref} initials={initialsOf(institutionName)} />
           </div>

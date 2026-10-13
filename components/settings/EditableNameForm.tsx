@@ -16,13 +16,13 @@ export function EditableNameForm({ initialName }: { initialName: string }) {
         defaultValue={initialName}
         required
         maxLength={200}
-        className="w-full max-w-xs rounded-lg border border-app-border bg-white px-3.5 py-2.5 font-lp-body text-[13.5px] text-app-charcoal focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20"
+        className="w-full max-w-xs rounded-lg border border-[var(--m-soft)]! bg-[var(--m-sheet)] px-3.5 py-2.5 font-lp-body text-[13.5px] text-app-charcoal focus:border-app-orange focus:outline-none focus:ring-2 focus:ring-app-orange/20"
       />
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-app-charcoal px-4 py-2.5 font-lp-body text-[12.5px] font-semibold text-white disabled:opacity-60"
+          className="rounded-lg bg-app-charcoal px-4 py-2.5 font-lp-body text-[12.5px] font-semibold text-[#fff] disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save"}
         </button>

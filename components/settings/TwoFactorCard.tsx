@@ -135,7 +135,7 @@ export function TwoFactorCard({ verifiedFactorId }: { verifiedFactorId: string |
               <span className="font-bold">1. Scan this code</span> with an authenticator app such as Google Authenticator, 1Password or Authy.
               <div className="mt-3 flex flex-wrap items-center gap-4">
                 {/* eslint-disable-next-line @next/next/no-img-element -- inline SVG data URI from Supabase, not an optimisable asset */}
-                <img src={phase.qr} alt="QR code for your authenticator app" width={148} height={148} className="rounded-lg border border-[var(--m-rule)]! bg-white p-2" />
+                <img src={phase.qr} alt="QR code for your authenticator app" width={148} height={148} className="rounded-lg border border-[var(--m-rule)]! bg-[#fff] p-2" />
                 <div className="min-w-0">
                   <p className="text-[12.5px] text-[var(--m-muted)]">Can&apos;t scan? Enter this key instead:</p>
                   <code className="mt-1 block break-all rounded-md bg-[var(--m-ground)] px-2.5 py-1.5 font-lp-mono text-[12.5px] text-[var(--m-ink)]">{phase.secret}</code>
