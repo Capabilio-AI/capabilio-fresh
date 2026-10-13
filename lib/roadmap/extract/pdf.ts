@@ -40,12 +40,16 @@ export async function extractPdfPages(bytes: Uint8Array): Promise<PdfText> {
   const parser = new PDFParse({ data: bytes.slice() }) // pdfjs detaches the buffer it is given — hand it a copy;
   try {
     const result = await parser.getText();
-    if (result.total > MAX_PDF_PAGES) return { ok: false, code: "unreadable" };
+    if (result.total > MAX_PDF_PAGES) {
+      console.error(`[pdf] ${result.total} pages is over the ${MAX_PDF_PAGES}-page limit`);
+      return { ok: false, code: "unreadable" };
+    }
     const pages = result.pages.map((p) => stripPageChrome(p.text));
     const chars = pages.reduce((n, p) => n + p.trim().length, 0);
     if (pages.length === 0 || chars / pages.length < MIN_CHARS_PER_PAGE) return { ok: false, code: "no_text_layer" };
     return { ok: true, pages, header: result.pages.slice(0, 3).map((p) => p.text).join("\n") };
-  } catch {
+  } catch (e) {
+    console.error("[pdf] could not read the file:", e instanceof Error ? `${e.name}: ${e.message}` : e);
     return { ok: false, code: "unreadable" };
   } finally {
     await parser.destroy().catch(() => undefined);
