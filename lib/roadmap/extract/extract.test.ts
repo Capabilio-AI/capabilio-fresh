@@ -67,6 +67,8 @@ describe("file validation", () => {
     const big = new Uint8Array(MAX_PDF_BYTES + 1);
     big.set(new TextEncoder().encode("%PDF-1.7"));
     expect(checkPdfBytes(big)).toMatchObject({ ok: false, status: 413 });
+    expect(checkPdfBytes(big, MAX_PDF_BYTES * 2)).toEqual({ ok: true });
+    expect(checkPdfBytes(big, MAX_PDF_BYTES)).toMatchObject({ message: "The PDF must be under 15 MB." });
   });
   it("gives an honest no_text_layer failure for a PDF with no selectable text (a scan)", async () => {
     const scan = new TextEncoder().encode(

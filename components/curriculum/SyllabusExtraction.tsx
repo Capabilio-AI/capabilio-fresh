@@ -7,9 +7,10 @@ import { Loader2 } from "lucide-react";
 import { searchBranches } from "@/lib/branch-catalog";
 import type { ExtractionErrorCode, ExtractionRecord } from "@/lib/roadmap/extract/types";
 import { Panel } from "@/components/org/ui";
+import { createClient } from "@/lib/supabase/client";
+import { MAX_SYLLABUS_BYTES, MAX_SYLLABUS_MB, SYLLABUS_BUCKET } from "@/lib/roadmap/extract/limits";
 
 const POLL_MS = 2500;
-const MAX_MB = 15;
 
 const FAILURE: Record<ExtractionErrorCode, string> = {
   no_text_layer: "We couldn't read this file — it looks like a scan with no selectable text. Start the curriculum by hand, or upload a digitally generated PDF.",
@@ -24,7 +25,7 @@ interface Props {
   roleKey: string;
 }
 
-/** Upload → background read (polled) → a draft curriculum to review. The PDF itself is never stored. */
+/** Upload → background read (polled) → a draft curriculum to review. The PDF is kept in private storage only while it is being read, then deleted. */
 export function SyllabusExtraction({ initial, roleKey }: Props) {
   const router = useRouter();
   const [extraction, setExtraction] = useState<ExtractionRecord | null>(initial);
@@ -50,15 +51,29 @@ export function SyllabusExtraction({ initial, roleKey }: Props) {
 
   async function upload() {
     if (!file || !branch.trim()) return setError("Choose a branch and a PDF.");
-    if (file.size > MAX_MB * 1024 * 1024) return setError(`The PDF must be under ${MAX_MB} MB.`);
+    if (file.size > MAX_SYLLABUS_BYTES) return setError(`The PDF must be under ${MAX_SYLLABUS_MB} MB.`);
     setBusy(true);
     setError(null);
-    const form = new FormData();
-    form.set("file", file);
-    form.set("branch", branch.trim());
-    form.set("roleKey", roleKey);
-    form.set("regulation", regulation.trim());
-    const res = await fetch("/api/admin/curriculum/extractions", { method: "POST", body: form });
+    const slot = await fetch("/api/admin/curriculum/extractions/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ size: file.size }),
+    });
+    const target = (await slot.json().catch(() => null)) as { path?: string; token?: string; error?: string } | null;
+    if (!slot.ok || !target?.path || !target.token) {
+      setBusy(false);
+      return setError(target?.error ?? "Could not start the upload.");
+    }
+    const sent = await createClient().storage.from(SYLLABUS_BUCKET).uploadToSignedUrl(target.path, target.token, file, { contentType: "application/pdf" });
+    if (sent.error) {
+      setBusy(false);
+      return setError("The upload failed. Check your connection and try again.");
+    }
+    const res = await fetch("/api/admin/curriculum/extractions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: target.path, fileName: file.name, branch: branch.trim(), roleKey, regulation: regulation.trim() }),
+    });
     const json = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
     setBusy(false);
     if (!res.ok || !json?.id) return setError(json?.error ?? "Could not start the extraction.");
@@ -78,7 +93,7 @@ export function SyllabusExtraction({ initial, roleKey }: Props) {
   return (
     <Panel title="No template? Upload any syllabus PDF">
       <p className="font-lp-body text-[12px] text-app-muted">
-        Upload one branch and one regulation at a time (a digital PDF, up to {MAX_MB} MB). If the regulation is printed in the PDF header we use it; a regulation you type here takes priority. We read the semester tables, units and topics, course outcomes, labs and books, then work out the skills each course builds, into a draft you review. Nothing is saved to students until you review, confirm and publish.
+        Upload one branch and one regulation at a time (a digital PDF, up to {MAX_SYLLABUS_MB} MB). If the regulation is printed in the PDF header we use it; a regulation you type here takes priority. We read the semester tables, units and topics, course outcomes, labs and books, then work out the skills each course builds, into a draft you review. Nothing is saved to students until you review, confirm and publish.
       </p>
 
       {!extraction && (

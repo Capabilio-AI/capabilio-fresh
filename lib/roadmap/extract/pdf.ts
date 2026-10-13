@@ -1,7 +1,7 @@
 import { PDFParse } from "pdf-parse";
 import type { ExtractionErrorCode } from "./types";
 
-/** The real JNTUK R23 CSE syllabus is 2.2 MB / 158 pages; 15 MB leaves room for image-heavy syllabi without inviting abuse. */
+/** The real JNTUK R23 CSE syllabus is 2.2 MB / 158 pages; 15 MB is the cap for resumes; syllabus uploads use the larger MAX_SYLLABUS_BYTES (limits.ts). */
 export const MAX_PDF_BYTES = 15 * 1024 * 1024;
 export const MAX_PDF_PAGES = 400;
 /** Below this many characters per page there is no usable text layer (a scan). */
@@ -10,9 +10,9 @@ const MIN_CHARS_PER_PAGE = 80;
 export type PdfCheck = { ok: true } | { ok: false; status: number; message: string };
 
 /** Type is judged from the file's first bytes; the browser-supplied Content-Type is never trusted. */
-export function checkPdfBytes(bytes: Uint8Array): PdfCheck {
+export function checkPdfBytes(bytes: Uint8Array, maxBytes: number = MAX_PDF_BYTES): PdfCheck {
   if (bytes.length === 0) return { ok: false, status: 400, message: "Choose a syllabus PDF to upload." };
-  if (bytes.length > MAX_PDF_BYTES) return { ok: false, status: 413, message: `The PDF must be under ${MAX_PDF_BYTES / 1024 / 1024} MB.` };
+  if (bytes.length > maxBytes) return { ok: false, status: 413, message: `The PDF must be under ${maxBytes / 1024 / 1024} MB.` };
   if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-") return { ok: false, status: 415, message: "Upload a PDF file." };
   return { ok: true };
 }
