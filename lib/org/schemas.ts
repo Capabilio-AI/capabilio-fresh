@@ -16,7 +16,7 @@ export const MaterialSchema = z
     url: optionalUrl,
     subjectId: uuid.optional().or(z.literal("").transform(() => undefined)),
     branch: optionalText(200),
-    year: z.coerce.number().int().min(1).max(6).optional(),
+    year: z.coerce.number("Enter the year as a number, 1 to 6.").int("Enter the year as a whole number, 1 to 6.").min(1, "Year must be between 1 and 6.").max(6, "Year must be between 1 and 6.").optional(),
   })
   .strict()
   .superRefine((v, ctx) => {
@@ -98,7 +98,7 @@ export const ProfileSchema = z
     tagline: optionalText(160),
     bio: optionalText(3000),
     websiteUrl: optionalUrl,
-    foundedYear: z.coerce.number().int().min(1800).max(2100).optional().or(z.literal("").transform(() => undefined)),
+    foundedYear: z.coerce.number("Founded year must be a number.").int("Founded year must be a whole number.").min(1800, "Founded year must be between 1800 and 2100.").max(2100, "Founded year must be between 1800 and 2100.").optional().or(z.literal("").transform(() => undefined)),
     city: optionalText(100),
     state: optionalText(100),
     /** unique per college; student roll numbers must start with it */
@@ -155,7 +155,7 @@ export const JoinLinkSchema = z
   .object({
     label: optionalText(80),
     branch: optionalText(200),
-    endYear: z.coerce.number().int().min(1980).max(2100).optional().or(z.literal("").transform(() => undefined)),
+    endYear: z.coerce.number("Graduation year must be a number.").int("Graduation year must be a whole number.").min(1980, "Graduation year must be between 1980 and 2100.").max(2100, "Graduation year must be between 1980 and 2100.").optional().or(z.literal("").transform(() => undefined)),
   })
   .strict();
 export const JoinLinkToggleSchema = z.object({ linkId: uuid, active: z.boolean() }).strict();

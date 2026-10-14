@@ -1,8 +1,9 @@
 import { generateStructured, type GenerateDeps } from "@/lib/ai/llm";
 import { RESUME_PROMPT_VERSION, ResumeExtractionSchema, resumePrompt, type ResumeExtraction } from "@/lib/ai/llm/prompts/resume.v1";
 import { extractPdfPages, checkPdfBytes } from "@/lib/roadmap/extract/pdf";
+import { MAX_UPLOAD_BYTES } from "@/lib/uploads/limits";
 
-export const MAX_RESUME_BYTES = 5 * 1024 * 1024;
+export const MAX_RESUME_BYTES = MAX_UPLOAD_BYTES;
 
 export type ResumeReadError = { ok: false; status: number; message: string };
 export type ResumeRead = { ok: true; extraction: ResumeExtraction; model: string } | ResumeReadError;

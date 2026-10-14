@@ -1,6 +1,7 @@
+import { MAX_UPLOAD_BYTES } from "@/lib/uploads/limits";
 export type MediaKind = "logo" | "cover" | "post";
 
-export const MAX_MEDIA_BYTES = 5 * 1024 * 1024;
+export const MAX_MEDIA_BYTES = MAX_UPLOAD_BYTES;
 
 export interface SniffedImage {
   contentType: "image/png" | "image/jpeg" | "image/webp";

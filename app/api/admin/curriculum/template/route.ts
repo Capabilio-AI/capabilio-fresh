@@ -4,8 +4,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireOrgAdmin } from "@/lib/roadmap/admin-gate";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { importTemplate } from "@/lib/curriculum/template/import";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = MAX_UPLOAD_BYTES;
 
 /** Upload a filled Capabilio curriculum template for one branch and regulation. Becomes a draft curriculum for the caller's OWN institution. */
 export async function POST(request: Request) {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
   const program = String(form?.get("program") ?? "").trim() || null;
   if (!(file instanceof File) || branch.length < 1 || branch.length > 200) return NextResponse.json({ error: "Choose a branch and the filled template file." }, { status: 400 });
   if ((regulation?.length ?? 0) > 80 || (program?.length ?? 0) > 200) return NextResponse.json({ error: "The regulation or program is too long." }, { status: 400 });
-  if (file.size > MAX_BYTES) return NextResponse.json({ error: "The file must be under 5 MB." }, { status: 413 });
+  if (file.size > MAX_BYTES) return NextResponse.json({ error: `The file must be under ${MAX_UPLOAD_MB} MB.` }, { status: 413 });
   if (!/\.(csv|txt)$/i.test(file.name)) return NextResponse.json({ error: "Upload the template as a .csv file (in Excel: Save As → CSV UTF-8)." }, { status: 415 });
 
   try {

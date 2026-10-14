@@ -2,9 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
-const FIELD = "w-full rounded-lg border border-app-border bg-white px-3 py-2 text-[13.5px]";
-const MAX_MB = 10;
+const FIELD = "w-full rounded-lg border border-[var(--m-soft)]! bg-[var(--m-sheet)] px-3 py-2 text-[13.5px]";
+const MAX_MB = MAX_UPLOAD_MB;
 
 /** Staff upload a PDF, Word, Excel, PowerPoint file or an image for a subject (or a branch and year). Students open it in SkillStudio. */
 export function MaterialFileForm({ subjects, scoped }: { subjects: { value: string; label: string }[]; scoped: boolean }) {

@@ -6,8 +6,9 @@ import { ArrowRight, Award, Briefcase, CheckCircle2, FileText, FolderGit2, Gradu
 import type { ResumeSummary } from "@/lib/graduate/summary";
 import { ApiError, NetworkError, assessApi } from "../api";
 import { Button } from "../ui/Button";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = MAX_UPLOAD_BYTES;
 const READING = ["Reading your resume", "Finding your education, projects and skills", "Filling in your profile"];
 
 type View =
@@ -35,7 +36,7 @@ export function ResumeStep({ onContinue }: { onContinue: () => void }) {
   const upload = async (file: File | undefined) => {
     if (!file) return;
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) return setView({ kind: "idle", error: "Upload your resume as a PDF." });
-    if (file.size > MAX_BYTES) return setView({ kind: "idle", error: "Keep the resume under 5 MB." });
+    if (file.size > MAX_BYTES) return setView({ kind: "idle", error: `Keep the resume under ${MAX_UPLOAD_MB} MB.` });
     setTick(0);
     setView({ kind: "reading", fileName: file.name });
     try {
@@ -84,7 +85,7 @@ export function ResumeStep({ onContinue }: { onContinue: () => void }) {
           ) : (
             <>
               <p className="text-[18px] font-bold text-[var(--m-ink)]">Drop your resume here, or choose a file</p>
-              <p className="text-[14px] text-[var(--m-muted)]">PDF with selectable text, up to 5 MB</p>
+              <p className="text-[14px] text-[var(--m-muted)]">PDF with selectable text, up to {MAX_UPLOAD_MB} MB</p>
             </>
           )}
           <input ref={input} id="resume-file" type="file" accept="application/pdf,.pdf" className="sr-only" disabled={reading} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} />

@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { hashtagsOf, type PostKind } from "./format";
+import { MAX_UPLOAD_BYTES } from "@/lib/uploads/limits";
 
 /**
  * What each kind of post carries. A project is not a question is not an achievement: each has its own fields, validated here and
  * stored in posts.meta, so the composer and the card can show what actually matters for that kind.
  */
-export const MAX_DOC_BYTES = 10 * 1024 * 1024;
+export const MAX_DOC_BYTES = MAX_UPLOAD_BYTES;
 
 export const OPPORTUNITY_TYPES = ["job", "internship", "referral", "freelance"] as const;
 export type OpportunityType = (typeof OPPORTUNITY_TYPES)[number];

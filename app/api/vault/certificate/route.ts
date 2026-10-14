@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
+import { MAX_UPLOAD_BYTES } from "@/lib/uploads/limits";
 
 const ALLOWED_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = MAX_UPLOAD_BYTES;
 
 /**
  * "Verified" here means the upload passed real integrity checks (correct
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Only PDF, JPG, or PNG files are accepted." }, { status: 400 });
   }
   if (file.size === 0 || file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "File must be non-empty and under 5MB." }, { status: 400 });
+    return NextResponse.json({ error: "File must be non-empty and under 4MB." }, { status: 400 });
   }
 
   const extension = file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg";

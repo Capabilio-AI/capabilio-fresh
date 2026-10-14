@@ -35,7 +35,7 @@ export default async function OrgCurriculumPage() {
   // what to do next, most useful first
   const next: { key: string; text: string; sub: string; href: string }[] = [];
   for (const b of boards) {
-    if (b.imports.length === 0 && b.students > 0) next.push({ key: `none-${b.key}`, text: `No curriculum for ${b.branch}`, sub: `${b.students} students have none. Upload the syllabus under this exact branch name.`, href: "#new-curriculum" });
+    if (b.imports.length === 0 && b.students > 0) next.push({ key: `none-${b.key}`, text: `No curriculum for ${b.branch}`, sub: `${b.students} ${b.students === 1 ? "student has" : "students have"} none. Upload the syllabus under this exact branch name.`, href: "#new-curriculum" });
     else if (b.students > 0 && b.publishedRegulations.length === 0) {
       const draft = b.imports.find((i) => i.status !== "ARCHIVED");
       next.push({ key: `pub-${b.key}`, text: `Publish a curriculum for ${b.branch}`, sub: `${b.students} students are waiting on it.`, href: draft ? `/org/curriculum/${draft.id}` : "#new-curriculum" });

@@ -11,7 +11,7 @@ function stripExtension(fileName: string): string {
 
 export function CertificateUpload({
   heading = "Add a certificate",
-  description = "PDF, JPG, or PNG, up to 5MB. Verified uploads appear in your Vault automatically.",
+  description = "PDF, JPG, or PNG, up to 4MB. Verified uploads appear in your Vault automatically.",
   institutionMembershipId,
   onUploaded,
   onSkip,

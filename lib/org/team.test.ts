@@ -117,7 +117,7 @@ describe("uploads are checked by their bytes, scoped to the college", () => {
     expect(ownPathFromPublicUrl(`${base}inst-1/../inst-2/x.png`, "org-media", "inst-1")).toBeNull();
     expect(ownPathFromPublicUrl("https://evil.example/a.png", "org-media", "inst-1")).toBeNull();
     expect(ownPathFromPublicUrl(null, "org-media", "inst-1")).toBeNull();
-    expect(MAX_MEDIA_BYTES).toBe(5 * 1024 * 1024);
+    expect(MAX_MEDIA_BYTES).toBe(4 * 1024 * 1024); // the serverless request-body limit is 4.5 MB
   });
 });
 

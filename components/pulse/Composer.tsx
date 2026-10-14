@@ -6,9 +6,10 @@ import { Award, BookmarkPlus, FileText, FolderGit2, HelpCircle, ImagePlus, Loade
 import clsx from "clsx";
 import { Avatar, type AvatarPerson } from "./Avatar";
 import { EMPTY_DRAFT, FIELD, Labelled, TagInput, draftBody, draftReady, type Draft, type Kind } from "./composer-fields";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
-const MAX_DOC = 10 * 1024 * 1024;
-const MAX_IMAGE = 5 * 1024 * 1024;
+const MAX_DOC = MAX_UPLOAD_BYTES;
+const MAX_IMAGE = MAX_UPLOAD_BYTES;
 
 /** Students do not post jobs: Pulse is for updates, what they are building, useful resources, questions and wins. */
 type ComposerKind = Exclude<Kind, "opportunity">;
@@ -44,13 +45,13 @@ export function Composer({ me, onPosted, endpoint = "/api/pulse/posts", placehol
 
   function pickImage(file: File | null) {
     if (image?.preview) URL.revokeObjectURL(image.preview);
-    if (file && file.size > MAX_IMAGE) return setError("Photos must be under 5 MB.");
+    if (file && file.size > MAX_IMAGE) return setError(`Photos must be under ${MAX_UPLOAD_MB} MB.`);
     setError(null);
     setImage(file ? { file, preview: URL.createObjectURL(file) } : null);
   }
   function pickDoc(file: File | null) {
     if (file && file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) return setError("Attach a PDF document.");
-    if (file && file.size > MAX_DOC) return setError("Documents must be under 10 MB.");
+    if (file && file.size > MAX_DOC) return setError(`Documents must be under ${MAX_UPLOAD_MB} MB.`);
     setError(null);
     setDoc(file ? { file } : null);
   }

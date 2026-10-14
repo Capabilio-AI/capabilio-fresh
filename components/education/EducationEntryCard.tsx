@@ -67,7 +67,7 @@ export function EducationEntryCard({
         <div className="mt-3">
           <CertificateUpload
             heading="Upload a certificate"
-            description="PDF, JPG, or PNG, up to 5MB."
+            description="PDF, JPG, or PNG, up to 4MB."
             institutionMembershipId={entry.id}
             onUploaded={onDoneVerifying}
             onSkip={onDoneVerifying}

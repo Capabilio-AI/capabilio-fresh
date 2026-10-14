@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
 type Service = SupabaseClient<Database>;
 
 export const BUCKET = "pulse-media";
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-export const MAX_DOC_BYTES = 10 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = MAX_UPLOAD_BYTES;
+export const MAX_DOC_BYTES = MAX_UPLOAD_BYTES;
 export const SIGNED_URL_SECONDS = 3600;
 export type Purpose = "story" | "post" | "doc" | "chat" | "material";
 export type ImageMime = "image/png" | "image/jpeg" | "image/webp";
@@ -48,7 +49,7 @@ export async function uploadImage(service: Service, userId: string, purpose: Pur
   if (file.size === 0) return { ok: false, status: 400, message: "That file is empty." };
   const isDoc = purpose === "doc";
   const isChat = purpose === "chat" || purpose === "material";
-  if (file.size > (isDoc || isChat ? MAX_DOC_BYTES : MAX_IMAGE_BYTES)) return { ok: false, status: 413, message: isDoc || isChat ? "Files must be under 10 MB." : "Images must be under 5 MB." };
+  if (file.size > (isDoc || isChat ? MAX_DOC_BYTES : MAX_IMAGE_BYTES)) return { ok: false, status: 413, message: isDoc || isChat ? `Files must be under ${MAX_UPLOAD_MB} MB.` : `Images must be under ${MAX_UPLOAD_MB} MB.` };
   const bytes = new Uint8Array(await file.arrayBuffer());
   const mime: MediaMime | null = isChat ? (sniffImage(bytes) ?? (sniffPdf(bytes) ? "application/pdf" : sniffOffice(bytes, file.name))) : isDoc ? (sniffPdf(bytes) ? "application/pdf" : null) : sniffImage(bytes);
   if (!mime) return { ok: false, status: 415, message: isChat ? "Upload a PDF, a Word, Excel or PowerPoint file, or a PNG, JPEG or WebP image." : isDoc ? "Upload a PDF document." : "Use a PNG, JPEG or WebP image." };

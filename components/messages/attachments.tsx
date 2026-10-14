@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { FileSpreadsheet, FileText, Loader2, Paperclip, Presentation, X } from "lucide-react";
 import clsx from "clsx";
 import { splitLinks, type ChatAttachment } from "@/lib/pulse/chat-attachment";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
 /** A file already uploaded and waiting to be sent with the next message. */
 export interface PendingFile {
@@ -16,7 +17,7 @@ export interface PendingFile {
 }
 
 const ACCEPT = "image/png,image/jpeg,image/webp,application/pdf,.pdf,.docx,.xlsx,.pptx";
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = MAX_UPLOAD_BYTES;
 
 export const formatSize = (bytes: number): string => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
@@ -31,13 +32,13 @@ async function uploadChatFile(file: File): Promise<PendingFile> {
   return { path: json.path, mime: json.mime, name: json.name ?? file.name, size: json.size ?? file.size, preview: json.mime.startsWith("image/") ? URL.createObjectURL(file) : undefined };
 }
 
-/** Paperclip button: picks a photo, PDF, Word, Excel or PowerPoint file (up to 10 MB) and uploads it straight away. */
+/** Paperclip button: picks a photo, PDF, Word, Excel or PowerPoint file (up to 4 MB) and uploads it straight away. */
 export function AttachButton({ onPicked, onError, disabled, className }: { onPicked: (f: PendingFile) => void; onError: (message: string) => void; disabled?: boolean; className?: string }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   async function onFile(file: File | undefined) {
     if (!file) return;
-    if (file.size > MAX_BYTES) return onError("Files must be under 10 MB.");
+    if (file.size > MAX_BYTES) return onError(`Files must be under ${MAX_UPLOAD_MB} MB.`);
     setBusy(true);
     try {
       onPicked(await uploadChatFile(file));
@@ -49,7 +50,7 @@ export function AttachButton({ onPicked, onError, disabled, className }: { onPic
   }
   return (
     <>
-      <button type="button" onClick={() => input.current?.click()} disabled={disabled || busy} aria-label="Attach a photo or file" title="Photo, PDF, Word, Excel or PowerPoint (up to 10 MB)" className={clsx("flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-app-muted hover:bg-app-orange-container hover:text-app-charcoal disabled:opacity-50", className)}>
+      <button type="button" onClick={() => input.current?.click()} disabled={disabled || busy} aria-label="Attach a photo or file" title="Photo, PDF, Word, Excel or PowerPoint (up to 4 MB)" className={clsx("flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-app-muted hover:bg-app-orange-container hover:text-app-charcoal disabled:opacity-50", className)}>
         {busy ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <Paperclip size={17} aria-hidden="true" />}
       </button>
       <input ref={input} type="file" accept={ACCEPT} className="sr-only" aria-label="Choose a file to attach" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ""; }} />

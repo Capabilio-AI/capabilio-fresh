@@ -44,12 +44,12 @@ afterAll(async () => {
 });
 
 describe("organisation signup (live)", () => {
-  it("creates a PENDING membership via the existing trigger and a new institution row", async () => {
+  it("creates an ACTIVE membership (no manual approval for institution staff) and a new institution row", async () => {
     const { res, userId } = await signup({});
     expect(res.ok).toBe(true);
     const { data: m } = await service.from("institution_memberships").select("role,status,institutions(name,org_type)").eq("user_id", userId!).single();
     expect(m?.role).toBe("tpo");
-    expect(m?.status).toBe("pending");
+    expect(m?.status).toBe("active");
     expect(m?.institutions).toMatchObject({ name: orgName, org_type: "institution" });
   });
 
@@ -59,7 +59,7 @@ describe("organisation signup (live)", () => {
     expect(rows).toHaveLength(1);
     const { data: m } = await service.from("institution_memberships").select("institution_id,status").eq("user_id", userId!).single();
     expect(m?.institution_id).toBe(rows![0].id);
-    expect(m?.status).toBe("pending");
+    expect(m?.status).toBe("active");
   });
 
   it("does NOT fuzzy-match a typo'd name (creates a separate row)", async () => {
@@ -81,10 +81,12 @@ describe("organisation signup (live)", () => {
     expect(m).toMatchObject({ role: "company_admin", status: "pending", institutions: { org_type: "company" } });
   });
 
-  it("a pending org account is signed in but has no active membership", async () => {
-    const { userId } = await signup({ orgName: `${orgName} pending` });
-    const { data } = await service.from("institution_memberships").select("id").eq("user_id", userId!).eq("status", "active");
-    expect(data).toHaveLength(0);
+  it("an institution account is active straight away, a company account still waits", async () => {
+    const inst = await signup({ orgName: `${orgName} pending` });
+    const company = await signup({ orgType: "company", designation: undefined, orgName: `${orgName} pending Co` });
+    const active = (id: string) => service.from("institution_memberships").select("id").eq("user_id", id).eq("status", "active");
+    expect((await active(inst.userId!)).data).toHaveLength(1);
+    expect((await active(company.userId!)).data).toHaveLength(0);
   });
 });
 
@@ -125,26 +127,13 @@ describe("client authority (raw client attacks, same pattern as Job-Track direct
   });
 });
 
-describe("manual approval (scripts/org-approvals.mjs)", () => {
-  const run = (...args: string[]) => execFileSync("node", ["--env-file=.env.local", "scripts/org-approvals.mjs", ...args], { encoding: "utf8" });
+describe("manual approval script (scripts/org-approvals.mjs)", () => {
+  const run = (...args: string[]) => execFileSync("node", ["--env-file=.env.local", "scripts/org-approvals.mjs", ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 
-  it("refuses unconfirmed email, then activates a confirmed pending institution account who can then log in", async () => {
-    const { userId } = await signup({ orgName: `${orgName} approve` });
+  it("lists a pending company account and refuses to approve it (companies have no product surface yet)", async () => {
+    const { userId } = await signup({ orgType: "company", designation: undefined, orgName: `${orgName} approve` });
     const { data: m } = await service.from("institution_memberships").select("id").eq("user_id", userId!).single();
     expect(run("list")).toContain(m!.id);
-    expect(() => run("approve", m!.id)).toThrow(/Email not confirmed/);
-
-    await service.auth.admin.updateUserById(userId!, { email_confirm: true, password: "Approve-me-1234" });
-    const email = emails.at(-1)!;
-    const c = anon();
-    await c.auth.signInWithPassword({ email, password: "Approve-me-1234" });
-    const active = () => c.from("institution_memberships").select("status").eq("status", "active");
-    expect((await active()).data).toHaveLength(0); // pending: login screen's "pending-approval" branch
-    // the pending screen names the organisation using this same own-row read
-    const pending = await c.from("institution_memberships").select("institutions ( name, org_type )").eq("status", "pending").limit(1);
-    expect(pending.data?.[0]?.institutions).toEqual({ name: `${orgName} approve`, org_type: "institution" });
-
-    run("approve", m!.id);
-    expect((await active()).data).toHaveLength(1); // approved: the same universal login now succeeds
+    expect(() => run("approve", m!.id)).toThrow(/Company accounts have no product surface yet/);
   });
 });

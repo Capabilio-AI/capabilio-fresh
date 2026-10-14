@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { authorizeOrg } from "@/lib/api/org-route";
 import { MAX_MEDIA_BYTES, sniffDocument } from "@/lib/org/media";
 import { untyped } from "@/lib/org/db";
+import { MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
 const BUCKET = "org-offers";
 
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   if (env instanceof NextResponse) return env;
   const { ctx, service } = env;
 
-  if (file.size === 0 || file.size > MAX_MEDIA_BYTES) return NextResponse.json({ error: "The letter must be under 5 MB." }, { status: 413 });
+  if (file.size === 0 || file.size > MAX_MEDIA_BYTES) return NextResponse.json({ error: `The letter must be under ${MAX_UPLOAD_MB} MB.` }, { status: 413 });
   const bytes = new Uint8Array(await file.arrayBuffer());
   const doc = sniffDocument(bytes);
   if (!doc) return NextResponse.json({ error: "Upload a PDF, PNG or JPG file." }, { status: 415 });
