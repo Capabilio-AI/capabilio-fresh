@@ -6,7 +6,7 @@ import { can } from "@/lib/org/roles";
 import { ROLE_LABEL } from "@/lib/org/nav";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { CopyButton } from "@/components/org/CopyButton";
-import { initialsOf } from "@/components/org/OrgShell";
+import { initialsOf } from "@/lib/org/format";
 
 export const metadata: Metadata = { title: "Organisation — Settings — Capabilio AI" };
 
