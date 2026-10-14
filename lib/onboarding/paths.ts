@@ -11,7 +11,7 @@ export interface OnboardingPath {
 export const ONBOARDING_PATHS: readonly OnboardingPath[] = [
   {
     id: "student",
-    title: "Student / Recently Graduated",
+    title: "Student / Graduate",
     tagline: "Build your evidence-backed career profile.",
     href: "/signup",
     comingSoon: false,

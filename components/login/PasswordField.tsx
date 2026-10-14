@@ -10,9 +10,26 @@ interface PasswordFieldProps {
   error?: string;
   placeholder?: string;
   autoComplete?: string;
+  /** Show a live strength meter under the field (for choosing a new password). */
+  meter?: boolean;
 }
 
-export function PasswordField({ value, onChange, label = "Password", error, placeholder = "Enter your password", autoComplete = "current-password" }: PasswordFieldProps) {
+const STRENGTH = [
+  { label: "Too short", color: "#d64545" },
+  { label: "Weak", color: "#e0801a" },
+  { label: "Fair", color: "#d9b200" },
+  { label: "Good", color: "#5aa83c" },
+  { label: "Strong", color: "#17784a" },
+];
+
+function strengthOf(pw: string): number {
+  if (!pw) return -1;
+  if (pw.length < 8) return 0;
+  const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((r) => r.test(pw)).length;
+  return Math.max(1, Math.min(4, kinds - 1 + (pw.length >= 12 ? 1 : 0)));
+}
+
+export function PasswordField({ value, onChange, label = "Password", error, placeholder = "Enter your password", autoComplete = "current-password", meter = false }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   const id = useId();
   const errorId = `${id}-error`;
@@ -44,6 +61,16 @@ export function PasswordField({ value, onChange, label = "Password", error, plac
           {visible ? <EyeOff size={17} /> : <Eye size={17} />}
         </button>
       </div>
+      {meter && value && (
+        <div className="mt-2 flex items-center gap-2" aria-live="polite">
+          <span className="cap-meter flex flex-1 gap-1" aria-hidden="true">
+            {[1, 2, 3, 4].map((n) => (
+              <i key={n} style={{ background: n <= Math.max(1, strengthOf(value)) ? STRENGTH[strengthOf(value)].color : undefined }} />
+            ))}
+          </span>
+          <span className="font-lp-mono text-lp-label-sm text-lp-text-muted">{STRENGTH[strengthOf(value)].label}</span>
+        </div>
+      )}
       {error && (
         <p id={errorId} className="mt-1.5 font-lp-mono text-lp-label-sm text-lp-error">
           {error}

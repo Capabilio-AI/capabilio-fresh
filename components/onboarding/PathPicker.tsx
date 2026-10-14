@@ -39,15 +39,22 @@ const LOOK: Record<OnboardingPath["id"], Look> = {
   },
 };
 
-const STUDENT_CHOICES = [
-  { as: "student", label: "I'm a student", hint: "Currently studying" },
-  { as: "graduate", label: "I recently graduated", hint: "Finished in the last few years" },
-] as const;
+const CHOICES: Partial<Record<OnboardingPath["id"], readonly { as: string; label: string; hint: string }[]>> = {
+  student: [
+    { as: "student", label: "I'm a student", hint: "Currently studying" },
+    { as: "graduate", label: "I'm a graduate seeking a job", hint: "Show your skills to recruiters" },
+  ],
+  organisation: [
+    { as: "institution", label: "College / University", hint: "Cohorts, students and placements" },
+    { as: "company", label: "Company", hint: "Assess and develop your people" },
+  ],
+};
 
 function PathCard({ path, index }: { path: OnboardingPath; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const look = LOOK[path.id];
   const Icon = look.Icon;
+  const choices = CHOICES[path.id];
 
   const move = (e: PointerEvent<HTMLDivElement>) => {
     const el = ref.current;
@@ -104,14 +111,14 @@ function PathCard({ path, index }: { path: OnboardingPath; index: number }) {
           ))}
         </ul>
 
-        {path.id === "student" ? (
+        {choices ? (
           <span className="relative z-20 mt-auto grid gap-2 pt-8">
-            {STUDENT_CHOICES.map((c, n) => (
+            {choices.map((c, n) => (
               <Link
                 key={c.as}
                 href={`${path.href}?as=${c.as}`}
                 className={`group/choice flex items-center justify-between gap-3 rounded-full px-5 py-3 text-sm font-semibold transition-transform duration-200 hover:-translate-y-0.5 ${
-                  n === 0 ? "bg-cap-ink text-cap-paper" : "border border-white/70! bg-white/15 text-white hover:bg-white/25"
+                  n === 0 ? "bg-cap-ink text-cap-paper" : path.id === "student" ? "border border-white/70! bg-white/15 text-white hover:bg-white/25" : "border border-cap-ink/40! bg-white/30 text-cap-ink hover:bg-white/50"
                 }`}
               >
                 <span>

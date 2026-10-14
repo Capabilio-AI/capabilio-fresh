@@ -19,8 +19,8 @@ const DESIGNATIONS: { value: InstitutionDesignation; label: string }[] = [
   { value: "faculty", label: "Faculty" },
 ];
 
-export function OrganisationSignupForm() {
-  const [orgType, setOrgType] = useState<OrgType>("institution");
+export function OrganisationSignupForm({ initialType = "institution" }: { initialType?: OrgType }) {
+  const [orgType, setOrgType] = useState<OrgType>(initialType);
   const [orgName, setOrgName] = useState("");
   const [fullName, setFullName] = useState("");
   const [designation, setDesignation] = useState<InstitutionDesignation>("tpo");
@@ -98,7 +98,7 @@ export function OrganisationSignupForm() {
           <legend className={FIELD_LABEL}>Organisation type</legend>
           <div className="grid grid-cols-2 gap-3">
             {(["institution", "company"] as const).map((t) => (
-              <label key={t} className="flex cursor-pointer items-center gap-2 rounded border border-lp-border-hairline px-3 py-2.5 font-lp-body text-lp-body-sm text-lp-text-ink has-[:checked]:border-lp-accent-indigo">
+              <label key={t} className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/80! bg-white/45 px-4 py-3 font-lp-body text-lp-body-sm font-medium text-lp-text-ink transition-all hover:-translate-y-0.5 hover:bg-white/70 has-[:checked]:border-cap-indigo! has-[:checked]:bg-cap-indigo-soft has-[:checked]:shadow-[0_8px_20px_-10px_rgba(74,88,240,0.6)]">
                 <input type="radio" name="org-type" checked={orgType === t} onChange={() => setOrgType(t)} className="accent-[var(--lp-accent-indigo)]" />
                 {t === "institution" ? "College / University" : "Company"}
               </label>
@@ -138,7 +138,7 @@ export function OrganisationSignupForm() {
           <input id="org-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={FIELD_INPUT} autoComplete="email" />
         </div>
 
-        <PasswordField value={password} onChange={setPassword} label="Password" />
+        <PasswordField value={password} onChange={setPassword} label="Password" autoComplete="new-password" meter />
         <PasswordField value={confirmPassword} onChange={setConfirmPassword} label="Confirm password" error={error} />
 
         <label className="flex items-start gap-2.5 font-lp-body text-lp-body-sm text-lp-on-surface-variant">

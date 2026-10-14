@@ -7,10 +7,11 @@ export const metadata: Metadata = {
   description: "Apply for an organisation account. Accounts are approved manually.",
 };
 
-export default function OrganisationSignupPage() {
+export default async function OrganisationSignupPage({ searchParams }: { searchParams: Promise<{ as?: string }> }) {
+  const { as } = await searchParams;
   return (
     <AuthLayout path="organisation">
-      <OrganisationSignupForm />
+      <OrganisationSignupForm initialType={as === "company" ? "company" : "institution"} />
     </AuthLayout>
   );
 }

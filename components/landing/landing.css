@@ -60,11 +60,38 @@
 .cap-auth [class*="border-lp-border"] { border-color: rgba(12, 16, 32, 0.16) !important; }
 .cap-auth input:not([type="checkbox"]):not([type="radio"]),
 .cap-auth select,
-.cap-auth textarea { border: 1px solid rgba(12, 16, 32, 0.24) !important; border-radius: 0.9rem !important; background: #fff !important; color: var(--cap-ink); }
+.cap-auth textarea { border: 1px solid rgba(255, 255, 255, 0.85) !important; border-radius: 0.9rem !important; background: rgba(255, 255, 255, 0.5) !important; color: var(--cap-ink); backdrop-filter: blur(8px); box-shadow: inset 0 1px 2px rgba(12, 16, 32, 0.06), 0 1px 0 rgba(255, 255, 255, 0.7); transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+.cap-auth input::placeholder, .cap-auth textarea::placeholder { color: rgba(12, 16, 32, 0.52); }
+.cap-auth input:not([type="checkbox"]):not([type="radio"]):hover, .cap-auth select:hover { background: rgba(255, 255, 255, 0.72) !important; }
 .cap-auth input:not([type="checkbox"]):not([type="radio"]):focus,
 .cap-auth select:focus,
-.cap-auth textarea:focus { border-color: var(--cap-indigo) !important; box-shadow: 0 0 0 3px rgba(74, 88, 240, 0.22) !important; outline: none; }
-.cap-auth button[type="submit"] { border-radius: 9999px !important; background: var(--cap-orange) !important; color: var(--cap-ink) !important; font-weight: 700; transition: transform 0.15s ease, filter 0.15s ease; }
-.cap-auth button[type="submit"]:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.cap-auth textarea:focus { border-color: var(--cap-indigo) !important; background: rgba(255, 255, 255, 0.92) !important; box-shadow: 0 0 0 4px rgba(74, 88, 240, 0.2), 0 8px 20px -10px rgba(74, 88, 240, 0.5) !important; outline: none; }
+.cap-auth button[type="submit"] { position: relative; overflow: hidden; border-radius: 9999px !important; background: var(--cap-orange) !important; color: var(--cap-ink) !important; font-weight: 700; box-shadow: 0 12px 24px -10px rgba(255, 87, 1, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.45); transition: transform 0.2s cubic-bezier(.22,1,.36,1), filter 0.2s ease, box-shadow 0.2s ease; }
+.cap-auth button[type="submit"]::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%); transform: translateX(-120%); }
+.cap-auth button[type="submit"]:hover:not(:disabled)::after { transform: translateX(120%); transition: transform 0.7s cubic-bezier(.22,1,.36,1); }
+.cap-auth button[type="submit"]:hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-2px); box-shadow: 0 18px 30px -12px rgba(255, 87, 1, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.45); }
+.cap-auth button[type="submit"]:active:not(:disabled) { transform: translateY(0) scale(0.99); }
 .cap-auth a.bg-lp-text-ink { border-radius: 9999px; background: var(--cap-ink); color: var(--cap-paper); }
 .cap-auth label:has(input:checked)[class*="border-lp-border"] { border-color: var(--cap-indigo) !important; background: var(--cap-indigo-soft); }
+
+/* Glass panel for every auth card: frosted, specular top edge, pointer-follow sheen. */
+.cap-glass { position: relative; isolation: isolate; background: linear-gradient(160deg, rgba(255,255,255,0.66), rgba(255,255,255,0.42)); backdrop-filter: blur(28px) saturate(1.6); -webkit-backdrop-filter: blur(28px) saturate(1.6); border: 1px solid rgba(255,255,255,0.75); box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 -1px 0 rgba(255,255,255,0.25) inset, 0 40px 80px -24px rgba(18,22,52,0.45), 0 8px 24px -8px rgba(18,22,52,0.2); }
+.cap-glass::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.75), transparent 60%); opacity: 0; transition: opacity 0.35s ease; pointer-events: none; }
+.cap-glass:hover::before { opacity: 1; }
+@supports not (backdrop-filter: blur(1px)) { .cap-glass { background: rgba(255,255,255,0.92); } }
+@media (prefers-reduced-transparency: reduce) { .cap-glass { background: #fff; backdrop-filter: none; } }
+
+/* Staggered reveal of the form's rows once the card lands. */
+.cap-glass form > *, .cap-glass fieldset { animation: cap-rise-in 0.6s cubic-bezier(.22,1,.36,1) both; }
+.cap-glass form > :nth-child(1) { animation-delay: 0.12s; } .cap-glass form > :nth-child(2) { animation-delay: 0.17s; }
+.cap-glass form > :nth-child(3) { animation-delay: 0.22s; } .cap-glass form > :nth-child(4) { animation-delay: 0.27s; }
+.cap-glass form > :nth-child(5) { animation-delay: 0.32s; } .cap-glass form > :nth-child(n+6) { animation-delay: 0.37s; }
+@keyframes cap-rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* Aurora behind the glass so the blur has something to refract. */
+.cap-aurora span { position: absolute; border-radius: 9999px; filter: blur(70px); opacity: 0.7; animation: cap-drift 18s ease-in-out infinite alternate; }
+@keyframes cap-drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(6vw,-5vh,0) scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .cap-aurora span, .cap-glass form > *, .cap-glass fieldset { animation: none; } }
+
+/* Password strength meter */
+.cap-meter i { height: 4px; flex: 1; border-radius: 9999px; background: rgba(12,16,32,0.12); transition: background 0.3s ease; }

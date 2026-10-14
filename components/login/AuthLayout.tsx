@@ -52,6 +52,11 @@ export function AuthLayout({ children, path = "student" }: { children: ReactNode
   const copy = COPY[path];
   return (
     <div className={`${display.variable} cap cap-auth relative isolate min-h-screen overflow-hidden`} style={{ background: SKY }}>
+      <div aria-hidden="true" className="cap-aurora pointer-events-none absolute inset-0 -z-10">
+        <span className="-left-[8vw] top-[8vh] h-[42vh] w-[42vh] bg-cap-indigo/45" />
+        <span className="right-[6vw] top-[22vh] h-[38vh] w-[38vh] bg-cap-orange/40 [animation-delay:-6s]" />
+        <span className="bottom-[18vh] left-[34vw] h-[30vh] w-[30vh] bg-cap-apricot/60 [animation-delay:-11s]" />
+      </div>
       <Ridgeline className="absolute inset-x-0 bottom-0 -z-10 h-[30svh]" palette={RIDGE} layers={10} horizon={0.35} relief={0.28} interactive />
       <div className="mx-auto grid min-h-screen max-w-[84rem] gap-10 px-5 md:px-10 lg:grid-cols-[1fr_minmax(0,34rem)] lg:gap-16">
         <aside className="hidden flex-col justify-center py-16 lg:flex">
@@ -70,7 +75,7 @@ export function AuthLayout({ children, path = "student" }: { children: ReactNode
           )}
         </aside>
 
-        <main className="flex flex-col items-center justify-center py-10 pb-44 lg:pb-16">
+        <main className="flex flex-col items-center justify-center py-10 pb-44 lg:pb-40 lg:pt-8">
           <Brand className="mb-8 lg:hidden" />
           {children}
         </main>

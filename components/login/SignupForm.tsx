@@ -27,7 +27,7 @@ type StudentStatus = "student" | "graduate";
 
 const STATUS_OPTIONS: { id: StudentStatus; title: string; hint: string; Icon: typeof BookOpen }[] = [
   { id: "student", title: "I'm a student", hint: "Currently studying", Icon: BookOpen },
-  { id: "graduate", title: "Recently graduated", hint: "Finished in the last few years", Icon: GraduationCap },
+  { id: "graduate", title: "Graduate seeking a job", hint: "Show your skills to recruiters", Icon: GraduationCap },
 ];
 
 export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLinkInfo | null; initialStatus?: StudentStatus }) {
@@ -141,7 +141,7 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
               <label
                 key={id}
                 className={`relative flex cursor-pointer flex-col gap-2 rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-0.5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-cap-indigo ${
-                  on ? "border-cap-indigo! bg-cap-indigo-soft shadow-[0_8px_20px_-10px_rgba(74,88,240,0.6)]" : "border-cap-ink/20! bg-white"
+                  on ? "border-cap-indigo! bg-cap-indigo-soft shadow-[0_8px_20px_-10px_rgba(74,88,240,0.6)]" : "border-white/80! bg-white/45 hover:bg-white/70"
                 }`}
               >
                 <input type="radio" name="student-status" value={id} checked={on} onChange={() => setStatus(id)} className="sr-only" />
@@ -297,7 +297,7 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
           />
         </div>
 
-        <PasswordField value={password} onChange={setPassword} label="Password" />
+        <PasswordField value={password} onChange={setPassword} label="Password" autoComplete="new-password" meter />
         <PasswordField
           value={confirmPassword}
           onChange={setConfirmPassword}
