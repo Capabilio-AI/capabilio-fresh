@@ -2,11 +2,14 @@
 // be done about each. Read live from the same graph as the Roadmap tab, so progress here is the progress there.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRoadmapGraph } from "@/lib/roadmap-visual/service";
-import type { GraphNode, Stage } from "@/lib/roadmap-visual/graph-types";
+import type { GraphNode, RoadmapGraph, Stage } from "@/lib/roadmap-visual/graph-types";
 
 export interface ModuleTopic {
   key: string;
   title: string;
+  description: string;
+  /** the student's own mark (Learning or Skipped); a topic is only Proven by evidence */
+  userState: GraphNode["userState"];
   level: number | null;
   target: number | null;
   status: GraphNode["status"];
@@ -35,8 +38,11 @@ const STAGE_ORDER: Stage[] = ["FOUNDATION", "CORE", "SPECIALIZATION", "JOB_READY
 
 export async function loadModules(service: SupabaseClient, userId: string): Promise<ModulesView | null> {
   const res = await getRoadmapGraph(service as never, userId, "primary").catch(() => null);
-  if (!res?.ok) return null;
-  const { graph } = res;
+  return res?.ok ? modulesFromGraph(res.graph) : null;
+}
+
+/** The modules of a built roadmap graph. Pure, so the course and lesson pages read the same shape from the one graph they already load. */
+export function modulesFromGraph(graph: RoadmapGraph): ModulesView {
   const year = graph.header.position.year;
   const focusStages = new Set(FOCUS[Math.min(4, Math.max(1, year ?? 1))]);
   const topicsOf = new Map<string, GraphNode[]>();
@@ -47,7 +53,7 @@ export async function loadModules(service: SupabaseClient, userId: string): Prom
     return {
       key: g.key, title: g.title, description: g.description, stage: g.stage, focus: year === null || focusStages.has(g.stage),
       progress: g.progress, assessed: topics.filter((t) => t.level !== null).length,
-      topics: topics.map((t) => ({ key: t.key, title: t.title, level: t.level, target: t.target, status: t.status, learning: t.practice.learning })),
+      topics: topics.map((t) => ({ key: t.key, title: t.title, description: t.description, userState: t.userState, level: t.level, target: t.target, status: t.status, learning: t.practice.learning })),
       practice: topics.reduce((a, t) => ({ arena: a.arena + t.practice.arena, projects: a.projects + t.practice.projects, certifications: a.certifications + t.practice.certifications, learning: a.learning + t.practice.learning }), { arena: 0, projects: 0, certifications: 0, learning: 0 }),
     };
   });
