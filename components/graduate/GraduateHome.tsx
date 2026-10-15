@@ -2,7 +2,7 @@ import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import type { GraduateHomeData } from "@/lib/graduate/home";
 import { JobHuntHero } from "./JobHuntHero";
-import { GotAJob, InterviewCard, LaunchpadStrip, ResumeCard, SkillsToClose } from "./JobHuntPanels";
+import { GotAJob, InterviewCard, LaunchpadStrip, PassportCard, ResumeCard, SkillsToClose } from "./JobHuntPanels";
 
 /** The recently graduated dashboard: one job hunt, from knowing your level to applying. Not the student's programme view. */
 export function GraduateHome({ data, planId, interviewUnlocked }: { data: GraduateHomeData; planId: string | null; interviewUnlocked: boolean }) {
@@ -16,6 +16,7 @@ export function GraduateHome({ data, planId, interviewUnlocked }: { data: Gradua
         {data.overview ? <SkillsToClose skills={data.overview.lagging} roleName={data.overview.roleName} /> : <ResumeCard resume={data.resume} />}
         <div className="grid gap-5">
           <InterviewCard unlocked={interviewUnlocked} count={data.interviewCount} />
+          <PassportCard passport={data.passport} />
           {data.overview && <ResumeCard resume={data.resume} />}
         </div>
       </div>

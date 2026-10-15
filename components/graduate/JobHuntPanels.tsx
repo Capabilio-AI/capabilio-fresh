@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Briefcase, FileText, MapPin, MessagesSquare, Rocket, Sparkles } from "lucide-react";
+import { ArrowRight, Briefcase, FileText, IdCard, MapPin, MessagesSquare, Rocket, Sparkles } from "lucide-react";
 import type { Opportunity } from "@/lib/launchpad/opportunities";
 import type { OverviewSkill } from "@/lib/dashboard/overview";
 import { JobForm } from "@/components/stage/JobForm";
@@ -57,6 +57,23 @@ export function ResumeCard({ resume }: { resume: { skillCount: number; applied: 
       </p>
       <Link href="/assessment" className="mt-auto inline-flex w-fit items-center gap-1.5 pt-4 text-[13px] font-bold text-[var(--m-ink)] hover:underline">
         {resume ? "Review in assessment" : "Add your resume"} <ArrowRight size={14} aria-hidden />
+      </Link>
+    </section>
+  );
+}
+
+/** The Skill Passport: the verified, shareable proof a recruiter can open. Lives under Profile; this is the way in. */
+export function PassportCard({ passport }: { passport: { earned: number; total: number; shared: boolean } }) {
+  const body =
+    passport.total === 0
+      ? "Finish your career assessment and your verified skill badges appear on a passport you can share."
+      : `${passport.earned} of ${passport.total} skills earned as badges. ${passport.shared ? "Your public link is on, so recruiters can open it." : "Your public link is off. Switch it on when you are ready to share."}`;
+  return (
+    <section className={`${CARD} flex flex-col`} aria-labelledby="pp-h">
+      <h2 id="pp-h" className={`${H} flex items-center gap-2`}><IdCard size={17} aria-hidden />Skill Passport</h2>
+      <p className="mt-2 text-[13.5px] leading-relaxed text-app-muted">{body}</p>
+      <Link href="/profile?tab=passport" className="mt-auto inline-flex w-fit items-center gap-1.5 pt-4 text-[13px] font-bold text-[var(--m-ink)] hover:underline">
+        {passport.shared ? "Open and share" : "Open your passport"} <ArrowRight size={14} aria-hidden />
       </Link>
     </section>
   );

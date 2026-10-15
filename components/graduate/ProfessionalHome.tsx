@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Briefcase, FolderOpen, MessagesSquare, Activity } from "lucide-react";
+import { ArrowRight, Briefcase, FolderOpen, IdCard, MessagesSquare, Activity } from "lucide-react";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import type { ProfessionalHomeData } from "@/lib/stage/professional";
 
@@ -9,6 +9,7 @@ const CARD = "group flex flex-col gap-2 rounded-2xl border border-[var(--m-rule)
 export function ProfessionalHome({ data, employerName, jobTitle }: { data: ProfessionalHomeData; employerName: string | null; jobTitle: string | null }) {
   const role = [jobTitle, employerName].filter(Boolean).join(" at ");
   const tiles = [
+    { href: "/profile?tab=passport", icon: IdCard, title: "Skill Passport", body: "Your verified skill badges, ready to share." },
     { href: "/dashboard/portfolio", icon: FolderOpen, title: "Portfolio", body: "Your projects and proof, ready to share." },
     { href: "/dashboard/vault", icon: Briefcase, title: "Evidence vault", body: `${data.proofCount} ${data.proofCount === 1 ? "item" : "items"} of verified evidence.` },
     { href: "/dashboard/interview", icon: MessagesSquare, title: "AI Interview", body: "Keep your interview skills sharp for the next move." },
