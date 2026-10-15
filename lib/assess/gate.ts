@@ -1,5 +1,6 @@
 import { dashboardUnlocked, getOnboardingStatus, type Db } from "./db";
 import type { OnboardingStatus } from "./config";
+import { isPostStudy } from "@/lib/stage/stage";
 
 /**
  * Students see only the limited onboarding shell until the career assessment is finished and analysed (PROFILE_READY). Staff,
@@ -11,6 +12,6 @@ export async function studentGate(db: Db, userId: string): Promise<{ locked: boo
   const { data: profile } = await db.from("profiles").select("primary_role, student_status").eq("id", userId).maybeSingle();
   if (profile?.primary_role !== "student") return { locked: false, status: null, graduate: false };
   const status = await getOnboardingStatus(db, userId);
-  if (profile.student_status === "graduate") return { locked: false, status, graduate: true };
+  if (isPostStudy(profile.student_status)) return { locked: false, status, graduate: true };
   return { locked: !dashboardUnlocked(status), status, graduate: false };
 }

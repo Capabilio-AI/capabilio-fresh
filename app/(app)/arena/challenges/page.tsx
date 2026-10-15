@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Clock, Database, FileText, GraduationCap, type LucideIcon } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { getStageState } from "@/lib/stage/server";
 import { resolveStreamScope } from "@/lib/arena-challenges/resolve-scope";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCareerIntent } from "@/lib/careers/intent";
@@ -20,16 +21,18 @@ const ACCENT = {
 
 export default async function ArenaChallengesPage() {
   const { supabase, user } = await requireAuthedUser();
-  const [scope, { intent }] = await Promise.all([resolveStreamScope(supabase, user.id), getCareerIntent(createServiceClient(), user.id)]);
+  const [scope, { intent }, { stage }] = await Promise.all([resolveStreamScope(supabase, user.id), getCareerIntent(createServiceClient(), user.id), getStageState(user.id)]);
+  const isStudent = stage === "student";
   // Domain follows the Plan B answer: same role keeps the onboarding role, change role uses the new one, anything else has no Domain yet.
-  const target = intent.planBKind === "same_role" ? intent.primary?.name ?? null : intent.planBKind === "change_role" ? intent.secondary?.name ?? null : null;
+  // A graduate has no Plan B: their target role from the assessment drives Domain straight away.
+  const target = !isStudent ? intent.primary?.name ?? null : intent.planBKind === "same_role" ? intent.primary?.name ?? null : intent.planBKind === "change_role" ? intent.secondary?.name ?? null : null;
 
   return (
     <div>
-      <AreaHero tone="dark" title="Arena" intro="Two separate tracks — pick one. Each has its own leaderboard, streak, and history." nav={<ArenaSubNav />} />
+      <AreaHero tone="dark" title="Arena" intro={isStudent ? "Two separate tracks — pick one. Each has its own leaderboard, streak, and history." : "Real work tickets for your target role. Finish one to earn ELO and add proof to your portfolio."} nav={<ArenaSubNav />} />
 
-      <div className="grid grid-cols-1 gap-6 pt-5 lg:grid-cols-2">
-        <TrackCard
+      <div className={`grid grid-cols-1 gap-6 pt-5 ${isStudent ? "lg:grid-cols-2" : "mx-auto max-w-2xl"}`}>
+        {isStudent && <TrackCard
           href="/arena/challenges/stream"
           icon={GraduationCap}
           accent="orange"
@@ -44,18 +47,18 @@ export default async function ArenaChallengesPage() {
           timing="8–15 min each"
           reward="Earn points"
           context={scope ? { text: `Your stream: ${scope.branch}` } : { text: "No branch on your profile yet", href: "/profile", label: "Add your branch" }}
-        />
+        />}
         <TrackCard
           href="/arena/challenges/domain"
           icon={Database}
           accent="blue"
           badge="Domain"
           title="Domain Challenges"
-          description={target ? "Work on a real-world ticket for your career role. Finish it, and the next one unlocks a day later." : "Real-world tickets for your career role. They begin once you answer Plan B in 3rd year; until then, Stream challenges build your base."}
+          description={target ? "Work on a real-world ticket for your career role. Finish it, and the next one unlocks a day later." : isStudent ? "Real-world tickets for your career role. They begin once you answer Plan B in 3rd year; until then, Stream challenges build your base." : "Real-world tickets for your target role. Set your target role in the assessment and they begin."}
           count="One ticket at a time"
           timing="8–15 min each"
           reward="Earn ELO"
-          context={{ text: target ? `Your role: ${target}` : "Starts after Plan B in 3rd year" }}
+          context={{ text: target ? `Your role: ${target}` : isStudent ? "Starts after Plan B in 3rd year" : "Choose your target role in the assessment" }}
         />
       </div>
     </div>

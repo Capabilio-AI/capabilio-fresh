@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Briefcase, Calendar, Lock, MapPin, Rocket } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { requireStage } from "@/lib/stage/guard";
 import { OnboardingGate } from "@/components/assess/OnboardingGate";
 import { studentGate } from "@/lib/assess/gate";
 import type { Db as AssessDb } from "@/lib/assess/db";
@@ -24,6 +25,7 @@ const TYPE_COLOR: Record<OpportunityType, string> = {
 };
 
 export default async function LaunchpadPage() {
+  const stage = await requireStage(["student", "graduate"]); // professionals have found their role
   const { supabase, user } = await requireAuthedUser();
   const gate = await studentGate(createGateClient() as unknown as AssessDb, user.id);
   if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="Launchpad recommendations" />;
@@ -34,7 +36,8 @@ export default async function LaunchpadPage() {
   ]);
 
   const direction = viewer.direction;
-  const unlocked = direction?.launchpadOpen ?? false;
+  // A graduate is job-hunting now, so Launchpad is always open for them.
+  const unlocked = stage === "graduate" || (direction?.launchpadOpen ?? false);
 
   if (!unlocked) {
     return (

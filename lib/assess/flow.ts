@@ -5,6 +5,7 @@ import { COMMON_SECTION_REGISTRY, GENERAL_SECTIONS, GENERAL_TOTAL } from "./gene
 import { latestResult } from "./finalize";
 import { loadRoleOptions, type RoleOption } from "./roles";
 import { matchFocusSkills } from "@/lib/graduate/focus";
+import { isPostStudy } from "@/lib/stage/stage";
 
 export type Stage = "resume" | "career-interest" | "general" | "career" | "done";
 
@@ -56,7 +57,7 @@ export async function getFlowSnapshot(db: Db, userId: string, opts: { plan?: "b"
     db.from("profiles").select("student_status").eq("id", userId).maybeSingle(),
     db.from("graduate_resumes").select("skill_names").eq("user_id", userId).maybeSingle(),
   ]);
-  const isGraduate = me?.student_status === "graduate";
+  const isGraduate = isPostStudy(me?.student_status);
   const list = (careers ?? []) as CareerRef[];
   const byId = new Map(list.map((c) => [c.id, c]));
   const primary = intent?.primary_career_id ? byId.get(intent.primary_career_id) ?? null : null;

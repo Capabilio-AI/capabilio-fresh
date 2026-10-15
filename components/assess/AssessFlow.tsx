@@ -69,7 +69,7 @@ function Screen({ snapshot, view, setView, onSubmitted, advance }: { snapshot: F
 
   switch (snapshot.stage) {
     case "resume":
-      return <ResumeStep onContinue={advance} />;
+      return <ResumeStep onContinue={advance} hasRole={!!snapshot.primary} />;
     case "career-interest":
       return <RoleEntryStep roles={snapshot.roleOptions} onConfirmed={advance} graduate={!!snapshot.graduate} />;
     case "general":

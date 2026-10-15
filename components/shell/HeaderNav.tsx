@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { PRIMARY_NAV, isNavItemActive } from "@/lib/nav/config";
+import { navFor, isNavItemActive } from "@/lib/nav/config";
+import type { CareerStage } from "@/lib/stage/stage";
 
 /** The app's pages as a centred frosted-glass bar; the current page is the raised white thumb. */
-export function HeaderNav({ launchpadOpen }: { launchpadOpen: boolean }) {
+export function HeaderNav({ stage, launchpadOpen }: { stage: CareerStage; launchpadOpen: boolean }) {
   const pathname = usePathname();
 
   return (
     <nav aria-label="Primary" className="sticky top-[64px] z-20 bg-[var(--m-ground)] px-4 pb-2 pt-0">
       <div className="mx-auto flex max-w-full justify-center overflow-x-auto py-0.5">
         <div className="glass inline-flex min-w-max gap-0.5 rounded-full p-1">
-          {PRIMARY_NAV.filter((item) => !item.requiresLaunchpad || launchpadOpen).map((item) => {
+          {navFor(stage, launchpadOpen).map((item) => {
             const active = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
             return (

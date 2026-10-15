@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
+import { studentOnlyResponse } from "@/lib/stage/guard";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
+  const notStudent = await studentOnlyResponse(auth.userId);
+  if (notStudent) return notStudent;
 
   const rateLimit = await checkRateLimit(auth.userId, { bucket: "arena_challenge_submit", maxRequests: 20, windowSeconds: 60 });
   if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);

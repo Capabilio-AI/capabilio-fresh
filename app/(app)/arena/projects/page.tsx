@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { getStageState } from "@/lib/stage/server";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { AreaHero } from "@/components/metro/AreaHero";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -15,7 +16,7 @@ export const metadata: Metadata = { title: "Projects | Arena | Capabilio AI" };
 export default async function ArenaProjectsPage() {
   const { supabase, user } = await requireAuthedUser();
   const service = createServiceClient();
-  const ctx = await getOrgContext(supabase, user.id);
+  const [ctx, { stage }] = await Promise.all([getOrgContext(supabase, user.id), getStageState(user.id)]);
   const [facultyProjects, careers] = await Promise.all([
     ctx && ctx.kind === "student" ? loadStudentProjects(service, ctx) : Promise.resolve([]),
     loadCareerResources(service, user.id),
@@ -30,7 +31,7 @@ export default async function ArenaProjectsPage() {
         {withProjects.map((c) => (
           <section key={c.which} aria-labelledby={`pj-${c.which}`}>
             <h2 id={`pj-${c.which}`} className="mb-1 font-lp-display text-[24px] font-bold text-[var(--m-ink)]">{c.which === "primary" ? c.careerName : `${c.careerName} (Plan B)`}</h2>
-            <p className="mb-4 font-lp-body text-[14px] text-app-muted">{c.projects.length} {c.projects.length === 1 ? "project" : "projects"} from your roadmap. Finish one and add it to your portfolio as proof.</p>
+            <p className="mb-4 font-lp-body text-[14px] text-app-muted">{c.projects.length} {c.projects.length === 1 ? "project" : "projects"} for your target role. Finish one and add it to your portfolio as proof.</p>
             <ResourceGallery resources={c.projects} career={c.which} emptyText="No projects yet." />
           </section>
         ))}
@@ -38,7 +39,7 @@ export default async function ArenaProjectsPage() {
         {withProjects.length === 0 && (
           <div className="rounded-xl border border-dashed border-[var(--m-off)] bg-white px-6 py-12 text-center">
             <p className="font-lp-body text-[14px] text-app-muted">Projects appear here once you choose a career with a roadmap.</p>
-            <Link href="/dashboard/roadmap" className="mt-4 inline-block rounded-lg bg-[var(--m-ink)] px-4 py-2 text-[13px] font-bold text-white">Open your roadmap</Link>
+            <Link href={stage === "student" ? "/dashboard/roadmap" : "/assessment"} className="mt-4 inline-block rounded-lg bg-[var(--m-ink)] px-4 py-2 text-[13px] font-bold text-white">{stage === "student" ? "Open your roadmap" : "Choose your target role"}</Link>
           </div>
         )}
 

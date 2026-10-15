@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { requireStage } from "@/lib/stage/guard";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { PLAN_B_CLOSED_MESSAGE, isPlanBOpen } from "@/lib/careers/plan-b";
@@ -11,6 +12,7 @@ import { DiagnosticRunner } from "@/components/roadmap/visual/DiagnosticRunner";
 export const metadata: Metadata = { title: "Baseline check — Capabilio AI" };
 
 export default async function CheckPage({ searchParams }: { searchParams: Promise<{ career?: string }> }) {
+  await requireStage(["student"]);
   const { user } = await requireAuthedUser();
   const service = createServiceClient();
   const career = (await searchParams).career === "plan-b" ? "plan-b" : "primary";

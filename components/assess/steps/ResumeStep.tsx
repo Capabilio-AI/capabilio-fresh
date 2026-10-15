@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ArrowRight, Award, Briefcase, CheckCircle2, FileText, FolderGit2, GraduationCap, UploadCloud } from "lucide-react";
+import { AlertTriangle, ArrowRight, Award, Briefcase, CheckCircle2, FileText, FolderGit2, GraduationCap, UploadCloud, X } from "lucide-react";
 import type { ResumeSummary } from "@/lib/graduate/summary";
 import { ApiError, NetworkError, assessApi } from "../api";
 import { Button } from "../ui/Button";
@@ -20,7 +20,7 @@ type View =
  * Recently graduated, step 1. The resume is read once on the server; what it says goes into the sections Capabilio already has, and the
  * skills it names decide which skills the role assessment asks about a little more. The file itself is not kept.
  */
-export function ResumeStep({ onContinue }: { onContinue: () => void }) {
+export function ResumeStep({ onContinue, hasRole = false }: { onContinue: () => void; hasRole?: boolean }) {
   const reduce = useReducedMotion();
   const [view, setView] = useState<View>({ kind: "idle" });
   const [over, setOver] = useState(false);
@@ -56,7 +56,7 @@ export function ResumeStep({ onContinue }: { onContinue: () => void }) {
     }
   };
 
-  if (view.kind === "done") return <ResumeDone summary={view.summary} onContinue={onContinue} />;
+  if (view.kind === "done") return <ResumeDone summary={view.summary} onContinue={onContinue} hasRole={hasRole} />;
 
   const reading = view.kind === "reading";
   return (
@@ -90,7 +90,7 @@ export function ResumeStep({ onContinue }: { onContinue: () => void }) {
           )}
           <input ref={input} id="resume-file" type="file" accept="application/pdf,.pdf" className="sr-only" disabled={reading} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} />
         </label>
-        {view.kind === "idle" && view.error && <div role="alert" className="a-glass a-rise mx-auto mt-5 max-w-xl rounded-2xl p-4 text-center"><p className="text-[15px] font-bold text-[var(--m-ink)]">{view.error}</p></div>}
+        {view.kind === "idle" && view.error && <ErrorBanner message={view.error} onClose={() => setView({ kind: "idle" })} />}
         {!reading && (
           <div className="mt-5 flex justify-center">
             <Button variant="ghost" onClick={() => void skip()}>I don&apos;t have a resume yet</Button>
@@ -101,7 +101,21 @@ export function ResumeStep({ onContinue }: { onContinue: () => void }) {
   );
 }
 
-export function ResumeDone({ summary, onContinue }: { summary: ResumeSummary; onContinue: () => void }) {
+/** A popup at the top of the screen, so a rejected resume is impossible to miss. It stays until closed. */
+function ErrorBanner({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div role="alert" className="a-rise fixed inset-x-4 top-5 z-50 mx-auto flex max-w-xl items-start gap-3 rounded-2xl border border-red-200 bg-white p-4 shadow-[0_24px_48px_-20px_rgb(20_20_20/0.45)]">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600"><AlertTriangle className="h-4 w-4" aria-hidden /></span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[15px] font-bold text-[var(--m-ink)]">We couldn&apos;t use that resume</p>
+        <p className="mt-0.5 text-[14px] leading-relaxed text-[var(--m-muted)]">{message}</p>
+      </div>
+      <button type="button" onClick={onClose} aria-label="Dismiss" className="rounded-lg p-1.5 text-[var(--m-muted)] hover:bg-[var(--m-ground)] hover:text-[var(--m-ink)]"><X className="h-4 w-4" aria-hidden /></button>
+    </div>
+  );
+}
+
+export function ResumeDone({ summary, onContinue, hasRole = false }: { summary: ResumeSummary; onContinue: () => void; hasRole?: boolean }) {
   const tiles = [
     { icon: GraduationCap, label: "Education", n: summary.counts.education },
     { icon: FolderGit2, label: "Projects", n: summary.counts.projects },
@@ -141,7 +155,7 @@ export function ResumeDone({ summary, onContinue }: { summary: ResumeSummary; on
             )}
           </>
         )}
-        <Button variant="accent" size="lg" onClick={onContinue} iconAfter={<ArrowRight className="h-4 w-4" aria-hidden />} className="mt-8">Choose your target role</Button>
+        <Button variant="accent" size="lg" onClick={onContinue} iconAfter={<ArrowRight className="h-4 w-4" aria-hidden />} className="mt-8">{hasRole ? "Continue to your assessment" : "Choose your target role"}</Button>
       </div>
     </section>
   );

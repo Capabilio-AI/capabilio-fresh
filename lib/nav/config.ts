@@ -6,6 +6,7 @@ import {
   Rocket,
   type LucideIcon,
 } from "lucide-react";
+import type { CareerStage } from "@/lib/stage/stage";
 
 export interface NavItem {
   label: string;
@@ -29,6 +30,13 @@ export const PRIMARY_NAV: NavItem[] = [
     lockedMessage: "Opens when you enter your final year (4-1).",
   },
 ];
+
+/** Which pages each stage sees. A graduate's Launchpad is always open (they are job-hunting now); a professional keeps learning but has no Arena or Launchpad. */
+export function navFor(stage: CareerStage, launchpadOpen: boolean): NavItem[] {
+  if (stage === "professional") return PRIMARY_NAV.filter((i) => ["/dashboard", "/skillstudio", "/pulse"].includes(i.href));
+  if (stage === "graduate") return PRIMARY_NAV.map((i) => ({ ...i, requiresLaunchpad: false }));
+  return PRIMARY_NAV.filter((i) => !i.requiresLaunchpad || launchpadOpen);
+}
 
 export function isNavItemActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard" || pathname.startsWith("/dashboard/");

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
+import { studentOnlyResponse } from "@/lib/stage/guard";
 import { getSpin, revealSpin, spinWheel } from "@/lib/arena-challenges/spin";
 
 const Body = z.object({ action: z.enum(["spin", "reveal"]) });
@@ -11,12 +12,16 @@ const Body = z.object({ action: z.enum(["spin", "reveal"]) });
 export async function GET() {
   const auth = await requireUser(await createClient());
   if ("error" in auth) return auth.error;
+  const notStudent = await studentOnlyResponse(auth.userId);
+  if (notStudent) return notStudent;
   return NextResponse.json(await getSpin(createServiceClient(), auth.userId));
 }
 
 export async function POST(request: Request) {
   const auth = await requireUser(await createClient());
   if ("error" in auth) return auth.error;
+  const notStudent = await studentOnlyResponse(auth.userId);
+  if (notStudent) return notStudent;
   const body = Body.safeParse(await request.json().catch(() => null));
   if (!body.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 

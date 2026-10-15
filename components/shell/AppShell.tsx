@@ -10,15 +10,18 @@ import "@/components/metro/metro.css";
 import { metroFontVars } from "@/components/metro/font";
 import { AreaMain } from "@/components/shell/AreaMain";
 import { DirectionProvider } from "@/components/direction/DirectionContext";
+import type { CareerStage } from "@/lib/stage/stage";
 
-export function AppShell({ viewer, banner, children }: { viewer: ViewerSummary; banner?: ReactNode; children: ReactNode }) {
+export function AppShell({ viewer, stage, banner, children }: { viewer: ViewerSummary; stage: CareerStage; banner?: ReactNode; children: ReactNode }) {
+  // A graduate is job-hunting now, so Launchpad is open for them whatever their old programme dates say.
+  const launchpadOpen = stage === "graduate" || (viewer.direction?.launchpadOpen ?? false);
   return (
-    <DirectionProvider isJobTrack={viewer.direction?.track === "job"} launchpadOpen={viewer.direction?.launchpadOpen ?? false}>
+    <DirectionProvider isJobTrack={stage === "student" ? viewer.direction?.track === "job" : true} launchpadOpen={launchpadOpen} stage={stage}>
       <MessagingProvider userId={viewer.id}>
       <CallProvider>
       <div className={`metro ${metroFontVars} min-h-screen bg-[var(--m-ground)]`}>
         <Topbar viewer={viewer} />
-        <HeaderNav launchpadOpen={viewer.direction?.launchpadOpen ?? false} />
+        <HeaderNav stage={stage} launchpadOpen={launchpadOpen} />
         <AreaMain>
           {banner}
           {children}

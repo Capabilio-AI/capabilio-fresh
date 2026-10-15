@@ -104,13 +104,14 @@ const statusOf = (latest: string | undefined): ItemStatus => (latest === "IN_PRO
  * The student's current Domain ticket. Domain starts only after the Plan B answer (same role or change role). One ticket at a time: an unfinished ticket stays until it is passed,
  * and the next one unlocks 24h after a pass (`unlockAt`). Never rotates weekly -- only Stream does. Never invents a career or a challenge.
  */
-export async function loadDomainSet(service: Service, userId: string, which: CareerChoice, now: Date = new Date()): Promise<DomainSetView> {
+export async function loadDomainSet(service: Service, userId: string, which: CareerChoice, now: Date = new Date(), opts: { skipPlanB?: boolean } = {}): Promise<DomainSetView> {
   const { intent } = await getCareerIntent(service, userId);
   const base = chooseDomainCareer(intent, which);
   if (base.state !== "ready") return base;
   // Domain starts only after the Plan B answer: "same role" practises the main career, "change role" the new one. Anything else stays on Stream.
   const kind = intent.planBKind;
-  const career = kind === "same_role" ? intent.primary : kind === "change_role" ? intent.secondary : null;
+  // Graduates and professionals have no Plan B (it is a 3rd-year question), so their main career is the target.
+  const career = opts.skipPlanB ? intent.primary : kind === "same_role" ? intent.primary : kind === "change_role" ? intent.secondary : null;
   if (!career) return { state: "no_plan_b", primary: base.primary };
   const target = { ...base, career };
 

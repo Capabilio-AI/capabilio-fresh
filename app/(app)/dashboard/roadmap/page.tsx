@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { requireStage } from "@/lib/stage/guard";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getRoadmapGraph } from "@/lib/roadmap-visual/service";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
@@ -12,6 +13,7 @@ import { RoadmapExperience } from "@/components/roadmap/visual/RoadmapExperience
 export const metadata: Metadata = { title: "Roadmap — Capabilio AI" };
 
 export default async function RoadmapPage({ searchParams }: { searchParams: Promise<{ career?: string; tab?: string; version?: string }> }) {
+  await requireStage(["student"]); // the roadmap is a student's plan through their programme
   const { user } = await requireAuthedUser();
   const gate = await studentGate(createServiceClient() as unknown as Db, user.id);
   if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="your roadmap and career path" />;

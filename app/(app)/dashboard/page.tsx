@@ -27,6 +27,12 @@ import { getCareerProfile } from "@/lib/assess/career-profile";
 import { OnboardingGate } from "@/components/assess/OnboardingGate";
 import { studentGate } from "@/lib/assess/gate";
 import type { Db } from "@/lib/assess/db";
+import { getStageState } from "@/lib/stage/server";
+import { interviewUnlocked } from "@/lib/plans/catalog";
+import { loadGraduateHome } from "@/lib/graduate/home";
+import { loadProfessionalHome } from "@/lib/stage/professional";
+import { GraduateHome } from "@/components/graduate/GraduateHome";
+import { ProfessionalHome } from "@/components/graduate/ProfessionalHome";
 
 export const metadata: Metadata = {
   title: "Dashboard — Capabilio AI",
@@ -35,6 +41,16 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const { supabase, user } = await requireAuthedUser();
+
+  // Recently graduated and professional profiles have their own homes: no programme year, no roadmap, no Plan B.
+  const state = await getStageState(user.id);
+  if (state.stage !== "student") {
+    const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    if (state.stage === "professional") {
+      return <ProfessionalHome data={await loadProfessionalHome(user.id, me?.full_name ?? null)} employerName={state.employerName} jobTitle={state.jobTitle} />;
+    }
+    return <GraduateHome data={await loadGraduateHome(supabase, user.id, me?.full_name ?? null)} planId={state.planId} interviewUnlocked={interviewUnlocked("graduate", state.planId, false)} />;
+  }
 
   // A first-time student sees only the onboarding shell until the career assessment is analysed (never the full dashboard).
   const gate = await studentGate(createServiceClient() as unknown as Db, user.id);

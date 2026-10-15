@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, FolderKanban, GraduationCap, Database, Trophy } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { getStageState } from "@/lib/stage/server";
 import { getLeaderboard } from "@/lib/arena/data";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { AreaHero, HeroStat } from "@/components/metro/AreaHero";
@@ -12,7 +13,9 @@ const CARD = "group flex h-full flex-col gap-3 rounded-2xl border border-[var(--
 
 export default async function ArenaHubPage() {
   const { supabase, user } = await requireAuthedUser();
-  const leaderboard = await getLeaderboard(supabase, user.id);
+  const [leaderboard, { stage }] = await Promise.all([getLeaderboard(supabase, user.id), getStageState(user.id)]);
+  // Stream challenges are drawn from a study programme, so only students get them.
+  const showStream = stage === "student";
   const viewer = leaderboard.find((e) => e.isViewer);
   const podium = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3, 8);
@@ -31,12 +34,12 @@ export default async function ArenaHubPage() {
         <section aria-labelledby="modes-h" className="flex flex-col gap-4">
           <h2 id="modes-h" className="font-lp-display text-[28px] font-bold text-[var(--m-ink)]">Choose how to play</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Link href="/arena/challenges/stream" className={CARD}>
+            {showStream && <Link href="/arena/challenges/stream" className={CARD}>
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--m-accent-soft)] text-[var(--m-accent)]"><GraduationCap size={21} aria-hidden /></span>
               <h3 className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Stream challenges</h3>
               <p className="font-lp-body text-[14px] leading-relaxed text-app-muted">Eight fresh problems every Monday, drawn from your own branch and subjects.</p>
               <span className="mt-auto inline-flex items-center gap-1.5 pt-1 text-[13.5px] font-bold text-[var(--m-accent)]">Play this week <ArrowRight size={14} aria-hidden className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none" /></span>
-            </Link>
+            </Link>}
             <Link href="/arena/challenges/domain" className={CARD}>
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--m-accent-soft)] text-[var(--m-accent)]"><Database size={21} aria-hidden /></span>
               <h3 className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Domain challenges</h3>
@@ -46,7 +49,7 @@ export default async function ArenaHubPage() {
             <Link href="/arena/projects" className={CARD}>
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--m-ground)] text-[var(--m-ink)]"><FolderKanban size={21} aria-hidden /></span>
               <h3 className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Projects</h3>
-              <p className="font-lp-body text-[14px] leading-relaxed text-app-muted">Guided builds from your career roadmap that become portfolio evidence.</p>
+              <p className="font-lp-body text-[14px] leading-relaxed text-app-muted">Guided builds for your target role that become portfolio evidence.</p>
               <span className="mt-auto inline-flex items-center gap-1.5 pt-1 text-[13.5px] font-bold text-[var(--m-ink)]">See projects <ArrowRight size={14} aria-hidden className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none" /></span>
             </Link>
             <Link href="/arena/competitions" className={CARD}>

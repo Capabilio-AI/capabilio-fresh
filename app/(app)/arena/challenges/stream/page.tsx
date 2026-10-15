@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { requireAuthedUser } from "@/lib/supabase/auth";
+import { requireStage } from "@/lib/stage/guard";
 import { TrackChallengesBoard } from "@/components/arena/TrackChallengesBoard";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StreamChallengesPage() {
-  await requireAuthedUser();
+  await requireStage(["student"]); // stream challenges come from a study programme
 
   return (
     <div>

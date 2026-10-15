@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
+import { getStageState } from "@/lib/stage/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection } from "@/lib/career/direction";
 import { loadDomainSet } from "@/lib/arena-challenges/domain-set";
@@ -38,7 +39,10 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
   const params = await searchParams;
   const which = "primary"; // Domain tickets follow the main career; a Plan B must be set to unlock them
   const service = createServiceClient();
-  const view = await loadDomainSet(service, user.id, which);
+  const { stage } = await getStageState(user.id);
+  const isStudent = stage === "student";
+  const view = await loadDomainSet(service, user.id, which, new Date(), { skipPlanB: !isStudent });
+  const setCareerHref = isStudent ? SET_CAREER_HREF : "/assessment";
 
   let body: React.ReactNode;
   if (params.sample === "1") {
@@ -55,7 +59,7 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
       <Notice
         title={view.state === "exploring" ? "You are still exploring" : "Set your target career"}
         body="Domain challenges are real work tickets for the role you want. Pick a career and they appear here — we don't guess one for you."
-        cta={[{ href: SET_CAREER_HREF, label: "Choose a career in Career Path" }, { href: "?sample=1", label: "Try a sample track" }]}
+        cta={[{ href: setCareerHref, label: isStudent ? "Choose a career in Career Path" : "Choose your target role" }, { href: "?sample=1", label: "Try a sample track" }]}
       />
     );
   } else if (view.state === "no_plan_b") {
@@ -64,7 +68,7 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
       <Notice
         title="Domain challenges start with your Plan B"
         body={`Until then Arena gives you Stream challenges, so you can learn about ${view.primary} and build your base. Domain tickets begin once you choose to continue in your role or move to another in 3rd year.`}
-        cta={[...(planBOpen ? [{ href: "/dashboard/roadmap", label: "Answer Plan B" }] : []), { href: "/arena/challenges/stream", label: "Go to Stream challenges" }]}
+        cta={[...(planBOpen ? [{ href: "/dashboard/roadmap", label: "Answer Plan B" }] : []), ...(isStudent ? [{ href: "/arena/challenges/stream", label: "Go to Stream challenges" }] : [])]}
       />
     );
   } else {
@@ -87,7 +91,7 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
           <Notice
             title={`No challenges configured yet for ${view.career.name}`}
             body="We only show real, reviewed challenges. You can try another track while this one is being built."
-            cta={[{ href: "?sample=1", label: "Browse other tracks" }, { href: "/arena/challenges/stream", label: "Go to Stream challenges" }]}
+            cta={[{ href: "?sample=1", label: "Browse other tracks" }, ...(isStudent ? [{ href: "/arena/challenges/stream", label: "Go to Stream challenges" }] : [])]}
           />
         )}
       </>

@@ -1,4 +1,5 @@
 import type { Db } from "@/lib/assess/db";
+import { isPostStudy } from "@/lib/stage/stage";
 import type { ResumeExtraction } from "@/lib/ai/llm/prompts/resume.v1";
 import type { Target } from "@/lib/assess/engine";
 
@@ -34,7 +35,7 @@ export function matchFocusSkills(resumeSkills: readonly string[], roleSkills: re
 
 export async function isGraduate(db: Db, userId: string): Promise<boolean> {
   const { data } = await db.from("profiles").select("student_status").eq("id", userId).maybeSingle();
-  return data?.student_status === "graduate";
+  return isPostStudy(data?.student_status);
 }
 
 /** The role skills this graduate's resume claims, or null when they are not a graduate or have no resume yet. */

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
 import { requireUser } from "@/lib/api/require-user";
+import { studentOnlyResponse } from "@/lib/stage/guard";
 import { resolveStreamScope } from "@/lib/arena-challenges/resolve-scope";
 import { getOrAssignWeeklyBatch } from "@/lib/arena-challenges/weekly-batch";
 import { loadStreamPool, loadStreamStudentContext } from "@/lib/arena-challenges/stream-context";
@@ -24,6 +25,8 @@ export async function GET() {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
+  const notStudent = await studentOnlyResponse(auth.userId);
+  if (notStudent) return notStudent;
 
   const service = createServiceClient();
   const scope = await resolveStreamScope(supabase, auth.userId);

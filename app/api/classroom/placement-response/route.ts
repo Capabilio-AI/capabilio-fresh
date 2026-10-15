@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { orgRoute } from "@/lib/api/org-route";
 import { PlacementResponseSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
+import { markEmployed } from "@/lib/stage/server";
 
 /** The student accepts or declines the offer their college confirmed (own row only). The college sees the answer. */
 export async function POST(request: Request) {
@@ -11,9 +12,11 @@ export async function POST(request: Request) {
       .update({ student_response: body.response, responded_at: new Date().toISOString() })
       .eq("id", body.placementId)
       .eq("student_user_id", ctx.userId)
-      .select("id");
+      .select("id, company, role_title");
     if (error) throw error;
     if (!data || data.length === 0) return NextResponse.json({ error: "Placement not found." }, { status: 404 });
+    // Accepting an offer means they have a job: the profile moves to the professional path on its own.
+    if (body.response === "accepted") await markEmployed(ctx.userId, { employerName: data[0].company, jobTitle: data[0].role_title });
     return {};
   });
 }
