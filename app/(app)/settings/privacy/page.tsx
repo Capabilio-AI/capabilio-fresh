@@ -27,7 +27,7 @@ export default async function PrivacySettingsPage() {
 
       <SettingsCard id="passport-h" title="Public skill passport" description="When on, anyone who scans your passport QR or opens its link sees your passport. When off, the page is private.">
         <PassportShareToggle initial={profile?.passport_public ?? false} />
-        <Link href="/profile?tab=passport" className="mt-3 inline-block font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline">Open your passport →</Link>
+        <Link href="/dashboard/passport" className="mt-3 inline-block font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline">Open your passport →</Link>
       </SettingsCard>
 
       <SettingsCard id="access-h" title="Who can see your data" description="Your assessment answers, Vault and capability data are yours. Staff at your institution can see your ELO rating, your target career and counts of your activity, and anything else only where their role's permissions explicitly allow it." />

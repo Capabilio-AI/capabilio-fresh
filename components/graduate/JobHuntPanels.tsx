@@ -72,7 +72,7 @@ export function PassportCard({ passport }: { passport: { earned: number; total: 
     <section className={`${CARD} flex flex-col`} aria-labelledby="pp-h">
       <h2 id="pp-h" className={`${H} flex items-center gap-2`}><IdCard size={17} aria-hidden />Skill Passport</h2>
       <p className="mt-2 text-[13.5px] leading-relaxed text-app-muted">{body}</p>
-      <Link href="/profile?tab=passport" className="mt-auto inline-flex w-fit items-center gap-1.5 pt-4 text-[13px] font-bold text-[var(--m-ink)] hover:underline">
+      <Link href="/dashboard/passport" className="mt-auto inline-flex w-fit items-center gap-1.5 pt-4 text-[13px] font-bold text-[var(--m-ink)] hover:underline">
         {passport.shared ? "Open and share" : "Open your passport"} <ArrowRight size={14} aria-hidden />
       </Link>
     </section>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getViewerSummary, initialsOf } from "@/lib/dashboard/viewer";
 import { getEducationEntries } from "@/lib/dashboard/education";
@@ -10,11 +11,7 @@ import { profileCompleteness } from "@/lib/profile/details";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { ProfileTabs, tabOf } from "@/components/profile/ProfileTabs";
 import { AboutSection, AcademicSection, SettingsSection, StrengthCard } from "@/components/profile/ProfileSections";
-import { PassportSection } from "@/components/profile/PassportSection";
 import { loadPassportSkills } from "@/lib/passport/data";
-import { loadReel } from "@/lib/passport/reel-data";
-import { passportQrSvg } from "@/lib/passport/qr";
-import { passportUrl } from "@/lib/passport/url";
 import type { Db } from "@/lib/assess/db";
 import type { EditableProfile } from "@/components/profile/EditProfileDialog";
 
@@ -22,6 +19,8 @@ export const metadata: Metadata = { title: "Profile — Capabilio AI" };
 
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const [{ supabase, user }, { tab: rawTab }] = await Promise.all([requireAuthedUser(), searchParams]);
+  // The Skill Passport now lives on the dashboard; old links and bookmarks land there.
+  if (rawTab === "passport") redirect("/dashboard/passport");
   const tab = tabOf(rawTab);
 
   const service = createServiceClient();
@@ -36,7 +35,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const graduatingYear = viewer.direction?.endYear ?? null;
   const yearLabel = formatAcademicYear(viewer.direction?.academicYear?.year ?? null, viewer.direction?.startYear ?? null, viewer.direction?.endYear ?? null);
   const aspiringFor = intent.primary?.name ?? null;
-  const passportCode = details?.passport_code ?? "";
   const shared = details?.passport_public ?? false;
 
   const profile: EditableProfile = {
@@ -52,8 +50,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     college: viewer.collegeName, branch: viewer.branch, graduatingYear,
     hasBadge: passport.skills.some((x) => x.badge), passportShared: shared,
   });
-
-  const reel = tab === "passport" ? await loadReel(service, user.id) : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -76,13 +72,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           )}
           {tab === "about" && <AboutSection profile={profile} aspiringFor={aspiringFor} location={profile.location} email={viewer.email} />}
           {tab === "academic" && <AcademicSection college={viewer.collegeName} branch={viewer.branch} graduatingYear={graduatingYear} yearLabel={yearLabel} entries={educationEntries} />}
-          {tab === "passport" && reel && (
-            <PassportSection
-              holderName={profile.fullName || "Student"} college={viewer.collegeName} passportNo={reel.input.holder.passportNo}
-              qrSvg={await passportQrSvg(await passportUrl(passportCode))} url={await passportUrl(passportCode)} shared={shared}
-              unlocked={passport.unlocked} roleName={passport.roleName} skills={passport.skills} reel={reel.input}
-            />
-          )}
           {tab === "settings" && <SettingsSection email={viewer.email} />}
         </div>
         <StrengthCard completeness={completeness} />

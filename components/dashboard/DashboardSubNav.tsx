@@ -9,6 +9,7 @@ import type { CareerStage } from "@/lib/stage/stage";
 const TABS: { label: string; href: string; jobTrackOnly?: boolean; launchpadOnly?: boolean; stages: CareerStage[] }[] = [
   { label: "Overview", href: "/dashboard", stages: ["student", "graduate", "professional"] },
   { label: "Portfolio", href: "/dashboard/portfolio", stages: ["student", "graduate", "professional"] },
+  { label: "Skill Passport", href: "/dashboard/passport", stages: ["student", "graduate", "professional"] },
   { label: "Skills", href: "/dashboard/skills", stages: ["student", "graduate"] },
   // The roadmap is a student's plan through their programme; graduates and professionals do not have one.
   { label: "Roadmap", href: "/dashboard/roadmap", stages: ["student"] },

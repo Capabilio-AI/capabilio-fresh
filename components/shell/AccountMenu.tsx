@@ -84,7 +84,7 @@ export function AccountMenu({ viewer }: { viewer: ViewerSummary }) {
             <p className="relative truncate text-[13px] text-white/70">{viewer.email}</p>
           </div>
           <div className="mt-2 flex flex-col gap-0.5">
-            <MenuLink href="/profile" icon={UserCircle} label="Your profile" hint="Your details and Skill Passport" onDone={() => setOpen(false)} />
+            <MenuLink href="/profile" icon={UserCircle} label="Your profile" hint="Education, branch and career goal" onDone={() => setOpen(false)} />
             <MenuLink href="/settings" icon={Settings} label="Settings" hint="Account, direction and privacy" onDone={() => setOpen(false)} />
             <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[#fff0e8] disabled:opacity-60">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fff0e8] text-[#c2410c]"><LogOut size={17} aria-hidden /></span>

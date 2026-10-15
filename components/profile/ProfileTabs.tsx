@@ -3,7 +3,6 @@ import { SegmentedLinks } from "@/components/dashboard/SegmentedLinks";
 export const TABS = [
   { id: "about", label: "About" },
   { id: "academic", label: "Academic" },
-  { id: "passport", label: "Skill passport" },
   { id: "settings", label: "Settings" },
 ] as const;
 export type TabId = (typeof TABS)[number]["id"];
