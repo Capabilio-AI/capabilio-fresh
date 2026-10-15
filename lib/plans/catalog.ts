@@ -1,5 +1,11 @@
 // The plans a recently graduated user picks after login. Prices are display-only placeholders until checkout exists:
 // choosing a plan records it on the profile and unlocks its features; nothing is charged.
+/**
+ * Whether a plan actually restricts features. Off while there is no checkout: nobody can pay yet, so nobody is blocked. Turn this on
+ * in the same release that ships billing, and the plan gates (AI Interview) start applying again.
+ */
+export const ENFORCE_PLANS = false;
+
 export const PLAN_IDS = ["launch", "accelerate_monthly", "accelerate_quarterly"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
@@ -58,9 +64,9 @@ export function planAllows(id: unknown, feature: PlanFeature): boolean {
   return planById(id)?.unlocks.includes(feature) ?? false;
 }
 
-/** Students unlock AI Interview in their final year; graduates need a plan that includes it; professionals always have it. */
-export function interviewUnlocked(stage: "student" | "graduate" | "professional", planId: unknown, finalYearOpen: boolean): boolean {
+/** Students unlock AI Interview in their final year; graduates need a plan that includes it once plans are enforced; professionals always have it. */
+export function interviewUnlocked(stage: "student" | "graduate" | "professional", planId: unknown, finalYearOpen: boolean, enforce: boolean = ENFORCE_PLANS): boolean {
   if (stage === "student") return finalYearOpen;
-  if (stage === "graduate") return planAllows(planId, "aiInterview");
+  if (stage === "graduate") return !enforce || planAllows(planId, "aiInterview");
   return true;
 }

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { Check, Sparkles } from "lucide-react";
 import clsx from "clsx";
-import { PLANS, type PlanId } from "@/lib/plans/catalog";
+import { ENFORCE_PLANS, PLANS, type PlanId } from "@/lib/plans/catalog";
 import { selectPlan, type SelectPlanState } from "@/app/(app)/plans/actions";
 
 /** Choose or change a plan. `current` is the saved plan (null on the first visit straight after login). */
@@ -18,6 +18,7 @@ export function PlanPicker({ current }: { current: PlanId | null }) {
         <h1 id="plans-h" className="mt-3 font-lp-display text-[32px] font-bold leading-tight tracking-tight text-[var(--m-ink)] sm:text-[44px]">{current ? "Your plan" : "Choose your plan"}</h1>
         <p className="mx-auto mt-2 max-w-xl text-[15px] leading-relaxed text-[var(--m-muted)]">
           Pick how you want to go after your first role. You are not charged during early access, and you can change plan any time.
+          {!ENFORCE_PLANS && " Every feature, including AI Interview, is open on every plan for now."}
         </p>
       </div>
 

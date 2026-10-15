@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { interviewUnlocked, isPlanId, planAllows, planById } from "./catalog";
+import { ENFORCE_PLANS, interviewUnlocked, isPlanId, planAllows, planById } from "./catalog";
 
 describe("plan catalog", () => {
   it("recognises only real plan ids", () => {
@@ -20,8 +20,14 @@ describe("interviewUnlocked", () => {
   it("follows the stage", () => {
     expect(interviewUnlocked("student", null, false)).toBe(false);
     expect(interviewUnlocked("student", null, true)).toBe(true);
-    expect(interviewUnlocked("graduate", "launch", true)).toBe(false);
-    expect(interviewUnlocked("graduate", "accelerate_monthly", false)).toBe(true);
+    expect(interviewUnlocked("graduate", "launch", true, true)).toBe(false);
+    expect(interviewUnlocked("graduate", "accelerate_monthly", false, true)).toBe(true);
     expect(interviewUnlocked("professional", null, false)).toBe(true);
+  });
+
+  it("blocks nobody while plans are not enforced, because nobody can pay yet", () => {
+    expect(ENFORCE_PLANS).toBe(false);
+    expect(interviewUnlocked("graduate", "launch", false)).toBe(true);
+    expect(interviewUnlocked("graduate", null, false)).toBe(true);
   });
 });
