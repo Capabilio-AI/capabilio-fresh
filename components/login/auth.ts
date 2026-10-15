@@ -221,14 +221,22 @@ export async function signUpGraduate(input: GraduateSignUpInput): Promise<SignUp
   return { status: "success" };
 }
 
-export async function requestPasswordReset(email: string): Promise<void> {
+export type PasswordResetResult = { ok: true } | { ok: false; message: string };
+
+export async function requestPasswordReset(email: string): Promise<PasswordResetResult> {
   const supabase = createClient();
-  await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
     redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
   });
-  // Deliberately no error surfaced to the caller: Supabase already returns
-  // the same response whether the email exists or not, and we don't add a
-  // second layer that could leak account existence.
+  // Unknown emails return success from Supabase, so account existence is not
+  // leaked. Only throttling and transport failures are surfaced.
+  if (error?.status === 429 || error?.code === "over_email_send_rate_limit") {
+    return { ok: false, message: "Too many requests. Please wait a minute before trying again." };
+  }
+  if (error && !error.status) {
+    return { ok: false, message: "Couldn't reach the server. Check your connection and try again." };
+  }
+  return { ok: true };
 }
 
 export async function resendVerificationEmail(email: string): Promise<void> {

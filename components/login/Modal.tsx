@@ -13,22 +13,30 @@ interface ModalProps {
 
 export function Modal({ open, onClose, titleId, children }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // Callers pass a fresh onClose every render; keeping it in a ref stops the
+  // effect below re-running (and stealing focus) on every keystroke.
+  const onCloseRef = useRef(onClose);
+  // Updated after each render (not during it), so Escape always calls the latest handler.
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     document.addEventListener("keydown", onKeyDown);
 
-    const firstFocusable = panelRef.current?.querySelector<HTMLElement>(
-      "input, button, [tabindex]"
-    );
-    firstFocusable?.focus();
+    // Focus once per open, preferring a form field over the close button.
+    const target =
+      panelRef.current?.querySelector<HTMLElement>("input, select, textarea") ??
+      panelRef.current?.querySelector<HTMLElement>("button, [tabindex]");
+    target?.focus();
 
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   return (
     <AnimatePresence>

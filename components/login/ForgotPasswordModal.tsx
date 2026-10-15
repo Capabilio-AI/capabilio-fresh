@@ -14,6 +14,7 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | undefined>();
 
   const handleClose = () => {
     onClose();
@@ -21,15 +22,18 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
       setEmail("");
       setSent(false);
       setSubmitting(false);
+      setError(undefined);
     }, 200);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    await requestPasswordReset(email);
+    setError(undefined);
+    const result = await requestPasswordReset(email);
     setSubmitting(false);
-    setSent(true);
+    if (result.ok) setSent(true);
+    else setError(result.message);
   };
 
   return (
@@ -80,6 +84,12 @@ export function ForgotPasswordModal({ open, onClose }: ForgotPasswordModalProps)
             autoComplete="email"
             className="w-full rounded border border-lp-border-hairline bg-lp-surface-card px-4 py-3 font-lp-body text-lp-body-sm text-lp-text-ink placeholder:text-lp-text-muted transition-colors focus:border-lp-accent-indigo focus:outline-none focus:ring-2 focus:ring-lp-accent-indigo/25"
           />
+
+          {error && (
+            <p role="alert" className="mt-2 font-lp-body text-lp-body-sm text-red-600">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

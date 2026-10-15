@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { CardChrome } from "./CardChrome";
 import { PasswordField } from "./PasswordField";
@@ -67,6 +67,13 @@ function AuthModals({
 export function AuthCard({ path = "student" }: { path?: AuthPath }) {
   const isOrg = path === "organisation";
   const router = useRouter();
+  const params = useSearchParams();
+  const urlNotice =
+    params.get("reset") === "success"
+      ? "Password updated. Sign in with your new password."
+      : params.get("error") === "auth-link-invalid"
+        ? "That email link has expired or was already used. Use \u201cForgot password?\u201d to get a new one."
+        : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -171,7 +178,7 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
             <>
               <Loader2 size={22} className="animate-spin text-lp-accent-indigo" />
               <p className="mt-4 font-lp-body text-lp-body-sm font-medium text-lp-on-surface-variant">
-                Redirecting to {redirectPortal}…
+                Signing you in…
               </p>
             </>
           ) : (
@@ -198,6 +205,11 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
         </p>
 
         <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5" noValidate>
+          {urlNotice && (
+            <p role="status" className="font-lp-body text-lp-body-sm text-lp-accent-indigo">
+              {urlNotice}
+            </p>
+          )}
           {authError && (
             <AuthErrorBanner
               status={authError}

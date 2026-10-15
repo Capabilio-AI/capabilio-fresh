@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PasswordField } from "./PasswordField";
@@ -16,6 +16,17 @@ export function ResetPasswordForm() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [factorId, setFactorId] = useState<string | null>(null);
+
+  // After a successful save: drop the recovery session so the user must sign
+  // in with the new password, then send them to the sign-in page.
+  useEffect(() => {
+    if (!done) return;
+    const timer = setTimeout(async () => {
+      await createClient().auth.signOut();
+      window.location.assign("/login?reset=success");
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [done]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -74,10 +85,11 @@ export function ResetPasswordForm() {
           Password updated
         </h1>
         <p className="mt-2 font-lp-body text-lp-body-sm leading-relaxed text-lp-text-muted">
-          Your password has been changed. You can now sign in with your new password.
+          Your password has been changed. Redirecting you to sign in…
         </p>
         <a
-          href="/login"
+          href="/login?reset=success"
+          onClick={() => void createClient().auth.signOut()}
           className="mt-6 inline-flex w-full items-center justify-center rounded bg-lp-text-ink py-3 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card transition-colors hover:bg-lp-inverse-surface"
         >
           Back to sign in
