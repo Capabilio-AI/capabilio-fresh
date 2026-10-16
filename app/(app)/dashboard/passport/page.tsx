@@ -19,14 +19,14 @@ export default async function DashboardPassportPage() {
   const [viewer, { data: details }, passport, reel] = await Promise.all([
     getViewerSummary(supabase, user.id),
     supabase.from("profiles").select("passport_code, passport_public").eq("id", user.id).single(),
-    loadPassportSkills(service as unknown as Db, user.id),
+    loadPassportSkills(service, user.id),
     loadReel(service, user.id),
   ]);
   const url = await passportUrl(details?.passport_code ?? "");
 
   return (
     <div>
-      <PageHead title="Skill Passport" intro="Your verified skills in one place you can share: badges earned from real assessments, a QR code and a public link for recruiters." />
+      <PageHead title="Skill Passport" intro="Badges you have earned by doing the work, each with the evidence behind it, in one place you can share with a QR code and a public link." />
       <div className="pt-4">
         <PassportSection
           holderName={viewer.fullName || "Your name"} college={viewer.collegeName} passportNo={reel.input.holder.passportNo}

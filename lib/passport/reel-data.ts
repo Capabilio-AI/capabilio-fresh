@@ -2,7 +2,6 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import type { Db } from "@/lib/assess/db";
 import { getPortfolioData, type ArenaTask } from "@/lib/portfolio/data";
 import type { CapabilityGroup } from "@/lib/portfolio/view";
 import { loadPassportSkills, type PassportSkills } from "./data";
@@ -34,8 +33,8 @@ const httpsOnly = (url: string | null) => (url && /^https:\/\//i.test(url) ? url
 
 /** Everything the proof reel and the passport pages show, built from verified evidence only (service client; the caller owns the access check). */
 export async function loadReel(service: SupabaseClient<Database>, userId: string): Promise<ReelBundle> {
-  const [portfolio, passport, passportNo] = await Promise.all([getPortfolioData(service, userId), loadPassportSkills(service as unknown as Db, userId), ensurePassportNumber(service, userId)]);
-  const badges = passport.skills.flatMap((s) => (s.badge ? [{ name: s.badge.name, level: s.badge.level, provisional: s.badge.provisional }] : []));
+  const [portfolio, passport, passportNo] = await Promise.all([getPortfolioData(service, userId), loadPassportSkills(service, userId), ensurePassportNumber(service, userId)]);
+  const badges = passport.skills.flatMap((s) => (s.badge ? [{ skillId: s.skillId, name: s.badge.name, level: s.badge.level, provisional: s.badge.provisional }] : []));
   const verified = portfolio.items.filter((v) => v.verified);
   const proofs = verified.map((v) => ({ title: v.title, kind: v.item_type }));
   const github = portfolio.github?.verified ? { username: portfolio.github.username, repositories: portfolio.github.repositoriesAnalyzed } : null;
@@ -50,7 +49,7 @@ export async function loadReel(service: SupabaseClient<Database>, userId: string
     input: {
       holder: { name: v.fullName ?? "Capabilio student", college: v.collegeName, branch: v.branch, classOf: v.direction?.endYear ?? null, aspiringFor: passport.roleName ?? portfolio.statedRole, passportNo },
       badges,
-      elo: passport.elo ? { rating: passport.elo.rating, history } : null,
+      elo: passport.elo && passport.elo.fromArena > 0 ? { rating: passport.elo.rating, history } : null,
       arenaPassed: portfolio.arenaTasks.length,
       arena: portfolio.arenaTasks.map((a) => ({ title: a.title, company: a.company, area: a.area })),
       interviews,

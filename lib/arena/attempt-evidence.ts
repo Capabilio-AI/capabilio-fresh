@@ -44,6 +44,11 @@ const TOOL_LABEL: Record<string, string> = {
   cleaning_workspace: "Data prep workspace",
   dashboard_workspace: "BI workspace",
   spreadsheet_workspace: "Excel workbook",
+  investigation_workspace: "Investigation workspace",
+  ml_workspace: "ML notebook",
+  code_workspace: "Code editor",
+  devops_workspace: "Config editor",
+  frontend_workspace: "Frontend editor",
 };
 
 /**

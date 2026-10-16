@@ -12,8 +12,8 @@ export const MAX_SECONDS = 90;
 
 export interface ReelInput {
   holder: { name: string; college: string | null; branch: string | null; classOf: number | null; aspiringFor: string | null; passportNo: string };
-  badges: { name: string; level: BadgeLevel; provisional: boolean }[];
-  /** the ELO ledger: current rating and its history (oldest first) */
+  badges: { skillId: string; name: string; level: BadgeLevel; provisional: boolean }[];
+  /** the ELO ledger, only once Arena work has moved it: the assessment's starting rating is not shown as an achievement */
   elo: { rating: number; history: number[] } | null;
   arenaPassed: number;
   /** the most recent passed Arena challenges */

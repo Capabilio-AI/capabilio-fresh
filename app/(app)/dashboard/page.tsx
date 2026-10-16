@@ -49,7 +49,8 @@ export default async function DashboardPage() {
     if (state.stage === "professional") {
       return <ProfessionalHome data={await loadProfessionalHome(user.id, me?.full_name ?? null)} employerName={state.employerName} jobTitle={state.jobTitle} />;
     }
-    return <GraduateHome data={await loadGraduateHome(supabase, user.id, me?.full_name ?? null)} planId={state.planId} interviewUnlocked={interviewUnlocked("graduate", state.planId, false)} />;
+    const canInterview = interviewUnlocked("graduate", state.planId, false);
+    return <GraduateHome data={await loadGraduateHome(supabase, user.id, me?.full_name ?? null, canInterview)} interviewUnlocked={canInterview} />;
   }
 
   // A first-time student sees only the onboarding shell until the career assessment is analysed (never the full dashboard).

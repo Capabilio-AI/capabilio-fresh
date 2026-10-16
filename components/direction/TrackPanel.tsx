@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection, shouldShowHigherStudiesCheckin } from "@/lib/career/direction";
 import { getJobTrackSignals } from "@/lib/career/track-signals";
 import { getEngagedRoleKey, listEnabledRoles, pickActiveRole } from "@/lib/arena-workstations/taxonomy";
-import { getStatedCareerInterest } from "@/lib/career/interest-statement";
+import { getWorkstationCareer } from "@/lib/career/workstation-career";
 import { JobTrackCard } from "./JobTrackCard";
 import { HigherStudiesCheckin } from "./HigherStudiesCheckin";
 
@@ -19,7 +19,7 @@ export async function TrackPanel({ supabase, userId }: { supabase: SupabaseClien
   if (direction.track === "higher_studies") {
     if (!shouldShowHigherStudiesCheckin(direction)) return null;
     const roles = await listEnabledRoles(service);
-    const [engagedRoleKey, statedRole] = await Promise.all([getEngagedRoleKey(service, userId), getStatedCareerInterest(service, userId)]);
+    const [engagedRoleKey, statedRole] = await Promise.all([getEngagedRoleKey(service, userId), getWorkstationCareer(service, userId)]);
     const current = pickActiveRole(roles, {
       activeRoleKey: direction.activeRoleKey,
       engagedRoleKey,

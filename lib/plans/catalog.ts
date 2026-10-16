@@ -6,10 +6,19 @@
  */
 export const ENFORCE_PLANS = false;
 
-export const PLAN_IDS = ["launch", "accelerate_monthly", "accelerate_quarterly"] as const;
+export const PLAN_IDS = ["free", "pro", "elite"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
 export type PlanFeature = "aiInterview";
+
+/** One line of the plan comparison. `included: false` renders as a muted "not included" row. */
+export interface PlanRow {
+  label: string;
+  value: string;
+  included: boolean;
+  /** promised but not built yet: shown with a "Soon" tag so a card never claims more than the product does */
+  soon?: boolean;
+}
 
 export interface Plan {
   id: PlanId;
@@ -17,41 +26,70 @@ export interface Plan {
   /** shown as the big number; "Free" for the free plan */
   price: string;
   cadence: string;
+  /** small line under the price, e.g. the per-month equivalent */
+  hint?: string;
   blurb: string;
-  features: string[];
+  rows: PlanRow[];
+  /** small print under the rows */
+  note?: string;
   /** features this plan unlocks beyond the free ones */
   unlocks: PlanFeature[];
   highlight?: string;
 }
 
+// Prices are placeholders until checkout exists. Passes are one-time and do not auto-renew: a job search ends when the job starts.
 export const PLANS: readonly Plan[] = [
   {
-    id: "launch",
-    name: "Launch",
-    price: "Free",
+    id: "free",
+    name: "Free",
+    price: "₹0",
     cadence: "",
-    blurb: "Everything you need to get an evidence-backed profile in front of employers.",
-    features: ["Career assessment and skill graph", "Portfolio and evidence vault", "Launchpad jobs and referrals", "Pulse community"],
+    blurb: "Find out how job-ready you are, and start practising today.",
+    rows: [
+      { label: "Arena practice", value: "Weekly spin: 4 to 9 challenges", included: true },
+      { label: "Skill gaps", value: "Your top 3 gaps", included: true },
+      { label: "AI mock interview", value: "1 free session, then ₹29 each", included: true },
+      { label: "Proof portfolio", value: "Up to 3 projects with evidence", included: true },
+      { label: "Skill Passport", value: "Shareable link and QR for employers", included: true },
+      { label: "Job tracker", value: "Up to 10 applications", included: true },
+    ],
+    note: "Need more practice? Buy 20-minute mock interviews at ₹29 each, or 5 for ₹99.",
     unlocks: [],
   },
   {
-    id: "accelerate_monthly",
-    name: "Accelerate",
+    id: "pro",
+    name: "Pro",
     price: "₹499",
-    cadence: "per month",
-    blurb: "Practise interviews until the real ones feel familiar.",
-    features: ["Everything in Launch", "AI Interview: technical, behavioural and HR rounds", "Cancel any time"],
+    cadence: "for 3 months",
+    hint: "About ₹166 a month. Pay once, no auto-renew.",
+    blurb: "Everything you need to go from practising to getting interview calls.",
+    rows: [
+      { label: "Arena practice", value: "Weekly spin, with challenges matched to your role and skill gaps, never repeated", included: true, soon: true },
+      { label: "Skill gaps", value: "Full analysis and a step-by-step plan, every month", included: true },
+      { label: "AI mock interview", value: "8 sessions of 20 minutes", included: true },
+      { label: "Proof portfolio", value: "Unlimited projects, with Code DNA from your GitHub", included: true },
+      { label: "Skill Passport", value: "With your verified evidence", included: true },
+      { label: "Job tracker", value: "Unlimited applications", included: true },
+    ],
     unlocks: ["aiInterview"],
+    highlight: "Recommended",
   },
   {
-    id: "accelerate_quarterly",
-    name: "Accelerate Quarterly",
-    price: "₹1,299",
-    cadence: "every 3 months",
-    blurb: "The same plan for the length of a typical job search, for less.",
-    features: ["Everything in Accelerate", "Save about 13% against monthly"],
+    id: "elite",
+    name: "Elite",
+    price: "₹899",
+    cadence: "for 3 months",
+    hint: "About ₹300 a month. Pay once, no auto-renew.",
+    blurb: "For when you want every edge and a profile that stands out.",
+    rows: [
+      { label: "Arena practice", value: "Weekly spin, with challenges matched to your role and skill gaps, never repeated", included: true, soon: true },
+      { label: "Skill gaps", value: "Full analysis every fortnight", included: true },
+      { label: "AI mock interview", value: "15 sessions of 20 minutes", included: true },
+      { label: "Proof portfolio", value: "Unlimited, plus a mentor review of your evidence", included: true, soon: true },
+      { label: "Skill Passport", value: "With a personal branding video", included: true, soon: true },
+      { label: "Job tracker", value: "Unlimited applications", included: true },
+    ],
     unlocks: ["aiInterview"],
-    highlight: "Best value",
   },
 ];
 

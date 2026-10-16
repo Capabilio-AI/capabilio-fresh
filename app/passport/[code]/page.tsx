@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MetroScope } from "@/components/metro/MetroScope";
-import { SkillBadgeGrid } from "@/components/profile/PassportSection";
+import { BadgeWall } from "@/components/passport/badge/BadgeWall";
 import { EvidenceSection } from "@/components/passport/EvidenceSection";
 import { ReelPlayer } from "@/components/passport/reel/ReelPlayer";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -45,8 +45,8 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
 
             <section aria-labelledby="badges" className="rounded-2xl bg-white p-5 sm:p-6">
               <h2 id="badges" className="font-lp-display text-[20px] font-bold">Skill badges</h2>
-              <p className="mt-1 mb-4 font-lp-body text-[13.5px] text-[var(--m-muted)]">Earned from measured assessments and challenges on Capabilio, not self-reported.</p>
-              {passport.unlocked ? <SkillBadgeGrid skills={passport.skills} /> : <p className="font-lp-body text-[14px] text-[var(--m-muted)]">This student hasn&apos;t earned any badges yet.</p>}
+              <p className="mt-1 mb-4 font-lp-body text-[13.5px] text-[var(--m-muted)]">Each badge was earned by demonstrated work on Capabilio, never self-reported. Tap a badge to see the work behind it.</p>
+              {passport.unlocked ? <BadgeWall skills={passport.skills} audience="public" /> : <p className="font-lp-body text-[14px] text-[var(--m-muted)]">This student hasn&apos;t earned any badges yet.</p>}
             </section>
 
             <EvidenceSection evidence={evidence} />

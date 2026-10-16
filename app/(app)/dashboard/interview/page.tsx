@@ -30,7 +30,7 @@ export default async function InterviewPage() {
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--m-accent-soft)] text-[var(--m-accent-ink)]">
               <Sparkles size={18} />
             </span>
-            <h2 className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">AI Interview is part of the Accelerate plan</h2>
+            <h2 className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">AI Interview is part of Pro and Elite</h2>
             <p className="max-w-md text-[14px] text-[var(--m-muted)]">Practise technical, behavioural and HR rounds with feedback. You are not charged during early access.</p>
             <Link href="/plans" className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--m-ink)] px-5 py-2.5 text-[13.5px] font-bold text-white">
               <MessagesSquare size={15} />

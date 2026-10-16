@@ -19,9 +19,11 @@
     "arena:backfill-domain": "node --env-file=.env.local --import tsx scripts/arena-backfill-domain.mts",
     "stream:import": "node --env-file=.env.local --import tsx scripts/stream-import.mts",
     "stream:bulk": "node --env-file=.env.local --import tsx scripts/stream-bulk.mts",
-    "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts"
+    "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts",
+    "pg:template": "node --import tsx scripts/pg-template.mts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@remotion/player": "^4.0.534",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
@@ -30,9 +32,11 @@
     "clsx": "^2.1.1",
     "framer-motion": "^13.4.0",
     "groq-sdk": "^1.6.0",
+    "linkedom": "0.18.12",
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
     "pdf-parse": "^2.4.5",
+    "postcss": "8.5.28",
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -41,6 +45,7 @@
     "sql.js": "^1.13.0",
     "thinking-orbs": "^0.3.2",
     "ws": "^8.21.3",
+    "yaml": "2.8.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {

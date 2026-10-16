@@ -2,12 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // pdf-parse (pdfjs) must load from node_modules at runtime, not be bundled
-  serverExternalPackages: ["pdf-parse", "pdfjs-dist", "sql.js"],
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist", "sql.js", "@electric-sql/pglite"],
   // pdfjs loads @napi-rs/canvas (DOMMatrix) through a dynamic require the file tracer cannot see; without it the PDF routes
   // crash on Vercel with "DOMMatrix is not defined". Ship the package and its platform binary with those routes.
   outputFileTracingIncludes: {
     "/api/admin/curriculum/extractions": ["./node_modules/@napi-rs/canvas*/**/*"],
     "/api/graduate/resume": ["./node_modules/@napi-rs/canvas*/**/*"],
+    // the SQL workspace runs queries in workers that load sql.js and PGlite (plus its starting snapshot) from disk, which the tracer cannot see
+    "/api/arena/domain/**/*": ["./node_modules/sql.js/dist/**/*", "./node_modules/@electric-sql/pglite/dist/**/*", "./lib/workplace/sql/assets/*"],
   },
   // Dashboard tabs were merged; keep old bookmarks and emailed links working.
   async redirects() {

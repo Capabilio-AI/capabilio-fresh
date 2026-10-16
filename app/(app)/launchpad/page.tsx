@@ -8,8 +8,10 @@ import { studentGate } from "@/lib/assess/gate";
 import type { Db as AssessDb } from "@/lib/assess/db";
 import { createServiceClient as createGateClient } from "@/lib/supabase/service";
 import { getViewerSummary } from "@/lib/dashboard/viewer";
-import { matchCareersForStudent } from "@/lib/career/match";
 import { listOpenOpportunities, type OpportunityType } from "@/lib/launchpad/opportunities";
+import { loadSkillContext } from "@/lib/arena/skill-context";
+import { matchJob } from "@/lib/launchpad/match";
+import { JobMatch } from "@/components/launchpad/JobMatch";
 import { StudentPlacementOffers } from "@/components/org/StudentPlacementOffers";
 import { ActionButton } from "@/components/org/ActionButton";
 import { REGISTRATION_LABEL } from "@/lib/org/visits";
@@ -30,10 +32,7 @@ export default async function LaunchpadPage() {
   const gate = await studentGate(createGateClient() as unknown as AssessDb, user.id);
   if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="Launchpad recommendations" />;
 
-  const [viewer, careerMatches] = await Promise.all([
-    getViewerSummary(supabase, user.id),
-    matchCareersForStudent(supabase, user.id),
-  ]);
+  const viewer = await getViewerSummary(supabase, user.id);
 
   const direction = viewer.direction;
   // A graduate is job-hunting now, so Launchpad is always open for them.
@@ -64,7 +63,8 @@ export default async function LaunchpadPage() {
   const { data: myApps } = await supabase.from("applications").select("opportunity_id, status").eq("user_id", user.id);
   const appliedStatus = new Map((myApps ?? []).map((a) => [a.opportunity_id, a.status]));
   const APPLIED_LABEL = REGISTRATION_LABEL;
-  const gapSkills = new Set((careerMatches[0]?.skillGaps ?? []).map((g) => g.skill));
+  // measured capability per catalog skill, read once; each listing is compared with it
+  const skillContext = await loadSkillContext(createGateClient(), user.id);
 
   return (
     <div>
@@ -92,7 +92,7 @@ export default async function LaunchpadPage() {
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {opportunities.map((opp) => {
-            const matchedSkills = opp.skills.filter((s) => gapSkills.has(s));
+            const match = matchJob(opp.skills, skillContext.resolve, skillContext.levelOf);
             return (
               <div key={opp.id} className="flex flex-col gap-3 rounded-xl border border-app-border bg-white p-5">
                 <div className="flex items-start justify-between gap-2">
@@ -116,19 +116,11 @@ export default async function LaunchpadPage() {
                   </p>
                 )}
 
-                {opp.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {opp.skills.map((s) => (
-                      <span
-                        key={s}
-                        className={`rounded-full border px-2 py-0.5 font-lp-mono text-[10.5px] ${
-                          gapSkills.has(s) ? "border-app-orange text-app-orange" : "border-app-border text-app-muted"
-                        }`}
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
+                <JobMatch match={match} practise={skillContext.practisable} />
+                {match.counted > 0 && (
+                  <Link href={`/arena/prepare?job=${opp.id}`} className="inline-flex w-fit items-center gap-1.5 rounded-full border border-app-charcoal px-3.5 py-1.5 font-lp-body text-[12.5px] font-semibold text-app-charcoal transition-colors hover:bg-app-charcoal hover:text-white">
+                    Prepare for this job
+                  </Link>
                 )}
 
                 {opp.campus && (opp.driveDate || opp.ctcOffered || opp.eligibleBranches.length > 0) && (
@@ -170,7 +162,7 @@ export default async function LaunchpadPage() {
 
                 <div className="mt-auto flex items-center justify-between border-t border-app-border pt-3">
                   <span className="font-lp-mono text-[10.5px] text-app-charcoal">
-                    {opp.skills.length > 0 ? `${matchedSkills.length}/${opp.skills.length} skills to build` : ""}
+                    {match.gaps.length > 0 ? `${match.gaps.length} skill${match.gaps.length === 1 ? "" : "s"} to build` : match.counted > 0 ? "Every skill ready" : ""}
                   </span>
                   {opp.deadline && (
                     <span className="flex items-center gap-1 font-lp-mono text-[10.5px] text-app-muted">

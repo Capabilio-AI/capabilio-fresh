@@ -13,6 +13,8 @@ export interface PublicAttempt {
   submissionCount: number;
   lastGrade: { passed: boolean; message: string; checks: { label: string; passed: boolean }[] } | null;
   area: { key: string | null; name: string | null };
+  /** a solved task waits for the user to explain it */
+  explain?: { submission: string; checks: string[]; attempts: number; maxAttempts: number } | null;
   challenge: {
     id: string;
     title: string;
@@ -34,6 +36,8 @@ interface Feedback {
   checks: { label: string; passed: boolean }[];
   points?: number;
   nextAvailableAt?: string;
+  /** solved; the rating comes after the user explains their work */
+  explain?: boolean;
 }
 
 const noop = () => {};
@@ -95,9 +99,9 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
         </span>
         <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px]">
           <span className="text-white/60">{attempt.area.name}</span>
-          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? "Verified" : "In progress"}</span>
+          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? (feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
           {!closed && <Countdown target={expiresAt} onDone={() => onClose(false)} />}
-          <span className="font-semibold text-app-orange">+{ELO_BY_DIFFICULTY[challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO</span>
+          <span className="font-semibold text-app-orange" title="Awarded after you explain your work">+{ELO_BY_DIFFICULTY[challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO after the interview</span>
         </span>
       </header>
 
@@ -145,7 +149,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
             <div className={`rounded-xl border px-5 py-4 ${feedback.passed ? "border-app-success/30 bg-app-success-container" : "border-app-warning/30 bg-app-warning-container"}`} role="status">
               <p className={`flex items-center gap-2 font-lp-body text-[14px] font-semibold ${feedback.passed ? "text-app-success" : "text-app-warning"}`}>
                 {feedback.passed ? <CheckCircle2 size={17} /> : <CircleX size={17} />}
-                {feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : "Not quite — the task is still open"}
+                {feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : "Not quite — the task is still open"}
               </p>
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
               {feedback.checks.length > 0 && (
@@ -157,6 +161,11 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
                   ))}
                 </ul>
               )}
+              {feedback.explain && (
+                <p className="mt-2 font-lp-body text-[13px] text-app-charcoal">
+                  Your rating is awarded after a short interview about your work. It then updates your portfolio and skill graph.
+                </p>
+              )}
               {feedback.passed && feedback.nextAvailableAt && (
                 <p className="mt-2 font-lp-body text-[13px] text-app-charcoal">
                   Added to your portfolio as verified {attempt.area.name} evidence. Next task in <Countdown target={feedback.nextAvailableAt} onDone={noop} />.
@@ -164,14 +173,14 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
               )}
               {feedback.passed && (
                 <button type="button" onClick={() => onClose(true)} className="mt-3 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white">
-                  Back to Arena
+                  {feedback.explain ? "Explain your work" : "Back to Arena"}
                 </button>
               )}
             </div>
           )}
           {error && <p className="rounded-lg bg-app-rose-container px-4 py-2.5 font-lp-body text-[13px] text-app-rose">{error}</p>}
           {Tool ? (
-            <Tool attemptId={attempt.attemptId} content={challenge.content as never} closed={closed} submitting={submitting} onSubmit={submit} />
+            <Tool attemptId={attempt.attemptId} content={challenge.content as never} closed={closed} submitting={submitting} onSubmit={submit} lastChecks={feedback?.checks} />
           ) : (
             <p className="font-lp-body text-[13px] text-app-muted">This workstation isn&apos;t available in this version of the app.</p>
           )}

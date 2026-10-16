@@ -2,7 +2,11 @@
 
 import type { ComponentType } from "react";
 import { CleaningTool } from "./CleaningTool";
+import { CodeTool } from "./CodeTool";
+import { ConfigTool } from "./ConfigTool";
 import { DashboardTool } from "./DashboardTool";
+import { InvestigationTool } from "./InvestigationTool";
+import { MlTool } from "./MlTool";
 import { SpreadsheetTool } from "./SpreadsheetTool";
 import { SqlTool } from "./SqlTool";
 import { StatisticsTool } from "./StatisticsTool";
@@ -15,5 +19,10 @@ export const WORKSTATIONS: Record<string, { label: string; component: ComponentT
   statistics_workspace: { label: "Statistics workspace", component: StatisticsTool as ComponentType<ToolProps<never>> },
   cleaning_workspace: { label: "Data prep workspace", component: CleaningTool as ComponentType<ToolProps<never>> },
   dashboard_workspace: { label: "BI workspace", component: DashboardTool as ComponentType<ToolProps<never>> },
+  investigation_workspace: { label: "Investigation workspace", component: InvestigationTool as ComponentType<ToolProps<never>> },
+  code_workspace: { label: "Code editor", component: CodeTool as ComponentType<ToolProps<never>> },
+  devops_workspace: { label: "Config editor", component: ConfigTool as ComponentType<ToolProps<never>> },
+  frontend_workspace: { label: "Frontend editor", component: ConfigTool as ComponentType<ToolProps<never>> },
+  ml_workspace: { label: "ML notebook", component: MlTool as ComponentType<ToolProps<never>> },
   spreadsheet_workspace: { label: "Excel workbook", component: SpreadsheetTool as ComponentType<ToolProps<never>> },
 };

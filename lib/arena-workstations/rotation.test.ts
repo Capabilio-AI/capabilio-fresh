@@ -134,3 +134,18 @@ describe("orderByWeakness", () => {
     expect(orderByWeakness(["sql"], rating({}), "sql")).toEqual(["sql"]);
   });
 });
+
+import { preferArea } from "./rotation";
+describe("preferArea", () => {
+  it("brings the asked-for area to the front without losing or duplicating any other", () => {
+    expect(preferArea(["sql", "stats", "clean"], "clean", null)).toEqual(["clean", "sql", "stats"]);
+  });
+  it("leaves the order alone when the area is not left in this cycle, is already first, or is the one just served", () => {
+    expect(preferArea(["sql", "stats"], "dashboard", null)).toEqual(["sql", "stats"]);
+    expect(preferArea(["sql", "stats"], "sql", null)).toEqual(["sql", "stats"]);
+    expect(preferArea(["sql", "stats"], "stats", "stats")).toEqual(["sql", "stats"]);
+  });
+  it("does nothing when no area is asked for", () => {
+    expect(preferArea(["sql", "stats"], undefined, null)).toEqual(["sql", "stats"]);
+  });
+});

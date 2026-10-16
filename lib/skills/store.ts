@@ -16,6 +16,13 @@ export async function loadSkillIndex(client: Service): Promise<SkillIndex> {
   return buildSkillIndex(skills ?? [], (aliases ?? []).map((a) => ({ skillId: a.skill_id, alias: a.alias })));
 }
 
+/** Active canonical skills by id, for showing a skill's name. */
+export async function loadSkillNames(client: Service): Promise<Map<string, string>> {
+  const { data, error } = await client.from("skills").select("id, name").eq("status", "active");
+  if (error) throw new Error("Could not load the skill names.");
+  return new Map((data ?? []).map((s) => [s.id, s.name]));
+}
+
 /**
  * Text that did not resolve goes to the review queue — it is NEVER turned into a skill automatically.
  * Service role only (the table is private). ponytail: read-then-write, so concurrent hits can undercount `occurrences`; it is advisory.

@@ -14,7 +14,10 @@ describe("pickActiveRole — explicit selection is config/data, not a code path 
   it("an explicit active_role_key beats existing engagement and stated career", () => {
     expect(pickActiveRole(ROLES, { activeRoleKey: "ml-engineer", engagedRoleKey: "data-analyst", statedRole: "data-analyst" })?.role_key).toBe("ml-engineer");
   });
-  it("without a selection the previous behavior is unchanged: engaged, then stated career, then first role", () => {
+  it("a stated career that matches a role beats a role the user only sampled", () => {
+    expect(pickActiveRole(ROLES, { activeRoleKey: null, engagedRoleKey: "data-analyst", statedRole: "ml-engineer" })?.role_key).toBe("ml-engineer");
+  });
+  it("without a selection: stated career, then the engaged role, then the first role", () => {
     expect(pickActiveRole(ROLES, { activeRoleKey: null, engagedRoleKey: "ml-engineer", statedRole: null })?.role_key).toBe("ml-engineer");
     expect(pickActiveRole(ROLES, { activeRoleKey: null, engagedRoleKey: null, statedRole: "ml-engineer" })?.role_key).toBe("ml-engineer");
     expect(pickActiveRole(ROLES, { activeRoleKey: null, engagedRoleKey: null, statedRole: null })?.role_key).toBe("data-analyst");

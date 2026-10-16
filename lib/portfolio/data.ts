@@ -18,6 +18,8 @@ export interface ArenaTask {
   /** Catalog Domain tickets carry their score and ELO; legacy workstation tasks do not. */
   score?: number;
   eloDelta?: number;
+  /** how well the user explained this task in the Arena interview (0-100), when they did; a rating is only awarded after one */
+  explanationScore?: number;
 }
 
 export interface GithubEvidence {
@@ -124,7 +126,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
       : Promise.resolve({ data: [] as { id: string; title: string; content: unknown; requester: string | null }[] }),
     supabase.from("arena_skill_areas").select("role_key, area_key, display_name"),
   ]);
-  const arenaTasks: ArenaTask[] = (completions ?? []).map((c) => {
+  let arenaTasks: ArenaTask[] = (completions ?? []).map((c) => {
     const ch = challenges?.find((x) => x.id === c.challenge_id);
     return {
       attemptId: c.attempt_id,
@@ -148,6 +150,12 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     .filter((t) => t.arena_challenges?.track === "domain")
     .map((t) => ({ attemptId: t.id, title: t.arena_challenges!.title, company: null, area: "Domain ticket", completedAt: t.submitted_at, score: t.score ?? 0, eloDelta: t.elo_delta ?? 0 }));
   arenaTasks.push(...ticketTasks);
+  // a task that earned its rating through the "explain your work" interview carries the interview score
+  if (arenaTasks.length > 0) {
+    const { data: explained } = await untyped(createServiceClient()).from("arena_task_interviews").select("attempt_id, score").in("attempt_id", arenaTasks.map((t) => t.attemptId)).eq("passed", true);
+    const scores = new Map(((explained ?? []) as { attempt_id: string; score: number | null }[]).map((r) => [r.attempt_id, r.score]));
+    arenaTasks = arenaTasks.map((t) => (typeof scores.get(t.attemptId) === "number" ? { ...t, explanationScore: scores.get(t.attemptId)! } : t));
+  }
   arenaTasks.sort((a, b) => ((a.completedAt ?? "") < (b.completedAt ?? "") ? 1 : -1));
 
   const graph = await loadGraph(userId);

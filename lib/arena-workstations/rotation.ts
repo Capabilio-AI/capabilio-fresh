@@ -81,3 +81,12 @@ export function orderByWeakness(remaining: readonly string[], ratingOf: (area: s
   if (ordered.length > 1 && ordered[0] === lastServed) [ordered[0], ordered[1]] = [ordered[1], ordered[0]];
   return ordered;
 }
+
+/**
+ * Pure. When a user asks to practise a particular skill (for example from a job's skill gap), that area goes first, provided it is still left in this
+ * cycle and was not the one just served. Everything else keeps its order, so every area is still served once per cycle.
+ */
+export function preferArea(remaining: readonly string[], preferred: string | undefined, lastServed: string | null): string[] {
+  if (!preferred || preferred === lastServed || remaining[0] === preferred || !remaining.includes(preferred)) return [...remaining];
+  return [preferred, ...remaining.filter((a) => a !== preferred)];
+}
