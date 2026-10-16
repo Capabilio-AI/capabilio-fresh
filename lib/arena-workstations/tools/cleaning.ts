@@ -4,6 +4,9 @@ import type { Json } from "@/lib/supabase/types";
 import { DatasetSchema, datasetProblems, type Dataset } from "../engines/dataset";
 import { CleaningStepSchema, applySteps, compareCleanTables, describeStep, noOpSteps, type CleaningStep } from "../engines/cleaning";
 import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type GeneratedChallenge, type ToolDefinition } from "../types";
+import { hashSeed, makeRng } from "@/lib/workplace/rng";
+import { checkClean, pickOffice } from "@/lib/workplace/office/pick";
+import { worldForRole, type World } from "@/lib/workplace/worlds";
 import { HeaderSchema, avoidLine, requesterLine, systemPreamble, withProblems } from "./common";
 
 const GenerationSchema = HeaderSchema.extend({
@@ -34,7 +37,7 @@ function problemsIn(raw: z.infer<typeof GenerationSchema>): string[] {
   return problems;
 }
 
-async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+async function generateWithAi(ctx: GenerationContext): Promise<GeneratedChallenge> {
   const stepCount = ctx.difficulty === "easy" ? "3-4" : ctx.difficulty === "medium" ? "4-5" : "5-7";
   const system = `${systemPreamble(ctx, "data preparation work (a Power Query-style cleaning tool)")}
 
@@ -71,6 +74,34 @@ Every step must actually change the data, and the mess must be realistic (typos 
     content: content as unknown as Json,
     answer_key: { steps: raw.steps, expected_rows: expectedRows } as unknown as Json,
   };
+}
+
+/** A ticket on a large raw export of the company's own orders, with the answer computed by applying the reference steps (no AI involved). */
+function generateFromWorld(ctx: GenerationContext, world: World): GeneratedChallenge {
+  const picked = pickOffice(
+    { templates: world.office!.cleaning, areaKey: ctx.areaKey ?? "data_cleaning", difficulty: ctx.difficulty, level: ctx.level ?? "fresher", rng: makeRng(ctx.ticketSeed ?? hashSeed("clean")), avoidTitles: ctx.avoidTitles, tables: world.generate(ctx.worldSeed!) },
+    checkClean
+  );
+  if (!picked) throw new GenerationRejected("no valid cleaning ticket could be built for this user");
+  const { draft, checked } = picked;
+  const content: CleaningContent = { company: world.name, dataset: draft.dataset, requirements: draft.steps.map(describeStep) };
+  return {
+    title: draft.title,
+    category: ctx.areaName,
+    requester: `${draft.requester.name} · ${draft.requester.title}`,
+    scenario: draft.scenario,
+    objective: content.requirements.map((r, i) => `${i + 1}. ${r}`).join("\n"),
+    skill_tags: draft.skillTags,
+    time_limit_minutes: TIME_LIMIT_MINUTES[ctx.difficulty],
+    content: content as unknown as Json,
+    answer_key: { steps: draft.steps, expected_rows: checked.expectedRows } as unknown as Json,
+    origin: { provider: "template", model: `${world.key}.cleaning.v1` },
+  };
+}
+
+async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+  const world = worldForRole(ctx.roleKey);
+  return world?.office && ctx.worldSeed !== undefined ? generateFromWorld(ctx, world) : generateWithAi(ctx);
 }
 
 const SubmissionSchema = z.object({ steps: z.array(CleaningStepSchema).max(25) });

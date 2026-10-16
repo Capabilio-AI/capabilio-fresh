@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/lib/supabase/types";
-import { cryptoRandomIndex, orderByWeakness, reconcileRotation, type RandomIndex, type RotationSnapshot } from "./rotation";
+import { cryptoRandomIndex, orderByWeakness, preferArea, reconcileRotation, type RandomIndex, type RotationSnapshot } from "./rotation";
 import { logArenaEvent } from "./log";
 
 export interface Reservation {
@@ -26,7 +26,9 @@ export async function reserveNextArea(
   activeAreaKeys: string[],
   randomIndex: RandomIndex = cryptoRandomIndex,
   /** Arena rating per area; the lowest is served first. Omit to keep the plain rotation order. */
-  ratings?: Readonly<Record<string, number>>
+  ratings?: Readonly<Record<string, number>>,
+  /** an area the user asked to practise; served first when it is still left in this cycle */
+  preferred?: string
 ): Promise<Reservation> {
   const { error: seedError } = await service.from("arena_rotation_state").upsert({ user_id: userId, role_key: roleKey }, { onConflict: "user_id,role_key", ignoreDuplicates: true });
   if (seedError) throw seedError;
@@ -43,6 +45,8 @@ export async function reserveNextArea(
       const ordered = orderByWeakness(next.remaining, (area) => ratings[area] ?? DEFAULT_RATING, next.lastServed);
       if (ordered.some((a, i) => a !== next.remaining[i])) { next.remaining = ordered; changed = true; }
     }
+    const asked = preferArea(next.remaining, preferred, next.lastServed);
+    if (asked.some((a, i) => a !== next.remaining[i])) { next.remaining = asked; changed = true; }
     if (!changed) return { areaKey: next.remaining[0], version: row.version, cycleNumber: next.cycleNumber };
 
     const { data: updated, error: updateError } = await service

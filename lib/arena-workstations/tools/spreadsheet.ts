@@ -4,6 +4,9 @@ import type { Json } from "@/lib/supabase/types";
 import { DatasetSchema, datasetProblems } from "../engines/dataset";
 import { SheetTaskSchema, buildLayout, computeExpectedCells, gradeSpreadsheet, type SheetLayout, type SpreadsheetContent } from "../engines/spreadsheet";
 import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type GeneratedChallenge, type ToolDefinition } from "../types";
+import { hashSeed, makeRng } from "@/lib/workplace/rng";
+import { checkSheet, pickOffice } from "@/lib/workplace/office/pick";
+import { worldForRole, type World } from "@/lib/workplace/worlds";
 import { HeaderSchema, avoidLine, requesterLine, systemPreamble, withProblems } from "./common";
 
 const GenerationSchema = HeaderSchema.extend({
@@ -38,7 +41,7 @@ function problemsIn(raw: z.infer<typeof GenerationSchema>): string[] {
   return problems;
 }
 
-async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+async function generateWithAi(ctx: GenerationContext): Promise<GeneratedChallenge> {
   const system = `${systemPreamble(ctx, "Excel workbook")}
 
 Shape:
@@ -77,6 +80,34 @@ stakeholder actually needs (e.g. line revenue, margin %, regional totals, tax ra
     content: content as unknown as Json,
     answer_key: { expected } as unknown as Json,
   };
+}
+
+/** A ticket on a slice of the company's own data, with the answers computed from it (no AI involved). */
+function generateFromWorld(ctx: GenerationContext, world: World): GeneratedChallenge {
+  const picked = pickOffice(
+    { templates: world.office!.sheets, areaKey: ctx.areaKey ?? "spreadsheet", difficulty: ctx.difficulty, level: ctx.level ?? "fresher", rng: makeRng(ctx.ticketSeed ?? hashSeed("sheet")), avoidTitles: ctx.avoidTitles, tables: world.generate(ctx.worldSeed!) },
+    checkSheet
+  );
+  if (!picked) throw new GenerationRejected("no valid spreadsheet ticket could be built for this user");
+  const { draft, checked } = picked;
+  const content: SpreadsheetPublicContent = { ...draft.content, company: world.name, layout: checked.layout };
+  return {
+    title: draft.title,
+    category: ctx.areaName,
+    requester: `${draft.requester.name} · ${draft.requester.title}`,
+    scenario: draft.scenario,
+    objective: checked.layout.targets.map((t, i) => `${i + 1}. ${t.instruction}`).join("\n"),
+    skill_tags: draft.skillTags,
+    time_limit_minutes: TIME_LIMIT_MINUTES[ctx.difficulty],
+    content: content as unknown as Json,
+    answer_key: { expected: checked.expected } as unknown as Json,
+    origin: { provider: "template", model: `${world.key}.spreadsheet.v1` },
+  };
+}
+
+async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+  const world = worldForRole(ctx.roleKey);
+  return world?.office && ctx.worldSeed !== undefined ? generateFromWorld(ctx, world) : generateWithAi(ctx);
 }
 
 const SubmissionSchema = z.object({ cells: z.record(z.string().max(8), z.string().max(500)) });

@@ -41,15 +41,17 @@ export function matchRoleForStatedCareer(roles: DomainRoleRow[], statedRole: str
 /**
  * Pure precedence for a student's active domain role: an explicit choice
  * (membership.active_role_key, set by the Higher Studies Switch) wins, then the
- * role they are already engaged in, then the role matching their stated
- * career, then the first enabled role. Only enabled roles are ever returned.
+ * role matching their stated career, then the role they are already engaged in,
+ * then the first enabled role. What someone says they want to become outranks a
+ * role they once tried, so a software engineer is not stuck on tickets from a
+ * role they only sampled. Only enabled roles are ever returned.
  */
 export function pickActiveRole(
   roles: DomainRoleRow[],
   opts: { activeRoleKey: string | null; engagedRoleKey: string | null; statedRole: string | null }
 ): DomainRoleRow | null {
   const byKey = (key: string | null) => (key ? roles.find((r) => r.role_key === key) : undefined);
-  return byKey(opts.activeRoleKey) ?? byKey(opts.engagedRoleKey) ?? matchRoleForStatedCareer(roles, opts.statedRole) ?? roles[0] ?? null;
+  return byKey(opts.activeRoleKey) ?? matchRoleForStatedCareer(roles, opts.statedRole) ?? byKey(opts.engagedRoleKey) ?? roles[0] ?? null;
 }
 
 /**

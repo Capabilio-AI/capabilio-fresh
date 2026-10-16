@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { getWorkstationState, startNextAttempt, submitAttempt, AttemptError } from "./attempts";
+import { getWorkstationState, startNextAttempt, submitAttempt, finishVerified, AttemptError } from "./attempts";
 import { createThrowawayUser, deleteThrowawayUser, liveServiceClient } from "./live-test-helpers";
 import { referenceSubmission } from "./reference-submission";
 
@@ -49,6 +49,12 @@ describe("Data Analyst end-to-end", () => {
       const { data: ratingBefore } = await service.from("arena_skill_ratings").select("rating, verified_count").eq("user_id", userId).eq("area_key", area).maybeSingle();
       const right = await submitAttempt(service, userId, attempt.attemptId, referenceSubmission(instance.tool_type!, instance.content, instance.answer_key));
       expect(right.passed).toBe(true);
+      // Solving the task does not award the rating by itself: it waits for the "explain your work" interview.
+      expect((right as { explain?: boolean }).explain).toBe(true);
+      const { data: waiting } = await service.from("arena_skill_ratings").select("verified_count").eq("user_id", userId).eq("area_key", area).maybeSingle();
+      expect(waiting?.verified_count ?? 0).toBe(ratingBefore?.verified_count ?? 0);
+      // A passing interview is what completes it (the interview itself is covered by explain-attempts.test.ts).
+      await finishVerified(service, userId, attempt.attemptId);
 
       const { data: ratingAfter } = await service.from("arena_skill_ratings").select("rating, verified_count").eq("user_id", userId).eq("area_key", area).single();
       expect(ratingAfter!.verified_count).toBe((ratingBefore?.verified_count ?? 0) + 1);

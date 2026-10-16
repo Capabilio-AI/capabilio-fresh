@@ -4,6 +4,9 @@ import type { Json } from "@/lib/supabase/types";
 import { DatasetSchema, datasetProblems, type Dataset } from "../engines/dataset";
 import { STATISTICS_BY_DIFFICULTY, computeExpected, describeQuestion, gradeAnswers, type AnswerField, type ExpectedAnswer, type StatQuestion } from "../engines/stats";
 import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type GeneratedChallenge, type ToolDefinition } from "../types";
+import { hashSeed, makeRng } from "@/lib/workplace/rng";
+import { checkStats, pickOffice } from "@/lib/workplace/office/pick";
+import { worldForRole, type World } from "@/lib/workplace/worlds";
 import { HeaderSchema, avoidLine, requesterLine, systemPreamble, withProblems } from "./common";
 
 const QuestionSchema = z.discriminatedUnion("statistic", [
@@ -27,7 +30,7 @@ interface StatisticsAnswerKey {
   expected: ExpectedAnswer[];
 }
 
-async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+async function generateWithAi(ctx: GenerationContext): Promise<GeneratedChallenge> {
   const allowed = STATISTICS_BY_DIFFICULTY[ctx.difficulty];
   const system = `${systemPreamble(ctx, "statistics / experimentation work")}
 
@@ -77,6 +80,34 @@ Ask 1-${ctx.difficulty === "easy" ? 2 : 3} questions that genuinely help the sta
     content: content as unknown as Json,
     answer_key: { questions, expected } as unknown as Json,
   };
+}
+
+/** A ticket on per-order measurements from the company's own data; every answer is computed from them (no AI involved). */
+function generateFromWorld(ctx: GenerationContext, world: World): GeneratedChallenge {
+  const picked = pickOffice(
+    { templates: world.office!.statistics, areaKey: ctx.areaKey ?? "statistics", difficulty: ctx.difficulty, level: ctx.level ?? "fresher", rng: makeRng(ctx.ticketSeed ?? hashSeed("statistics")), avoidTitles: ctx.avoidTitles, tables: world.generate(ctx.worldSeed!) },
+    checkStats
+  );
+  if (!picked) throw new GenerationRejected("no valid statistics ticket could be built for this user");
+  const { draft, checked } = picked;
+  const content: StatisticsContent = { company: world.name, dataset: draft.dataset, questions: draft.questions.map((q) => ({ id: q.id, ...describeQuestion(q) })) };
+  return {
+    title: draft.title,
+    category: ctx.areaName,
+    requester: `${draft.requester.name} · ${draft.requester.title}`,
+    scenario: draft.scenario,
+    objective: content.questions.map((q, i) => `${i + 1}. ${q.text}`).join("\n"),
+    skill_tags: draft.skillTags,
+    time_limit_minutes: TIME_LIMIT_MINUTES[ctx.difficulty],
+    content: content as unknown as Json,
+    answer_key: { questions: draft.questions, expected: checked.expected } as unknown as Json,
+    origin: { provider: "template", model: `${world.key}.statistics.v1` },
+  };
+}
+
+async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+  const world = worldForRole(ctx.roleKey);
+  return world?.office && ctx.worldSeed !== undefined ? generateFromWorld(ctx, world) : generateWithAi(ctx);
 }
 
 const SubmissionSchema = z.object({

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
-import { getStatedCareerInterest } from "@/lib/career/interest-statement";
+import { getWorkstationCareer } from "@/lib/career/workstation-career";
 import { getWorkstationState } from "@/lib/arena-workstations/attempts";
 import { attemptErrorResponse } from "@/lib/arena-workstations/http";
 
@@ -13,8 +13,8 @@ export async function GET() {
   if ("error" in auth) return auth.error;
 
   try {
-    const statedRole = await getStatedCareerInterest(supabase, auth.userId);
-    return NextResponse.json(await getWorkstationState(createServiceClient(), auth.userId, statedRole));
+    const service = createServiceClient();
+    return NextResponse.json(await getWorkstationState(service, auth.userId, await getWorkstationCareer(service, auth.userId)));
   } catch (error) {
     return attemptErrorResponse(error, "arena/domain");
   }

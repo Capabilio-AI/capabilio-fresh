@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, BookOpen, CheckCircle2, Clock, Code2, Loader2, Lock, Trophy } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { Countdown } from "../workstations/Countdown";
 import { WorkstationShell, type PublicAttempt } from "../workstations/WorkstationShell";
+import type { SprintView } from "@/lib/workplace/sprint-server";
+import { SprintBoard } from "./SprintBoard";
+import { ExplainWork } from "./ExplainWork";
 
 interface AreaProgress {
   key: string;
@@ -18,6 +22,7 @@ interface AreaProgress {
 }
 
 type DomainState = {
+  sprint: SprintView | null;
   role: { key: string; label: string; parentSkill: string };
   statedRole: string | null;
   progress: AreaProgress[];
@@ -25,6 +30,8 @@ type DomainState = {
 } & ({ state: "not_started" } | { state: "ready" } | { state: "unavailable" } | { state: "active"; attempt: PublicAttempt } | { state: "cooldown"; nextAvailableAt: string });
 
 export function DomainWorkspace() {
+  // a link such as a job's skill gap can ask to practise one skill area first; the server decides whether it can
+  const focus = useSearchParams().get("focus");
   const [data, setData] = useState<DomainState | null>(null);
   const [error, setError] = useState<{ message: string; retryable: boolean } | null>(null);
   const [starting, setStarting] = useState(false);
@@ -46,11 +53,11 @@ export function DomainWorkspace() {
 
   const start = useCallback(() => {
     setStarting(true);
-    return fetch("/api/arena/domain/attempts", { method: "POST" })
+    return fetch("/api/arena/domain/attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(focus ? { focus } : {}) })
       .then(apply)
       .catch(() => setError({ message: "Could not reach the server — check your connection.", retryable: true }))
       .finally(() => setStarting(false));
-  }, [apply]);
+  }, [apply, focus]);
 
   // "ready" means a task is due: the server picks the skill area and generates it.
   const load = useCallback(
@@ -82,7 +89,7 @@ export function DomainWorkspace() {
         <div className="mb-5">
           <h2 className="font-lp-display text-[24px] font-bold text-[var(--m-ink)]">{data.role.label} Workstation</h2>
           <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-            One real work task a day. Each day&apos;s task uses a different {data.role.parentSkill.toLowerCase()} skill and tool — every skill comes up once before any repeats.
+            One real work ticket a day, five to a sprint. Each ticket uses a different {data.role.parentSkill.toLowerCase()} skill and tool — every skill comes up once before any repeats.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {data.progress.map((p) => {
@@ -102,6 +109,8 @@ export function DomainWorkspace() {
           </div>
         </div>
       )}
+
+      {data?.sprint && <SprintBoard sprint={data.sprint} />}
 
       {error && (
         <div className="rounded-2xl border border-[var(--m-rule)] bg-white px-6 py-10 text-center">
@@ -139,7 +148,9 @@ export function DomainWorkspace() {
         </div>
       )}
 
-      {!error && data?.state === "active" && (
+      {!error && data?.state === "active" && data.attempt.status === "explaining" && <ExplainWork attempt={data.attempt} onDone={load} />}
+
+      {!error && data?.state === "active" && data.attempt.status !== "explaining" && (
         <article className="flex min-h-[350px] flex-col gap-6 rounded-3xl border border-[#E0E0E0] bg-white p-6 sm:p-10">
           <div className="flex items-center justify-between gap-3">
             <span className="flex items-center gap-2 font-lp-body text-[15px] font-medium text-[#5F6368]">

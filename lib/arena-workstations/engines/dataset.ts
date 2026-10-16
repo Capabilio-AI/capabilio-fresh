@@ -7,6 +7,8 @@ export interface Column {
   name: string;
   type: ColumnType;
   description?: string;
+  /** an exact database type for this column (for example "numeric(12,2)"); without it the type is worked out from the values */
+  sqlType?: string;
 }
 
 export interface Dataset {

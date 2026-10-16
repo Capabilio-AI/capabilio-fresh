@@ -40,4 +40,6 @@ export interface ToolProps<Content> {
   closed: boolean;
   submitting: boolean;
   onSubmit: (submission: unknown) => void;
+  /** the checks of the last graded try, for tools that list their requirements */
+  lastChecks?: { label: string; passed: boolean }[];
 }

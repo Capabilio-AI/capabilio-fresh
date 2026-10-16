@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ExperienceLevel } from "@/lib/workplace/level";
 import type { Json } from "@/lib/supabase/types";
 import { TIME_LIMIT_MINUTES } from "@/lib/arena-challenges/timer";
 
@@ -28,6 +29,16 @@ export interface GenerationContext {
   areaName: string;
   difficulty: Difficulty;
   avoidTitles: string[];
+  /** set when the role works in a company world: the user's warehouse is rebuilt from worldSeed, the ticket is picked from ticketSeed */
+  roleKey?: string;
+  /** the skill area being served, so a role with several kinds of SQL work gets the right one */
+  areaKey?: string;
+  worldSeed?: number;
+  ticketSeed?: number;
+  /** the user's experience, so a senior is not handed a fresher's ticket */
+  level?: ExperienceLevel;
+  /** task kinds of their last tickets in this tool, newest first, so the next one differs */
+  recentKinds?: string[];
 }
 
 /** What a tool's generator hands back after its own validation passed. */
@@ -41,6 +52,8 @@ export interface GeneratedChallenge {
   time_limit_minutes: number;
   content: Json; // shown to the candidate — never contains answers
   answer_key: Json; // server-only
+  /** who produced it, when not the default AI provider (for example the template engine) */
+  origin?: { provider: string; model: string };
 }
 
 export interface GradeCheck {

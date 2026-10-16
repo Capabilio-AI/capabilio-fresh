@@ -2,21 +2,55 @@ import { z } from "zod";
 import { completeJson } from "@/lib/ai/groq";
 import type { Json } from "@/lib/supabase/types";
 import { DatasetSchema, datasetProblems, type Dataset } from "../engines/dataset";
+import { buildSeedSql } from "../engines/seed-sql";
+import { engineOf } from "@/lib/workplace/sql/engine";
+import { seedParts, seedText } from "@/lib/workplace/tickets/pick";
 import { runSqlQueries, type SqlResult } from "../engines/sql-runner";
+import type { Probe } from "@/lib/workplace/tickets/types";
 import { gradeSqlResult } from "../engines/sql-grade";
-import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type GeneratedChallenge, type ToolDefinition } from "../types";
+import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type GeneratedChallenge, type GradeResult, type ToolDefinition } from "../types";
+import { hashSeed, makeRng } from "@/lib/workplace/rng";
+import { worldForRole } from "@/lib/workplace/worlds";
+import { pickTicket } from "@/lib/workplace/tickets/pick";
+import type { TaskKind } from "@/lib/workplace/tickets/types";
 import { HeaderSchema, avoidLine, requesterLine, systemPreamble, withProblems } from "./common";
+
+export { buildSeedSql };
+
+/** The database a task runs on, rebuilt from its stored content exactly as it was when the ticket was validated. */
+const seedOf = (c: SqlContent): string => seedText({ tables: c.tables, setupSql: c.setupSql ?? "" }, engineOf(c.engine).key);
 
 export interface SqlContent {
   company: string;
   tables: Dataset[];
   deliverable: string;
+  /** "script": the user writes a whole SQL script (UPDATE, ALTER, CREATE INDEX ...) graded on the database it leaves behind */
+  mode?: "query" | "script";
+  /** which database runs the task; absent means SQLite */
+  engine?: "sqlite" | "postgres";
+  /** SQL run after the tables are built: constraints, roles, derived tables */
+  setupSql?: string;
+  taskKind?: string;
+  /** a debugging task: the broken query the editor opens with */
+  starter?: string;
+  /** script tasks: a read-only query run after the user's script so they can see its effect */
+  previewQuery?: string;
 }
-interface SqlAnswerKey {
+interface QueryAnswerKey {
   reference_query: string;
-  independent_query: string;
+  /** a second, independently written query (AI-made tasks only) */
+  independent_query?: string;
   expected: SqlResult;
 }
+interface ScriptAnswerKey {
+  kind: "script";
+  reference_script: string;
+  probes: Probe[];
+  /** the results of the graded probes after the reference script, in probe order */
+  expected_probes: SqlResult[];
+}
+type SqlAnswerKey = QueryAnswerKey | ScriptAnswerKey;
+const isScriptKey = (k: SqlAnswerKey): k is ScriptAnswerKey => (k as ScriptAnswerKey).kind === "script";
 
 const GenerationSchema = HeaderSchema.extend({
   tables: z.array(DatasetSchema).min(1).max(3),
@@ -25,24 +59,6 @@ const GenerationSchema = HeaderSchema.extend({
 });
 
 const READ_ONLY = /^\s*(with|select)\b/i;
-
-/** Pure. Builds the seed script from validated structured data — the AI never supplies DDL. */
-export function buildSeedSql(tables: Dataset[]): string {
-  const lines: string[] = [];
-  for (const t of tables) {
-    const cols = t.columns.map((c, j) => {
-      const values = t.rows.map((r) => r[j]).filter((v) => v !== null);
-      const type = c.type === "number" ? (values.every((v) => Number.isInteger(v)) ? "INTEGER" : "REAL") : "TEXT";
-      return `"${c.name}" ${type}`;
-    });
-    lines.push(`CREATE TABLE "${t.name}" (${cols.join(", ")});`);
-    for (const row of t.rows) {
-      const vals = row.map((v) => (v === null ? "NULL" : typeof v === "number" ? String(v) : `'${v.replace(/'/g, "''")}'`));
-      lines.push(`INSERT INTO "${t.name}" VALUES (${vals.join(", ")});`);
-    }
-  }
-  return lines.join("\n");
-}
 
 function isSingleReadOnlyStatement(q: string): boolean {
   const body = q.trim().replace(/;\s*$/, "");
@@ -61,7 +77,7 @@ function schemaText(tables: Dataset[]): string {
   return tables.map((t) => `${t.name}(${t.columns.map((c) => `${c.name} ${c.type}${c.description ? ` -- ${c.description}` : ""}`).join(", ")})`).join("\n");
 }
 
-async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+async function generateWithAi(ctx: GenerationContext): Promise<GeneratedChallenge> {
   const system = `${systemPreamble(ctx, "SQL analytics warehouse (SQLite dialect)")}
 
 Shape:
@@ -98,7 +114,7 @@ specified by "deliverable" (column meaning, rounding, sort order) so a competent
   if (!gradeSqlResult(expected, check).passed) throw new GenerationRejected("independent query disagreed with the reference");
 
   const content: SqlContent = { company: raw.company, tables: raw.tables, deliverable: raw.deliverable };
-  const answerKey: SqlAnswerKey = { reference_query: raw.reference_query, independent_query: independent.query, expected };
+  const answerKey: QueryAnswerKey = { reference_query: raw.reference_query, independent_query: independent.query, expected };
   return {
     title: raw.title,
     category: ctx.areaName,
@@ -110,6 +126,44 @@ specified by "deliverable" (column meaning, rounding, sort order) so a competent
     content: content as unknown as Json,
     answer_key: answerKey as unknown as Json,
   };
+}
+
+/** A ticket from the role's company world: the user's own warehouse, a parameterised template, an answer computed by running the reference. */
+async function generateFromWorld(ctx: GenerationContext, world: NonNullable<ReturnType<typeof worldForRole>>): Promise<GeneratedChallenge> {
+  const tables = world.generate(ctx.worldSeed!);
+  const engine = engineOf(world.engine);
+  const picked = await pickTicket({
+    templates: world.templates, difficulty: ctx.difficulty, level: ctx.level ?? "fresher", rng: makeRng(ctx.ticketSeed ?? hashSeed("ticket")),
+    avoidTitles: ctx.avoidTitles, recentKinds: (ctx.recentKinds ?? []) as TaskKind[], tables,
+    runners: engine.runners, dialect: engine.key, setupSql: world.setupSql, areaKey: ctx.areaKey,
+  });
+  if (!picked) throw new GenerationRejected("no valid ticket could be built for this user");
+  const { draft, expected } = picked;
+
+  const base = {
+    title: draft.title,
+    category: ctx.areaName,
+    requester: `${draft.requester.name} · ${draft.requester.title}`,
+    scenario: draft.scenario,
+    objective: draft.deliverable,
+    skill_tags: draft.skillTags,
+    time_limit_minutes: TIME_LIMIT_MINUTES[ctx.difficulty],
+    origin: { provider: "template", model: `${world.key}.sql.v3` },
+  };
+  if (draft.kind === "query") {
+    const content: SqlContent = { company: world.name, tables, deliverable: draft.deliverable, mode: "query", taskKind: draft.taskKind, starter: draft.starterQuery, engine: engine.key, setupSql: world.setupSql };
+    const answerKey: QueryAnswerKey = { reference_query: draft.referenceQuery, expected: expected[0] };
+    return { ...base, content: content as unknown as Json, answer_key: answerKey as unknown as Json };
+  }
+  const parts = seedParts(tables, draft, world.setupSql);
+  const content: SqlContent = { company: world.name, tables: parts.tables, deliverable: draft.deliverable, mode: "script", taskKind: draft.taskKind, previewQuery: draft.previewQuery, engine: engine.key, setupSql: parts.setupSql };
+  const answerKey: ScriptAnswerKey = { kind: "script", reference_script: draft.referenceScript, probes: draft.probes, expected_probes: expected };
+  return { ...base, content: content as unknown as Json, answer_key: answerKey as unknown as Json };
+}
+
+async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+  const world = worldForRole(ctx.roleKey);
+  return world && ctx.worldSeed !== undefined ? generateFromWorld(ctx, world) : generateWithAi(ctx);
 }
 
 const SubmissionSchema = z.object({ query: z.string().trim().min(1).max(5000), note: z.string().max(2000).optional() });
@@ -124,7 +178,8 @@ export const sqlTool: ToolDefinition<SqlSubmission> = {
   async grade(content, answerKey, submission) {
     const c = content as unknown as SqlContent;
     const key = answerKey as unknown as SqlAnswerKey;
-    const [expected, actual] = await runSqlQueries(buildSeedSql(c.tables), [key.reference_query, submission.query]);
+    if (isScriptKey(key)) return gradeScript(c, key, submission.query);
+    const [expected, actual] = await engineOf(c.engine).runners.query(seedOf(c), [key.reference_query, submission.query]);
     const feedback = gradeSqlResult(expected, actual);
     return {
       passed: feedback.passed,
@@ -139,8 +194,34 @@ export const sqlTool: ToolDefinition<SqlSubmission> = {
   },
 };
 
-/** Exploration: runs the candidate's query against their instance's data only. */
-export async function runExploratoryQuery(content: Json, query: string): Promise<SqlResult> {
-  const [result] = await runSqlQueries(buildSeedSql((content as unknown as SqlContent).tables), [query]);
+/** Script tasks: run the user's script on a fresh copy of the warehouse, then compare what the hidden probes see with the reference. */
+async function gradeScript(c: SqlContent, key: ScriptAnswerKey, script: string): Promise<GradeResult> {
+  const run = await engineOf(c.engine).runners.script(seedOf(c), script, key.probes.map((p) => p.sql));
+  if (run.scriptError) {
+    return { passed: false, message: `Your script failed: ${run.scriptError}`, checks: [{ label: "Script runs", passed: false }, ...key.probes.filter((p) => p.compare).map((p) => ({ label: p.label, passed: false }))] };
+  }
+  const graded = key.probes.flatMap((p, i) => (p.compare ? [{ label: p.label, passed: gradeSqlResult(expectedOf(key, p), run.probes[i]).passed }] : []));
+  const passed = graded.every((g) => g.passed);
+  return {
+    passed,
+    message: passed ? "The database ended up exactly as it should." : `${graded.filter((g) => !g.passed).length} of ${graded.length} checks failed. Look at the data your script left behind.`,
+    checks: [{ label: "Script runs", passed: true }, ...graded],
+  };
+}
+
+/** The reference result for one graded probe: expected_probes holds only the graded ones, in order. */
+function expectedOf(key: ScriptAnswerKey, probe: Probe): SqlResult {
+  const index = key.probes.filter((p) => p.compare).indexOf(probe);
+  return key.expected_probes[index];
+}
+
+/** Exploration: runs the candidate's SQL against their instance's data only. For a script task it runs the script then shows the preview query, unless `explore` asks to just look at the original data. */
+export async function runExploratoryQuery(content: Json, query: string, explore = false): Promise<SqlResult> {
+  const c = content as unknown as SqlContent;
+  if (c.mode === "script" && c.previewQuery && !explore) {
+    const run = await engineOf(c.engine).runners.script(seedOf(c), query, [c.previewQuery]);
+    return run.scriptError ? { error: run.scriptError } : run.probes[0];
+  }
+  const [result] = await engineOf(c.engine).runners.query(seedOf(c), [query]);
   return result;
 }

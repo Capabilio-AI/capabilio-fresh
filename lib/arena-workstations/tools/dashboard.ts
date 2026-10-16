@@ -4,6 +4,9 @@ import type { Json } from "@/lib/supabase/types";
 import { DatasetSchema, datasetProblems, type Dataset } from "../engines/dataset";
 import { BiSpecSchema, describeSpec, evaluateSpec, gradeDashboard, suitableChartTypes, type BiSpec } from "../engines/bi";
 import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type GeneratedChallenge, type ToolDefinition } from "../types";
+import { hashSeed, makeRng } from "@/lib/workplace/rng";
+import { checkDashboard, pickOffice } from "@/lib/workplace/office/pick";
+import { worldForRole, type World } from "@/lib/workplace/worlds";
 import { HeaderSchema, avoidLine, requesterLine, systemPreamble, withProblems } from "./common";
 
 const GenerationSchema = HeaderSchema.extend({ dataset: DatasetSchema, spec: BiSpecSchema });
@@ -30,7 +33,7 @@ function problemsIn(raw: z.infer<typeof GenerationSchema>): string[] {
   return problems;
 }
 
-async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+async function generateWithAi(ctx: GenerationContext): Promise<GeneratedChallenge> {
   const system = `${systemPreamble(ctx, "BI / dashboarding tool")}
 
 Shape:
@@ -64,6 +67,34 @@ stakeholder's question. Use "month" grain only with a date dimension; a time tre
     content: content as unknown as Json,
     answer_key: { spec: raw.spec } as unknown as Json,
   };
+}
+
+/** A ticket on a reporting table built from the company's own data; the chart that answers it is fixed by the template (no AI involved). */
+function generateFromWorld(ctx: GenerationContext, world: World): GeneratedChallenge {
+  const picked = pickOffice(
+    { templates: world.office!.dashboards, areaKey: ctx.areaKey ?? "dashboard", difficulty: ctx.difficulty, level: ctx.level ?? "fresher", rng: makeRng(ctx.ticketSeed ?? hashSeed("dashboard")), avoidTitles: ctx.avoidTitles, tables: world.generate(ctx.worldSeed!) },
+    checkDashboard
+  );
+  if (!picked) throw new GenerationRejected("no valid dashboard ticket could be built for this user");
+  const { draft } = picked;
+  const content: DashboardContent = { company: world.name, dataset: draft.dataset, requirements: describeSpec(draft.spec) };
+  return {
+    title: draft.title,
+    category: ctx.areaName,
+    requester: `${draft.requester.name} · ${draft.requester.title}`,
+    scenario: draft.scenario,
+    objective: content.requirements.join(" "),
+    skill_tags: draft.skillTags,
+    time_limit_minutes: TIME_LIMIT_MINUTES[ctx.difficulty],
+    content: content as unknown as Json,
+    answer_key: { spec: draft.spec } as unknown as Json,
+    origin: { provider: "template", model: `${world.key}.dashboard.v1` },
+  };
+}
+
+async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
+  const world = worldForRole(ctx.roleKey);
+  return world?.office && ctx.worldSeed !== undefined ? generateFromWorld(ctx, world) : generateWithAi(ctx);
 }
 
 const SubmissionSchema = z.object({ spec: BiSpecSchema });

@@ -8,7 +8,7 @@ import { loadOwnedSqlContent } from "@/lib/arena-workstations/attempts";
 import { runExploratoryQuery } from "@/lib/arena-workstations/tools/sql";
 import { attemptErrorResponse } from "@/lib/arena-workstations/http";
 
-const BodySchema = z.object({ query: z.string().trim().min(1).max(5000) });
+const BodySchema = z.object({ query: z.string().trim().min(1).max(5000), explore: z.boolean().optional() });
 
 /** Exploration only: runs the candidate's SQL on their own task's data. Never graded. */
 export async function POST(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
@@ -25,7 +25,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
   const { attemptId } = await params;
   try {
     const content = await loadOwnedSqlContent(createServiceClient(), auth.userId, attemptId);
-    return NextResponse.json(await runExploratoryQuery(content, parsed.data.query));
+    return NextResponse.json(await runExploratoryQuery(content, parsed.data.query, parsed.data.explore));
   } catch (error) {
     return attemptErrorResponse(error, "arena/domain/run");
   }

@@ -1,9 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, FolderKanban, GraduationCap, Database, Trophy } from "lucide-react";
+import { ArrowRight, Crosshair, FolderKanban, GraduationCap, Database, Trophy } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getStageState } from "@/lib/stage/server";
 import { getLeaderboard } from "@/lib/arena/data";
+import { loadArenaProfile } from "@/lib/arena/profile";
+import { matchCareersForStudent } from "@/lib/career/match";
+import { createServiceClient } from "@/lib/supabase/service";
+import { SkillMatrix } from "@/components/arena/SkillMatrix";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { AreaHero, HeroStat } from "@/components/metro/AreaHero";
 
@@ -13,7 +17,9 @@ const CARD = "group flex h-full flex-col gap-3 rounded-2xl border border-[var(--
 
 export default async function ArenaHubPage() {
   const { supabase, user } = await requireAuthedUser();
-  const [leaderboard, { stage }] = await Promise.all([getLeaderboard(supabase, user.id), getStageState(user.id)]);
+  const [leaderboard, { stage }, careerMatches] = await Promise.all([getLeaderboard(supabase, user.id), getStageState(user.id), matchCareersForStudent(supabase, user.id)]);
+  // the skill profile reads the capability model; a problem loading it must never hide the rest of Arena
+  const profile = await loadArenaProfile(createServiceClient(), user.id, careerMatches[0]?.skillGaps ?? []).catch(() => null);
   // Stream challenges are drawn from a study programme, so only students get them.
   const showStream = stage === "student";
   const viewer = leaderboard.find((e) => e.isViewer);
@@ -30,6 +36,8 @@ export default async function ArenaHubPage() {
         nav={<ArenaSubNav />}
       />
 
+      {profile && <SkillMatrix rows={profile.rows} level={profile.level} />}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section aria-labelledby="modes-h" className="flex flex-col gap-4">
           <h2 id="modes-h" className="font-lp-display text-[28px] font-bold text-[var(--m-ink)]">Choose how to play</h2>
@@ -45,6 +53,12 @@ export default async function ArenaHubPage() {
               <h3 className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Domain challenges</h3>
               <p className="font-lp-body text-[14px] leading-relaxed text-app-muted">Real work tickets for your target career, with industry-style data and tools.</p>
               <span className="mt-auto inline-flex items-center gap-1.5 pt-1 text-[13.5px] font-bold text-[var(--m-accent)]">Take a ticket <ArrowRight size={14} aria-hidden className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none" /></span>
+            </Link>
+            <Link href="/arena/prepare" className={CARD}>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--m-accent-soft)] text-[var(--m-accent)]"><Crosshair size={21} aria-hidden /></span>
+              <h3 className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Prepare for a job</h3>
+              <p className="font-lp-body text-[14px] leading-relaxed text-app-muted">Pick a listing or paste a job description and get a plan built from your own measured skills.</p>
+              <span className="mt-auto inline-flex items-center gap-1.5 pt-1 text-[13.5px] font-bold text-[var(--m-accent)]">Build my plan <ArrowRight size={14} aria-hidden className="transition-transform group-hover:translate-x-1 motion-reduce:transition-none" /></span>
             </Link>
             <Link href="/arena/projects" className={CARD}>
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--m-ground)] text-[var(--m-ink)]"><FolderKanban size={21} aria-hidden /></span>

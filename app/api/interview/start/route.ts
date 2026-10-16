@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const service = createServiceClient();
   const [{ stage, planId }, direction] = await Promise.all([getStageState(auth.userId), getStudentDirection(service, auth.userId)]);
   if (!interviewUnlocked(stage, planId, direction?.launchpadOpen ?? false)) {
-    const error = stage === "graduate" ? "AI Interview is part of the Accelerate plan." : "AI Interview opens when you enter your final year (4-1).";
+    const error = stage === "graduate" ? "AI Interview is part of Pro and Elite." : "AI Interview opens when you enter your final year (4-1).";
     return NextResponse.json({ error }, { status: 403 });
   }
   const statedRole = await getStatedCareerInterest(service, auth.userId);

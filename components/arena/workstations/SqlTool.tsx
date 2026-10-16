@@ -7,10 +7,15 @@ import type { SqlContent } from "@/lib/arena-workstations/tools/sql";
 import { ResultView } from "./ResultView";
 import { useDraft, type ToolProps } from "./useDraft";
 
-const STARTER = "-- Your team's analytics warehouse (SQLite). Run as often as you like (Ctrl/⌘ + Enter).\n-- Only Submit is graded.\n\n";
+const DEBUG_NOTE = "-- This query has a bug. Read the ticket for the symptom, find the cause and fix it. Run it as often as you like. Only Submit is graded.\n";
+const queryStarter = (engine: string) => `-- Your team's analytics warehouse (${engine}). Run as often as you like (Ctrl/⌘ + Enter).\n-- Only Submit is graded.\n\n`;
+const scriptStarter = (engine: string) => `-- ${engine}: write the SQL script that does the job (several statements are fine). Run as often as you like (Ctrl/⌘ + Enter).\n-- Each run starts from a fresh copy of the data. Only Submit is graded.\n\n`;
 
 export function SqlTool({ attemptId, content, closed, submitting, onSubmit }: ToolProps<SqlContent>) {
-  const [query, setQuery] = useDraft(attemptId, "query", STARTER);
+  const script = content.mode === "script";
+  const engine = content.engine === "postgres" ? "PostgreSQL" : "SQLite";
+  const opening = content.starter ? `${DEBUG_NOTE}\n${content.starter}\n` : script ? scriptStarter(engine) : queryStarter(engine);
+  const [query, setQuery] = useDraft(attemptId, "query", opening);
   const [note, setNote] = useDraft(attemptId, "note", "");
   const [result, setResult] = useState<SqlResult | null>(null);
   const [running, setRunning] = useState(false);
@@ -18,12 +23,12 @@ export function SqlTool({ attemptId, content, closed, submitting, onSubmit }: To
   const [openTable, setOpenTable] = useState<string | null>(content.tables[0]?.name ?? null);
   const gutterRef = useRef<HTMLDivElement>(null);
 
-  async function run(sql = query) {
+  async function run(sql = query, explore = false) {
     if (!sql.trim() || running) return;
     setRunning(true);
     setError(null);
     try {
-      const res = await fetch(`/api/arena/domain/attempts/${attemptId}/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: sql }) });
+      const res = await fetch(`/api/arena/domain/attempts/${attemptId}/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: sql, explore }) });
       const data = await res.json();
       if (!res.ok && !("columns" in data)) setError(data.error ?? "Could not run the query.");
       else setResult(data);
@@ -80,8 +85,8 @@ export function SqlTool({ attemptId, content, closed, submitting, onSubmit }: To
                       type="button"
                       onClick={() => {
                         const sql = `SELECT * FROM ${t.name} LIMIT 20;`;
-                        setQuery(sql);
-                        run(sql);
+                        if (!script) setQuery(sql);
+                        run(sql, true);
                       }}
                       className="mt-2.5 font-lp-mono text-[11px] font-semibold text-app-blue hover:underline"
                     >
@@ -98,7 +103,7 @@ export function SqlTool({ attemptId, content, closed, submitting, onSubmit }: To
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#161616]">
           <div className="flex items-center justify-between border-b border-[#2a2a2a] px-4 py-2 font-lp-mono text-[11px] text-white/50">
-            <span>query.sql</span>
+            <span>{script ? "script.sql" : "query.sql"}</span>
             <span className="hidden sm:block">Ctrl/⌘ + Enter to run</span>
           </div>
           <div className="flex h-[260px]">
@@ -116,7 +121,7 @@ export function SqlTool({ attemptId, content, closed, submitting, onSubmit }: To
               }}
               spellCheck={false}
               wrap="off"
-              aria-label="SQL editor"
+              aria-label={script ? "SQL script editor" : "SQL editor"}
               disabled={closed}
               className="h-full flex-1 resize-none overflow-auto bg-transparent py-3 pr-4 font-lp-mono text-[13px] leading-[1.6] text-[#e8e8e8] caret-app-orange outline-none disabled:opacity-60"
             />
@@ -127,7 +132,7 @@ export function SqlTool({ attemptId, content, closed, submitting, onSubmit }: To
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => run()} disabled={running || !query.trim()} className="flex items-center gap-1.5 rounded-lg border border-app-border bg-white px-4 py-2 font-lp-body text-[13px] font-semibold text-app-charcoal disabled:opacity-50">
               {running ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-              Run query
+              {script ? "Run script" : "Run query"}
             </button>
             <button
               type="button"
@@ -136,15 +141,15 @@ export function SqlTool({ attemptId, content, closed, submitting, onSubmit }: To
               className="flex items-center gap-1.5 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white disabled:opacity-50"
             >
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-              Submit query
+              {script ? "Submit script" : "Submit query"}
             </button>
           </div>
         )}
         {error && <p className="rounded-lg bg-app-rose-container px-4 py-2.5 font-lp-body text-[13px] text-app-rose">{error}</p>}
 
         <section className="rounded-xl border border-app-border bg-white p-4">
-          <h3 className="mb-3 font-lp-body text-[12px] font-semibold text-app-charcoal">Result</h3>
-          {result ? <ResultView result={result} /> : <p className="font-lp-body text-[12.5px] text-app-muted">Run a query to see its result here.</p>}
+          <h3 className="mb-3 font-lp-body text-[12px] font-semibold text-app-charcoal">{script ? "What your script left behind" : "Result"}</h3>
+          {result ? <ResultView result={result} /> : <p className="font-lp-body text-[12.5px] text-app-muted">{script ? "Run your script to see the data after it ran. Use Preview 20 rows on a table to look at the original data." : "Run a query to see its result here."}</p>}
         </section>
 
         {!closed && (
