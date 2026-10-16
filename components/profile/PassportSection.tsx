@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import type { PassportSkill } from "@/lib/passport/badges";
-import { BadgeMark, NotEarnedMark } from "./Badge";
+import { BadgeWall } from "@/components/passport/badge/BadgeWall";
 import { PassportShareToggle } from "./PassportShareToggle";
 import { ReelDialog } from "@/components/passport/reel/ReelDialog";
 import type { ReelInput } from "@/lib/passport/reel";
@@ -22,24 +22,6 @@ export interface PassportSectionProps {
   roleName: string | null;
   skills: PassportSkill[];
   reel: ReelInput;
-}
-
-export function SkillBadgeGrid({ skills }: { skills: PassportSkill[] }) {
-  return (
-    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {skills.map((s) => (
-        <li key={s.skillId} className="flex items-center gap-3 rounded-xl bg-[var(--m-ground)] p-3">
-          {s.badge ? <BadgeMark level={s.badge.level} /> : <NotEarnedMark />}
-          <div className="min-w-0">
-            <p className="truncate font-lp-body text-[14px] font-bold text-[var(--m-ink)]">{s.name}</p>
-            <p className="font-lp-body text-[12.5px] text-[var(--m-muted)]">
-              {s.badge ? `${s.badge.level}${s.badge.provisional ? " · provisional" : ""} · ${s.badge.evidenceCount} evidence` : s.status === "building" ? "Still building" : "Not assessed yet"}
-            </p>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 export function PassportSection({ holderName, college, passportNo, qrSvg, url, shared, unlocked, roleName, skills, reel }: PassportSectionProps) {
@@ -77,9 +59,9 @@ export function PassportSection({ holderName, college, passportNo, qrSvg, url, s
 
       <section className={CARD} aria-labelledby="badges-h">
         <h2 id="badges-h" className={H2}>Skill badges</h2>
-        <p className={`mt-1 mb-4 ${MUTED} text-[13.5px]`}>A badge is earned from measured assessments and challenges, never from a claim. Foundation starts at 40, Proficient at 60 and Advanced at 80.</p>
-        {unlocked ? <SkillBadgeGrid skills={skills} /> : (
-          <p className={MUTED}>Your badges appear once your career assessment is analysed. <Link href="/assessment" className={`${LINK} inline-flex items-center gap-1`}>Go to assessment <ArrowRight size={13} aria-hidden /></Link></p>
+        <p className={`mt-1 mb-5 max-w-[68ch] ${MUTED} text-[13.5px] leading-relaxed`}>A badge is earned by doing the work: a verified Arena task, a project, your GitHub or a mentor&apos;s review. Your assessment shows where you start, but it never earns a badge. Tap a badge to hold it, flip it, and see the evidence behind it.</p>
+        {unlocked ? <BadgeWall skills={skills} audience="owner" /> : (
+          <p className={MUTED}>Your skills appear once your career assessment is analysed. <Link href="/assessment" className={`${LINK} inline-flex items-center gap-1`}>Go to assessment <ArrowRight size={13} aria-hidden /></Link></p>
         )}
       </section>
     </div>

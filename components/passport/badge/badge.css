@@ -1,0 +1,36 @@
+/* The badge popup. Tokens come from the dashboard theme (--m-*); the glow takes its hue from the badge's own palette (--bdg-a). */
+.bdg-tile { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.bdg-tile:hover .bdg-tile-art, .bdg-tile:focus-visible .bdg-tile-art { transform: translateY(-3px) rotate(-3deg) scale(1.04); }
+.bdg-tile-art { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); filter: drop-shadow(0 6px 5px rgb(20 20 20 / 0.22)); }
+.bdg-tile:focus-visible { outline: 3px solid var(--m-accent); outline-offset: 4px; border-radius: 20px; }
+
+.bdg-dialog { margin: auto; border: 0; padding: 0; background: transparent; width: min(560px, calc(100vw - 20px)); max-width: none; max-height: calc(100dvh - 20px); overflow: visible; color: var(--m-ink); }
+.bdg-dialog::backdrop { background: rgb(12 12 11 / 0.74); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.bdg-dialog[open] { animation: bdg-in 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes bdg-in { from { opacity: 0; transform: translateY(22px) scale(0.94); } to { opacity: 1; transform: none; } }
+
+.bdg-sheet { position: relative; overflow: hidden auto; max-height: calc(100dvh - 20px); background: var(--m-sheet); border-radius: 28px; box-shadow: 0 34px 70px -22px rgb(0 0 0 / 0.6), 0 2px 0 rgb(255 255 255 / 0.7) inset; overscroll-behavior: contain; }
+.bdg-stage { position: relative; display: grid; place-items: center; padding: 34px 20px 14px; perspective: 1000px; background: radial-gradient(62% 58% at 50% 46%, color-mix(in srgb, var(--bdg-a, #ff5701) 38%, transparent), transparent 72%), var(--m-ground); }
+.bdg-object { position: relative; width: min(250px, 62vw); aspect-ratio: 1; cursor: pointer; transform-style: preserve-3d; transform: rotateX(var(--rx, 0deg)) rotateY(calc(var(--ry, 0deg) + var(--flip, 0) * 180deg)); transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); /* no filter here: a filter flattens the 3D space and the back face would show mirrored */ }
+.bdg-object.is-tilting { transition: transform 0.12s linear; }
+.bdg-object:focus-visible { outline: 3px solid var(--m-accent); outline-offset: 10px; border-radius: 28px; }
+.bdg-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 20px 16px rgb(20 20 20 / 0.34)); }
+.bdg-face > svg { width: 100%; height: 100%; }
+.bdg-back { transform: rotateY(180deg); }
+
+.bdg-nav { position: absolute; top: 50%; translate: 0 -50%; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; border: 0; background: rgb(255 255 255 / 0.85); color: var(--m-ink); cursor: pointer; box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.4); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.bdg-nav:hover { transform: scale(1.08); }
+.bdg-nav:focus-visible, .bdg-close:focus-visible, .bdg-flip:focus-visible { outline: 3px solid var(--m-accent); outline-offset: 2px; }
+.bdg-nav[disabled] { opacity: 0.35; cursor: default; transform: none; }
+.bdg-close { position: absolute; top: 12px; right: 12px; z-index: 2; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 999px; border: 0; background: rgb(255 255 255 / 0.85); color: var(--m-ink); cursor: pointer; }
+
+.bdg-flip { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 12px; border: 0; border-radius: 999px; background: rgb(20 20 20 / 0.82); color: #fff; font: 600 12px/1 var(--font-geist, ui-sans-serif, system-ui), sans-serif; cursor: pointer; }
+.bdg-body ::selection { background: var(--m-accent); color: #fff; }
+.bdg-body { scrollbar-width: thin; scrollbar-color: var(--m-soft) transparent; }
+.bdg-step-line { background: linear-gradient(90deg, var(--bdg-a, var(--m-accent)), var(--m-rule)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bdg-dialog[open] { animation: none; }
+  .bdg-object, .bdg-object.is-tilting, .bdg-tile, .bdg-tile-art { transition: none; }
+  .bdg-tile:hover .bdg-tile-art { transform: none; }
+}

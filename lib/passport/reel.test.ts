@@ -5,7 +5,7 @@ const base: ReelInput = { holder: { name: "Asha Rao", college: "VIT-AP", branch:
 const many = (n: number, p: string) => Array.from({ length: n }, (_, i) => `${p}${i}`);
 const rich: ReelInput = {
   ...base,
-  badges: many(12, "Skill").map((name) => ({ name, level: "Proficient" as const, provisional: false })),
+  badges: many(12, "Skill").map((name) => ({ skillId: name, name, level: "Proficient" as const, provisional: false })),
   elo: { rating: 640, history: [400, 480, 640] }, arenaPassed: 30,
   arena: many(10, "Challenge").map((title) => ({ title: `${title} about window functions and joins`, company: "Acme Analytics", area: "SQL" })),
   interviews: { count: 4, best: 88, average: 76 },
@@ -28,7 +28,7 @@ describe("planReel", () => {
     expect(seconds(rich)).toBeLessThanOrEqual(MAX_SECONDS);
   });
   it("more evidence makes a longer film", () => {
-    expect(seconds(rich)).toBeGreaterThan(seconds({ ...base, badges: [{ name: "SQL", level: "Advanced", provisional: false }] }));
+    expect(seconds(rich)).toBeGreaterThan(seconds({ ...base, badges: [{ skillId: "sql", name: "SQL", level: "Advanced", provisional: false }] }));
   });
   it("total frames is the sum of the scenes", () => {
     const p = planReel(rich);

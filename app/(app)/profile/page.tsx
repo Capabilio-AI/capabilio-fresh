@@ -29,7 +29,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     supabase.from("profiles").select("cover_url, headline, bio, location, phone, portfolio_show_contact, passport_code, passport_public").eq("id", user.id).single(),
     getEducationEntries(supabase, user.id),
     getCareerIntent(service, user.id),
-    loadPassportSkills(service as unknown as Db, user.id),
+    loadPassportSkills(service, user.id),
   ]);
 
   const graduatingYear = viewer.direction?.endYear ?? null;

@@ -1,5 +1,5 @@
 import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { BadgeMark } from "@/components/profile/Badge";
+import { BadgeArt } from "@/components/passport/badge/BadgeArt";
 import type { Limits, ReelInput } from "@/lib/passport/reel";
 import { BODY, COL_W, DIM, DISPLAY, FAINT, LEFT, ORANGE, WHITE } from "./theme";
 
@@ -48,7 +48,7 @@ export function BadgesScene({ i, limits }: { i: ReelInput; limits: Limits }) {
           const s = spring({ frame: frame - (28 + n * 12), fps, config: { damping: 13, stiffness: 140 } });
           return (
             <div key={b.name} style={{ display: "flex", alignItems: "center", gap: 22, opacity: Math.min(1, s * 1.4), transform: `scale(${0.6 + 0.4 * s})`, transformOrigin: "left center" }}>
-              <BadgeMark level={b.level} size={150} onDark />
+              <BadgeArt skillId={b.skillId} name={b.name} level={b.level} size={150} />
               <div style={{ minWidth: 0 }}>
                 <p style={{ margin: 0, fontFamily: DISPLAY, fontSize: 42, fontWeight: 700, lineHeight: 1.08, color: WHITE, overflowWrap: "anywhere" }}>{b.name}</p>
                 <p style={{ margin: "6px 0 0", fontFamily: BODY, fontSize: 28, color: DIM }}>{b.level}{b.provisional ? " · provisional" : ""}</p>

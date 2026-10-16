@@ -169,7 +169,7 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
                   <li key={t.attemptId} className={`flex items-start justify-between gap-4 py-3.5 transition-colors duration-700 first:pt-0 ${fresh.has(t.attemptId) ? "-mx-2 rounded-lg bg-[var(--m-ground)] px-2" : ""}`}>
                     <div className="min-w-0">
                       <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{t.title}{fresh.has(t.attemptId) && <span className="ml-2 rounded-full bg-[var(--m-accent)] px-2 py-0.5 align-middle font-lp-mono text-[11px] font-bold text-white">New</span>}</p>
-                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.score !== undefined ? `Score ${t.score}%` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
+                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.score !== undefined ? `Score ${t.score}%` : null, t.explanationScore !== undefined ? `Explained ${t.explanationScore}/100` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
                     </div>
                     <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>
                   </li>
