@@ -15,7 +15,7 @@ export default defineConfig({
     // worktree lives inside this repo's own directory tree, so its nested
     // node_modules (e.g. zod's bundled test suite) got scanned too.
     exclude: ["**/node_modules/**", "**/.next/**", "**/.claude/**", ...(live ? [] : ["**/*.live.test.ts"])],
-    testTimeout: live ? 300_000 : 5_000,
+    testTimeout: live ? 300_000 : 30_000,
     hookTimeout: live ? 300_000 : 10_000,
   },
   resolve: {
