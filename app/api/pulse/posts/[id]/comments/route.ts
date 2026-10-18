@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/api/require-user";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { loadPeople } from "@/lib/pulse/people";
+import { notifyPulsePostAuthor } from "@/lib/notifications/events";
 
 const CreateSchema = z.object({ content: z.string().min(1).max(1000) });
 
@@ -28,6 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .single();
   if (error) throw error;
 
+  await notifyPulsePostAuthor(createServiceClient(), { postId, actorId: auth.userId, kind: "comment", commentId: data.id, snippet: data.content });
   const author = (await loadPeople(createServiceClient(), [data.user_id])).get(data.user_id);
   return NextResponse.json(
     {

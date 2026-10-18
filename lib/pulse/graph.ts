@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
 
 type Service = SupabaseClient<Database>;
 
@@ -28,7 +29,17 @@ export async function follow(service: Service, followerId: string, followeeId: s
   if (!target) return fail(404, "That profile doesn't exist.");
   if ((await blockedWith(service, followerId)).has(followeeId)) return fail(403, "You can't follow this person.");
   const { error } = await untyped(service).from("follows").upsert({ follower_id: followerId, followee_id: followeeId }, { onConflict: "follower_id,followee_id", ignoreDuplicates: true });
-  return error ? fail(500, "Couldn't follow. Please try again.") : { ok: true };
+  if (error) return fail(500, "Couldn't follow. Please try again.");
+  const { data: me } = await service.from("profiles").select("full_name").eq("id", followerId).maybeSingle();
+  await notify(service, {
+    userIds: [followeeId],
+    type: "pulse_follow",
+    title: `${me?.full_name ?? "Someone"} started following you`,
+    href: `/pulse/u/${followerId}`,
+    actorId: followerId,
+    dedupeKey: `pulse-follow:${followerId}`,
+  });
+  return { ok: true };
 }
 
 export async function unfollow(service: Service, followerId: string, followeeId: string): Promise<GraphResult> {

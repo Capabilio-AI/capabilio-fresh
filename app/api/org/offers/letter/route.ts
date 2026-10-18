@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { authorizeOrg } from "@/lib/api/org-route";
 import { MAX_MEDIA_BYTES, sniffDocument } from "@/lib/org/media";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
 import { MAX_UPLOAD_MB } from "@/lib/uploads/limits";
 
 const BUCKET = "org-offers";
@@ -27,8 +28,8 @@ export async function POST(request: Request) {
   if (!doc) return NextResponse.json({ error: "Upload a PDF, PNG or JPG file." }, { status: 415 });
 
   const db = untyped(service);
-  const { data } = await db.from("org_placements").select("id, offer_letter_path").eq("id", placementId).eq("institution_id", ctx.institutionId).maybeSingle();
-  const placement = data as { id: string; offer_letter_path: string | null } | null;
+  const { data } = await db.from("org_placements").select("id, offer_letter_path, student_user_id, company").eq("id", placementId).eq("institution_id", ctx.institutionId).maybeSingle();
+  const placement = data as { id: string; offer_letter_path: string | null; student_user_id: string; company: string } | null;
   if (!placement) return NextResponse.json({ error: "Placement not found." }, { status: 404 });
 
   const path = `${ctx.institutionId}/${placement.id}-${randomUUID()}.${doc.ext}`;
@@ -37,5 +38,14 @@ export async function POST(request: Request) {
   const { error } = await db.from("org_placements").update({ offer_letter_path: path }).eq("id", placement.id);
   if (error) return NextResponse.json({ error: "Could not save the letter." }, { status: 500 });
   if (placement.offer_letter_path) await service.storage.from(BUCKET).remove([placement.offer_letter_path]);
+  await notify(service, {
+    userIds: [placement.student_user_id],
+    type: "offer_letter",
+    title: `Your offer letter from ${placement.company} is ready`,
+    href: "/launchpad",
+    actorId: ctx.userId,
+    institutionId: ctx.institutionId,
+    dedupeKey: `letter:${placement.id}:${path}`,
+  });
   return NextResponse.json({ ok: true });
 }

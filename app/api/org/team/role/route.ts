@@ -4,6 +4,7 @@ import { MemberRoleSchema } from "@/lib/org/schemas";
 import { checkGrant } from "@/lib/org/team";
 import { kindOf } from "@/lib/org/roles";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
 
 /** Change a team member's role (and access with it). Never your own, never the principal, and never above what you hold. */
 export async function POST(request: Request) {
@@ -22,6 +23,16 @@ export async function POST(request: Request) {
     if (error) throw error;
     // the profile's primary role follows, exactly as it is set when an invitation is accepted
     await service.from("profiles").update({ primary_role: body.role as never }).eq("id", target.user_id);
+    await notify(service, {
+      userIds: [target.user_id],
+      type: "role_changed",
+      title: `Your role at ${ctx.institutionName} changed`,
+      body: `You are now ${body.role.replace(/_/g, " ")}.`,
+      href: "/org",
+      actorId: ctx.userId,
+      institutionId: ctx.institutionId,
+      dedupeKey: `role:${target.id}:${body.role}:${Date.now()}`,
+    });
     return {};
   });
 }

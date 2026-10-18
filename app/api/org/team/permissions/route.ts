@@ -4,6 +4,7 @@ import { MemberPermissionsSchema } from "@/lib/org/schemas";
 import { checkGrant } from "@/lib/org/team";
 import { kindOf } from "@/lib/org/roles";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
 
 /** Change what a team member may do. Admin roles always have everything, and you can't edit your own access. */
 export async function POST(request: Request) {
@@ -18,6 +19,15 @@ export async function POST(request: Request) {
     if (!grant.ok) return NextResponse.json({ error: grant.message }, { status: 403 });
     const { error } = await db.from("institution_memberships").update({ permissions: body.permissions }).eq("id", target.id);
     if (error) throw error;
+    await notify(service, {
+      userIds: [target.user_id],
+      type: "access_changed",
+      title: `Your access at ${ctx.institutionName} was updated`,
+      href: "/org",
+      actorId: ctx.userId,
+      institutionId: ctx.institutionId,
+      dedupeKey: `access:${target.id}:${Date.now()}`,
+    });
     return {};
   });
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { orgRoute } from "@/lib/api/org-route";
 import { PostActionSchema } from "@/lib/org/schemas";
 import { untyped, type OrgPostRow } from "@/lib/org/db";
+import { notifyPostPublished } from "@/lib/notifications/events";
 
 export async function POST(request: Request) {
   return orgRoute(request, PostActionSchema, "publishPost", async ({ ctx, service }, body) => {
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
             .update(body.action === "publish" ? { status: "published", published_at: new Date().toISOString() } : { status: "draft", published_at: null })
             .eq("id", post.id);
     if (error) throw error;
+    if (body.action === "publish") await notifyPostPublished(service, ctx, post);
     return {};
   });
 }

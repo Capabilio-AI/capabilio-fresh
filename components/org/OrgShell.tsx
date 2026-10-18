@@ -4,11 +4,12 @@ import { Fragment, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, Briefcase, Eye, FolderKanban, GraduationCap, LayoutDashboard, Megaphone, MessagesSquare, School, Settings, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
+import { Bell, BarChart3, BookOpen, Briefcase, Eye, FolderKanban, GraduationCap, LayoutDashboard, Megaphone, MessagesSquare, School, Settings, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import "@/components/metro/metro.css";
 import type { OrgNavGroup } from "@/lib/org/nav";
 import { OrgAccountMenu } from "./OrgAccountMenu";
+import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 
 const ICONS: Record<string, LucideIcon> = {
   "/org": LayoutDashboard,
@@ -40,7 +41,7 @@ export const initialsOf = (name: string) =>
     .join("") || "•";
 
 /** Round glass button that slides its label out on hover or focus (the student app's settings-button style). */
-function Dock({ href, label, external, children }: { href: string; label: string; external?: boolean; children: ReactNode }) {
+function Dock({ href, label, external, badge, children }: { href: string; label: string; external?: boolean; badge?: ReactNode; children: ReactNode }) {
   return (
     <Link
       href={href}
@@ -48,7 +49,7 @@ function Dock({ href, label, external, children }: { href: string; label: string
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       className="group relative flex h-9 shrink-0 items-center rounded-full px-[9px] text-[var(--m-ink)] transition-[background-color,box-shadow,padding] duration-300 ease-out hover:bg-[#fff] hover:pr-4 hover:shadow-[0_4px_14px_-6px_rgba(60,40,0,0.4)] focus-visible:bg-[#fff] focus-visible:pr-4 motion-reduce:transition-none"
     >
-      <span className="flex h-[20px] w-[20px] items-center justify-center">{children}</span>
+      <span className="relative flex h-[20px] w-[20px] items-center justify-center">{children}{badge}</span>
       <span aria-hidden className="max-w-0 overflow-hidden whitespace-nowrap text-[13px] font-bold opacity-0 transition-[max-width,opacity,margin] duration-300 ease-out group-hover:ml-2 group-hover:max-w-[8rem] group-hover:opacity-100 group-focus-visible:ml-2 group-focus-visible:max-w-[8rem] group-focus-visible:opacity-100 motion-reduce:transition-none">
         {label}
       </span>
@@ -101,6 +102,9 @@ export function OrgShell({
                 <School size={18} strokeWidth={2.2} />
               </Dock>
             )}
+            <Dock href="/org/notifications" label="Notifications" badge={<NotificationBadge className="absolute -right-2.5 -top-2 h-[18px]" />}>
+              <Bell size={18} strokeWidth={2.2} />
+            </Dock>
             <Dock href="/org/settings" label="Settings">
               <Settings size={18} strokeWidth={2.2} />
             </Dock>
