@@ -44,7 +44,7 @@ afterAll(async () => {
 });
 
 describe("organisation signup (live)", () => {
-  it("creates an ACTIVE membership (no manual approval for institution staff) and a new institution row", async () => {
+  it("creates an ACTIVE membership for the founder of a NEW institution (no manual approval) and a new institution row", async () => {
     const { res, userId } = await signup({});
     expect(res.ok).toBe(true);
     const { data: m } = await service.from("institution_memberships").select("role,status,institutions(name,org_type)").eq("user_id", userId!).single();
@@ -53,13 +53,13 @@ describe("organisation signup (live)", () => {
     expect(m?.institutions).toMatchObject({ name: orgName, org_type: "institution" });
   });
 
-  it("links a second signup to the same institution on exact case-insensitive name; no duplicate row", async () => {
+  it("links a second signup to the same institution on exact case-insensitive name; no duplicate row, and stays PENDING (no self-promotion into an existing college)", async () => {
     const { userId } = await signup({ orgName: `  ${orgName.toUpperCase()} `, designation: "principal" });
     const { data: rows } = await service.from("institutions").select("id").ilike("name", orgName);
     expect(rows).toHaveLength(1);
     const { data: m } = await service.from("institution_memberships").select("institution_id,status").eq("user_id", userId!).single();
     expect(m?.institution_id).toBe(rows![0].id);
-    expect(m?.status).toBe("active");
+    expect(m?.status).toBe("pending");
   });
 
   it("does NOT fuzzy-match a typo'd name (creates a separate row)", async () => {

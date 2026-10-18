@@ -27,6 +27,8 @@ export interface OpenInvitation {
   expiresAt: string;
   createdAt: string;
   expired: boolean;
+  /** custom permissions chosen when invited; null = the role defaults */
+  permissions: string[] | null;
 }
 
 export interface JoinLinkRow {
@@ -43,7 +45,7 @@ export async function loadTeam(service: SupabaseClient<Database>, ctx: OrgContex
   const db = untyped(service);
   const [membersRes, invitesRes] = await Promise.all([
     db.from("institution_memberships").select("id, user_id, role, status, permissions").eq("institution_id", ctx.institutionId).neq("role", "student").in("status", ["active", "pending"]).order("created_at"),
-    db.from("org_invitations").select("id, email, role, expires_at, created_at").eq("institution_id", ctx.institutionId).is("accepted_at", null).is("revoked_at", null).order("created_at", { ascending: false }),
+    db.from("org_invitations").select("id, email, role, permissions, expires_at, created_at").eq("institution_id", ctx.institutionId).is("accepted_at", null).is("revoked_at", null).order("created_at", { ascending: false }),
   ]);
   const rows = (membersRes.data ?? []) as { id: string; user_id: string; role: string; status: "active" | "pending"; permissions: string[] | null }[];
   const ids = rows.map((r) => r.user_id);
@@ -66,13 +68,14 @@ export async function loadTeam(service: SupabaseClient<Database>, ctx: OrgContex
     }));
 
   const now = Date.now();
-  const invitations: OpenInvitation[] = ((invitesRes.data ?? []) as { id: string; email: string; role: string; expires_at: string; created_at: string }[]).map((i) => ({
+  const invitations: OpenInvitation[] = ((invitesRes.data ?? []) as { id: string; email: string; role: string; permissions: string[] | null; expires_at: string; created_at: string }[]).map((i) => ({
     id: i.id,
     email: i.email,
     role: i.role,
     expiresAt: i.expires_at,
     createdAt: i.created_at,
     expired: new Date(i.expires_at).getTime() < now,
+    permissions: i.permissions,
   }));
 
   return {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isLaunchpadOpen, isPlanBTerm } from "./term";
+import { isLaunchpadOpen, isPlanBTerm, isStreamTerm } from "./term";
 
 describe("isPlanBTerm", () => {
   it("opens in 3-1 and stays open, never before", () => {
@@ -21,5 +21,16 @@ describe("isLaunchpadOpen", () => {
   it("stays closed when years are unknown", () => {
     expect(isLaunchpadOpen(null, 2023, 2027)).toBe(false);
     expect(isLaunchpadOpen(4, null, null)).toBe(false);
+  });
+});
+
+describe("isStreamTerm", () => {
+  it("opens in 2nd year and stays open; 1st year waits", () => {
+    expect(isStreamTerm(1)).toBe(false);
+    expect(isStreamTerm(2)).toBe(true);
+    expect(isStreamTerm(4)).toBe(true);
+  });
+  it("never locks out a student whose year is unknown", () => {
+    expect(isStreamTerm(null)).toBe(true);
   });
 });

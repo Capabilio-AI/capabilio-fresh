@@ -18,8 +18,12 @@ export interface ChallengeDetail {
   starter_code: string | null;
   stdin: string | null;
   answer_unit: string | null;
+  /** concept / case question (kind "mcq"): the lettered options */
+  options?: { key: string; text: string }[] | null;
   skill_tags: string[];
   solved?: boolean;
+  /** a concept question has one answer; once given it is locked, right or wrong */
+  answered?: boolean;
   /** set for ticket-style challenges that run in a workstation (opened on their own page) */
   workstation_template_id?: string | null;
   /** LeetCode-style problem (kind "leetcode"): opens in the full-screen workspace */
@@ -34,6 +38,8 @@ export const DIFFICULTY_CLASS: Record<string, string> = {
 
 export function ChallengeSolvePanel({ challenge, onDone }: { challenge: ChallengeDetail; onDone: () => void }) {
   const isNumeric = challenge.kind === "numeric";
+  const isMcq = challenge.kind === "mcq";
+  const [choice, setChoice] = useState<string | null>(null);
   const [code, setCode] = useState(challenge.starter_code ?? "");
   const [answer, setAnswer] = useState("");
   const [working, setWorking] = useState("");
@@ -41,7 +47,7 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<{ stdout: string; stderr: string } | null>(null);
-  const [result, setResult] = useState<{ isCorrect: boolean; pointsEarned: number } | null>(null);
+  const [result, setResult] = useState<{ isCorrect: boolean; pointsEarned: number; explanation?: string } | null>(null);
   const [expiresAt] = useState(() => new Date(Date.now() + challenge.time_limit_minutes * 60_000).toISOString());
 
   async function handleRun() {
@@ -64,7 +70,7 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
-    const body = isNumeric ? { challengeId: challenge.id, answer: answer.trim(), working: working || undefined } : { challengeId: challenge.id, code };
+    const body = isMcq ? { challengeId: challenge.id, choice } : isNumeric ? { challengeId: challenge.id, answer: answer.trim(), working: working || undefined } : { challengeId: challenge.id, code };
     const res = await fetch("/api/arena/challenges/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -76,8 +82,8 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
       setError(typeof data.error === "string" ? data.error : "Could not submit — try again.");
       return;
     }
-    setResult({ isCorrect: data.isCorrect, pointsEarned: data.pointsEarned });
-    if (!isNumeric) setOutput({ stdout: data.stdout, stderr: data.stderr });
+    setResult({ isCorrect: data.isCorrect, pointsEarned: data.pointsEarned, explanation: typeof data.explanation === "string" ? data.explanation : undefined });
+    if (!isNumeric && !isMcq) setOutput({ stdout: data.stdout, stderr: data.stderr });
   }
 
   if (result) {
@@ -86,8 +92,9 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
         {result.isCorrect ? <CheckCircle2 size={28} className="mx-auto text-app-success" /> : <XCircle size={28} className="mx-auto text-app-attention" />}
         <p className="mt-3 font-lp-display text-[18px] font-bold text-[var(--m-ink)]">{result.isCorrect ? "Correct!" : "Not quite"}</p>
         {result.isCorrect && <p className="mt-1 font-lp-mono text-[12px] text-app-muted">+{result.pointsEarned} Pts</p>}
+        {result.explanation && <p className="mx-auto mt-3 max-w-lg text-left font-lp-body text-[13px] leading-relaxed text-app-muted">{result.explanation}</p>}
         <div className="mt-5 flex justify-center gap-2">
-          {!result.isCorrect && (
+          {!result.isCorrect && !isMcq && (
             <button type="button" onClick={() => setResult(null)} className="rounded-lg border border-[var(--m-rule)] px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)]">
               Try again
             </button>
@@ -113,7 +120,18 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
       <p className="mt-2 font-lp-body text-[13px] leading-relaxed text-app-muted">{challenge.scenario}</p>
       <p className="mt-2 font-lp-body text-[13px] font-medium text-[var(--m-ink)]">{challenge.objective}</p>
 
-      {isNumeric ? (
+      {isMcq ? (
+        <fieldset className="mt-5 space-y-2">
+          <legend className="sr-only">Choose one option</legend>
+          {(challenge.options ?? []).map((o) => (
+            <label key={o.key} className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 font-lp-body text-[13.5px] text-[var(--m-ink)] ${choice === o.key ? "border-app-charcoal bg-app-background" : "border-[var(--m-rule)]"}`}>
+              <input type="radio" name="option" value={o.key} checked={choice === o.key} onChange={() => setChoice(o.key)} className="mt-1" />
+              <span><span className="mr-2 font-lp-mono text-[12px] font-bold text-app-muted">{o.key}</span>{o.text}</span>
+            </label>
+          ))}
+          <p className="pt-1 font-lp-body text-[11.5px] text-app-muted">You get one answer for this question.</p>
+        </fieldset>
+      ) : isNumeric ? (
         <>
           <label className="mt-5 block text-[12.5px] font-bold text-app-muted" htmlFor="working">
             Your working
@@ -164,7 +182,7 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
       {error && <p className="mt-3 font-lp-body text-[12.5px] font-semibold text-app-rose">{error}</p>}
 
       <div className="mt-4 flex gap-2">
-        {!isNumeric && (
+        {!isNumeric && !isMcq && (
           <button type="button" onClick={handleRun} disabled={running} className="rounded-lg border border-[var(--m-rule)] px-4 py-2 font-lp-body text-[13px] font-semibold text-[var(--m-ink)] disabled:opacity-60">
             {running ? "Running…" : "Run"}
           </button>
@@ -172,7 +190,7 @@ export function ChallengeSolvePanel({ challenge, onDone }: { challenge: Challeng
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={submitting || (isNumeric && answer.trim() === "")}
+          disabled={submitting || (isNumeric && answer.trim() === "") || (isMcq && !choice)}
           className="rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white disabled:opacity-60"
         >
           {submitting ? "Submitting…" : "Submit"}

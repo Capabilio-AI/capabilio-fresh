@@ -119,7 +119,7 @@ export async function loadOrgFacts(service: SupabaseClient<Database>, institutio
   const nowIso = new Date().toISOString();
   const [studentsRes, placementsRes, eventsRes, postsRes] = await Promise.all([
     service.from("institution_memberships").select("branch").eq("institution_id", institutionId).eq("role", "student").eq("status", "active").limit(5000),
-    db.from("org_placements").select("student_user_id, company").eq("institution_id", institutionId),
+    db.from("org_placements").select("student_user_id, company").eq("institution_id", institutionId).neq("student_response", "declined"),
     db.from("org_posts").select("id", { count: "exact", head: true }).eq("institution_id", institutionId).eq("status", "published").eq("type", "event").gte("event_starts_at", nowIso),
     db.from("org_posts").select("id", { count: "exact", head: true }).eq("institution_id", institutionId).eq("status", "published"),
   ]);

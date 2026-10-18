@@ -6,6 +6,8 @@ import { getStageState } from "@/lib/stage/server";
 import { resolveStreamScope } from "@/lib/arena-challenges/resolve-scope";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCareerIntent } from "@/lib/careers/intent";
+import { loadStreamGate } from "@/lib/arena-challenges/stream-gate";
+import { STREAM_FIRST_YEAR } from "@/lib/career/term";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { AreaHero } from "@/components/metro/AreaHero";
 
@@ -23,6 +25,7 @@ export default async function ArenaChallengesPage() {
   const { supabase, user } = await requireAuthedUser();
   const [scope, { intent }, { stage }] = await Promise.all([resolveStreamScope(supabase, user.id), getCareerIntent(createServiceClient(), user.id), getStageState(user.id)]);
   const isStudent = stage === "student";
+  const streamOpen = !isStudent || (await loadStreamGate(createServiceClient(), user.id)).open;
   // Domain follows the Plan B answer: same role keeps the onboarding role, change role uses the new one, anything else has no Domain yet.
   // A graduate has no Plan B: their target role from the assessment drives Domain straight away.
   const target = !isStudent ? intent.primary?.name ?? null : intent.planBKind === "same_role" ? intent.primary?.name ?? null : intent.planBKind === "change_role" ? intent.secondary?.name ?? null : null;
@@ -39,14 +42,16 @@ export default async function ArenaChallengesPage() {
           badge="Stream"
           title="Stream Challenges"
           description={
-            scope
+            !streamOpen
+              ? `Weekly challenges from your own branch subjects open in year ${STREAM_FIRST_YEAR}. Until then, follow your roadmap, learn in SkillStudio and build projects.`
+              : scope
               ? "Spin the wheel every Sunday to get 4 to 9 fresh challenges, drawn straight from your own branch and subjects. Practice regularly, build subject skills, and get better every week."
               : "Add your branch in Education to unlock a weekly wheel spin and 4 to 9 challenges from your own curriculum."
           }
           count="4–9 challenges"
           timing="8–15 min each"
           reward="Earn points"
-          context={scope ? { text: `Your stream: ${scope.branch}` } : { text: "No branch on your profile yet", href: "/profile", label: "Add your branch" }}
+          context={!streamOpen ? { text: `Opens in year ${STREAM_FIRST_YEAR}`, href: "/dashboard/roadmap", label: "Open your roadmap" } : scope ? { text: `Your stream: ${scope.branch}` } : { text: "No branch on your profile yet", href: "/profile", label: "Add your branch" }}
         />}
         <TrackCard
           href="/arena/challenges/domain"
@@ -54,7 +59,7 @@ export default async function ArenaChallengesPage() {
           accent="blue"
           badge="Domain"
           title="Domain Challenges"
-          description={target ? "Work on a real-world ticket for your career role. Finish it, and the next one unlocks a day later." : isStudent ? "Real-world tickets for your career role. They begin once you answer Plan B in 3rd year; until then, Stream challenges build your base." : "Real-world tickets for your target role. Set your target role in the assessment and they begin."}
+          description={target ? "Work on a real-world ticket for your career role. Finish it, and the next one unlocks a day later." : isStudent ? "Real-world tickets for your career role. They begin once you answer Plan B in 3rd year; until then, your roadmap, SkillStudio and Stream challenges build your base." : "Real-world tickets for your target role. Set your target role in the assessment and they begin."}
           count="One ticket at a time"
           timing="8–15 min each"
           reward="Earn ELO"

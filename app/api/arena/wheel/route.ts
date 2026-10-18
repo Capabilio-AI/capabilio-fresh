@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { studentOnlyResponse } from "@/lib/stage/guard";
 import { getSpin, revealSpin, spinWheel } from "@/lib/arena-challenges/spin";
+import { loadStreamGate } from "@/lib/arena-challenges/stream-gate";
 
 const Body = z.object({ action: z.enum(["spin", "reveal"]) });
 
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
   if (!body.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
   const service = createServiceClient();
+  if (!(await loadStreamGate(service, auth.userId)).open) return NextResponse.json({ error: "Stream challenges open in 2nd year." }, { status: 403 });
   const state = body.data.action === "spin" ? await spinWheel(service, auth.userId) : await revealSpin(service, auth.userId);
   if (body.data.action === "reveal" && !state.spin) return NextResponse.json({ error: "Spin the wheel first" }, { status: 409 });
   return NextResponse.json(state);

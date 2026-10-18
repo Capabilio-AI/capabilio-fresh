@@ -72,7 +72,7 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
   );
 
   const [drivesRes, studentsRes, pendingRes, placedRes, eventsRes] = await Promise.all([
-    runsPlacements ? service.from("opportunities").select("id, role, company, deadline").eq("institution_id", ctx.institutionId) : Promise.resolve({ data: [] }),
+    runsPlacements ? service.from("opportunities").select("id, role, company, deadline, drive_status").eq("institution_id", ctx.institutionId) : Promise.resolve({ data: [] }),
     service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active"),
     ctx.permissions.has("members")
       ? service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("status", "pending").in("role", [...IN_APP_APPROVABLE_ROLES] as never[])
@@ -80,7 +80,7 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
     runsPlacements ? db.from("org_placements").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId) : Promise.resolve({ count: 0 }),
     db.from("org_posts").select("*").eq("institution_id", ctx.institutionId).eq("type", "event").eq("status", "published").gte("event_starts_at", nowIso).order("event_starts_at").limit(5),
   ]);
-  const drives = (drivesRes.data ?? []) as { id: string; role: string; company: string; deadline: string | null }[];
+  const drives = ((drivesRes.data ?? []) as { id: string; role: string; company: string; deadline: string | null; drive_status?: string | null }[]).filter((d) => !d.drive_status || d.drive_status === "planned" || d.drive_status === "registration_open");
   const driveIds = drives.map((d) => d.id);
   const apps = driveIds.length ? ((await service.from("applications").select("status, opportunity_id").in("opportunity_id", driveIds)).data ?? []) : [];
   const events = (eventsRes.data ?? []) as OrgPostRow[];

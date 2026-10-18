@@ -28,7 +28,7 @@ export default async function OrgAccountSettingsPage() {
 
       <SettingsCard id="session-h" title="This session" bare>
         <SettingsRow icon={ShieldCheck} title="Sign out" description="End your session on this device.">
-          <SignOutButton />
+          <SignOutButton redirectTo="/login?path=organisation" />
         </SettingsRow>
       </SettingsCard>
     </div>

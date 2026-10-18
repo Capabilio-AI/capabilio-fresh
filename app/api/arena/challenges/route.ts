@@ -13,6 +13,9 @@ import { generateOnDemand, weeklyPool } from "@/lib/arena-challenges/leetcode/we
 import { mixFor, scaleMix } from "@/lib/arena-challenges/select-stream";
 import { currentStreamWeek } from "@/lib/arena-challenges/week";
 import { timeLimitForDifficulty } from "@/lib/arena-challenges/timer";
+import { MISSION_MINUTES } from "@/lib/arena-challenges/missions/score";
+import { loadStreamGate } from "@/lib/arena-challenges/stream-gate";
+import { preparePersonalPool } from "@/lib/arena-challenges/stream-ai/personal";
 
 export const maxDuration = 300;
 
@@ -32,6 +35,11 @@ export async function GET() {
   const scope = await resolveStreamScope(supabase, auth.userId);
   if (!scope) {
     return NextResponse.json({ scopeKey: null, scopeLabel: null, weekStart: null, challenges: [], shortfall: 0, emptyReason: "no_branch" });
+  }
+
+  // Stream opens at 2-1; before that the student has the roadmap, SkillStudio and projects
+  if (!(await loadStreamGate(service, auth.userId)).open) {
+    return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: null, challenges: [], shortfall: 0, emptyReason: "too_early" });
   }
 
   // the week's challenges open only after the student has spun the wheel and scratched their card
@@ -66,19 +74,28 @@ export async function GET() {
     }
   }
 
+  // Every other branch is written for the student: what the week still needs is generated after this response, and the board polls until it exists.
+  if (scope.scopeKey !== IT_CLUSTER_SCOPE_KEY) {
+    const { data: stats } = await service.from("arena_stream_stats").select("points").eq("user_id", auth.userId).maybeSingle();
+    const prep = await preparePersonalPool(service, { userId: auth.userId, scope, student, count: spin.count, points: stats?.points ?? 0 });
+    if (prep.start) after(prep.start);
+    if (prep.preparing) return NextResponse.json({ scopeKey: scope.scopeKey, scopeLabel: scope.promptLabel, branch: scope.branch, weekStart: spinWeek, preparing: true, challenges: [], shortfall: 0, emptyReason: null });
+  }
+
   const batch = await getOrAssignWeeklyBatch(service, auth.userId, scope, student, spin.count);
 
   const [{ data: challenges }, { data: completions }] = await Promise.all([
     batch.challengeIds.length
       ? untyped(service) // untyped: workstation_template_id postdates the generated types
           .from("arena_challenges")
-          .select("id, kind, title, category, difficulty, scenario, objective, language, starter_code, stdin, answer_unit, skill_tags, created_at, workstation_template_id, problem")
+          .select("id, kind, title, category, difficulty, scenario, objective, language, starter_code, stdin, answer_unit, options, skill_tags, created_at, workstation_template_id, problem")
           .in("id", batch.challengeIds)
       : Promise.resolve({ data: [] }),
     service.from("arena_challenge_completions").select("challenge_id, is_correct").eq("user_id", auth.userId).eq("track", "stream"),
   ]);
   type Row = { id: string; kind?: string; difficulty: string } & Record<string, unknown>;
   const solvedIds = new Set((completions ?? []).filter((c) => c.is_correct).map((c) => c.challenge_id));
+  const answeredIds = new Set((completions ?? []).map((c) => c.challenge_id));
 
   return NextResponse.json({
     scopeKey: scope.scopeKey,
@@ -88,7 +105,7 @@ export async function GET() {
     shortfall: batch.shortfall,
     emptyReason: batch.challengeIds.length === 0 ? "no_published_content" : null,
     challenges: ((challenges ?? []) as Row[])
-      .map((c) => ({ ...c, time_limit_minutes: c.kind === "leetcode" ? LEETCODE_MINUTES[c.difficulty] ?? 20 : timeLimitForDifficulty(c.difficulty), solved: solvedIds.has(c.id) }))
+      .map((c) => ({ ...c, time_limit_minutes: c.kind === "leetcode" ? LEETCODE_MINUTES[c.difficulty] ?? 20 : c.kind === "mission" ? MISSION_MINUTES[c.difficulty as keyof typeof MISSION_MINUTES] ?? 12 : timeLimitForDifficulty(c.difficulty), solved: solvedIds.has(c.id), answered: answeredIds.has(c.id) }))
       .sort((a, b) => (DIFFICULTY_RANK[a.difficulty] ?? 0) - (DIFFICULTY_RANK[b.difficulty] ?? 0)),
   });
 }

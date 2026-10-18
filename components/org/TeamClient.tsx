@@ -207,7 +207,7 @@ export function MemberActions({
   );
 }
 
-export function InvitationActions({ id, email, role, institutionName }: { id: string; email: string; role: string; institutionName: string }) {
+export function InvitationActions({ id, email, role, permissions, institutionName }: { id: string; email: string; role: string; permissions: string[] | null; institutionName: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -224,8 +224,8 @@ export function InvitationActions({ id, email, role, institutionName }: { id: st
   async function resend() {
     setBusy(true);
     setError(null);
-    // a resend issues a fresh link (the old one stops working); permissions stay as originally invited
-    const r = await post("/api/org/invitations", { email, role });
+    // a resend issues a fresh link (the old one stops working); keep the permissions it was originally invited with
+    const r = await post("/api/org/invitations", { email, role, permissions });
     setBusy(false);
     if (!r.ok) return setError(r.error ?? "Something went wrong.");
     setResult({ url: String(r.data?.inviteUrl), email, roleLabel: INVITABLE_ROLES.find((x) => x.role === role)?.label ?? role, expiresAt: String(r.data?.expiresAt) });
@@ -253,11 +253,14 @@ export function InvitationActions({ id, email, role, institutionName }: { id: st
 export function JoinLinkActions({ id, url, active, collegeName }: { id: string; url: string; active: boolean; collegeName: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const message = `Join ${collegeName} on Capabilio — build a verified profile of what you can do. Sign up here: ${url}`;
   async function toggle() {
     setBusy(true);
-    await post("/api/org/join-links/toggle", { linkId: id, active: !active });
+    setError(null);
+    const r = await post("/api/org/join-links/toggle", { linkId: id, active: !active });
     setBusy(false);
+    if (!r.ok) return setError(r.error ?? "Something went wrong.");
     router.refresh();
   }
   return (
@@ -271,6 +274,11 @@ export function JoinLinkActions({ id, url, active, collegeName }: { id: string; 
       <button type="button" className={active ? "o-btn-danger" : "o-btn-ghost"} onClick={toggle} disabled={busy}>
         {active ? "Turn off" : "Turn on"}
       </button>
+      {error && (
+        <span role="alert" className="text-[11.5px] text-app-rose">
+          {error}
+        </span>
+      )}
     </div>
   );
 }

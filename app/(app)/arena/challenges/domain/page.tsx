@@ -67,7 +67,7 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
     body = (
       <Notice
         title="Domain challenges start with your Plan B"
-        body={`Until then Arena gives you Stream challenges, so you can learn about ${view.primary} and build your base. Domain tickets begin once you choose to continue in your role or move to another in 3rd year.`}
+        body={`Until then your roadmap, SkillStudio and Stream challenges help you learn about ${view.primary} and build your base. Domain tickets begin once you choose to continue in your role or move to another in 3rd year.`}
         cta={[...(planBOpen ? [{ href: "/dashboard/roadmap", label: "Answer Plan B" }] : []), ...(isStudent ? [{ href: "/arena/challenges/stream", label: "Go to Stream challenges" }] : [])]}
       />
     );

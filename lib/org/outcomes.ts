@@ -33,7 +33,9 @@ export interface PlacementStats {
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 /** Pure. Counts distinct students (a student with two confirmed offers is one placed student). */
-export function summarizePlacements(rows: PlacementRecord[]): PlacementStats {
+export function summarizePlacements(all: PlacementRecord[]): PlacementStats {
+  // an offer the student declined is not a placement
+  const rows = all.filter((r) => r.studentResponse !== "declined");
   const students = new Map<string, PlacementRecord>();
   for (const r of rows) if (!students.has(r.studentUserId)) students.set(r.studentUserId, r);
 

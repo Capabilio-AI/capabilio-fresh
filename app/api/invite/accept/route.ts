@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   if (createError || !created.user) {
     await release();
     const taken = /already|registered|exists/i.test(createError?.message ?? "");
-    return NextResponse.json({ error: taken ? "That email already has a Capabilio account." : (createError?.message ?? "Could not create your account.") }, { status: taken ? 409 : 400 });
+    return NextResponse.json({ error: taken ? "That email already has a Capabilio account." : "Could not create your account." }, { status: taken ? 409 : 400 });
   }
   const userId = created.user.id;
 
