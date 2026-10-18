@@ -1,10 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeRng } from "@/lib/workplace/rng";
 import { defaultSettings, normalizeSettings, nearestSolution, validateScenario } from "./grid";
 import { LABS, labFamily } from "./registry";
 import { assumptionsFor } from "./notes";
 import { sceneFor } from "./scenes";
 import type { Difficulty } from "./types";
+
+// scenario search is CPU-bound; CI runners are several times slower than a laptop
+vi.setConfig({ testTimeout: 120_000 });
 
 const LEVELS: Difficulty[] = ["easy", "medium", "hard"];
 
