@@ -150,6 +150,14 @@ export const InviteSchema = z
 export const InviteIdSchema = z.object({ invitationId: uuid }).strict();
 export const AcceptInviteSchema = z.object({ token: z.string().min(20).max(120), fullName: z.string().trim().min(2).max(120), password: z.string().min(8).max(200) }).strict();
 export const MemberPermissionsSchema = z.object({ membershipId: uuid, permissions: z.array(permissionKey).max(ALL_PERMISSION_KEYS.length).nullable() }).strict();
+export const MemberRoleSchema = z
+  .object({
+    membershipId: uuid,
+    role: z.enum(["faculty", "hod", "tpo", "vice_principal"]),
+    // null = the new role's default set
+    permissions: z.array(permissionKey).max(ALL_PERMISSION_KEYS.length).nullable(),
+  })
+  .strict();
 export const MemberIdSchema = z.object({ membershipId: uuid }).strict();
 export const JoinLinkSchema = z
   .object({

@@ -93,7 +93,7 @@ export default async function TeamPage() {
                     {ROLE_LABEL[i.role] ?? i.role} · {i.expired ? "expired" : `expires ${new Date(i.expiresAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}`}
                   </p>
                 </div>
-                <InvitationActions id={i.id} email={i.email} role={i.role} permissions={i.permissions} institutionName={ctx.institutionName} />
+                <InvitationActions id={i.id} email={i.email} role={i.role} permissions={i.permissions} institutionName={ctx.institutionName} grantable={grantable} canGrantAdmin={isAdmin} />
               </li>
             ))}
           </ul>
@@ -152,6 +152,7 @@ export default async function TeamPage() {
                       canEdit={!m.isAdmin}
                       canRemove={m.role !== "principal" && (!m.isAdmin || isAdmin)}
                       grantable={grantable}
+                      canGrantAdmin={isAdmin}
                     />
                   )}
                 </div>

@@ -3,6 +3,9 @@ import { orgRoute } from "@/lib/api/org-route";
 import { InviteSchema } from "@/lib/org/schemas";
 import { INVITE_TTL_DAYS, checkGrant, inviteUrl, newInviteToken } from "@/lib/org/team";
 import { untyped } from "@/lib/org/db";
+import { INVITABLE_ROLES } from "@/lib/org/roles";
+import { sendEmail } from "@/lib/email/send";
+import { staffInviteEmail } from "@/lib/email/invite-email";
 
 /**
  * Invite a staff member by email. The role and permissions are chosen here by an authorised member (never by the
@@ -39,6 +42,20 @@ export async function POST(request: Request) {
       expires_at: expiresAt,
     });
     if (error) throw error;
-    return { inviteUrl: inviteUrl(new URL(request.url).origin, token), expiresAt, email: body.email };
+
+    const url = inviteUrl(new URL(request.url).origin, token);
+    const { data: inviter } = await service.from("profiles").select("full_name").eq("id", ctx.userId).maybeSingle();
+    const mail = await sendEmail(
+      staffInviteEmail({
+        to: body.email,
+        institutionName: ctx.institutionName,
+        roleLabel: INVITABLE_ROLES.find((r) => r.role === body.role)?.label ?? body.role,
+        inviterName: inviter?.full_name ?? null,
+        url,
+        expiresOn: new Date(expiresAt).toLocaleDateString("en-IN", { dateStyle: "long" }),
+      })
+    );
+    // the link is always returned so the admin can still share it by hand if email isn't set up or didn't go through
+    return { inviteUrl: url, expiresAt, email: body.email, emailSent: mail.sent, emailProblem: mail.sent ? null : mail.reason };
   });
 }
