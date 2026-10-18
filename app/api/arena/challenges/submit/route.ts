@@ -12,6 +12,7 @@ import { addChallengePoints } from "@/lib/arena-challenges/award";
 import { deriveArenaChallengeEvidence, ARENA_CHALLENGES_ANALYSIS_VERSION } from "@/lib/evidence/from-arena-challenges";
 import { recordEvidence } from "@/lib/evidence/record";
 import { judge, type TestVerdict } from "@/lib/arena-challenges/leetcode/judge";
+import { untyped } from "@/lib/org/db";
 import { loadLeetcodeForStudent } from "@/lib/arena-challenges/leetcode/access";
 
 export const maxDuration = 120;
@@ -21,6 +22,8 @@ const BodySchema = z.object({
   code: z.string().min(1).max(20000).optional(),
   language: z.string().optional(),
   answer: z.string().min(1).max(100).optional(),
+  /** concept / case question: the chosen option key */
+  choice: z.enum(["A", "B", "C", "D"]).optional(),
   working: z.string().max(5000).optional(),
 });
 
@@ -47,10 +50,14 @@ export async function POST(request: Request) {
     .eq("id", parsed.data.challengeId)
     .eq("track", "stream")
     .eq("active", true)
+    .or(`user_id.is.null,user_id.eq.${auth.userId}`) // a challenge written for another student is not yours to submit
     .maybeSingle();
   if (!challenge) {
     return NextResponse.json({ error: "Challenge not found." }, { status: 404 });
   }
+
+  // missions are played in their own lab (/api/arena/missions); their answer key is not a program's output
+  if (challenge.kind === "mission") return NextResponse.json({ error: "Open this mission in its lab." }, { status: 400 });
 
   let isCorrect: boolean;
   let tests: { index: number; passed: boolean; hidden: boolean; input?: string; expected?: string; actual?: string; error?: string }[] | undefined;
@@ -78,6 +85,13 @@ export async function POST(request: Request) {
       return hidden ? { index: i, passed: v.passed, hidden } : { index: i, passed: v.passed, hidden, input: lc.tests[i].input.trimEnd(), expected: lc.tests[i].output, actual: v.actual.trimEnd(), error: v.error };
     });
     submission = parsed.data.code;
+  } else if (challenge.kind === "mcq") {
+    if (!parsed.data.choice) return NextResponse.json({ error: "Choose an option." }, { status: 400 });
+    // four options can be guessed through, so a concept question gets one answer
+    const { data: prior } = await service.from("arena_challenge_completions").select("id").eq("user_id", auth.userId).eq("challenge_id", challenge.id).maybeSingle();
+    if (prior) return NextResponse.json({ error: "You've already answered this question." }, { status: 409 });
+    isCorrect = parsed.data.choice === challenge.expected_output;
+    submission = `Choice: ${parsed.data.choice}`;
   } else if (challenge.kind === "numeric") {
     if (!parsed.data.answer) return NextResponse.json({ error: "Enter your answer." }, { status: 400 });
     isCorrect = isNumericAnswerCorrect(parsed.data.answer, challenge.expected_output);
@@ -147,5 +161,7 @@ export async function POST(request: Request) {
     console.error("[arena/challenges/submit] evidence write failed (submission itself is unaffected):", evidenceError);
   }
 
-  return NextResponse.json({ isCorrect, stdout, stderr, pointsEarned, tests });
+  // the reasoning is shown once the question is answered, right or wrong (untyped: explanation postdates the generated types)
+  const explanation = challenge.kind === "mcq" ? ((await untyped(service).from("arena_challenges").select("explanation").eq("id", challenge.id).single()).data as { explanation: string | null } | null)?.explanation ?? undefined : undefined;
+  return NextResponse.json({ isCorrect, stdout, stderr, pointsEarned, tests, explanation });
 }

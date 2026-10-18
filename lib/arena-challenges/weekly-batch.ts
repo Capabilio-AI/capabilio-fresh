@@ -1,10 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { currentStreamWeek, weekStartOf } from "./week";
-import { ensureChallengePool } from "./generate";
 import type { StreamScope } from "./resolve-scope";
 import { BATCH_SIZE, selectStreamBatch } from "./select-stream";
-import { IT_CLUSTER_SCOPE_KEY } from "./branch-clusters";
 import { loadStreamPool, type StreamStudentContext } from "./stream-context";
 
 export interface WeeklyBatch {
@@ -28,16 +26,9 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
   if (existing && existing.challenge_ids.length > 0) return { weekStart, challengeIds: existing.challenge_ids, shortfall: Math.max(0, size - existing.challenge_ids.length) };
   if (existing) await service.from("arena_stream_weeks").delete().eq("user_id", userId).eq("week_start", weekStart);
 
-  // Best-effort: new AI output is stored as DRAFT for admin review and is never served from here; an outage never blocks the batch.
-  try {
-    if (scope.scopeKey !== IT_CLUSTER_SCOPE_KEY) await ensureChallengePool(service, scope.scopeKey, scope.promptLabel); // IT is filled by the weekly AI run instead
-  } catch (generationError) {
-    console.error(`[arena-challenges/weekly-batch] AI top-up failed for ${scope.scopeKey}:`, generationError);
-  }
-
   const since = weekStartOf(new Date(Date.now() - RECENT_WEEKS * 7 * 24 * 60 * 60 * 1000));
   const [pool, { data: completions }, { data: stats }, { data: recentWeeks }] = await Promise.all([
-    loadStreamPool(service, scope),
+    loadStreamPool(service, scope, userId),
     service.from("arena_challenge_completions").select("challenge_id").eq("user_id", userId).eq("track", "stream").eq("is_correct", true),
     service.from("arena_stream_stats").select("points").eq("user_id", userId).maybeSingle(),
     service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).gte("week_start", since).lt("week_start", weekStart),

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Clock, Lock } from "lucide-react";
 import { ChallengeSolvePanel, type ChallengeDetail } from "./ChallengeSolvePanel";
 import { LeetcodeScreen } from "./LeetcodeScreen";
+import { MissionScreen } from "./mission/MissionScreen";
+import { MISSION_POINTS } from "@/lib/arena-challenges/missions/score";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 
 export interface TrackState {
@@ -17,6 +19,8 @@ export interface TrackState {
   preparing?: boolean;
   /** how many of this week's wheel number could not be filled from published content */
   shortfall?: number;
+  /** why there is nothing to show: Stream opens at 2-1, or nothing could be prepared yet */
+  emptyReason?: string | null;
   challenges: (ChallengeDetail & { solved: boolean })[];
 }
 
@@ -31,6 +35,8 @@ const CARD_PALETTE = [
 const WORKSPACE_HINT: Record<string, string> = {
   code: "Write and run your program in the code workspace.",
   numeric: "Work it out and submit your answer in the calculation workspace.",
+  mcq: "Read the situation and choose the best answer. One try.",
+  mission: "Experiment in the lab: change the controls, run tests, and work out why it behaves that way.",
 };
 
 export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: TrackState; emptyHint: string; onRefresh: () => void }) {
@@ -57,11 +63,32 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
     );
   }
 
+  if (state.emptyReason === "too_early") {
+    return (
+      <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
+        <p className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Stream challenges open in 2nd year</p>
+        <p className="mx-auto mt-1 max-w-md font-lp-body text-[13px] text-app-muted">Until then, follow your roadmap, learn in SkillStudio, and build projects of your own or ones your staff assign.</p>
+      </div>
+    );
+  }
+
   if (!state.scopeKey) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
         <p className="font-lp-body text-[13.5px] text-app-muted">{emptyHint}</p>
       </div>
+    );
+  }
+
+  if (openChallenge?.kind === "mission") {
+    return (
+      <MissionScreen
+        challenge={openChallenge}
+        onDone={() => {
+          setOpenChallenge(null);
+          onRefresh();
+        }}
+      />
     );
   }
 
@@ -90,18 +117,18 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
 
       {state.challenges.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-14 text-center">
-          <p className="font-lp-body text-[13.5px] text-[var(--m-ink)]">No challenges configured yet for {state.scopeLabel}.</p>
-          <p className="mt-1 font-lp-body text-[13px] text-app-muted">New ones are added after review. Meanwhile you can try the Domain track.</p>
-          <Link href="/arena/challenges/domain" className="mt-4 inline-block font-lp-body text-[13px] font-semibold text-app-orange hover:underline">
-            Browse Domain challenges
-          </Link>
+          <p className="font-lp-body text-[13.5px] text-[var(--m-ink)]">We could not prepare this week&apos;s challenges for {state.scopeLabel} just now.</p>
+          <p className="mt-1 font-lp-body text-[13px] text-app-muted">They are written for you from your own subjects. Try again in a few minutes.</p>
+          <button type="button" onClick={onRefresh} className="mt-4 inline-block font-lp-body text-[13px] font-semibold text-app-orange hover:underline">
+            Try again
+          </button>
         </div>
       ) : (
         <>
           {startError && <p role="alert" className="mb-4 text-center font-lp-body text-[13px] text-app-rose">{startError}</p>}
           {(state.shortfall ?? 0) > 0 && (
             <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 text-center font-lp-body text-[12.5px] text-app-muted">
-              Only {state.challenges.length} challenge{state.challenges.length === 1 ? " is" : "s are"} published for {state.scopeLabel} so far — more are added after review.
+              Only {state.challenges.length} challenge{state.challenges.length === 1 ? " is" : "s are"} ready for {state.scopeLabel} this week — the rest could not be prepared yet.
             </p>
           )}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -112,9 +139,9 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
                 key={c.id}
                 type="button"
                 onClick={() => open(c)}
-                disabled={c.solved}
+                disabled={c.solved || c.answered}
                 className={`group relative flex min-h-[220px] flex-col rounded-3xl p-7 text-left transition-all duration-200 ${palette.bg} ${
-                  c.solved ? "cursor-default" : "hover:-translate-y-1 hover:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.3)]"
+                  c.solved || c.answered ? "cursor-default" : "hover:-translate-y-1 hover:shadow-[0_16px_36px_-18px_rgba(0,0,0,0.3)]"
                 }`}
               >
                 {c.solved && (
@@ -129,13 +156,18 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
                       <Clock size={11} />
                       {c.time_limit_minutes}m
                     </span>
-                    <span className={`rounded-full bg-white px-3 py-1 font-lp-body text-[12px] font-bold ${palette.accent}`}>+{pointsForDifficulty(c.difficulty)} Pts</span>
+                    <span className={`rounded-full bg-white px-3 py-1 font-lp-body text-[12px] font-bold ${palette.accent}`}>+{c.kind === "mission" ? MISSION_POINTS[c.difficulty] : pointsForDifficulty(c.difficulty)} Pts</span>
                   </div>
                 </div>
                 <p className="mt-6 font-lp-display text-[20px] font-bold leading-snug text-[var(--m-ink)]">{c.title}</p>
                 <p className="mt-2 font-lp-body text-[13.5px] leading-relaxed text-[var(--m-ink)]/65">{WORKSPACE_HINT[c.kind] ?? WORKSPACE_HINT.code}</p>
                 <span className={`mt-auto flex items-center gap-1.5 pt-6 font-lp-body text-[14px] font-bold ${c.solved ? "text-app-success" : palette.accent}`}>
-                  {c.solved ? (
+                  {!c.solved && c.answered ? (
+                    <>
+                      <Lock size={13} />
+                      Answered — locked
+                    </>
+                  ) : c.solved ? (
                     <>
                       <Lock size={13} />
                       Completed — locked

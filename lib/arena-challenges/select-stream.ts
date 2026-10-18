@@ -11,6 +11,8 @@ export interface StreamCandidate {
   courseTags: string[];
   /** an older stored challenge, served only when this week's fresh ones run short: ranked after fresh ones */
   stale?: boolean;
+  /** a shared catalog challenge: served only after the student's own written-for-them ones, which are better fitted */
+  shared?: boolean;
 }
 
 export interface StudentCourse {
@@ -103,6 +105,8 @@ export function tierFor(c: StreamCandidate, courses: StudentCourse[], currentYea
 }
 
 const TIER_RANK: Record<CurriculumTier, number> = { CURRENT_YEAR: 0, ADJACENT_YEAR: 1, GENERAL: 2 };
+/** larger than any tier/recency bucket, so a shared challenge ranks after every personal one */
+const SHARED_PENALTY = 6;
 
 /**
  * Pure and deterministic. From PUBLISHED, unsolved challenges: prefer the student's current-year subjects, then adjacent years, then
@@ -116,7 +120,7 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
     .map((c) => {
       const tier = tierFor(c, input.courses, input.currentYear);
       tiers[c.id] = tier;
-      return { c, bucket: TIER_RANK[tier] * 2 + (input.recentIds.has(c.id) || c.stale ? 1 : 0), tie: stableHash(`${input.seed}:${c.id}`) };
+      return { c, bucket: (c.shared ? SHARED_PENALTY : 0) + TIER_RANK[tier] * 2 + (input.recentIds.has(c.id) || c.stale ? 1 : 0), tie: stableHash(`${input.seed}:${c.id}`) };
     })
     .sort((a, b) => a.bucket - b.bucket || a.tie - b.tie);
   const bucketOf = new Map(ranked.map((r) => [r.c.id, r.bucket]));
