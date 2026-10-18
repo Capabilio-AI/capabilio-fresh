@@ -8,8 +8,13 @@ const BTN = "o-btn-ghost";
 const BTN_PRIMARY = "o-btn";
 
 async function post(url: string, body: unknown): Promise<{ ok: boolean; unauthenticated: boolean }> {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  return { ok: res.ok, unauthenticated: res.status === 401 };
+  try {
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    return { ok: res.ok, unauthenticated: res.status === 401 };
+  } catch {
+    // network failure: leave the button usable so the person can try again
+    return { ok: false, unauthenticated: false };
+  }
 }
 
 export function FollowButton({ slug, following, followerCount }: { slug: string; following: boolean; followerCount: number }) {

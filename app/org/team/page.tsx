@@ -93,7 +93,7 @@ export default async function TeamPage() {
                     {ROLE_LABEL[i.role] ?? i.role} · {i.expired ? "expired" : `expires ${new Date(i.expiresAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}`}
                   </p>
                 </div>
-                <InvitationActions id={i.id} email={i.email} role={i.role} institutionName={ctx.institutionName} />
+                <InvitationActions id={i.id} email={i.email} role={i.role} permissions={i.permissions} institutionName={ctx.institutionName} />
               </li>
             ))}
           </ul>

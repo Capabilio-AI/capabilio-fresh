@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const grant = checkGrant(ctx, body.role, body.permissions);
     if (!grant.ok) return NextResponse.json({ error: grant.message }, { status: 403 });
 
-    const { data: existing } = await service.from("profiles").select("id").ilike("email", body.email).maybeSingle();
+    const { data: existing } = await service.from("profiles").select("id").eq("email", body.email.toLowerCase()).maybeSingle();
     if (existing) {
       return NextResponse.json({ error: "That email already has a Capabilio account. Invite a different work email address." }, { status: 409 });
     }

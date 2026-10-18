@@ -98,10 +98,12 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                   <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">
                     {submission.submission_type === "physical" ? (
                       "Physical submission received."
-                    ) : (
-                      <a href={submission.link_url ?? "#"} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">
+                    ) : submission.link_url ? (
+                      <a href={submission.link_url} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">
                         {submission.link_url}
                       </a>
+                    ) : (
+                      "Submitted."
                     )}{" "}
                     <span className="text-app-muted">({formatDateTime(submission.submitted_at)})</span>
                   </p>

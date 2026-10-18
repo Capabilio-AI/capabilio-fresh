@@ -34,7 +34,7 @@ const COPY: Record<ShellPath, { title: string; lead: string; body: string; journ
   organisation: {
     title: "Understand your people.",
     lead: "Connect, assess and develop, with evidence, not claims.",
-    body: "For colleges, universities and companies. Organisation accounts are reviewed manually before they are activated.",
+    body: "For colleges, universities and companies. A new college workspace opens once you confirm your email; joining an existing one needs approval from its staff.",
     journeyLabel: "Organisation onboarding",
   },
 };
@@ -70,7 +70,7 @@ export function AuthLayout({ children, path = "student" }: { children: ReactNode
           {path === "organisation" && (
             <p className="mt-8 flex max-w-md items-start gap-2 text-sm leading-relaxed text-cap-ink/75">
               <ShieldCheck size={16} className="mt-0.5 shrink-0 text-cap-indigo" />
-              Every new organisation is checked by our team. You can sign in at any time to see where your application stands.
+              Sign in at any time. If you asked to join an existing college, you will see your approval status here.
             </p>
           )}
         </aside>

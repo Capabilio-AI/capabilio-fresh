@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Download } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
+import { can } from "@/lib/org/roles";
 import { loadOutcomes } from "@/lib/org/outcomes";
 import { MIN_COHORT } from "@/lib/org/insights";
 import { JsonForm } from "@/components/org/JsonForm";
@@ -122,6 +123,7 @@ export default async function OutcomesPage() {
         )}
       </section>
 
+      {can(ctx, "postPlacement") && (
       <Collapsible title="Record an off-campus offer">
         <p className="mb-3 font-lp-body text-[12.5px] text-app-muted">For a placement that didn&apos;t come through one of your drives. It counts only because you confirm it here.</p>
         <JsonForm
@@ -137,6 +139,7 @@ export default async function OutcomesPage() {
           ]}
         />
       </Collapsible>
+      )}
     </div>
   );
 }

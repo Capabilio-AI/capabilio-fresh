@@ -90,7 +90,7 @@ export function OrganisationSignupForm({ initialType = "institution" }: { initia
     <CardChrome label="capabilio / organisation">
       <h1 className="font-lp-display text-lp-headline-md font-semibold tracking-tight text-lp-text-ink">Register your organisation</h1>
       <p className="mt-1.5 font-lp-body text-lp-body-sm text-lp-text-muted">
-        Connect, assess, develop, and understand your people. New organisations are reviewed manually before activation.
+        Connect, assess, develop, and understand your people. Confirm your email to open a new college workspace. Joining a college that is already on Capabilio needs approval from its existing staff.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5" noValidate>

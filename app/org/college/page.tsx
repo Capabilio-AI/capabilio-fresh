@@ -6,6 +6,7 @@ import { loadOrgFacts, loadPlacementWall, loadPublicOrg, loadVisiblePosts } from
 import { TABS, type TabId } from "@/components/org/CollegeHeader";
 import { CollegeProfileView } from "@/components/org/CollegeProfileView";
 import { untyped, type OrgPostRow } from "@/lib/org/db";
+import { loadManagedPosts } from "@/lib/org/posts";
 
 export const metadata: Metadata = { title: "College page — Capabilio AI" };
 
@@ -21,7 +22,15 @@ export default async function OrgCollegePage({ searchParams }: { searchParams: P
   const tab: TabId = isTab(sp.tab) ? sp.tab : "home";
   const org = await loadPublicOrg(service, ctx.institutionSlug, ctx.userId);
   if (!org) notFound();
-  const [posts, wall, facts] = await Promise.all([loadVisiblePosts(service, org, ctx.userId), loadPlacementWall(service, org.institutionId), loadOrgFacts(service, org.institutionId)]);
+  const canManagePosts = can(ctx, "publishPost");
+  const [published, drafts, wall, facts] = await Promise.all([
+    loadVisiblePosts(service, org, ctx.userId),
+    // drafts and unpublished posts are only listed here, for the people who manage them
+    canManagePosts ? loadManagedPosts(service, ctx).then((all) => all.filter((p) => p.status === "draft")) : Promise.resolve([]),
+    loadPlacementWall(service, org.institutionId),
+    loadOrgFacts(service, org.institutionId),
+  ]);
+  const posts = [...drafts, ...published];
 
   // posts this member may edit or delete: everything for admins, otherwise only their own
   const ids = posts.map((p) => p.id);

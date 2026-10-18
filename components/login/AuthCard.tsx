@@ -76,7 +76,6 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
         : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
   const [authError, setAuthError] = useState<ErrorStatus | undefined>();
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -251,16 +250,6 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
               Forgot password?
             </button>
           </div>
-
-          <label className="flex items-center gap-2.5 font-lp-body text-lp-body-sm text-lp-on-surface-variant">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="h-4 w-4 rounded border-lp-border-strong bg-lp-surface-card text-lp-accent-indigo accent-[var(--lp-accent-indigo)] focus:ring-2 focus:ring-lp-accent-indigo/25"
-            />
-            Remember me
-          </label>
 
           <button
             type="submit"
