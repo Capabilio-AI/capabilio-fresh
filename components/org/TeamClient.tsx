@@ -29,6 +29,18 @@ interface InviteResult {
   email: string;
   roleLabel: string;
   expiresAt: string;
+  /** true when the server emailed the invitation itself */
+  emailSent: boolean;
+}
+
+function resultFrom(r: { data: Record<string, unknown> | null }, role: string): InviteResult {
+  return {
+    url: String(r.data?.inviteUrl),
+    email: String(r.data?.email),
+    roleLabel: INVITABLE_ROLES.find((x) => x.role === role)?.label ?? role,
+    expiresAt: String(r.data?.expiresAt),
+    emailSent: r.data?.emailSent === true,
+  };
 }
 
 /** Share panel: the link works only for the invited email, once, for seven days. Email is opened in the admin's own mail app. */
@@ -37,9 +49,12 @@ function InviteShare({ result, institutionName, onDone }: { result: InviteResult
   const message = `Hi,\n\nYou've been invited to join ${institutionName} on Capabilio as ${result.roleLabel}.\nOpen this link to create your account (it works once, for 7 days):\n${result.url}\n`;
   return (
     <div className="rounded-2xl border border-app-success/30 bg-app-success-container p-4" role="status">
-      <p className="text-[13px] font-bold text-app-charcoal">Invitation ready for {result.email}</p>
+      <p className="text-[13px] font-bold text-app-charcoal">{result.emailSent ? `Invitation emailed to ${result.email}` : `Invitation ready for ${result.email}`}</p>
       <p className="mt-1 text-[12px] text-app-muted">
-        Capabilio doesn&apos;t send email for you, so share the link yourself. It works once, only for this address, until {new Date(result.expiresAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}.
+        {result.emailSent
+          ? "They will get an email with the link (ask them to check spam). "
+          : "We couldn't send the email from here, so share the link yourself. "}
+        The link works once, only for this address, until {new Date(result.expiresAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}.
       </p>
       <input readOnly value={result.url} onFocus={(e) => e.currentTarget.select()} className="o-input mt-3 font-lp-mono !text-[12px]" aria-label="Invitation link" />
       <div className="mt-3 flex flex-wrap gap-2">
@@ -81,7 +96,7 @@ export function InviteStaffForm({ grantable, institutionName, canGrantAdmin }: {
     const r = await post("/api/org/invitations", { email, role, permissions: kindOf(role) === "admin" || isDefault ? null : perms });
     setBusy(false);
     if (!r.ok) return setError(r.error ?? "Something went wrong.");
-    setResult({ url: String(r.data?.inviteUrl), email: String(r.data?.email), roleLabel: INVITABLE_ROLES.find((x) => x.role === role)?.label ?? role, expiresAt: String(r.data?.expiresAt) });
+    setResult(resultFrom(r, role));
     setEmail("");
     router.refresh();
   }
@@ -129,6 +144,7 @@ export function MemberActions({
   canEdit,
   canRemove,
   grantable,
+  canGrantAdmin,
 }: {
   membershipId: string;
   name: string;
@@ -137,18 +153,30 @@ export function MemberActions({
   canEdit: boolean;
   canRemove: boolean;
   grantable: OrgPermissionKey[];
+  canGrantAdmin: boolean;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [newRole, setNewRole] = useState(role);
   const [value, setValue] = useState<OrgPermissionKey[]>(permissions);
+  const roles = INVITABLE_ROLES.filter((r) => kindOf(r.role) !== "admin" || canGrantAdmin);
+  function changeRole(next: string) {
+    setNewRole(next);
+    setValue(defaultsFor(next).filter((p) => grantable.includes(p)));
+  }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
     setBusy(true);
     setError(null);
-    const isDefault = sameSet(value, [...effectivePermissions(role, null)]);
-    const r = await post("/api/org/team/permissions", { membershipId, permissions: isDefault ? null : value });
+    const isDefault = sameSet(value, [...effectivePermissions(newRole, null)]);
+    const permissionsToSave = isDefault ? null : value;
+    // a role change goes through its own route (it also moves the profile's role); otherwise only the access changes
+    const r =
+      newRole !== role
+        ? await post("/api/org/team/role", { membershipId, role: newRole, permissions: permissionsToSave })
+        : await post("/api/org/team/permissions", { membershipId, permissions: permissionsToSave });
     setBusy(false);
     if (!r.ok) return setError(r.error ?? "Something went wrong.");
     setEditing(false);
@@ -166,8 +194,8 @@ export function MemberActions({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {canEdit && (
-        <button type="button" className="o-btn-ghost" onClick={() => { setValue(permissions); setEditing(true); }}>
-          Edit access
+        <button type="button" className="o-btn-ghost" onClick={() => { setNewRole(role); setValue(permissions); setEditing(true); }}>
+          Edit
         </button>
       )}
       {canRemove && (
@@ -183,9 +211,20 @@ export function MemberActions({
       {editing && (
         <div className="fixed inset-0 z-30 grid place-items-center overflow-y-auto bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={`Edit access for ${name}`}>
           <div className="o-card my-8 w-full max-w-xl !bg-[var(--o-pop,#14110c)] p-5">
-            <h3 className="text-[15px] font-extrabold text-app-charcoal">Access for {name}</h3>
+            <h3 className="text-[15px] font-extrabold text-app-charcoal">Edit {name}</h3>
+            <label className="mt-4 block text-[11.5px] font-bold text-app-muted">
+              Role
+              <select value={newRole} onChange={(e) => changeRole(e.target.value)} className="o-input mt-1.5" disabled={busy}>
+                {roles.map((r) => (
+                  <option key={r.role} value={r.role}>
+                    {r.label}
+                  </option>
+                ))}
+                {!roles.some((r) => r.role === role) && <option value={role}>{role}</option>}
+              </select>
+            </label>
             <div className="mt-4">
-              <PermissionPicker role={role} value={value} onChange={setValue} grantable={grantable} />
+              <PermissionPicker role={newRole} value={value} onChange={setValue} grantable={grantable} />
             </div>
             {error && (
               <p role="alert" className="mt-3 text-[12.5px] text-app-rose">
@@ -197,7 +236,7 @@ export function MemberActions({
                 Cancel
               </button>
               <button type="button" className="o-btn" onClick={save} disabled={busy}>
-                {busy && <Loader2 size={14} className="animate-spin" aria-hidden="true" />} Save access
+                {busy && <Loader2 size={14} className="animate-spin" aria-hidden="true" />} Save changes
               </button>
             </div>
           </div>
@@ -207,8 +246,50 @@ export function MemberActions({
   );
 }
 
-export function InvitationActions({ id, email, role, permissions, institutionName }: { id: string; email: string; role: string; permissions: string[] | null; institutionName: string }) {
+export function InvitationActions({
+  id,
+  email,
+  role,
+  permissions,
+  institutionName,
+  grantable,
+  canGrantAdmin,
+}: {
+  id: string;
+  email: string;
+  role: string;
+  permissions: string[] | null;
+  institutionName: string;
+  grantable: OrgPermissionKey[];
+  canGrantAdmin: boolean;
+}) {
   const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [editRole, setEditRole] = useState(role);
+  const [editPerms, setEditPerms] = useState<OrgPermissionKey[]>([]);
+  const roles = INVITABLE_ROLES.filter((r) => kindOf(r.role) !== "admin" || canGrantAdmin);
+  function startEdit() {
+    setEditRole(role);
+    setEditPerms((permissions ?? defaultsFor(role)).filter((p): p is OrgPermissionKey => grantable.includes(p as OrgPermissionKey)));
+    setError(null);
+    setEditing(true);
+  }
+  function changeEditRole(next: string) {
+    setEditRole(next);
+    setEditPerms(defaultsFor(next).filter((p) => grantable.includes(p)));
+  }
+  async function saveEdit() {
+    setBusy(true);
+    setError(null);
+    const isDefault = sameSet(editPerms, defaultsFor(editRole));
+    // saving replaces the old invitation with a fresh one for the same address and emails it again
+    const r = await post("/api/org/invitations", { email, role: editRole, permissions: kindOf(editRole) === "admin" || isDefault ? null : editPerms });
+    setBusy(false);
+    if (!r.ok) return setError(r.error ?? "Something went wrong.");
+    setEditing(false);
+    setResult(resultFrom(r, editRole));
+    router.refresh();
+  }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<InviteResult | null>(null);
@@ -228,15 +309,18 @@ export function InvitationActions({ id, email, role, permissions, institutionNam
     const r = await post("/api/org/invitations", { email, role, permissions });
     setBusy(false);
     if (!r.ok) return setError(r.error ?? "Something went wrong.");
-    setResult({ url: String(r.data?.inviteUrl), email, roleLabel: INVITABLE_ROLES.find((x) => x.role === role)?.label ?? role, expiresAt: String(r.data?.expiresAt) });
+    setResult(resultFrom(r, role));
     router.refresh();
   }
 
   if (result) return <div className="mt-3 w-full"><InviteShare result={result} institutionName={institutionName} onDone={() => setResult(null)} /></div>;
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className="o-btn-ghost" onClick={startEdit} disabled={busy}>
+        Edit
+      </button>
       <button type="button" className="o-btn-ghost" onClick={resend} disabled={busy}>
-        New link
+        Resend email
       </button>
       <button type="button" className="o-btn-danger" onClick={revoke} disabled={busy}>
         Cancel invite
@@ -245,6 +329,40 @@ export function InvitationActions({ id, email, role, permissions, institutionNam
         <span role="alert" className="text-[11.5px] text-app-rose">
           {error}
         </span>
+      )}
+      {editing && (
+        <div className="fixed inset-0 z-30 grid place-items-center overflow-y-auto bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={`Edit invitation for ${email}`}>
+          <div className="o-card my-8 w-full max-w-xl !bg-[var(--o-pop,#14110c)] p-5">
+            <h3 className="text-[15px] font-extrabold text-app-charcoal">Edit invitation for {email}</h3>
+            <p className="mt-1 text-[12px] text-app-muted">Saving cancels the old link and emails a new one.</p>
+            <label className="mt-4 block text-[11.5px] font-bold text-app-muted">
+              Role
+              <select value={editRole} onChange={(e) => changeEditRole(e.target.value)} className="o-input mt-1.5" disabled={busy}>
+                {roles.map((r) => (
+                  <option key={r.role} value={r.role}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="mt-4">
+              <PermissionPicker role={editRole} value={editPerms} onChange={setEditPerms} grantable={grantable} />
+            </div>
+            {error && (
+              <p role="alert" className="mt-3 text-[12.5px] text-app-rose">
+                {error}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" className="o-btn-ghost" onClick={() => setEditing(false)} disabled={busy}>
+                Cancel
+              </button>
+              <button type="button" className="o-btn" onClick={saveEdit} disabled={busy}>
+                {busy && <Loader2 size={14} className="animate-spin" aria-hidden="true" />} Save and resend
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
