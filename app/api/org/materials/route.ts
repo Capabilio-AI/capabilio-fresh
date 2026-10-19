@@ -3,6 +3,8 @@ import { orgRoute } from "@/lib/api/org-route";
 import { MaterialSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
 import { resolveMaterialScope } from "@/lib/org/material-scope";
+import { notify } from "@/lib/notifications/notify";
+import { activeStudents } from "@/lib/notifications/audiences";
 
 /** Staff/admin share a note, PDF link or external link with a branch + year. Institution comes from the caller's membership. */
 export async function POST(request: Request) {
@@ -23,6 +25,15 @@ export async function POST(request: Request) {
       year,
     });
     if (error) throw error;
+    await notify(service, {
+      userIds: await activeStudents(service, ctx.institutionId, branch ? [branch] : null),
+      type: "material_posted",
+      title: `New material: ${body.title}`,
+      href: "/skillstudio/materials",
+      actorId: ctx.userId,
+      institutionId: ctx.institutionId,
+      dedupeKey: `material:${ctx.membershipId}:${body.title}:${Math.floor(Date.now() / 60000)}`,
+    });
     return {};
   });
 }

@@ -3,6 +3,7 @@ import { AcceptInviteSchema } from "@/lib/org/schemas";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hashToken } from "@/lib/org/team";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
 
 interface InvitationRow {
   id: string;
@@ -10,6 +11,7 @@ interface InvitationRow {
   email: string;
   role: string;
   permissions: string[] | null;
+  invited_by_membership_id: string;
 }
 
 /**
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
     .is("accepted_at", null)
     .is("revoked_at", null)
     .gt("expires_at", nowIso)
-    .select("id, institution_id, email, role, permissions");
+    .select("id, institution_id, email, role, permissions, invited_by_membership_id");
   const invitation = (claimed as InvitationRow[] | null)?.[0];
   if (!invitation) return NextResponse.json({ error: "This invitation link is no longer valid. Ask your admin to send a new one." }, { status: 410 });
 
@@ -77,5 +79,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not set up your access. Please try again." }, { status: 500 });
   }
   await db.from("org_invitations").update({ accepted_user_id: userId }).eq("id", invitation.id);
+  const { data: inviter } = await db.from("institution_memberships").select("user_id").eq("id", invitation.invited_by_membership_id).maybeSingle();
+  if (inviter) {
+    await notify(service, {
+      userIds: [(inviter as { user_id: string }).user_id],
+      type: "invite_accepted",
+      title: `${fullName} accepted your invitation`,
+      body: "They now have access to the workspace.",
+      href: "/org/team",
+      actorId: userId,
+      institutionId: invitation.institution_id,
+      dedupeKey: `invite-accepted:${invitation.id}`,
+    });
+  }
   return NextResponse.json({ ok: true, email: invitation.email });
 }

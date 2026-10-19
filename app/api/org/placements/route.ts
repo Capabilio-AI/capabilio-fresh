@@ -1,6 +1,8 @@
 import { orgRoute } from "@/lib/api/org-route";
 import { PlacementSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
+import { activeStudents } from "@/lib/notifications/audiences";
 
 /**
  * Record a company visit the college has confirmed. It is an `opportunities` row pinned to the caller's institution,
@@ -28,6 +30,19 @@ export async function POST(request: Request) {
       .select("id")
       .single();
     if (error) throw error;
+    // students hear about a visit once it is open for registration, not while it is only planned
+    if (body.status === "registration_open") {
+      await notify(service, {
+        userIds: await activeStudents(service, ctx.institutionId, body.eligibleBranches),
+        type: "drive_open",
+        title: `${body.company} is visiting your college`,
+        body: `${body.role}${body.deadline ? ` · register by ${body.deadline}` : ""}`,
+        href: "/launchpad",
+        actorId: ctx.userId,
+        institutionId: ctx.institutionId,
+        dedupeKey: `drive-open:${data.id}`,
+      });
+    }
     return { visitId: data.id as string };
   });
 }

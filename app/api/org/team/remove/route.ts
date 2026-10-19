@@ -3,6 +3,7 @@ import { orgRoute } from "@/lib/api/org-route";
 import { MemberIdSchema } from "@/lib/org/schemas";
 import { kindOf } from "@/lib/org/roles";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
 
 /** Remove a team member's access (their account stays; they simply can't enter the workspace). */
 export async function POST(request: Request) {
@@ -16,6 +17,15 @@ export async function POST(request: Request) {
     if (kindOf(target.role) === "admin" && ctx.kind !== "admin") return NextResponse.json({ error: "Only an admin can remove an admin." }, { status: 403 });
     const { error } = await db.from("institution_memberships").update({ status: "revoked" }).eq("id", target.id);
     if (error) throw error;
+    await notify(service, {
+      userIds: [target.user_id],
+      type: "access_removed",
+      title: `Your access to ${ctx.institutionName} was removed`,
+      body: "Contact the college admin if you think this is a mistake.",
+      actorId: ctx.userId,
+      institutionId: ctx.institutionId,
+      dedupeKey: `access-removed:${target.id}:${Date.now()}`,
+    });
     return {};
   });
 }

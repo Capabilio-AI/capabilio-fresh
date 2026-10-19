@@ -3,6 +3,7 @@ import { orgRoute } from "@/lib/api/org-route";
 import { PostSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
 import { ownPathFromPublicUrl } from "@/lib/org/media";
+import { notifyPostPublished } from "@/lib/notifications/events";
 
 /** Events + announcements only. Staff and admins may publish (spec default); staff edit only their own (see /action). */
 export async function POST(request: Request) {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Upload the photo from here instead of pasting a link." }, { status: 400 });
     }
     const isEvent = body.type === "event";
-    const { error } = await untyped(service).from("org_posts").insert({
+    const { data: created, error } = await untyped(service).from("org_posts").insert({
       institution_id: ctx.institutionId,
       author_membership_id: ctx.membershipId,
       type: body.type,
@@ -30,8 +31,9 @@ export async function POST(request: Request) {
       is_public: body.isPublic,
       status: body.publish ? "published" : "draft",
       published_at: body.publish ? new Date().toISOString() : null,
-    });
+    }).select("id, type, title, is_public").single();
     if (error) throw error;
+    if (body.publish && created) await notifyPostPublished(service, ctx, created);
     return {};
   });
 }

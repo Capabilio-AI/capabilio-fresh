@@ -11,6 +11,7 @@ import { computeNextAction } from "@/lib/dashboard/next-action";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadRollNumberNotice } from "@/lib/org/roll-number";
 import { deriveNotifications, type Notification } from "@/lib/notifications/derive";
+import { NotificationList } from "@/components/notifications/NotificationList";
 
 export const metadata: Metadata = { title: "Notifications — Capabilio AI" };
 
@@ -61,11 +62,14 @@ export default async function NotificationsPage() {
   return (
     <div>
       <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Notifications</h1>
-      <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-        What&apos;s worth your attention right now — computed from your current profile, not a static feed.
-      </p>
+      <p className="mt-1 font-lp-body text-[13px] text-app-muted">What has happened on your account, and what is worth your attention right now.</p>
 
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-6">
+        <NotificationList />
+      </div>
+
+      <h2 className="mt-10 text-[15px] font-bold text-app-charcoal">To do</h2>
+      <div className="mt-3 flex flex-col gap-3">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center">
             <Sparkles size={20} className="text-app-success" />

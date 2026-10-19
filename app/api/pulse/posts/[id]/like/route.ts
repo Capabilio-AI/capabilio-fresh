@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
+import { createServiceClient } from "@/lib/supabase/service";
+import { notifyPulsePostAuthor } from "@/lib/notifications/events";
 
 /** Toggle: liked -> unlike, not liked -> like. Returns the new state. */
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,5 +31,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   const { error } = await supabase.from("post_likes").insert({ post_id: postId, user_id: auth.userId });
   if (error) throw error;
+  await notifyPulsePostAuthor(createServiceClient(), { postId, actorId: auth.userId, kind: "like" });
   return NextResponse.json({ liked: true });
 }

@@ -3,6 +3,8 @@ import { orgRoute } from "@/lib/api/org-route";
 import { ProjectSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
 import { resolveProjectScope, staffBranchScope } from "@/lib/org/branch-scope";
+import { notify } from "@/lib/notifications/notify";
+import { activeStudents } from "@/lib/notifications/audiences";
 
 // Team size is fixed at 4 for v1 (spec default); it is never a request field.
 const TEAM_SIZE = 4;
@@ -37,6 +39,16 @@ export async function POST(request: Request) {
       .select("id")
       .single();
     if (error) throw error;
+    await notify(service, {
+      userIds: await activeStudents(service, ctx.institutionId, scope.value),
+      type: "project_posted",
+      title: `New project: ${body.title}`,
+      body: `Form a group of ${TEAM_SIZE} before ${deadline.toLocaleDateString("en-IN", { dateStyle: "medium" })}.`,
+      href: `/arena/projects/${data.id}`,
+      actorId: ctx.userId,
+      institutionId: ctx.institutionId,
+      dedupeKey: `project:${data.id}`,
+    });
     return { projectId: data.id };
   });
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { orgRoute } from "@/lib/api/org-route";
 import { ConfirmPlacementSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
+import { notify } from "@/lib/notifications/notify";
 
 /**
  * TPO/admin confirm a placement. There is deliberately no self-report path: a placement exists only because a
@@ -49,6 +50,17 @@ export async function POST(request: Request) {
       { onConflict: "institution_id,student_user_id,company,role_title" }
     ).select("id").single();
     if (error) throw error;
-    return { placementId: (saved as { id: string }).id };
+    const placementId = (saved as { id: string }).id;
+    await notify(service, {
+      userIds: [studentUserId!],
+      type: "placement_confirmed",
+      title: `Congratulations! Your placement at ${company} is confirmed`,
+      body: `${roleTitle}. Open your offers to accept or decline.`,
+      href: "/launchpad",
+      actorId: ctx.userId,
+      institutionId: ctx.institutionId,
+      dedupeKey: `placement:${placementId}`,
+    });
+    return { placementId };
   });
 }

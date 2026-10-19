@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { notify } from "@/lib/notifications/notify";
+import { staffWithPermission } from "@/lib/notifications/audiences";
 
 export const ORG_TYPES = ["institution", "company"] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
@@ -53,7 +55,7 @@ export async function registerOrganisation(
   if (error) return { ok: false, status: 400, message: error.message };
   if (!data.user || (data.user.identities?.length ?? 0) === 0) return { ok: true };
 
-  const { error: rpcError } = await service.rpc("create_org_signup", {
+  const { data: created, error: rpcError } = await service.rpc("create_org_signup", {
     p_user_id: data.user.id,
     p_org_name: input.orgName,
     p_org_type: input.orgType,
@@ -65,6 +67,19 @@ export async function registerOrganisation(
       return { ok: false, status: 409, message: "That name is already registered as a different type of organisation. Please contact us." };
     }
     return { ok: false, status: 500, message: "We couldn't create your organisation account. Please try again." };
+  }
+  const row = (created as { institution_id: string; membership_id: string; matched_existing: boolean }[] | null)?.[0];
+  if (row?.matched_existing && input.orgType === "institution") {
+    // someone is asking to join a college that is already on Capabilio: its approvers need to know
+    await notify(service, {
+      userIds: await staffWithPermission(service, row.institution_id, "members"),
+      type: "join_request",
+      title: `${input.fullName} wants to join as ${roleFor(input).replace(/_/g, " ")}`,
+      body: "Approve them only if you know them.",
+      href: "/org/team",
+      institutionId: row.institution_id,
+      dedupeKey: `join-request:${row.membership_id}`,
+    });
   }
   return { ok: true };
 }

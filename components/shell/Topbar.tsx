@@ -6,6 +6,7 @@ import { AccountMenu } from "@/components/shell/AccountMenu";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { DockButton } from "@/components/shell/DockButton";
 import { UnreadBadge } from "@/components/messages/UnreadBadge";
+import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 
 export function Topbar({ viewer }: { viewer: ViewerSummary }) {
   return (
@@ -22,7 +23,7 @@ export function Topbar({ viewer }: { viewer: ViewerSummary }) {
 
         <div className="glass flex shrink-0 items-center gap-0.5 rounded-full p-1">
           <DockButton href="/pulse/messages" label="Messages" badge={<UnreadBadge className="absolute -right-2.5 -top-2 h-[18px]" />}><MessageCircle size={18} strokeWidth={2.2} /></DockButton>
-          <DockButton href="/notifications" label="Alerts"><Bell size={18} strokeWidth={2.2} /></DockButton>
+          <DockButton href="/notifications" label="Alerts" badge={<NotificationBadge className="absolute -right-2.5 -top-2 h-[18px]" />}><Bell size={18} strokeWidth={2.2} /></DockButton>
           <DockButton href="/settings" label="Settings"><Settings size={18} strokeWidth={2.2} /></DockButton>
           <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
           <AccountMenu viewer={viewer} />
