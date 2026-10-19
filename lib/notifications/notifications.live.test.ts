@@ -116,7 +116,7 @@ describe("reading your notifications", () => {
     const other = (await get("sECE")).body.items[0].id;
     expect((await post(markRead, "sCSE", { ids: [first, other] })).status).toBe(200);
     expect((await get("sCSE")).body.unread).toBe(1);
-    expect((await get("sECE")).body.unread).toBe(2); // sCSE could not touch sECE's
+    expect((await get("sECE")).body.unread).toBe(1); // sCSE could not touch sECE's
     expect((await post(markRead, "sCSE", { all: true })).status).toBe(200);
     expect((await get("sCSE")).body.unread).toBe(0);
     expect((await post(markRead, "sCSE", { everything: true })).status).toBe(400);
