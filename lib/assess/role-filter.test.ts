@@ -23,6 +23,14 @@ describe("filterRoles", () => {
     expect(names("llm")).toEqual(["Generative AI Engineer"]);
     expect(names("analy").length).toBe(1);
   });
+  it("matches several keywords across the name, then roles sharing some of them", () => {
+    const more = [...roles, { careerId: "6", name: "Embedded Systems Engineer", aliases: ["firmware engineer"] }];
+    const out = (t: string) => filterRoles(more, t).map((h) => h.role.name);
+    expect(out("embedded engineer")[0]).toBe("Embedded Systems Engineer");
+    expect(out("systems embedded")).toEqual(["Embedded Systems Engineer"]);
+    expect(out("firmware engineer")[0]).toBe("Embedded Systems Engineer");
+    expect(out("zoology engineer")).toContain("Cloud Engineer");
+  });
   it("returns nothing for a role we do not have (the UI then offers 'use as typed')", () => {
     expect(names("zoologist")).toEqual([]);
   });

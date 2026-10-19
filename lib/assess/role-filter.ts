@@ -16,7 +16,9 @@ export const FEATURED = ["Data Analyst", "Software Engineer", "AI/ML Engineer", 
 
 /**
  * Instant, local filtering over the role list that ships with the page. Ranking: name starts with the text, an alias starts with it,
- * a word of the name/alias starts with it, then anything that contains it. Pure, so it is unit-tested and costs no request.
+ * a word of the name/alias starts with it, then anything that contains it. When the text is several words, the keywords match one by
+ * one across the name and aliases (all of them first, then roles sharing some of them), so "embedded engineer" still finds
+ * "Embedded Systems Engineer". Pure, so it is unit-tested and costs no request.
  */
 export function filterRoles<T extends FilterableRole>(roles: readonly T[], text: string): RoleHit<T>[] {
   const q = normalizeRole(text);
@@ -24,6 +26,7 @@ export function filterRoles<T extends FilterableRole>(roles: readonly T[], text:
     const rank = (r: T) => { const i = FEATURED.indexOf(r.name); return i < 0 ? FEATURED.length : i; };
     return [...roles].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name)).map((role) => ({ role, matched: null }));
   }
+  const qWords = q.split(" ");
   const scored: { hit: RoleHit<T>; score: number }[] = [];
   for (const role of roles) {
     const name = normalizeRole(role.name);
@@ -36,6 +39,12 @@ export function filterRoles<T extends FilterableRole>(roles: readonly T[], text:
     };
     consider(name, true);
     for (const a of role.aliases) consider(a, false);
+    if (qWords.length > 1 && best === 9) {
+      const pool = [name, ...role.aliases].flatMap((c) => c.split(" "));
+      const hit = qWords.filter((qw) => qw.length >= 3 && pool.some((w) => w.startsWith(qw))).length;
+      if (hit === qWords.length) best = 4;
+      else if (hit > 0) best = 5 + (qWords.length - hit) / 10;
+    }
     if (best < 9) scored.push({ hit: { role, matched }, score: best });
   }
   return scored.sort((a, b) => a.score - b.score || a.hit.role.name.localeCompare(b.hit.role.name)).map((s) => s.hit);
