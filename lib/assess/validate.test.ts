@@ -16,6 +16,11 @@ describe("validateQuestion", () => {
     const v = validateQuestion(good, expect_);
     expect(v.ok && v.question.correctIndex).toBe(0);
   });
+  it("accepts an AI-created role whose key (ai-...) is never echoed by the model, by its name", () => {
+    const ai: Expectation = { ...expect_, careerKey: "ai-embedded-systems-engineer", careerName: "Embedded Systems Engineer" };
+    expect(validateQuestion({ ...good, careerRole: "Embedded Systems Engineer" }, ai).ok).toBe(true);
+    expect(validateQuestion({ ...good, careerRole: "Data Analyst" }, ai).ok).toBe(false);
+  });
   it.each([
     ["missing fields", { question: "short" }],
     ["wrong option count", { ...good, options: good.options.slice(0, 3) }],
