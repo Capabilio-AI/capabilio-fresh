@@ -73,7 +73,7 @@ ${SHAPE}`;
       c.avoid.length ? `Do not repeat or lightly reword any of these existing questions:\n- ${c.avoid.join("\n- ")}` : "",
       `Write ${c.count} different questions that all test ${s.skillName} for a ${s.careerName}, each on a different basic point.`,
     ].filter(Boolean).join("\n");
-    return { system, user, expectation: { skillKey: s.skillKey, careerKey: s.careerKey, difficulty: c.difficulty, minQuestionLength: 25 } };
+    return { system, user, expectation: { skillKey: s.skillKey, careerKey: s.careerKey, careerName: s.careerName, difficulty: c.difficulty, minQuestionLength: 25 } };
   }
 
   const g = c.slot;

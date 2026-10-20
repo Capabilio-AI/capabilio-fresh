@@ -25,6 +25,8 @@ export interface Expectation {
   /** canonical skill key (career layer) or section key (general layer) */
   skillKey: string;
   careerKey: string | null;
+  /** the role's display name. AI-created roles have keys like "ai-embedded-systems-engineer", which a model never echoes back, so the name counts too */
+  careerName?: string | null;
   difficulty: Difficulty;
   /** extra floor on question length for scenario-style career questions (definitions are too short to be realistic) */
   minQuestionLength: number;
@@ -62,8 +64,9 @@ export function validateQuestion(raw: unknown, expect: Expectation): Verdict {
   if (norm(q.skillId) !== norm(expect.skillKey)) return { ok: false, reason: `skillId ${q.skillId} is not the requested skill ${expect.skillKey}` };
   // compare on letters/digits only so "AI/ML Engineer", "ai-ml-engineer" and "AI ML Engineer" are the same role
   const roleKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
-  if (expect.careerKey && !roleKey(q.careerRole).includes(roleKey(expect.careerKey))) {
-    return { ok: false, reason: `careerRole ${q.careerRole} does not match ${expect.careerKey}` };
+  const wanted = [expect.careerKey, expect.careerName].filter((v): v is string => Boolean(v));
+  if (wanted.length > 0 && !wanted.some((w) => roleKey(q.careerRole).includes(roleKey(w)))) {
+    return { ok: false, reason: `careerRole ${q.careerRole} does not match ${wanted.join(" / ")}` };
   }
   if (q.difficulty !== expect.difficulty) return { ok: false, reason: `difficulty ${q.difficulty} != requested ${expect.difficulty}` };
   if (q.question.length < expect.minQuestionLength) return { ok: false, reason: "question too short to be a realistic scenario" };
