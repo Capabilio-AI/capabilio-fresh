@@ -17,6 +17,7 @@ import { topUp } from "./generate";
 import { boostTargets, focusSkillIdsFor, isGraduate } from "@/lib/graduate/focus";
 import type { LlmDeps } from "./generate";
 import { careerBankFull, careerSlot, chooseFrom, fetchCandidates, pickFromPool, shuffledOrder, warmPool, type PoolFilter, type PoolPick } from "./pool";
+import { inBackground } from "./background";
 import { AssessError, PoolUnavailableError, type Feedback, type Layer, type QuestionPayload, type SessionStart, type SessionState } from "./types";
 
 /** An assessment may end early (pool ran dry) only after this share of it has been answered. */
@@ -263,7 +264,9 @@ export async function refillBuffer(db: Db, userId: string, sessionId: string, de
   const rowsP = fetchRows(db, sessionId);
   const session = await loadSession(db, userId, sessionId).catch((e) => { void rowsP.catch(() => {}); throw e; });
   if (session.status !== "IN_PROGRESS") return;
-  await reconcileBuffer(db, await loadContext(db, session, rowsP), { allowLive: false }, deps);
+  // This runs after the answer was saved, while the student reads the feedback, so it may write a missing question now (about 9 s with
+  // the model) instead of making the student wait for it when they press Next.
+  await reconcileBuffer(db, await loadContext(db, session, rowsP), { allowLive: true }, deps);
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -537,7 +540,7 @@ export async function startSession(db: Db, userId: string, layer: Layer, opts: {
       plan = planFromAvailability(available);
       if (Object.values(plan).reduce((a, b) => a + b, 0) < 4) throw new PoolUnavailableError();
       if (generalTargets().some((t) => (plan![t.id] ?? 0) < t.max)) console.warn("[assess] common question pool is thin, planning for:", plan);
-      void warmPool(db, { general: true }, deps.retry, 12).catch((e) => console.error("[assess] common warm-up failed:", e));
+      inBackground(() => warmPool(db, { general: true }, deps.retry, 12));
     }
     if (careerId) {
       const start = await startRating(db);
@@ -558,7 +561,7 @@ export async function startSession(db: Db, userId: string, layer: Layer, opts: {
       existing = created;
       void track(db, userId, layer === "CAREER" ? "career_assessment_started" : "assessment_started", { sessionId: created.id, careerId });
       // top up this role's pool in the background so later questions never wait on Groq
-      if (career) void warmPool(db, { career, skills }, deps.retry, 30).catch((e) => console.error("[assess] warmPool failed:", e));
+      if (career) inBackground(() => warmPool(db, { career, skills }, deps.retry, 30));
     }
   }
   const session = existing as SessionRow;
