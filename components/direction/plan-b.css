@@ -1,0 +1,14 @@
+/* Plan B dialog: one authored moment (the sheet rises in, the tiles follow), then calm. */
+.pb-dialog::backdrop { background: rgb(18 14 24 / 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: pb-fade 0.3s ease both; }
+.pb-dialog[open] { animation: pb-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.pb-dialog[open] .pb-tile { animation: pb-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 55ms + 140ms); }
+.pb-line { transition: stroke 0.3s ease, stroke-width 0.3s ease; }
+.pb-dot { transition: fill 0.3s ease, r 0.3s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease; }
+.pb-ring { transform-box: fill-box; transform-origin: center; animation: pb-ring 1.8s ease-out infinite; }
+@keyframes pb-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pb-pop { from { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes pb-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pb-ring { 0% { transform: scale(0.8); opacity: 0.7; } 100% { transform: scale(2.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .pb-dialog::backdrop, .pb-dialog[open], .pb-dialog[open] .pb-tile, .pb-ring { animation: none; }
+}
