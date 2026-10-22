@@ -8,7 +8,10 @@ const MIGRATION = readFileSync(path.join(process.cwd(), "supabase/migrations/120
 const STUBS = `
   create role anon; create role authenticated; create role service_role;
   create table public.profiles (id uuid primary key default gen_random_uuid());
-  create table public.arena_domain_assignments (id uuid primary key default gen_random_uuid());
+  create table public.arena_domain_assignments (
+    id uuid primary key default gen_random_uuid(), user_id uuid not null, role_key text not null, status text not null default 'presented', completed_at timestamptz
+  );
+  create unique index arena_domain_assignments_one_open on public.arena_domain_assignments (user_id, role_key) where completed_at is null;
 `;
 const USER = "00000000-0000-0000-0000-000000000001";
 
@@ -71,6 +74,35 @@ describe("migration 120", () => {
     await db.exec(`insert into arena_proof_session_stages (session_id, stage_key, stage_index, area_key) values ('${id}', 'a', 0, 'sql')`);
     await fails(`insert into arena_proof_session_stages (session_id, stage_key, stage_index, area_key) values ('${id}', 'a', 1, 'sql')`, /duplicate key/);
     await fails(`insert into arena_proof_session_stages (session_id, stage_key, stage_index, area_key) values ('${id}', 'b', 0, 'sql')`, /duplicate key/);
+  });
+
+  it("keeps one open DAILY ticket per student and role, while letting a session run beside it", async () => {
+    await db.exec("delete from arena_domain_assignments");
+    await db.exec("delete from arena_proof_sessions");
+    const session = await newSession("open");
+    await db.exec(`insert into arena_domain_assignments (user_id, role_key) values ('${USER}', 'data-analyst')`);
+    await fails(`insert into arena_domain_assignments (user_id, role_key) values ('${USER}', 'data-analyst')`, /arena_domain_assignments_one_open/);
+    await db.exec(`insert into arena_domain_assignments (user_id, role_key, proof_session_id) values ('${USER}', 'data-analyst', '${session}')`);
+  });
+
+  it("allows one in-progress stage per session, and any number of finished ones", async () => {
+    await db.exec("delete from arena_domain_assignments");
+    const session = await newSession("finished");
+    const stage = (status: string, done: boolean) => `insert into arena_domain_assignments (user_id, role_key, proof_session_id, status, completed_at) values ('${USER}', 'data-analyst', '${session}', '${status}', ${done ? "now()" : "null"})`;
+    await db.exec(stage("explaining", false));
+    await db.exec(stage("explaining", false));
+    await db.exec(stage("presented", false));
+    await fails(stage("presented", false), /arena_domain_assignments_one_active_stage/);
+    await fails(stage("grading", false), /arena_domain_assignments_one_active_stage/);
+  });
+
+  it("keeps a stage's attempt if the session row is removed", async () => {
+    await db.exec("delete from arena_domain_assignments");
+    const session = await newSession("finished");
+    await db.exec(`insert into arena_domain_assignments (user_id, role_key, proof_session_id, status, completed_at) values ('${USER}', 'data-analyst', '${session}', 'explaining', null)`);
+    await db.exec(`delete from arena_proof_sessions where id = '${session}'`);
+    const left = await db.query<{ n: number; sid: string | null }>("select count(*)::int as n, max(proof_session_id::text) as sid from arena_domain_assignments");
+    expect(left.rows[0]).toEqual({ n: 1, sid: null });
   });
 
   it("removes a session's stages, events and reports with the session", async () => {

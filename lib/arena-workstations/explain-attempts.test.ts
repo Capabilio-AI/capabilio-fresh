@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // The real attempts module needs a live database client to load, so only the two functions the explain flow calls are stood in for.
-const mocks = vi.hoisted(() => ({ finishVerified: vi.fn(), closeWithoutRating: vi.fn(), generateExplainQuestions: vi.fn(), scoreExplanation: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  finishVerified: vi.fn(), closeWithoutRating: vi.fn(), generateExplainQuestions: vi.fn(), scoreExplanation: vi.fn(),
+  sessionContextFor: vi.fn(), sessionBrief: vi.fn(), finishSessionRated: vi.fn(), finishSessionUnrated: vi.fn(),
+}));
+// the Proof Session half of the flow (it needs a database client to load); a daily ticket has no session
+vi.mock("@/lib/arena-roles/session/finish", () => ({ sessionContextFor: mocks.sessionContextFor, sessionBrief: mocks.sessionBrief, finishSessionRated: mocks.finishSessionRated, finishSessionUnrated: mocks.finishSessionUnrated }));
 vi.mock("./attempts", () => {
   class AttemptError extends Error {
     constructor(message: string, readonly status: number, readonly extra: Record<string, unknown> = {}) { super(message); }
@@ -52,6 +57,7 @@ const ai = (overallScore: number) => ({ overallScore, answers: QUESTIONS.map(() 
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.sessionContextFor.mockResolvedValue(null);
   generateExplainQuestions.mockResolvedValue(QUESTIONS);
   finishVerified.mockResolvedValue({ points: 8, nextAvailableAt: "2026-10-17T00:00:00Z", evidenceId: null });
   closeWithoutRating.mockResolvedValue("2026-10-17T00:00:00Z");
@@ -141,5 +147,55 @@ describe("skip", () => {
     expect(r.nextAvailableAt).toBe("2026-10-17T00:00:00Z");
     expect(closeWithoutRating).toHaveBeenCalledTimes(1);
     expect(finishVerified).not.toHaveBeenCalled();
+  });
+});
+
+describe("a Proof Session", () => {
+  const ctx = { sessionId: "s1", anchorAttemptId: "a1", stages: [] };
+  const brief = { title: "From raw extract to evidence-backed recommendation", requester: null, scenario: "multi-stage", objective: "explain", skill: null, difficulty: "medium", submission: "Stage 1 ...", passedChecks: ["Totals match"] };
+  beforeEach(() => {
+    mocks.sessionContextFor.mockResolvedValue(ctx);
+    mocks.sessionBrief.mockResolvedValue(brief);
+    mocks.finishSessionRated.mockResolvedValue({ points: 40, evidenceIds: ["e1", "e2"], nextAvailableAt: "2026-10-22T00:00:00Z" });
+    mocks.finishSessionUnrated.mockResolvedValue("2026-10-22T00:00:00Z");
+  });
+  const started = async (db = tables({ evidence: [{ id: "e1", metadata: {} }, { id: "e2", metadata: {} }] })) => { const service = fakeService(db); await startExplanation(service, "u1", "a1"); return { db, service }; };
+
+  it("interviews on the whole session, not on one stage", async () => {
+    const v = await startExplanation(fakeService(tables()), "u1", "a1");
+    expect(v.task.title).toBe(brief.title);
+    expect(v.task.checks).toEqual(["Totals match"]);
+    expect(generateExplainQuestions.mock.calls[0][0]).toMatchObject({ title: brief.title });
+  });
+
+  it("will not start the interview while stages remain", async () => {
+    mocks.sessionContextFor.mockRejectedValue(Object.assign(new Error("Pass every stage before explaining your work."), { status: 409 }));
+    await expect(startExplanation(fakeService(tables()), "u1", "a1")).rejects.toMatchObject({ status: 409 });
+    expect(generateExplainQuestions).not.toHaveBeenCalled();
+  });
+
+  it("awards every stage through the session finish, with no daily cooldown path", async () => {
+    scoreExplanation.mockResolvedValue(ai(80));
+    const { db, service } = await started();
+    const r = await submitExplanation(service, "u1", "a1", GOOD);
+    expect(r).toMatchObject({ outcome: "award", points: 40, nextAvailableAt: "2026-10-22T00:00:00Z" });
+    expect(mocks.finishSessionRated).toHaveBeenCalledTimes(1);
+    expect(finishVerified).not.toHaveBeenCalled();
+    expect((db as Record<string, Row[]>).evidence.map((e) => (e.metadata as { explanationScore: number }).explanationScore)).toEqual([80, 80]);
+  });
+
+  it("closes the whole session without a rating after two misses, and on skip", async () => {
+    scoreExplanation.mockResolvedValue(ai(20));
+    const { service } = await started();
+    await submitExplanation(service, "u1", "a1", GOOD);
+    generateExplainQuestions.mockResolvedValue(["a?", "b?", "c?", "d?"]);
+    await startExplanation(service, "u1", "a1");
+    expect(await submitExplanation(service, "u1", "a1", GOOD)).toMatchObject({ outcome: "close" });
+    expect(mocks.finishSessionUnrated).toHaveBeenCalledTimes(1);
+    expect(closeWithoutRating).not.toHaveBeenCalled();
+
+    expect((await skipExplanation(fakeService(tables()), "u1", "a1")).nextAvailableAt).toBe("2026-10-22T00:00:00Z");
+    expect(mocks.finishSessionUnrated).toHaveBeenCalledTimes(2);
+    expect(mocks.finishSessionRated).not.toHaveBeenCalled();
   });
 });

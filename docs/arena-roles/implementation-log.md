@@ -85,3 +85,23 @@ Built and tested locally (unit and local-Postgres level):
 Verification: full suite 245 files / 1963 tests pass; `tsc` 0 source errors; eslint clean. No browser test, no live-database test.
 
 Not built yet (so the role is not wired end to end): session service (start, record events from the routes, finish, build report), API routes, the workbench and report UI, explain-your-work for sessions, portfolio entry, a Lab spec layer, quests. Next step: the session service and routes, tested against the migration on PGlite where possible.
+
+### IT-01 progress, second pass (2026-10-22): Proof Session wired end to end in code, NOT live
+
+Production state: **migration 120 is NOT applied.** The permission system denied `apply_migration` ("Modify Shared Resources"), so I stopped and did not route around it. Migration 113 (Backend role) is also not applied. Everything below is verified locally only.
+
+Built:
+
+- Service and storage port (`session/service.ts`, `store.ts`, `memory-store.ts`, `supabase-store.ts`): start (idempotent, race-safe, refuses while a daily ticket is open), sequential stages, browser events limited to `brief_viewed`, `data_inspected`, `plan_note`, student-scoped reads, report built once from server-graded stage results.
+- Stage attempts (`session/stage-attempt.ts`): a stage is an ordinary workstation attempt on the student's own BrightCart warehouse, so the existing tools and graders serve it. Double-activation is stopped by the `one_active_stage` index.
+- Changes to existing code (`attempts.ts`): daily state ignores session stages and reports `in_session`; the daily start refuses during a session; a stage pass parks the attempt in `explaining` (no rating, no cooldown); `finishVerified` and `closeWithoutRating` take an optional cooldown (default unchanged). Before the migration is applied the daily flow falls back to the old query, so deploying the code first does not break daily tickets (by reading; not tested).
+- Interview (`session/finish.ts`, `explain-attempts.ts`): one interview for the whole session, only after every stage is passed and only from the last stage; a pass rates every stage with no daily cooldown, a miss or skip closes them unrated.
+- Routes: `/api/arena/sessions` (+ `/stage`, `/events`, `/report`); the SQL run route records a trusted `query_run` for session stages.
+- UI: `SessionWorkspace`, `ReportView`, wired into the Domain page for roles with a workstation; `WorkstationShell` shows "Stage passed / Continue the session".
+- Migration 120 extended and tested on PGlite (11 tests): `proof_session_id` on assignments, the daily one-open index rebuilt to ignore session rows, one in-progress stage per session, service_role explicitly revoked on the log and reports.
+
+Verified locally: `tsc` 0 source errors, eslint clean, 298 tests pass in the affected areas (service 24, explain flow incl. session 13, migration 11).
+
+NOT verified: anything against the live database (stage creation insert, the explain-to-finish chain, `complete_workstation_attempt` with a 0-hour cooldown), any browser run of the UI, AI-generated stage tickets, the full suite after these changes.
+
+Known gaps: the AI helper is not offered in sessions yet (the AI dimension reads "not assessed"); `data_inspected` events are not sent by the SQL tool yet; stages are not linked by data (stated in the report); a session cannot be abandoned from the UI.

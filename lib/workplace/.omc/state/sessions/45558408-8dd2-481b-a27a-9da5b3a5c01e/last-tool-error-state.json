@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /Users/venkatagopichandkopuri/Desktop/Capabilio-fresh && for d in code frontend devops file-tasks investigate ml office tickets; do echo \\\"== $d 2: only-in-copy:\\\"; diff -rq \\\"lib/workp...",
+  "error": "Exit code 1\n== code 2: only-in-copy:\n       0\n== frontend 2: only-in-copy:\n       0\n== devops 2: only-in-copy:\n       0\n== file-tasks 2: only-in-copy:\n       0\n== investigate 2: only-in-copy:\n       0\n== ml 2: only-in-copy:\n       0\n== office 2: only-in-copy:\n       0\n== tickets 2: only-in-copy:\n       0",
+  "timestamp": "2026-10-16T17:38:31.952Z",
+  "retry_count": 1
+}

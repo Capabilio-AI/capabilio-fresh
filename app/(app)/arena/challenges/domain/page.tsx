@@ -12,6 +12,7 @@ import { chooseDomainSource } from "@/lib/arena-challenges/domain-source";
 import { TrackChallengesBoard } from "@/components/arena/TrackChallengesBoard";
 import { DomainSetList } from "@/components/arena/domain/DomainSetList";
 import { DomainCountdown } from "@/components/arena/domain/DomainCountdown";
+import { SessionWorkspace } from "@/components/arena/session/SessionWorkspace";
 
 export const metadata: Metadata = {
   title: "Domain Challenges — Arena — Capabilio AI",
@@ -85,7 +86,10 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
           <span className="rounded-full bg-app-blue-container px-3 py-1 font-semibold text-app-blue">{view.career.name}</span>
         </div>
         {source === "workstation" ? (
-          <TrackChallengesBoard track="domain" />
+          <>
+            <SessionWorkspace />
+            <TrackChallengesBoard track="domain" />
+          </>
         ) : source === "catalog" ? (
           <TrackChallengesBoard
             track="domain"

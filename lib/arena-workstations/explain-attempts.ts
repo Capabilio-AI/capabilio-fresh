@@ -4,6 +4,7 @@ import { untyped } from "@/lib/org/db";
 import { AttemptError, closeWithoutRating, finishVerified } from "./attempts";
 import { decideOutcome, describeSubmission, finalScore, generateExplainQuestions, MAX_ANSWER_CHARS, MAX_ATTEMPTS, QUESTION_COUNT, scoreExplanation, type ExplainScore, type TaskBrief } from "./explain";
 import { logArenaEvent } from "./log";
+import { finishSessionRated, finishSessionUnrated, sessionBrief, sessionContextFor } from "@/lib/arena-roles/session/finish";
 
 type Service = SupabaseClient<Database>;
 
@@ -48,7 +49,13 @@ async function loadExplaining(service: Service, userId: string, attemptId: strin
     title: challenge.title, requester: challenge.requester, scenario: challenge.scenario, objective: challenge.objective, skill: area?.display_name ?? null,
     difficulty: challenge.difficulty, submission: describeSubmission(challenge.tool_type ?? "", attempt.submission), passedChecks: checks,
   };
-  return { attempt, brief, areaName: area?.display_name ?? null };
+  // an attempt that closes a Proof Session is explained as the whole session; null for a daily ticket
+  const session = await sessionContextFor(service, userId, attemptId);
+  if (session) {
+    const { data: areas } = await service.from("arena_skill_areas").select("area_key, display_name").eq("role_key", attempt.role_key);
+    return { attempt, brief: await sessionBrief(service, userId, session, new Map((areas ?? []).map((a) => [a.area_key, a.display_name]))), areaName: null, session };
+  }
+  return { attempt, brief, areaName: area?.display_name ?? null, session: null };
 }
 
 async function loadInterview(service: Service, attemptId: string): Promise<InterviewRow | null> {
@@ -96,7 +103,7 @@ export async function submitExplanation(service: Service, userId: string, attemp
   if (given.length !== QUESTION_COUNT) throw new AttemptError(`Answer all ${QUESTION_COUNT} questions.`, 400);
   if (given.some((a) => a.length > MAX_ANSWER_CHARS)) throw new AttemptError(`Keep each answer under ${MAX_ANSWER_CHARS} characters.`, 400);
 
-  const { brief } = await loadExplaining(service, userId, attemptId);
+  const { brief, session } = await loadExplaining(service, userId, attemptId);
   const row = await loadInterview(service, attemptId);
   if (!row?.questions) throw new AttemptError("Start the interview first.", 409);
 
@@ -122,8 +129,13 @@ export async function submitExplanation(service: Service, userId: string, attemp
   if (!saved?.length) throw new AttemptError("This explanation was already scored. Reload to continue.", 409);
 
   if (outcome === "retry") return { outcome, score, feedback, triesLeft: MAX_ATTEMPTS - attemptsUsed };
-  if (outcome === "close") return { outcome, score, feedback, nextAvailableAt: await closeWithoutRating(service, attemptId) };
+  if (outcome === "close") return { outcome, score, feedback, nextAvailableAt: session ? await finishSessionUnrated(service, userId, session) : await closeWithoutRating(service, attemptId) };
 
+  if (session) {
+    const done = await finishSessionRated(service, userId, session);
+    for (const id of done.evidenceIds) await recordExplanationOnEvidence(service, id, score);
+    return { outcome, score, feedback, points: done.points, nextAvailableAt: done.nextAvailableAt };
+  }
   const done = await finishVerified(service, userId, attemptId);
   if (done.evidenceId) await recordExplanationOnEvidence(service, done.evidenceId, score);
   return { outcome, score, feedback, points: done.points, nextAvailableAt: done.nextAvailableAt };
@@ -131,8 +143,8 @@ export async function submitExplanation(service: Service, userId: string, attemp
 
 /** The user chose not to explain: the task closes with no rating. */
 export async function skipExplanation(service: Service, userId: string, attemptId: string): Promise<{ nextAvailableAt: string }> {
-  await loadExplaining(service, userId, attemptId);
-  return { nextAvailableAt: await closeWithoutRating(service, attemptId) };
+  const { session } = await loadExplaining(service, userId, attemptId);
+  return { nextAvailableAt: session ? await finishSessionUnrated(service, userId, session) : await closeWithoutRating(service, attemptId) };
 }
 
 /** The evidence row says the work was explained and how well, so anyone reading it can see the whole story. */

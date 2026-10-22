@@ -27,7 +27,7 @@ type DomainState = {
   statedRole: string | null;
   progress: AreaProgress[];
   cycle: { number: number; served: string[] } | null;
-} & ({ state: "not_started" } | { state: "ready" } | { state: "unavailable" } | { state: "active"; attempt: PublicAttempt } | { state: "cooldown"; nextAvailableAt: string });
+} & ({ state: "not_started" } | { state: "ready" } | { state: "unavailable" } | { state: "in_session"; sessionId: string } | { state: "active"; attempt: PublicAttempt } | { state: "cooldown"; nextAvailableAt: string });
 
 export function DomainWorkspace() {
   // a link such as a job's skill gap can ask to practise one skill area first; the server decides whether it can
@@ -221,6 +221,10 @@ export function DomainWorkspace() {
           </p>
           <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">A new task unlocks 24 hours after you complete the previous one.</p>
         </div>
+      )}
+
+      {!error && data?.state === "in_session" && (
+        <div className="rounded-2xl border border-[var(--m-rule)] bg-white px-6 py-10 text-center font-lp-body text-[13.5px] text-app-muted">You are in a Proof Session. Finish it above, then your next daily ticket is available.</div>
       )}
 
       {!error && data?.state === "unavailable" && (

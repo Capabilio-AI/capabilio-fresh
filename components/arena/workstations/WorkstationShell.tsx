@@ -38,6 +38,8 @@ interface Feedback {
   nextAvailableAt?: string;
   /** solved; the rating comes after the user explains their work */
   explain?: boolean;
+  /** a stage of a Proof Session: passing moves on to the next stage, with no rating yet */
+  session?: boolean;
 }
 
 const noop = () => {};
@@ -99,7 +101,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
         </span>
         <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px]">
           <span className="text-white/60">{attempt.area.name}</span>
-          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? (feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
+          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? (feedback?.session ? "Stage passed" : feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
           {!closed && <Countdown target={expiresAt} onDone={() => onClose(false)} />}
           <span className="font-semibold text-app-orange" title="Awarded after you explain your work">+{ELO_BY_DIFFICULTY[challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO after the interview</span>
         </span>
@@ -149,7 +151,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
             <div className={`rounded-xl border px-5 py-4 ${feedback.passed ? "border-app-success/30 bg-app-success-container" : "border-app-warning/30 bg-app-warning-container"}`} role="status">
               <p className={`flex items-center gap-2 font-lp-body text-[14px] font-semibold ${feedback.passed ? "text-app-success" : "text-app-warning"}`}>
                 {feedback.passed ? <CheckCircle2 size={17} /> : <CircleX size={17} />}
-                {feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : "Not quite — the task is still open"}
+                {feedback.session ? (feedback.passed ? "Stage passed" : "Not quite — the stage is still open") : feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : "Not quite — the task is still open"}
               </p>
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
               {feedback.checks.length > 0 && (
@@ -173,7 +175,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
               )}
               {feedback.passed && (
                 <button type="button" onClick={() => onClose(true)} className="mt-3 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white">
-                  {feedback.explain ? "Explain your work" : "Back to Arena"}
+                  {feedback.session ? "Continue the session" : feedback.explain ? "Explain your work" : "Back to Arena"}
                 </button>
               )}
             </div>
