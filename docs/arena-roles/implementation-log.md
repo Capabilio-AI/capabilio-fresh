@@ -29,10 +29,16 @@ Done and tested locally (unit level only):
 - `lib/arena-challenges/domain-source.ts` (+test): the Domain page now chooses the workstation first, catalog second, notice third, using the same role resolution as the API.
 - Not changed: `pickActiveRole` (still asserted by `higher-studies-switch.test.ts`, no longer used by `attempts.ts`), the cooldown, Plan B logic, the database.
 
+Also done (unit level only):
+
+- `lib/arena-roles/blueprint.ts` + `blueprints/data-analyst.ts` (+tests): IT-01 blueprint with 9 competencies mapped to the 8 enabled areas, honest execution modes (executed / computed-key / evaluated-spec), and Python declared `blocked`. A test fails if a tool's registered gen/grade versions differ from the blueprint.
+- Defect fixed: a "grading" lock was never released if the request died mid-grade, leaving the ticket stuck at "already being graded". The lock time is now stamped in `submitted_at` and a lock older than 120 s (route max is 60 s) can be taken over by one compare-and-set (`grading-lock.ts`). The database behaviour of the takeover is NOT tested; it needs a live test.
+- Reviewed and found correct by reading, not by running: a grader exception reverts the ticket to "presented" with a 502 and awards nothing; the client sends only the submission, never a score; completion goes through `complete_workstation_attempt`, which reports `already_completed` on repeats.
+
 Open before this role can pass:
 
 1. Run `test:live` suites (`e2e.live`, `security.live`, `higher-studies-switch.live`) against a test project. Not run; they need `LIVE_DB=1` and credentials.
-2. Blueprint, competency mapping and rubric versions for Data Analyst.
+2. Per-criterion rubric detail (graders return per-check results, but criteria, weights and critical failures are not yet documented per tool).
 3. Scenario pool and uniqueness rules (family / variant / instance / attempt).
 4. Grading checks, idempotency and evaluation-failure paths under test.
 5. Authorization / RLS tests, run live.

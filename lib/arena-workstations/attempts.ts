@@ -9,6 +9,7 @@ import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, type SkillAreaRow } from "./taxonomy";
 import { resolveDomainRole } from "./role-resolution";
+import { staleGradingCutoff } from "./grading-lock";
 import { logArenaEvent } from "./log";
 import { describeSubmission, MAX_ATTEMPTS } from "./explain-rules";
 import { hashSeed } from "@/lib/workplace/rng";
@@ -234,7 +235,12 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   if (!parsed.success) throw new AttemptError("That submission isn't in the expected format.", 400);
 
   // Grading lock: only one grading per attempt at a time (double-click / retry safe).
-  const { data: locked } = await service.from("arena_domain_assignments").update({ status: "grading" }).eq("id", attemptId).eq("status", "presented").is("completed_at", null).select("id");
+  // The lock time is stamped in submitted_at. If the request that took the lock died (timeout, crash) the ticket would stay "grading" forever, so a
+  // lock older than the submit route can run is taken over -- the compare-and-set keeps two takeovers from both winning.
+  const lockedAt = new Date().toISOString();
+  const lock = () => service.from("arena_domain_assignments").update({ status: "grading", submitted_at: lockedAt }).eq("id", attemptId).is("completed_at", null);
+  let { data: locked } = await lock().eq("status", "presented").select("id");
+  if (!locked?.length) ({ data: locked } = await lock().eq("status", "grading").lt("submitted_at", staleGradingCutoff(new Date())).select("id"));
   if (!locked?.length) throw new AttemptError("This task is already being graded.", 409);
 
   const logFields = { userId, attemptId, area: attempt.skill_area_key ?? "", tool: challenge.tool_type! };

@@ -1,0 +1,54 @@
+import type { RoleBlueprint } from "../blueprint";
+
+/**
+ * IT-01 Data Analyst. `domainRoleKey`, area keys, tools and versions mirror the live `arena_skill_areas` rows (checked 2026-10-22); the test in
+ * blueprint.test.ts fails if a tool's registered versions drift from what is declared here.
+ *
+ * Execution modes are stated as they really are:
+ * - "executed": the student's own query/work is run and its output compared with the server's.
+ * - "computed-key": the server derives the expected answer from the task parameters and checks the submission against it. Student work is
+ *   not executed as code.
+ * - "evaluated-spec": a structured spec is evaluated on the dataset and compared with the expected series.
+ */
+export const DATA_ANALYST: RoleBlueprint = {
+  roleId: "IT-01",
+  domainRoleKey: "data-analyst",
+  name: "Data Analyst",
+  competencies: [
+    { id: "da.sql", label: "SQL querying and analytical reasoning" },
+    { id: "da.cleaning", label: "Data profiling, cleaning and validation" },
+    { id: "da.spreadsheet", label: "Spreadsheet analysis" },
+    { id: "da.metrics", label: "Business metrics and KPI interpretation" },
+    { id: "da.statistics", label: "Statistical reasoning" },
+    { id: "da.bi", label: "BI dashboards and reporting" },
+    { id: "da.root_cause", label: "Root-cause investigation" },
+    { id: "da.anomaly", label: "Data quality and anomaly detection" },
+    { id: "da.communication", label: "Communicating evidence-based findings" },
+  ],
+  areas: [
+    { areaKey: "sql", toolType: "sql_workspace", generationVersion: "sql.gen.v1", gradingVersion: "sql.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.sql", "da.metrics"] },
+    { areaKey: "debugging", toolType: "sql_workspace", generationVersion: "sql.gen.v1", gradingVersion: "sql.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.sql"] },
+    { areaKey: "spreadsheet", toolType: "spreadsheet_workspace", generationVersion: "spreadsheet.gen.v1", gradingVersion: "spreadsheet.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.spreadsheet", "da.metrics"] },
+    { areaKey: "dashboard", toolType: "dashboard_workspace", generationVersion: "dashboard.gen.v1", gradingVersion: "dashboard.grade.v1", executionMode: "evaluated-spec", status: "enabled", competencies: ["da.bi", "da.metrics"] },
+    { areaKey: "statistics", toolType: "statistics_workspace", generationVersion: "statistics.gen.v1", gradingVersion: "statistics.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.statistics"] },
+    { areaKey: "data_cleaning", toolType: "cleaning_workspace", generationVersion: "cleaning.gen.v1", gradingVersion: "cleaning.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.cleaning", "da.anomaly"] },
+    { areaKey: "investigation", toolType: "investigation_workspace", generationVersion: "investigation.gen.v1", gradingVersion: "investigation.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.root_cause", "da.anomaly", "da.communication"] },
+    { areaKey: "incident", toolType: "investigation_workspace", generationVersion: "investigation.gen.v1", gradingVersion: "investigation.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.root_cause", "da.communication"] },
+    {
+      areaKey: "python",
+      toolType: "python_workspace",
+      generationVersion: "python.gen.v0",
+      gradingVersion: "python.grade.v0",
+      executionMode: "none",
+      status: "blocked",
+      blockedReason: "No isolated Python executor with network egress denied exists. Student code is never run in the application process.",
+      competencies: [],
+    },
+  ],
+  // Honest limits: these are graded through findings, not free-text quality.
+  limitations: [
+    "da.communication is verified only through the correctness of the submitted findings and the explain-your-work interview, not through prose quality.",
+    "Python analysis is not assessed until an isolated executor exists.",
+    "Dashboard grading compares the structured spec's series, not visual design.",
+  ],
+};
