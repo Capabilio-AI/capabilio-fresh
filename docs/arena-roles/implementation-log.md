@@ -65,3 +65,23 @@ Found:
 Done (unit level): `blueprints/backend-developer.ts` (7 assessed + 4 unassessed competencies, all 5 areas `client-run`), catalog key set, blueprint validator extended (`unassessed`, `client-run`), sandbox-escape tests (process / require / constructor-chain / eval / Function all blocked; the Node `vm` is not a hardened boundary, the worker thread and timeout are the main protection).
 
 Open: apply migration 113 (needs approval) then live run; more template problems or a validated variant source to avoid repeats; browser check of the code editor; rubric detail; server-side execution of student code is BLOCKED on an isolated executor.
+
+## Founder decisions (2026-10-22, owner delegated ordinary product and engineering calls)
+
+1. **Phase 1 first, no executor spend.** Build the Lab/Proof Session engine on the browser tools that exist. The isolated executor stays a separate, costed decision; nothing is purchased or enabled.
+2. **Proof Session v1 = a "story session" on the existing BrightCart company world**: 5 stages, each an existing Data Analyst area and tool, graded by its own grader on the student's own warehouse. A later stage is not computed from an earlier stage's output (stated in every report); real lineage is a later step.
+3. **Signals are deterministic, not an AI judge.** Dimension levels (0-3, or "not assessed") come from the session log with caps and de-duplication; anything the browser reports is marked lower-trust; pass/fail and the Execution dimension come only from server grading. No composite score.
+4. **Logs and reports are private to the student by default.** Sharing needs an explicit student action (not built yet).
+5. **Not done without authorization:** applying migrations 113 and 120 to production, running `test:live` against the only (production) Supabase project, any paid infrastructure.
+
+## IT-01 Data Analyst: IN_PROGRESS (Proof Session core built, not wired)
+
+Built and tested locally (unit and local-Postgres level):
+
+- `lib/arena-roles/session/{events,signals,report}.ts`: event schema, the six dimension signals, and the report builder (claims only what the server verified). 22 tests, including: repeats counted once, late or short plans earn nothing, lowest level across stages, AI not used is never penalised, a client-reported "passed" cannot change a result.
+- `lib/arena-roles/sessions/data-analyst-story.ts`: the 5-stage spec, with a fresher variant (statistics replaces investigation, which needs experience). Tests check every stage uses an enabled, registered area the student can actually be served.
+- `supabase/migrations/120_proof_sessions.sql`: four additive tables (sessions, stages, append-only events, write-once reports), RLS on, server-only access. NOT applied to production. 8 tests run the real SQL on PGlite and a mutation check confirmed they fail when the index, trigger or grants are removed. PGlite stands in for Supabase (no real auth, RLS policies or `service_role` behaviour), so this is not a production verification.
+
+Verification: full suite 245 files / 1963 tests pass; `tsc` 0 source errors; eslint clean. No browser test, no live-database test.
+
+Not built yet (so the role is not wired end to end): session service (start, record events from the routes, finish, build report), API routes, the workbench and report UI, explain-your-work for sessions, portfolio entry, a Lab spec layer, quests. Next step: the session service and routes, tested against the migration on PGlite where possible.
