@@ -35,9 +35,9 @@ export const POOL_TARGET_PER_SECTION: Record<Difficulty, number> = { EASY: 4, ME
 
 /**
  * Once a career holds this many active questions, the AI is never called for it again: every student is served from the database.
- * Until then the pool keeps growing (per skill and difficulty, see careerPoolTarget).
+ * Until then every assessment keeps growing the bank through the AI (per skill and difficulty, see careerPoolTarget).
  */
-export const CAREER_BANK_CAP = 500;
+export const CAREER_BANK_CAP = 1000;
 /** Share of a career's bank per difficulty. */
 export const CAREER_BANK_MIX: Record<Difficulty, number> = { EASY: 0.3, MEDIUM: 0.4, HARD: 0.3 };
 
