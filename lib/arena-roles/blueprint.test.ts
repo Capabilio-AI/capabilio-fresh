@@ -3,6 +3,7 @@ import { isRegisteredTool, toolFor } from "@/lib/arena-workstations/registry";
 import { catalogRole } from "./catalog";
 import { validateBlueprint, type RoleBlueprint } from "./blueprint";
 import { DATA_ANALYST } from "./blueprints/data-analyst";
+import { BACKEND_DEVELOPER } from "./blueprints/backend-developer";
 
 describe("validateBlueprint", () => {
   const base: RoleBlueprint = {
@@ -45,5 +46,28 @@ describe("IT-01 Data Analyst blueprint", () => {
     const python = DATA_ANALYST.areas.find((a) => a.areaKey === "python")!;
     expect(python.status).toBe("blocked");
     expect(isRegisteredTool(python.toolType)).toBe(false);
+  });
+});
+
+describe("IT-02 Backend Developer blueprint", () => {
+  it("is well-formed and matches the catalog", () => {
+    expect(validateBlueprint(BACKEND_DEVELOPER)).toEqual([]);
+    const entry = catalogRole("IT-02");
+    expect([entry?.name, entry?.domainRoleKey]).toEqual([BACKEND_DEVELOPER.name, BACKEND_DEVELOPER.domainRoleKey]);
+  });
+
+  it("uses the registered code tool at the versions the migration declares", () => {
+    const tool = toolFor("code_workspace");
+    for (const a of BACKEND_DEVELOPER.areas) expect([a.toolType, a.generationVersion, a.gradingVersion], a.areaKey).toEqual(["code_workspace", tool.generationVersion, tool.gradingVersion]);
+  });
+
+  it("does not claim skills nothing assesses", () => {
+    expect(BACKEND_DEVELOPER.unassessed?.map((c) => c.id)).toEqual(["be.database", "be.tests", "be.performance", "be.docs"]);
+    expect(BACKEND_DEVELOPER.areas.every((a) => a.executionMode === "client-run")).toBe(true);
+  });
+
+  it("is isolated from the other roles: its areas do not belong to Data Analyst", () => {
+    const mine = new Set(BACKEND_DEVELOPER.areas.map((a) => a.areaKey));
+    for (const a of DATA_ANALYST.areas) expect(mine.has(a.areaKey), a.areaKey).toBe(false);
   });
 });

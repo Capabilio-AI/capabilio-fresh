@@ -21,6 +21,8 @@ A role is COMPLETE only after every applicable item in the role completion gate 
 
 Gate items verified so far: none of the gate. What exists and is unverified end to end: system A workstation with 8 enabled areas across 6 tools.
 
+Gate status: PARTIALLY_VERIFIED (unit level; live and browser checks outstanding). IT-02 was started at the owner's instruction while this gate was open.
+
 Decisions (2026-10-22): the role workstation wins over catalog tickets; a career with no workstation gets an "unavailable" state, never another role's tickets.
 
 Done and tested locally (unit level only):
@@ -47,3 +49,19 @@ Open before this role can pass:
 8. Clean up the `* 2.ts` Finder duplicates (they break `tsc` via `.next`).
 
 Changes so far: `lib/arena-roles/*`, `lib/arena-workstations/{role-resolution,attempts}.ts`, `lib/arena-challenges/domain-source*`, the Domain page, `DomainWorkspace.tsx`, one type narrowing in `higher-studies-switch.live.test.ts`, `docs/arena-roles/*`. No database changes.
+
+## IT-02 Backend Developer: IN_PROGRESS (BLOCKED on a production migration)
+
+Started 2026-10-22 on the owner's instruction, with IT-01 still PARTIALLY_VERIFIED (not waived: its open items stay listed above).
+
+Found:
+
+- The role is already coded: AI generator Backend mode (`lib/workplace/code/ai.ts`), 5 template problems (one per area, `problems.ts`), the shared `code_workspace` tool, and the sandbox.
+- `supabase/migrations/113_backend_role.sql` defines the role, its career and 5 areas but is NOT applied to production (`arena_domain_roles` has no `backend-developer`; verified 2026-10-22). Until it is applied, a Backend student gets the "no workstation" state. Not applied by me: it is a production write and needs your approval.
+- Grading trusts the browser: the student's function runs client-side and the server compares the returned outputs. Student code is never run or inspected server-side, so a student can submit correct outputs by any means. Mitigation is the explain-your-work interview only.
+- Tasks model an API as a pure function. No real HTTP, database, auth stack or test runner exists, so four competencies are declared unassessed (database, automated tests, performance, documentation) rather than claimed.
+- Template fallback repeats a problem once a title was already served (one template per area).
+
+Done (unit level): `blueprints/backend-developer.ts` (7 assessed + 4 unassessed competencies, all 5 areas `client-run`), catalog key set, blueprint validator extended (`unassessed`, `client-run`), sandbox-escape tests (process / require / constructor-chain / eval / Function all blocked; the Node `vm` is not a hardened boundary, the worker thread and timeout are the main protection).
+
+Open: apply migration 113 (needs approval) then live run; more template problems or a validated variant source to avoid repeats; browser check of the code editor; rubric detail; server-side execution of student code is BLOCKED on an isolated executor.

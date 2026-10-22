@@ -1,4 +1,10 @@
-export type ExecutionMode = "executed" | "computed-key" | "evaluated-spec" | "none";
+/**
+ * executed: the server runs the student's own work and compares its output.
+ * client-run: the student's code runs in THEIR browser; the server only compares the outputs they send (their code is never run or checked server-side).
+ * computed-key: the server derives the expected answer from task parameters and checks the submission against it.
+ * evaluated-spec: a structured spec is evaluated on the dataset and compared with the expected series.
+ */
+export type ExecutionMode = "executed" | "client-run" | "computed-key" | "evaluated-spec" | "none";
 
 export interface BlueprintCompetency {
   id: string;
@@ -24,7 +30,10 @@ export interface RoleBlueprint {
   /** arena_domain_roles.role_key this blueprint describes */
   domainRoleKey: string;
   name: string;
+  /** competencies at least one enabled area assesses */
   competencies: BlueprintCompetency[];
+  /** part of the role, but nothing here can assess it yet; stated so it is never claimed */
+  unassessed?: BlueprintCompetency[];
   areas: BlueprintArea[];
   limitations: string[];
 }
@@ -47,5 +56,9 @@ export function validateBlueprint(b: RoleBlueprint): string[] {
     if (a.status === "enabled" && (a.executionMode === "none" || a.competencies.length === 0)) problems.push(`enabled area ${a.areaKey} needs an execution mode and competencies`);
   }
   for (const c of b.competencies) if (!covered.has(c.id)) problems.push(`competency ${c.id} is not assessed by any area`);
+  for (const u of b.unassessed ?? []) {
+    if (ids.has(u.id)) problems.push(`competency ${u.id} is listed as both assessed and unassessed`);
+    if (covered.has(u.id)) problems.push(`unassessed competency ${u.id} is mapped by an area`);
+  }
   return problems;
 }

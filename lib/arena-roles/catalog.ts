@@ -1,8 +1,8 @@
 /**
  * The 45-role Arena catalog: the one place that names every role, its stream and its stable ID.
  *
- * `domainRoleKey` links a catalog role to the existing `arena_domain_roles.role_key` that serves it today. It is `null` while no workstation exists,
- * and a role with `null` must show an "unavailable" state -- never another role's tickets. Two catalog roles may NOT share a `domainRoleKey`
+ * `domainRoleKey` links a catalog role to the `arena_domain_roles.role_key` that serves it. It is `null` while no workstation is defined. Whether the row
+ * exists in the live database is separate: with no row, or `null`, the student sees an "unavailable" state -- never another role's tickets. Two catalog roles may NOT share a `domainRoleKey`
  * unless the shared row is deliberately listed in SHARED_DOMAIN_ROLE_KEYS (a known overlap to be split during that role's own work).
  *
  * Status here is about the catalog only. Whether a role is actually complete lives in docs/arena-roles/implementation-log.md, after its gate.
@@ -31,7 +31,7 @@ const role = (stream: StreamId, n: number, name: string, domainRoleKey: string |
 
 const ORDERED: Omit<CatalogRole, "order">[] = [
   role("IT", 1, "Data Analyst", "data-analyst"),
-  role("IT", 2, "Backend Developer"), // migration 113 defines `backend-developer`, but it is not applied to production (verified 2026-10-22)
+  role("IT", 2, "Backend Developer", "backend-developer"), // the row comes from migration 113, NOT applied to production (verified 2026-10-22); until it is, the role resolves to "no workstation"
   role("IT", 3, "Frontend Developer", "frontend-developer"),
   role("IT", 4, "Full Stack Developer"),
   role("IT", 5, "Data Engineer", "data-engineer-sql"),
