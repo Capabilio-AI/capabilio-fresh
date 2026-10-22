@@ -39,7 +39,7 @@ describe("generateBatch", () => {
     expect(out.valid).toHaveLength(1); // q2: verifier disagreed; q3 bad key; 4th malformed
     expect(out.valid[0].question).toContain("report number 1");
     expect(out.rejected.join(" ")).toMatch(/not exactly one|schema|verification/);
-    expect(out.provenance).toMatchObject({ provider: "mock", model: "m", promptVersion: "question.v3" });
+    expect(out.provenance).toMatchObject({ provider: "mock", model: "m", promptVersion: "question.v4" });
   });
 
   it("never returns anything from non-JSON output", async () => {
@@ -62,12 +62,19 @@ describe("verifyBatch", () => {
 });
 
 describe("buildPrompt", () => {
-  it("asks for beginner-level questions, names the exact skill and difficulty, and carries the avoid-list", () => {
+  it("asks for entry-level (fresher) questions, names the exact skill and difficulty, and carries the avoid-list", () => {
     const p = buildPrompt({ slot, difficulty: "HARD", count: 4, studentLevel: "fresher", avoid: ["Which query counts rows?"] });
-    expect(p.system).toMatch(/FIRST-YEAR college student/);
+    expect(p.system).toMatch(/ENTRY-LEVEL \(fresher\)/);
     expect(p.user).toContain("SKILL_ID: SKILL_SQL");
     expect(p.user).toContain("DIFFICULTY: HARD");
     expect(p.user).toContain("Which query counts rows?");
     expect(p.expectation).toMatchObject({ skillKey: "SKILL_SQL", difficulty: "HARD" });
+  });
+  it("climbs from first-year fundamentals to the top of entry-level, never to professional depth", () => {
+    const user = (difficulty: "EASY" | "MEDIUM" | "HARD") => buildPrompt({ slot, difficulty, count: 2, studentLevel: "fresher", avoid: [] }).user;
+    expect(user("EASY")).toMatch(/first-year fundamentals/);
+    expect(user("MEDIUM")).toMatch(/entry-level screening/);
+    expect(user("HARD")).toMatch(/upper end of entry-level/);
+    expect(user("HARD")).toMatch(/Never architecture/);
   });
 });

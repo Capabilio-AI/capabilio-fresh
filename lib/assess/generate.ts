@@ -148,7 +148,7 @@ export async function topUp(
   for (let round = 0; round < (opts.rounds ?? 3) && inserted < want; round++) {
     const avoid = await recentStems(db, slot);
     const out = await generateBatch(
-      { slot, difficulty, count: Math.min(GENERATION_BATCH_SIZE, want - inserted + 1), studentLevel: opts.studentLevel ?? "first-year college student, complete beginner in this career role", avoid, ...opts.context },
+      { slot, difficulty, count: Math.min(GENERATION_BATCH_SIZE, want - inserted + 1), studentLevel: opts.studentLevel ?? "entry-level fresher: an engineering student or fresh graduate, new to this career role", avoid, ...opts.context },
       opts.deps
     );
     rejected.push(...out.rejected);
