@@ -94,6 +94,7 @@ describe("Job-Track walkthrough", () => {
     expect(await switchActiveRole(service, userId, TEST_ROLE, enabled)).toEqual({ ok: true });
 
     const state = await getWorkstationState(service, userId, "Data Analyst");
+    if (state.state === "no_role") throw new Error("expected a resolved role after the switch");
     expect(state.role.key).toBe(TEST_ROLE);
     expect(await snapshot("data-analyst")).toBe(before); // byte-for-byte
 

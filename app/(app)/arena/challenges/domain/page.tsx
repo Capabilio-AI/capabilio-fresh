@@ -6,7 +6,9 @@ import { getStageState } from "@/lib/stage/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection } from "@/lib/career/direction";
 import { loadDomainSet } from "@/lib/arena-challenges/domain-set";
-import { listEnabledRoles, matchRoleForStatedCareer } from "@/lib/arena-workstations/taxonomy";
+import { getEngagedRoleKey, listEnabledRoles } from "@/lib/arena-workstations/taxonomy";
+import { resolveDomainRole } from "@/lib/arena-workstations/role-resolution";
+import { chooseDomainSource } from "@/lib/arena-challenges/domain-source";
 import { TrackChallengesBoard } from "@/components/arena/TrackChallengesBoard";
 import { DomainSetList } from "@/components/arena/domain/DomainSetList";
 import { DomainCountdown } from "@/components/arena/domain/DomainCountdown";
@@ -72,21 +74,23 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
       />
     );
   } else {
-    const roles = view.items.length === 0 ? await listEnabledRoles(service) : [];
-    const hasLegacyWorkstation = matchRoleForStatedCareer(roles, view.career.name) !== null;
+    // the same role resolution the workstation API uses, so the page and the API cannot disagree
+    const [roles, direction, engagedRoleKey] = await Promise.all([listEnabledRoles(service), getStudentDirection(service, user.id), getEngagedRoleKey(service, user.id)]);
+    const hasWorkstation = resolveDomainRole(roles, { activeRoleKey: direction?.activeRoleKey ?? null, engagedRoleKey, statedRole: view.career.name }).role !== null;
+    const source = chooseDomainSource({ hasWorkstation, catalogItems: view.items.length, catalogCountdown: Boolean(view.unlockAt) });
     body = (
       <>
         <div className="mb-5 flex flex-wrap items-center gap-2 font-lp-body text-[13px]">
           <span className="text-app-muted">Your role:</span>
           <span className="rounded-full bg-app-blue-container px-3 py-1 font-semibold text-app-blue">{view.career.name}</span>
         </div>
-        {view.items.length > 0 || view.unlockAt ? (
+        {source === "workstation" ? (
+          <TrackChallengesBoard track="domain" />
+        ) : source === "catalog" ? (
           <TrackChallengesBoard
             track="domain"
             workspace={view.unlockAt ? <DomainCountdown unlockAt={view.unlockAt} /> : <DomainSetList items={view.items} />}
           />
-        ) : hasLegacyWorkstation ? (
-          <TrackChallengesBoard track="domain" />
         ) : (
           <Notice
             title={`No challenges configured yet for ${view.career.name}`}

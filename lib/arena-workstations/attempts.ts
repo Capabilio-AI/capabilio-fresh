@@ -7,7 +7,8 @@ import { COOLDOWN_MS, resolveDailyState, type AssignmentRow } from "./daily";
 import { isRegisteredTool, toolFor } from "./registry";
 import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
 import { getStudentDirection } from "@/lib/career/direction";
-import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, pickActiveRole, type SkillAreaRow } from "./taxonomy";
+import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, type SkillAreaRow } from "./taxonomy";
+import { resolveDomainRole } from "./role-resolution";
 import { logArenaEvent } from "./log";
 import { describeSubmission, MAX_ATTEMPTS } from "./explain-rules";
 import { hashSeed } from "@/lib/workplace/rng";
@@ -48,12 +49,9 @@ async function resolveRole(service: Service, userId: string, statedRole: string 
   if (roles.length === 0) throw new AttemptError("No domain roles are configured.", 503);
   const [engagedRoleKey, direction] = await Promise.all([getEngagedRoleKey(service, userId), getStudentDirection(service, userId)]);
   const matched = matchRoleForStatedCareer(roles, statedRole);
-  const role = pickActiveRole(roles, {
-    activeRoleKey: direction?.activeRoleKey ?? null,
-    engagedRoleKey,
-    statedRole,
-  })!;
-  return { role, matched: matched?.role_key === role.role_key, engaged: engagedRoleKey !== null };
+  // no "first enabled role" fallback: a career without a workstation resolves to null, never to another role's tickets
+  const { role } = resolveDomainRole(roles, { activeRoleKey: direction?.activeRoleKey ?? null, engagedRoleKey, statedRole });
+  return { role, matched: role !== null && matched?.role_key === role.role_key, engaged: engagedRoleKey !== null };
 }
 
 async function explainInfo(service: Service, attempt: { id: string; grade: Json | null; submission: Json | null }, toolType: string) {
@@ -82,6 +80,10 @@ async function publicAttempt(service: Service, attempt: AssignmentRow & { status
 /** Read-only: what the Domain tab should show. Never generates. */
 export async function getWorkstationState(service: Service, userId: string, statedRole: string | null) {
   const { role, matched, engaged } = await resolveRole(service, userId, statedRole);
+  if (!role) {
+    logArenaEvent("role.unresolved", { userId, statedRole: statedRole?.slice(0, 80) ?? null });
+    return { state: "no_role" as const, statedRole };
+  }
   const { areas } = await loadRoleTaxonomy(service, role.role_key);
   const [{ data: attempts }, { data: ratings }, { data: rotation }] = await Promise.all([
     service.from("arena_domain_assignments").select(ASSIGNMENT_COLUMNS).eq("user_id", userId).eq("role_key", role.role_key).order("assigned_at", { ascending: false }),
@@ -141,6 +143,7 @@ async function generateWithRetries(area: SkillAreaRow, ctx: Parameters<ReturnTyp
  */
 export async function startNextAttempt(service: Service, userId: string, statedRole: string | null, focusAreaKey?: string) {
   const state = await getWorkstationState(service, userId, statedRole);
+  if (state.state === "no_role") throw new AttemptError("There is no workstation for your target role yet.", 409, { reason: "no_role" });
   if (state.state === "active") return state;
   if (state.state === "cooldown") throw new AttemptError("Your next task unlocks later.", 409, { nextAvailableAt: state.nextAvailableAt });
   if (state.state === "unavailable") throw new AttemptError("No skill areas are enabled for this role yet.", 503);
