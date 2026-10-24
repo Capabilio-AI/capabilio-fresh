@@ -27,12 +27,14 @@ type DomainState = {
   statedRole: string | null;
   progress: AreaProgress[];
   cycle: { number: number; served: string[] } | null;
-} & ({ state: "not_started" } | { state: "ready" } | { state: "unavailable" } | { state: "active"; attempt: PublicAttempt } | { state: "cooldown"; nextAvailableAt: string });
+} & ({ state: "not_started" } | { state: "ready" } | { state: "unavailable" } | { state: "in_session"; sessionId: string } | { state: "active"; attempt: PublicAttempt } | { state: "cooldown"; nextAvailableAt: string });
 
 export function DomainWorkspace() {
   // a link such as a job's skill gap can ask to practise one skill area first; the server decides whether it can
   const focus = useSearchParams().get("focus");
   const [data, setData] = useState<DomainState | null>(null);
+  // the target career has no workstation: nothing is substituted, the student is told so
+  const [noRole, setNoRole] = useState<{ statedRole: string | null } | null>(null);
   const [error, setError] = useState<{ message: string; retryable: boolean } | null>(null);
   const [starting, setStarting] = useState(false);
   const [open, setOpen] = useState(false);
@@ -40,10 +42,21 @@ export function DomainWorkspace() {
   const apply = useCallback(
     (res: Response) =>
       res.json().then((body) => {
+        if (res.ok && body.state === "no_role") {
+          setError(null);
+          setNoRole({ statedRole: body.statedRole ?? null });
+          return null;
+        }
         if (res.ok) {
           setError(null);
+          setNoRole(null);
           setData(body);
           return body as DomainState;
+        }
+        if (body.reason === "no_role") {
+          setError(null);
+          setNoRole({ statedRole: null });
+          return null;
         }
         setError({ message: body.error ?? "Something went wrong.", retryable: Boolean(body.retryable) || res.status >= 500 });
         return null;
@@ -74,6 +87,18 @@ export function DomainWorkspace() {
   useEffect(() => {
     load();
   }, [load]);
+
+  if (noRole) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-2xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-12 text-center">
+        <p className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">No workstation for your target role yet</p>
+        <p className="mx-auto mt-1 max-w-md font-lp-body text-[13px] text-app-muted">
+          {noRole.statedRole ? `We don't have a workstation for ${noRole.statedRole} yet.` : "We don't have a workstation for your target role yet."} We only show real work tickets built for the role, so
+          nothing is substituted. Your roadmap, SkillStudio and Stream challenges still apply.
+        </p>
+      </div>
+    );
+  }
 
   if (!data && !error) {
     return (
@@ -196,6 +221,10 @@ export function DomainWorkspace() {
           </p>
           <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">A new task unlocks 24 hours after you complete the previous one.</p>
         </div>
+      )}
+
+      {!error && data?.state === "in_session" && (
+        <div className="rounded-2xl border border-[var(--m-rule)] bg-white px-6 py-10 text-center font-lp-body text-[13.5px] text-app-muted">You are in a Proof Session. Finish it above, then your next daily ticket is available.</div>
       )}
 
       {!error && data?.state === "unavailable" && (

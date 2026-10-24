@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createThrowawayUser, deleteThrowawayUser, liveServiceClient } from "@/lib/arena-workstations/live-test-helpers";
-import { getWorkstationState, startNextAttempt, submitAttempt } from "@/lib/arena-workstations/attempts";
+import { finishVerified, getWorkstationState, startNextAttempt, submitAttempt } from "@/lib/arena-workstations/attempts";
 import { referenceSubmission } from "@/lib/arena-workstations/reference-submission";
 import { listEnabledRoles } from "@/lib/arena-workstations/taxonomy";
 import { getStudentDirection, shouldShowGoalPrompt, shouldShowHigherStudiesCheckin } from "./direction";
@@ -81,6 +81,8 @@ describe("Job-Track walkthrough", () => {
     const { data: instance } = await service.from("arena_challenges").select("answer_key, content, tool_type").eq("id", started.attempt.challenge.id).single();
     const graded = await submitAttempt(service, userId, started.attempt.attemptId, referenceSubmission(instance!.tool_type!, instance!.content, instance!.answer_key));
     expect(graded.passed).toBe(true);
+    // a pass waits for the explain-your-work interview; a passing interview is what completes it (the interview itself has its own tests)
+    await finishVerified(service, userId, started.attempt.attemptId);
     const before = await snapshot("data-analyst");
     expect(JSON.parse(before).comp).toHaveLength(1);
 
@@ -94,6 +96,7 @@ describe("Job-Track walkthrough", () => {
     expect(await switchActiveRole(service, userId, TEST_ROLE, enabled)).toEqual({ ok: true });
 
     const state = await getWorkstationState(service, userId, "Data Analyst");
+    if (state.state === "no_role") throw new Error("expected a resolved role after the switch");
     expect(state.role.key).toBe(TEST_ROLE);
     expect(await snapshot("data-analyst")).toBe(before); // byte-for-byte
 
@@ -104,6 +107,7 @@ describe("Job-Track walkthrough", () => {
       const { data: inst2 } = await service.from("arena_challenges").select("answer_key, content, tool_type").eq("id", next.attempt.challenge.id).single();
       const done = await submitAttempt(service, userId, next.attempt.attemptId, referenceSubmission(inst2!.tool_type!, inst2!.content, inst2!.answer_key));
       expect(done.passed).toBe(true);
+      await finishVerified(service, userId, next.attempt.attemptId); // the rating is awarded when the interview passes
       const { data: newRatings } = await service.from("arena_skill_ratings").select("role_key").eq("user_id", userId).eq("role_key", TEST_ROLE);
       expect(newRatings).toHaveLength(1);
     }

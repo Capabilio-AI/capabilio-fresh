@@ -7,6 +7,7 @@ import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { loadOwnedSqlContent } from "@/lib/arena-workstations/attempts";
 import { runExploratoryQuery } from "@/lib/arena-workstations/tools/sql";
 import { attemptErrorResponse } from "@/lib/arena-workstations/http";
+import { recordQueryForAttempt } from "@/lib/arena-roles/session/record";
 
 const BodySchema = z.object({ query: z.string().trim().min(1).max(5000), explore: z.boolean().optional() });
 
@@ -24,8 +25,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
 
   const { attemptId } = await params;
   try {
-    const content = await loadOwnedSqlContent(createServiceClient(), auth.userId, attemptId);
-    return NextResponse.json(await runExploratoryQuery(content, parsed.data.query, parsed.data.explore));
+    const service = createServiceClient();
+    const content = await loadOwnedSqlContent(service, auth.userId, attemptId);
+    const result = await runExploratoryQuery(content, parsed.data.query, parsed.data.explore);
+    // a stage of a Proof Session keeps a trusted record of the queries run (nothing happens for an ordinary ticket)
+    await recordQueryForAttempt(service, auth.userId, attemptId, parsed.data.query, !("error" in result));
+    return NextResponse.json(result);
   } catch (error) {
     return attemptErrorResponse(error, "arena/domain/run");
   }

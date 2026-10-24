@@ -7,7 +7,11 @@ import { COOLDOWN_MS, resolveDailyState, type AssignmentRow } from "./daily";
 import { isRegisteredTool, toolFor } from "./registry";
 import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
 import { getStudentDirection } from "@/lib/career/direction";
-import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, pickActiveRole, type SkillAreaRow } from "./taxonomy";
+import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, type SkillAreaRow } from "./taxonomy";
+import { resolveDomainRole } from "./role-resolution";
+import { staleGradingCutoff } from "./grading-lock";
+import { recordStageResult } from "@/lib/arena-roles/session/service";
+import { supabaseSessionStore } from "@/lib/arena-roles/session/supabase-store";
 import { logArenaEvent } from "./log";
 import { describeSubmission, MAX_ATTEMPTS } from "./explain-rules";
 import { hashSeed } from "@/lib/workplace/rng";
@@ -43,17 +47,26 @@ export interface AreaProgress {
   lastVerifiedAt: string | null;
 }
 
+/**
+ * The student's DAILY tickets. Proof Session stages are ordinary assignments too, but marked with their session, so they are left out here: they
+ * must never be mistaken for the daily ticket or start its cooldown. If the proof_session_id column does not exist yet (the migration has not been
+ * applied), every assignment is a daily ticket and the plain query is used.
+ */
+async function loadDailyAssignments(service: Service, userId: string, roleKey: string) {
+  const withSession = await untyped(service).from("arena_domain_assignments").select(`${ASSIGNMENT_COLUMNS}, proof_session_id`).eq("user_id", userId).eq("role_key", roleKey).order("assigned_at", { ascending: false });
+  if (!withSession.error) return (withSession.data as { proof_session_id: string | null }[]).filter((r) => !r.proof_session_id);
+  const plain = await service.from("arena_domain_assignments").select(ASSIGNMENT_COLUMNS).eq("user_id", userId).eq("role_key", roleKey).order("assigned_at", { ascending: false });
+  return plain.data ?? [];
+}
+
 async function resolveRole(service: Service, userId: string, statedRole: string | null) {
   const roles = await listEnabledRoles(service);
   if (roles.length === 0) throw new AttemptError("No domain roles are configured.", 503);
   const [engagedRoleKey, direction] = await Promise.all([getEngagedRoleKey(service, userId), getStudentDirection(service, userId)]);
   const matched = matchRoleForStatedCareer(roles, statedRole);
-  const role = pickActiveRole(roles, {
-    activeRoleKey: direction?.activeRoleKey ?? null,
-    engagedRoleKey,
-    statedRole,
-  })!;
-  return { role, matched: matched?.role_key === role.role_key, engaged: engagedRoleKey !== null };
+  // no "first enabled role" fallback: a career without a workstation resolves to null, never to another role's tickets
+  const { role } = resolveDomainRole(roles, { activeRoleKey: direction?.activeRoleKey ?? null, engagedRoleKey, statedRole });
+  return { role, matched: role !== null && matched?.role_key === role.role_key, engaged: engagedRoleKey !== null };
 }
 
 async function explainInfo(service: Service, attempt: { id: string; grade: Json | null; submission: Json | null }, toolType: string) {
@@ -79,12 +92,30 @@ async function publicAttempt(service: Service, attempt: AssignmentRow & { status
   };
 }
 
+/** The arena_domain_roles.role_key a student works in (same resolution as the Domain page and API), or null when their career has no workstation. */
+export async function studentRoleKey(service: Service, userId: string, statedRole: string | null): Promise<string | null> {
+  return (await resolveRole(service, userId, statedRole)).role?.role_key ?? null;
+}
+
+/** The candidate-visible view of one attempt (never the answer key), for a stage of a Proof Session. Null if it is not this student's. */
+export async function loadPublicAttempt(service: Service, userId: string, attemptId: string) {
+  const { data: attempt } = await service.from("arena_domain_assignments").select(`${ASSIGNMENT_COLUMNS}, role_key`).eq("id", attemptId).eq("user_id", userId).maybeSingle();
+  if (!attempt) return null;
+  const { areas } = await loadRoleTaxonomy(service, attempt.role_key);
+  return publicAttempt(service, attempt as unknown as Parameters<typeof publicAttempt>[1], areas);
+}
+
 /** Read-only: what the Domain tab should show. Never generates. */
 export async function getWorkstationState(service: Service, userId: string, statedRole: string | null) {
   const { role, matched, engaged } = await resolveRole(service, userId, statedRole);
+  if (!role) {
+    logArenaEvent("role.unresolved", { userId, statedRole: statedRole?.slice(0, 80) ?? null });
+    return { state: "no_role" as const, statedRole };
+  }
   const { areas } = await loadRoleTaxonomy(service, role.role_key);
-  const [{ data: attempts }, { data: ratings }, { data: rotation }] = await Promise.all([
-    service.from("arena_domain_assignments").select(ASSIGNMENT_COLUMNS).eq("user_id", userId).eq("role_key", role.role_key).order("assigned_at", { ascending: false }),
+  const [attempts, openSession, { data: ratings }, { data: rotation }] = await Promise.all([
+    loadDailyAssignments(service, userId, role.role_key),
+    untyped(service).from("arena_proof_sessions").select("id").eq("user_id", userId).eq("role_key", role.role_key).eq("status", "open").maybeSingle(),
     service.from("arena_skill_ratings").select("area_key, verified_count, last_verified_at").eq("user_id", userId).eq("role_key", role.role_key),
     service.from("arena_rotation_state").select("cycle_number, served, remaining").eq("user_id", userId).eq("role_key", role.role_key).maybeSingle(),
   ]);
@@ -106,6 +137,10 @@ export async function getWorkstationState(service: Service, userId: string, stat
     cycle: rotation ? { number: rotation.cycle_number, served: rotation.served } : null,
   };
 
+  // a Proof Session is running: its stages are worked in the session, and the daily ticket waits until it ends
+  const sessionId = (openSession.data as { id: string } | null)?.id ?? null;
+  if (sessionId) return { ...base, state: "in_session" as const, sessionId };
+
   const rows = (attempts ?? []) as (AssignmentRow & { status: string; skill_area_key: string | null; submission_count: number; grade: Json | null; submission: Json | null })[];
   const daily = resolveDailyState(rows, new Date());
   if (daily.kind === "active") return { ...base, state: "active" as const, attempt: await publicAttempt(service, daily.assignment as (typeof rows)[number], areas) };
@@ -115,7 +150,7 @@ export async function getWorkstationState(service: Service, userId: string, stat
   return { ...base, state: "ready" as const };
 }
 
-async function generateWithRetries(area: SkillAreaRow, ctx: Parameters<ReturnType<typeof toolFor>["generate"]>[0], logFields: Record<string, string>): Promise<GeneratedChallenge> {
+export async function generateWithRetries(area: SkillAreaRow, ctx: Parameters<ReturnType<typeof toolFor>["generate"]>[0], logFields: Record<string, string>): Promise<GeneratedChallenge> {
   const tool = toolFor(area.tool_type);
   let lastError = "";
   for (let attempt = 1; attempt <= GENERATION_ATTEMPTS; attempt++) {
@@ -141,6 +176,8 @@ async function generateWithRetries(area: SkillAreaRow, ctx: Parameters<ReturnTyp
  */
 export async function startNextAttempt(service: Service, userId: string, statedRole: string | null, focusAreaKey?: string) {
   const state = await getWorkstationState(service, userId, statedRole);
+  if (state.state === "in_session") throw new AttemptError("You are in a Proof Session. Finish it before your next daily ticket.", 409, { reason: "session_open", sessionId: state.sessionId });
+  if (state.state === "no_role") throw new AttemptError("There is no workstation for your target role yet.", 409, { reason: "no_role" });
   if (state.state === "active") return state;
   if (state.state === "cooldown") throw new AttemptError("Your next task unlocks later.", 409, { nextAvailableAt: state.nextAvailableAt });
   if (state.state === "unavailable") throw new AttemptError("No skill areas are enabled for this role yet.", 503);
@@ -231,7 +268,12 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   if (!parsed.success) throw new AttemptError("That submission isn't in the expected format.", 400);
 
   // Grading lock: only one grading per attempt at a time (double-click / retry safe).
-  const { data: locked } = await service.from("arena_domain_assignments").update({ status: "grading" }).eq("id", attemptId).eq("status", "presented").is("completed_at", null).select("id");
+  // The lock time is stamped in submitted_at. If the request that took the lock died (timeout, crash) the ticket would stay "grading" forever, so a
+  // lock older than the submit route can run is taken over -- the compare-and-set keeps two takeovers from both winning.
+  const lockedAt = new Date().toISOString();
+  const lock = () => service.from("arena_domain_assignments").update({ status: "grading", submitted_at: lockedAt }).eq("id", attemptId).is("completed_at", null);
+  let { data: locked } = await lock().eq("status", "presented").select("id");
+  if (!locked?.length) ({ data: locked } = await lock().eq("status", "grading").lt("submitted_at", staleGradingCutoff(new Date())).select("id"));
   if (!locked?.length) throw new AttemptError("This task is already being graded.", 409);
 
   const logFields = { userId, attemptId, area: attempt.skill_area_key ?? "", tool: challenge.tool_type! };
@@ -250,6 +292,10 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   const gradeJson = { passed: grade.passed, message: grade.message, checks: grade.checks, detail: grade.detail ?? null, grading_version: tool.gradingVersion } as unknown as Json;
   const submissionJson = parsed.data as unknown as Json;
   const nowIso = new Date().toISOString();
+
+  // a Proof Session stage is graded exactly like any ticket, but it never starts the daily cooldown and its rating waits for the session interview
+  const sessionId = await sessionOfAttempt(service, attemptId);
+  if (sessionId) return settleStage(service, { userId, attemptId, sessionId, grade, gradeJson, submissionJson, nowIso, submissionCount: attempt.submission_count, logFields });
 
   if (!grade.passed) {
     // a tool may cap the tries (machine learning tasks, where unlimited tries would let someone recover the hidden labels)
@@ -282,11 +328,52 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   return { passed: true, explain: true as const, message: "Task solved. Explain your work to earn your rating.", checks: grade.checks, detail: grade.detail ?? null };
 }
 
+/** The Proof Session an attempt belongs to, or null for a daily ticket (also null if the column does not exist yet). */
+async function sessionOfAttempt(service: Service, attemptId: string): Promise<string | null> {
+  const { data } = await untyped(service).from("arena_domain_assignments").select("proof_session_id").eq("id", attemptId).maybeSingle();
+  return (data as { proof_session_id: string | null } | null)?.proof_session_id ?? null;
+}
+
+/**
+ * Saves the result of a Proof Session stage. A miss leaves the stage open for another try. A pass parks the attempt in "explaining" (no rating, no cooldown,
+ * not closed) until the session interview, and the next stage becomes available. The check counts come from this server's own grade.
+ */
+async function settleStage(
+  service: Service,
+  a: { userId: string; attemptId: string; sessionId: string; grade: GradeResult; gradeJson: Json; submissionJson: Json; nowIso: string; submissionCount: number; logFields: Record<string, string> }
+) {
+  const { grade } = a;
+  const common = { grade: a.gradeJson, submission: a.submissionJson, submitted_at: a.nowIso, submission_count: a.submissionCount + 1 };
+  const { error } = await service
+    .from("arena_domain_assignments")
+    .update({ status: grade.passed ? "explaining" : "presented", ...common })
+    .eq("id", a.attemptId)
+    .eq("status", "grading")
+    .is("completed_at", null);
+  if (error) {
+    await service.from("arena_domain_assignments").update({ status: "presented" }).eq("id", a.attemptId).is("completed_at", null);
+    logArenaEvent("completion.failed", { ...a.logFields, reason: error.message.slice(0, 200) });
+    throw new AttemptError("Your answer was graded, but saving the result failed. Submit again to record it.", 502);
+  }
+  const store = supabaseSessionStore(service);
+  const stage = (await store.stages(a.sessionId)).find((s) => s.assignmentId === a.attemptId);
+  if (stage) {
+    // the log is a record, never a gate: a failure to write it must not undo a graded result
+    try {
+      await recordStageResult(store, { sessionId: a.sessionId, stageKey: stage.stageKey, passed: grade.passed, checksPassed: grade.checks.filter((c) => c.passed).length, checksTotal: grade.checks.length });
+    } catch (e) {
+      logArenaEvent("session.record_failed", { ...a.logFields, reason: (e as Error).message.slice(0, 200) });
+    }
+  }
+  logArenaEvent(grade.passed ? "session.stage_passed" : "session.stage_missed", { ...a.logFields, sessionId: a.sessionId });
+  return { passed: grade.passed, session: true as const, message: grade.passed ? "Stage passed." : grade.message, checks: grade.checks, detail: grade.detail ?? null };
+}
+
 /**
  * Awards the rating for a solved task whose explanation passed: the atomic completion (rating, evidence, portfolio entry, cooldown) and then the
  * shared role ELO and skill graph. The grade and submission are the ones saved when the task was solved. Throws AttemptError if it cannot save.
  */
-export async function finishVerified(service: Service, userId: string, attemptId: string) {
+export async function finishVerified(service: Service, userId: string, attemptId: string, cooldownHours: number = COOLDOWN_HOURS) {
   const { data: attempt } = await service.from("arena_domain_assignments").select("id, user_id, role_key, skill_area_key, challenge_id, status, grade, submission").eq("id", attemptId).eq("user_id", userId).maybeSingle();
   if (!attempt || attempt.status !== "explaining") throw new AttemptError("This task is not waiting for an explanation.", 409);
   const { data: challenge } = await service.from("arena_challenges").select("difficulty").eq("id", attempt.challenge_id).single();
@@ -301,7 +388,7 @@ export async function finishVerified(service: Service, userId: string, attemptId
       p_submission: attempt.submission as Json,
       p_points: points,
       p_streak: { current_streak: streak.currentStreak, longest_streak: streak.longestStreak, last_completed_week: streak.lastCompletedWeek } as unknown as Json,
-      p_cooldown_hours: COOLDOWN_HOURS,
+      p_cooldown_hours: cooldownHours,
     });
     if (error) throw error;
     const result = completion as { rating_delta: number; points: number; next_available_at: string; evidence_id?: string; already_completed: boolean };
@@ -317,9 +404,9 @@ export async function finishVerified(service: Service, userId: string, attemptId
 }
 
 /** Closes a solved task without a rating (explanation not passed, or skipped). The cooldown still applies. */
-export async function closeWithoutRating(service: Service, attemptId: string): Promise<string> {
+export async function closeWithoutRating(service: Service, attemptId: string, cooldownMs: number = COOLDOWN_MS): Promise<string> {
   const now = new Date();
-  const nextAvailableAt = new Date(now.getTime() + COOLDOWN_MS).toISOString();
+  const nextAvailableAt = new Date(now.getTime() + cooldownMs).toISOString();
   const { error } = await service
     .from("arena_domain_assignments")
     .update({ status: "unexplained", completed_at: now.toISOString(), next_available_at: nextAvailableAt })
