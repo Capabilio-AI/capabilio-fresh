@@ -29,7 +29,7 @@ beforeAll(async () => {
   await db.exec(STUBS);
   await db.exec(`insert into public.profiles (id) values ('${USER}')`);
   await db.exec(MIGRATION);
-});
+}, 60_000); // booting PGlite can be slow when the whole suite is running
 afterAll(async () => db.close());
 
 describe("migration 120", () => {

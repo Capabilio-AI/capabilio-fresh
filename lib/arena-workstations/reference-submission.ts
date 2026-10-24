@@ -8,7 +8,8 @@ export function referenceSubmission(toolType: string, content: unknown, answerKe
   const key = answerKey as Record<string, unknown>;
   switch (toolType) {
     case "sql_workspace":
-      return { query: key.reference_query };
+      // a query task has a reference query; a script task (UPDATE, ALTER, ...) has a reference script, submitted the same way
+      return { query: key.reference_query ?? key.reference_script };
     case "statistics_workspace":
       return { answers: Object.fromEntries((key.expected as { key: string; value: number | string }[]).map((e) => [e.key, typeof e.value === "number" ? e.value.toFixed(3) : e.value])) };
     case "cleaning_workspace":

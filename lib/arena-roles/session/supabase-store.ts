@@ -4,7 +4,7 @@ import { untyped } from "@/lib/org/db";
 import { StoreConflict, type NewEvent, type SessionRow, type SessionStore, type StageRow } from "./store";
 
 const UNIQUE_VIOLATION = "23505";
-const SEQ_RETRIES = 6;
+const SEQ_RETRIES = 25;
 
 interface SessionDb { id: string; user_id: string; role_key: string; spec_key: string; spec_version: number; status: SessionRow["status"]; started_at: string; finished_at: string | null }
 interface StageDb { session_id: string; stage_key: string; stage_index: number; area_key: string; assignment_id: string | null; status: StageRow["status"]; checks_passed: number | null; checks_total: number | null }
@@ -33,7 +33,7 @@ export function supabaseSessionStore(service: SupabaseClient<Database>): Session
     },
 
     async hasOpenDailyTicket(userId, roleKey) {
-      const { data, error } = await db.from("arena_domain_assignments").select("id").eq("user_id", userId).eq("role_key", roleKey).is("completed_at", null).is("proof_session_id", null).limit(1);
+      const { data, error } = await db.from("arena_domain_assignments").select("id").eq("user_id", userId).eq("role_key", roleKey).is("completed_at", null).is("proof_session_id", null).order("id").limit(1);
       fail(error, "check daily ticket");
       return (data?.length ?? 0) > 0;
     },
@@ -77,12 +77,15 @@ export function supabaseSessionStore(service: SupabaseClient<Database>): Session
 
     async appendEvent(sessionId, event) {
       const row = split(event);
+      // The next number is read, then claimed by the primary key. When writers collide the loser reads again; a short random wait stops them colliding
+      // again in step. Events come one at a time from a single student, so this is only ever a few tries.
       for (let attempt = 0; attempt < SEQ_RETRIES; attempt++) {
         const { data: last } = await db.from("arena_session_events").select("seq").eq("session_id", sessionId).order("seq", { ascending: false }).limit(1);
         const seq = ((last?.[0] as { seq: number } | undefined)?.seq ?? 0) + 1;
         const { error } = await db.from("arena_session_events").insert({ session_id: sessionId, seq, ...row });
         if (!error) return;
         if (error.code !== UNIQUE_VIOLATION) fail(error, "append event");
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 40 * (attempt + 1)));
       }
       throw new Error("append event: could not allocate a sequence number");
     },

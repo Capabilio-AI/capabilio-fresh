@@ -5,7 +5,8 @@ import { referenceSubmission } from "./reference-submission";
 
 // §62 acceptance flow, live: real DB, real AI provider, real graders.
 const service = liveServiceClient();
-const ENABLED = ["sql", "spreadsheet", "dashboard", "statistics", "data_cleaning"];
+// a new (fresher) student is served these; investigation needs junior and incident needs mid (lib/workplace/areas.ts)
+const ENABLED = ["sql", "debugging", "spreadsheet", "dashboard", "statistics", "data_cleaning"];
 let userId: string;
 
 async function answerKeyFor(challengeId: string) {
@@ -58,7 +59,8 @@ describe("Data Analyst end-to-end", () => {
 
       const { data: ratingAfter } = await service.from("arena_skill_ratings").select("rating, verified_count").eq("user_id", userId).eq("area_key", area).single();
       expect(ratingAfter!.verified_count).toBe((ratingBefore?.verified_count ?? 0) + 1);
-      expect(ratingAfter!.rating).toBeGreaterThan(ratingBefore?.rating ?? 1200);
+      // a new student starts at the Arena baseline (400, migration 027), not the old 1200
+      expect(ratingAfter!.rating).toBeGreaterThan(ratingBefore?.rating ?? 400);
 
       // Exactly once: a replayed completion changes nothing; a resubmission is refused.
       const { data: replay } = await service.rpc("complete_workstation_attempt", { p_attempt_id: attempt.attemptId, p_grade: {}, p_submission: {}, p_points: 999, p_streak: {}, p_cooldown_hours: 24 });

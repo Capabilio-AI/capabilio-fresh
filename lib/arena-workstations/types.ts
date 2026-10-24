@@ -39,6 +39,8 @@ export interface GenerationContext {
   level?: ExperienceLevel;
   /** task kinds of their last tickets in this tool, newest first, so the next one differs */
   recentKinds?: string[];
+  /** serve only tickets of these kinds (a Proof Session stage that needs a particular sort of task); absent means any */
+  onlyTaskKinds?: string[];
 }
 
 /** What a tool's generator hands back after its own validation passed. */

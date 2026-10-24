@@ -105,3 +105,25 @@ Verified locally: `tsc` 0 source errors, eslint clean, 298 tests pass in the aff
 NOT verified: anything against the live database (stage creation insert, the explain-to-finish chain, `complete_workstation_attempt` with a 0-hour cooldown), any browser run of the UI, AI-generated stage tickets, the full suite after these changes.
 
 Known gaps: the AI helper is not offered in sessions yet (the AI dimension reads "not assessed"); `data_inspected` events are not sent by the SQL tool yet; stages are not linked by data (stated in the report); a session cannot be abandoned from the UI.
+
+### IT-01 third pass (2026-10-24): migrations applied, verified live
+
+Production state, checked by query: migration 120 is applied (4 tables, RLS on, `proof_session_id` column, `one_open` index rebuilt, `one_active_stage` added, `service_role` limited to select+insert on the log and reports). Migration 113 is also applied: `backend-developer` exists with 5 enabled areas. The 2 existing assignments were untouched.
+
+Verified live against the real database with throwaway users (all deleted afterwards; 0 test users, sessions or events left):
+
+- `session.live.test.ts`: 12 tests, passed in 3 consecutive runs after the fixes below. Covers: one session however many starts (concurrent), daily ticket held back during a session, a stage served once under a race, a wrong answer leaving the stage open, interview refused from a middle stage, five stages passed with no rating, no cooldown and no closed ticket, server vs browser events, interview built on the whole session, every stage rated once with a zero-hour cooldown and a report written, daily ticket available afterwards, another student's session unreadable and untouchable, browser clients unable to read or write the four tables, the log append-only even for the server key, no duplicate event numbers under 8 concurrent writers.
+- The three existing live suites (daily e2e, security, higher-studies switch): 10 tests pass.
+
+Defects the live run found and fixed:
+
+1. Concurrent event writes could fail to get a sequence number (6 immediate retries). Now up to 25 tries with a random wait.
+2. The test helper did not know SQL "script" tickets (UPDATE, ALTER), so intermittently a random student's reference answer was rejected. Fixed, and `reference.test.ts` now proves every stage is solvable for 25 different students at two levels, with no database.
+3. Design fix: the "business question" stage could be served a script task. It now serves only retrieval and analytics tasks (`onlyTaskKinds`), asserted for 25 students.
+4. Two existing live tests were already failing on a clean `main` (checked in a separate worktree) because they predate the interview step and the 400 rating baseline, and the e2e test did not know the role now has six fresher areas. Updated; they pass.
+
+Also: an error boundary keeps a failure in the session panel from breaking the Domain page; the full unit suite had a repo guard (every `.limit(1)` ordered) that my code broke, now fixed.
+
+Checks: `tsc` 0 source errors, eslint 0 errors (8 older warnings in untouched files), `next build` compiles and the four session routes are in it. The build's type check failed locally only because of stray Finder duplicates (`routes.d 2.ts` etc.) in the generated `.next/dev/types`; I removed those untracked, git-ignored files only.
+
+NOT verified: the screens in a browser (a login is required and test credentials cannot be entered into an app whose sign-in goes to the production auth host), the real AI interview scoring end to end (questions were generated live; the pass path was driven through the session finish directly), and the AI-written stage tickets (the Data Analyst stages use the template engine).

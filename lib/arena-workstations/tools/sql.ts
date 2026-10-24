@@ -133,7 +133,7 @@ async function generateFromWorld(ctx: GenerationContext, world: NonNullable<Retu
   const tables = world.generate(ctx.worldSeed!);
   const engine = engineOf(world.engine);
   const picked = await pickTicket({
-    templates: world.templates, difficulty: ctx.difficulty, level: ctx.level ?? "fresher", rng: makeRng(ctx.ticketSeed ?? hashSeed("ticket")),
+    templates: ctx.onlyTaskKinds ? world.templates.filter((t) => ctx.onlyTaskKinds!.includes(t.taskKind)) : world.templates, difficulty: ctx.difficulty, level: ctx.level ?? "fresher", rng: makeRng(ctx.ticketSeed ?? hashSeed("ticket")),
     avoidTitles: ctx.avoidTitles, recentKinds: (ctx.recentKinds ?? []) as TaskKind[], tables,
     runners: engine.runners, dialect: engine.key, setupSql: world.setupSql, areaKey: ctx.areaKey,
   });

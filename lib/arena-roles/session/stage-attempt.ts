@@ -9,7 +9,7 @@ import { GROQ_MODEL } from "@/lib/ai/groq";
 import { difficultyForRating } from "@/lib/arena-workstations/types";
 import { loadExperienceLevel } from "@/lib/workplace/level-server";
 import { hashSeed } from "@/lib/workplace/rng";
-import { currentStage, recordServerEvent, SessionError } from "./service";
+import { currentStage, recordServerEvent, SessionError, SPECS } from "./service";
 import { supabaseSessionStore } from "./supabase-store";
 
 type Service = SupabaseClient<Database>;
@@ -54,6 +54,7 @@ export async function activateStage(service: Service, userId: string, sessionId:
     {
       roleName: role.display_name, parentSkill: role.parent_skill_name, areaName: area.display_name, difficulty, avoidTitles: ((previousRows ?? []) as { title: string }[]).map((p) => p.title),
       roleKey: session.roleKey, areaKey: area.area_key, worldSeed: hashSeed(userId, session.roleKey, "world"), ticketSeed: hashSeed(userId, session.roleKey, "session", sessionId, stage.stageKey), level, recentKinds: [],
+      onlyTaskKinds: SPECS[session.roleKey]?.stagesFor(level).find((s) => s.key === stage.stageKey)?.taskKinds?.slice(),
     },
     { userId, roleKey: session.roleKey, area: area.area_key, difficulty }
   );
