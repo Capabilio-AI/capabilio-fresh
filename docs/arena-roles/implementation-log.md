@@ -127,3 +127,20 @@ Also: an error boundary keeps a failure in the session panel from breaking the D
 Checks: `tsc` 0 source errors, eslint 0 errors (8 older warnings in untouched files), `next build` compiles and the four session routes are in it. The build's type check failed locally only because of stray Finder duplicates (`routes.d 2.ts` etc.) in the generated `.next/dev/types`; I removed those untracked, git-ignored files only.
 
 NOT verified: the screens in a browser (a login is required and test credentials cannot be entered into an app whose sign-in goes to the production auth host), the real AI interview scoring end to end (questions were generated live; the pass path was driven through the session finish directly), and the AI-written stage tickets (the Data Analyst stages use the template engine).
+
+### IT-01 fourth pass (2026-10-24): tested through the running app over HTTP
+
+PR #12 is open and NOT merged (CI `verify` green; the Vercel preview fails on a missing `NEXT_PUBLIC_SUPABASE_URL`, as it did on PRs #9-#11). Production still runs the previous release, so this pass tested the built branch locally (`next start`) against the production database.
+
+`session.http.live.test.ts`, 12 tests, passed 4 times in a row against the real built app: sign-in cookies in the real format, the proxy, rate limits, every route handler and the database. Covers: visitors refused; a student with no workstation told so and never given a Data Analyst ticket (session start and daily start); start is idempotent; the daily ticket is held back (`in_session`, 409 `session_open`); browsers can only report `brief_viewed`, `plan_note`, `data_inspected` (forged `submitted`, `check_run`, `query_run` get 400); five stages each with a genuine miss then a pass, a repeat request returning the same stage, no answer key in any response, no rating or cooldown; interview refused from a middle stage (409 `not_anchor`); a real AI interview on the whole session (questions generated, AI-written answers scored: award at 55, 62, 55; pass mark is 50) rating all five stages; five completions, five evidence rows each carrying the interview score, no cooldown; the report; another student getting 404 on every session and attempt route; the Domain page returning 200.
+
+What the run exposed in my own report logic, now fixed and covered by unit tests:
+
+1. Discovery and Analysis were judged on every stage although only the SQL stage reports exploration, so every student scored 0. Discovery is now assessed only on stages whose tool reports exploration (`explorable`); "not assessed" otherwise.
+2. A student who failed a stage, corrected it and passed was told they "did not change their work", because the tools do not report edits. A later resubmission now counts as revising.
+3. Planning was marked trusted although the plan length comes from the browser; now lower-confidence.
+4. The same explanation was repeated once per stage; now said once.
+
+With a plan before each stage, the brief shown, one query run, and a miss then a fix on every stage, the report reads: planning 3, analysis 1, discovery 1, judgement 3, execution 3, AI not assessed.
+
+Honest limits seen: the interview scores are close to the pass mark (55-62) with answers written by an AI from the submission summary, so a real student's result is unknown; Analysis tops out at 1 until the tools report which data a student inspected; the screens have still not been exercised in a browser.

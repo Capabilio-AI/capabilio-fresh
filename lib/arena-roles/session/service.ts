@@ -123,7 +123,8 @@ export async function finalizeReport(store: SessionStore, input: { userId: strin
   if (stored) return stored as SessionReport;
 
   const stages = describe(spec, input.level, await store.stages(session.id));
-  const results: StageResult[] = stages.map((s) => ({ key: s.stageKey, title: s.title, passed: s.status === "passed", checksPassed: s.checksPassed ?? 0, checksTotal: s.checksTotal ?? 0 }));
+  const explorable = new Set(spec.stagesFor(input.level).filter((s) => s.explorable).map((s) => s.key));
+  const results: StageResult[] = stages.map((s) => ({ key: s.stageKey, title: s.title, passed: s.status === "passed", checksPassed: s.checksPassed ?? 0, checksTotal: s.checksTotal ?? 0, explorable: explorable.has(s.stageKey) }));
   const { events, dropped } = parseEvents(await store.events(session.id));
   const report = buildReport({ specKey: spec.key, specVersion: spec.version, roleId: spec.roleId, worldName: "BrightCart", stages: results, events, limitations: spec.limitations, droppedEvents: dropped });
   await store.saveReport(session.id, RUBRIC_VERSION, report);

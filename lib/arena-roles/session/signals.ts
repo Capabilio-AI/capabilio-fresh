@@ -45,7 +45,8 @@ function planning(stage: SessionEvent[]): DimensionSignal {
   const firstQuery = firstSeq(stage, (e) => e.kind === "query_run");
   const before = notes.find((n) => n.seq < firstQuery);
   const any = notes[0];
-  return { level: before ? 3 : any ? 2 : 0, trusted: true, evidence: (before ?? any) ? [(before ?? any)!.seq] : [], basis: before ? "wrote a plan before running anything" : any ? "wrote a plan after starting" : `no plan note of at least ${MIN_PLAN_WORDS} words` };
+  // the plan's length is reported by the browser, so this is lower-confidence like the other browser-reported signals
+  return { level: before ? 3 : any ? 2 : 0, trusted: false, evidence: (before ?? any) ? [(before ?? any)!.seq] : [], basis: before ? "wrote a plan before running anything" : any ? "wrote a plan after starting" : `no plan note of at least ${MIN_PLAN_WORDS} words` };
 }
 
 /** Judgement: checked the work before submitting, and acted on a failure. */
@@ -54,7 +55,8 @@ function judgement(stage: SessionEvent[]): DimensionSignal {
   const submit = stage.find((e) => e.kind === "submitted");
   if (checks.length === 0) return { level: submit ? 0 : null, trusted: true, evidence: submit ? [submit.seq] : [], basis: submit ? "submitted without running the checks" : "nothing submitted yet" };
   const failedAt = checks.find((c) => c.passed < c.total);
-  const acted = failedAt ? stage.some((e) => e.seq > failedAt.seq && (e.kind === "query_run" || e.kind === "plan_note")) : false;
+  // after a miss, trying again counts as changing the work: the tools do not report edits, so the next check is the evidence of a revision
+  const acted = failedAt ? stage.some((e) => e.seq > failedAt.seq && (e.kind === "query_run" || e.kind === "plan_note" || e.kind === "check_run")) : false;
   const last = checks[checks.length - 1];
   const endedPassing = last.passed === last.total;
   const n = 1 + (failedAt ? (acted ? 1 : 0) : 1) + (failedAt && acted && endedPassing ? 1 : 0);
@@ -88,18 +90,28 @@ const worst = (a: DimensionSignal["level"], b: DimensionSignal["level"]) => (a =
 const merge = (signals: DimensionSignal[]): DimensionSignal => {
   const assessed = signals.filter((s) => s.level !== null);
   if (assessed.length === 0) return { ...signals[0], level: null };
-  return { level: assessed.map((s) => s.level).reduce((a, b) => worst(a, b)), trusted: signals.every((s) => s.trusted), evidence: signals.flatMap((s) => s.evidence), basis: assessed.map((s) => s.basis).join("; ") };
+  return { level: assessed.map((s) => s.level).reduce((a, b) => worst(a, b)), trusted: signals.every((s) => s.trusted), evidence: signals.flatMap((s) => s.evidence), basis: [...new Set(assessed.map((s) => s.basis))].join("; ") };
 };
 
-export function assessSession(events: readonly SessionEvent[], stageKeys: readonly string[], stagesPassed: number): Record<Dimension, DimensionSignal> {
-  const per = stageKeys.map((k) => forStage(events, k)).filter((s) => s.length > 0);
-  const over = (f: (s: SessionEvent[]) => DimensionSignal): DimensionSignal => (per.length === 0 ? { level: null, trusted: true, evidence: [], basis: "no activity was recorded" } : merge(per.map(f)));
+/** A stage as the signals see it. `explorable` says its tool reports what the student explored (queries run, tables looked at); only then can Discovery be assessed. */
+export interface StageInfo {
+  key: string;
+  explorable?: boolean;
+}
+
+export function assessSession(events: readonly SessionEvent[], stages: readonly StageInfo[], stagesPassed: number): Record<Dimension, DimensionSignal> {
+  const logs = (list: readonly StageInfo[]) => list.map((s) => forStage(events, s.key)).filter((l) => l.length > 0);
+  const over = (f: (s: SessionEvent[]) => DimensionSignal, list: readonly StageInfo[] = stages): DimensionSignal => {
+    const per = logs(list);
+    if (list.length === 0) return { level: null, trusted: true, evidence: [], basis: "none of this session's tools report this, so it is not assessed" };
+    return per.length === 0 ? { level: null, trusted: true, evidence: [], basis: "no activity was recorded" } : merge(per.map(f));
+  };
   return {
     analysis: over(analysis),
-    discovery: over(discovery),
+    discovery: over(discovery, stages.filter((s) => s.explorable)),
     planning: over(planning),
     judgement: over(judgement),
-    execution: executionSignal(stagesPassed, stageKeys.length),
+    execution: executionSignal(stagesPassed, stages.length),
     aiCollaboration: over(aiCollaboration),
   };
 }

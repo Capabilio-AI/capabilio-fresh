@@ -7,6 +7,8 @@ export interface StageResult {
   passed: boolean;
   checksPassed: number;
   checksTotal: number;
+  /** the stage's tool reports what the student explored, so Discovery can be assessed on it */
+  explorable?: boolean;
 }
 
 export interface SessionReport {
@@ -37,7 +39,7 @@ export function buildReport(input: { specKey: string; specVersion: number; roleI
     roleId: input.roleId,
     claim,
     stages: input.stages,
-    dimensions: assessSession(input.events, input.stages.map((s) => s.key), passedStages),
+    dimensions: assessSession(input.events, input.stages.map((s) => ({ key: s.key, explorable: s.explorable })), passedStages),
     limitations: input.limitations,
     droppedEvents: input.droppedEvents ?? 0,
   };

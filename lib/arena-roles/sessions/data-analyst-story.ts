@@ -10,6 +10,8 @@ export interface SessionStage {
   goal: string;
   /** serve only tickets of these kinds (see TASK_KINDS); absent means any ticket of the area */
   taskKinds?: readonly string[];
+  /** the stage's tool reports what the student explored (SQL queries run), so Discovery is assessed on it */
+  explorable?: boolean;
 }
 
 export interface ProofSessionSpec {
@@ -27,10 +29,10 @@ export interface ProofSessionSpec {
 }
 
 const PREPARE: SessionStage = { key: "prepare", areaKey: "data_cleaning", title: "Prepare the data", goal: "Profile the warehouse extract and clean what would corrupt the numbers." };
-const ANALYSE: SessionStage = { key: "analyse", areaKey: "sql", title: "Answer the business question", goal: "Write the SQL that answers the manager's question on the cleaned data.", taskKinds: ["retrieval", "analytics"] };
+const ANALYSE: SessionStage = { key: "analyse", areaKey: "sql", title: "Answer the business question", goal: "Write the SQL that answers the manager's question on the cleaned data.", taskKinds: ["retrieval", "analytics"], explorable: true };
 const CROSSCHECK: SessionStage = { key: "crosscheck", areaKey: "spreadsheet", title: "Cross-check the number", goal: "Rebuild the headline figure in a spreadsheet and confirm it matches." };
 const REPORT: SessionStage = { key: "report", areaKey: "dashboard", title: "Report it", goal: "Build the dashboard view the stakeholder will actually read." };
-const FINDINGS_JUNIOR: SessionStage = { key: "findings", areaKey: "investigation", title: "Explain what is going on", goal: "Find what is behind the movement in the numbers and report it with evidence." };
+const FINDINGS_JUNIOR: SessionStage = { key: "findings", areaKey: "investigation", title: "Explain what is going on", goal: "Find what is behind the movement in the numbers and report it with evidence.", explorable: true };
 const FINDINGS_FRESHER: SessionStage = { key: "findings", areaKey: "statistics", title: "Is the change real?", goal: "Test whether the movement is more than noise and state the conclusion." };
 
 export const DATA_ANALYST_STORY: ProofSessionSpec = {
