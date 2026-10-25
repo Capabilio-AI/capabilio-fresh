@@ -1,5 +1,6 @@
 import type { ExperienceLevel } from "@/lib/workplace/level";
 import { DATA_ANALYST_STORY, type ProofSessionSpec, type SessionStage } from "../sessions/data-analyst-story";
+import { BACKEND_SERVICE } from "../sessions/backend-developer-service";
 import { parseEvents } from "./events";
 import { buildReport, type SessionReport, type StageResult } from "./report";
 import { StoreConflict, type NewEvent, type SessionRow, type SessionStore, type StageRow } from "./store";
@@ -7,7 +8,7 @@ import { StoreConflict, type NewEvent, type SessionRow, type SessionStore, type 
 export const RUBRIC_VERSION = "signals.v1";
 
 /** The session spec each role runs. A role without an entry has no Proof Session: nothing is substituted. */
-export const SPECS: Readonly<Record<string, ProofSessionSpec>> = { "data-analyst": DATA_ANALYST_STORY };
+export const SPECS: Readonly<Record<string, ProofSessionSpec>> = { "data-analyst": DATA_ANALYST_STORY, "backend-developer": BACKEND_SERVICE };
 
 export class SessionError extends Error {
   constructor(message: string, readonly status: number, readonly reason: string) {
@@ -126,7 +127,7 @@ export async function finalizeReport(store: SessionStore, input: { userId: strin
   const explorable = new Set(spec.stagesFor(input.level).filter((s) => s.explorable).map((s) => s.key));
   const results: StageResult[] = stages.map((s) => ({ key: s.stageKey, title: s.title, passed: s.status === "passed", checksPassed: s.checksPassed ?? 0, checksTotal: s.checksTotal ?? 0, explorable: explorable.has(s.stageKey) }));
   const { events, dropped } = parseEvents(await store.events(session.id));
-  const report = buildReport({ specKey: spec.key, specVersion: spec.version, roleId: spec.roleId, worldName: "BrightCart", stages: results, events, limitations: spec.limitations, droppedEvents: dropped });
+  const report = buildReport({ specKey: spec.key, specVersion: spec.version, roleId: spec.roleId, claimSubject: spec.claimSubject, stages: results, events, limitations: spec.limitations, droppedEvents: dropped });
   await store.saveReport(session.id, RUBRIC_VERSION, report);
   return report;
 }

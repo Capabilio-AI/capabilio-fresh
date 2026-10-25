@@ -17,6 +17,7 @@ const NO_COOLDOWN_HOURS = 0;
 
 export interface SessionContext {
   sessionId: string;
+  roleKey: string;
   /** the last stage's attempt: the one the interview hangs off */
   anchorAttemptId: string;
   stages: StageRow[];
@@ -37,13 +38,13 @@ export async function sessionContextFor(service: Service, userId: string, attemp
   if (stages.length === 0 || stages.some((s) => s.status !== "passed")) throw new AttemptError("Pass every stage before explaining your work.", 409, { reason: "stages_remaining" });
   const anchor = stages[stages.length - 1];
   if (anchor.assignmentId !== attemptId) throw new AttemptError("Explain your work from the last stage of the session.", 409, { reason: "not_anchor" });
-  return { sessionId, anchorAttemptId: attemptId, stages };
+  return { sessionId, roleKey: session.roleKey, anchorAttemptId: attemptId, stages };
 }
 
 /** One brief for the whole session: what was asked and everything the student handed in, stage by stage. */
 export async function sessionBrief(service: Service, userId: string, ctx: SessionContext, areaNames: Map<string, string>): Promise<TaskBrief> {
   const db = untyped(service);
-  const spec = SPECS["data-analyst"];
+  const spec = SPECS[ctx.roleKey];
   const parts: string[] = [];
   const passed: string[] = [];
   for (const stage of ctx.stages) {

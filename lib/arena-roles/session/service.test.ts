@@ -62,7 +62,7 @@ describe("startSession", () => {
   });
 
   it("has no session for a role without a spec", async () => {
-    await rejects(startSession(memoryStore(), { userId: U, roleKey: "backend-developer", level: "fresher" }), "no_session_for_role");
+    await rejects(startSession(memoryStore(), { userId: U, roleKey: "devops-engineer", level: "fresher" }), "no_session_for_role");
     await rejects(startSession(memoryStore(), { userId: U, roleKey: "no-such-role", level: "fresher" }), "no_session_for_role");
   });
 

@@ -151,7 +151,7 @@ describe("skip", () => {
 });
 
 describe("a Proof Session", () => {
-  const ctx = { sessionId: "s1", anchorAttemptId: "a1", stages: [] };
+  const ctx = { sessionId: "s1", roleKey: "data-analyst", anchorAttemptId: "a1", stages: [] };
   const brief = { title: "From raw extract to evidence-backed recommendation", requester: null, scenario: "multi-stage", objective: "explain", skill: null, difficulty: "medium", submission: "Stage 1 ...", passedChecks: ["Totals match"] };
   beforeEach(() => {
     mocks.sessionContextFor.mockResolvedValue(ctx);

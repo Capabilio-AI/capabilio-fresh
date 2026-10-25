@@ -144,3 +144,16 @@ What the run exposed in my own report logic, now fixed and covered by unit tests
 With a plan before each stage, the brief shown, one query run, and a miss then a fix on every stage, the report reads: planning 3, analysis 1, discovery 1, judgement 3, execution 3, AI not assessed.
 
 Honest limits seen: the interview scores are close to the pass mark (55-62) with answers written by an AI from the submission summary, so a real student's result is unknown; Analysis tops out at 1 until the tools report which data a student inspected; the screens have still not been exercised in a browser.
+
+## Release check, IT-01 on production (2026-10-24)
+
+PR #12 was merged (200b9a9) and deployed to production. Checked on the real site, `https://www.capabilio.online` (the bare domain redirects there): the new session routes answer anonymous visitors with 401, and the same 12 HTTP live tests passed against production with throwaway students (interview 80, report as designed); all test data was removed. In the owner's signed-in browser the production Domain page renders without errors (that account has no target career, so it correctly shows "Set your target career" and no Proof Session panel). The panel itself has still not been seen in a browser.
+
+## IT-02 Backend Developer: PROOF SESSION BUILT, verified on a local build against the production database (not yet released)
+
+- `sessions/backend-developer-service.ts`: five stages, one per backend area (build, secure, state, failure, debug), all served by the shared code workstation. The session code was generalised so a role supplies its own wording (`claimSubject`, `intro`) instead of the Data Analyst's; the report text for Data Analyst is unchanged.
+- Tests without a database: spec matches the blueprint and catalog; every stage's reference answer passes, and an empty answer fails, for 25 students per stage (fixed problems, AI off).
+- Live: the HTTP test now runs both roles. Backend passed all 12 steps through the real built app: AI-written stage tickets in 24-59 s each, a real AI interview (award at 55), five ratings and five evidence rows, no cooldown, the report (planning 3, judgement 3, execution 3, analysis 1, Discovery not assessed because no backend stage reports exploration, AI not assessed).
+- Honest limits (also in every Backend report): the code runs in the student's browser and the server checks its answers, not the code; each stage is a separate exercise, not one growing service; no real HTTP server, database or test runner.
+- A run interrupted by the laptop sleeping left 2 test students and a session in production; they were identified by their test addresses and removed, and the live test's cleanup was confirmed to leave 0 test rows.
+- Full suite: 2007 pass; two `solar-farm` mission tests time out under full-suite load but pass alone (88/88), as the ML test did earlier. Not caused by this change (nothing under `lib/arena-challenges` was touched).
