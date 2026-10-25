@@ -1,4 +1,6 @@
 import { appendFileSync } from "node:fs";
+import http from "node:http";
+import https from "node:https";
 import { createServerClient } from "@supabase/ssr";
 import { z } from "zod";
 import { afterAll, describe, expect, it } from "vitest";
@@ -15,6 +17,28 @@ import { referenceSubmission } from "@/lib/arena-workstations/reference-submissi
  * Skipped unless LIVE_BASE_URL is set. Uses throwaway students that are deleted afterwards.
  */
 const BASE = process.env.LIVE_BASE_URL;
+
+interface RawResponse { status: number; text: string; location: string | null }
+/**
+ * One request on its own connection (no reuse). A long wait on one request can leave a pooled connection that the network has silently dropped, and the
+ * next request on it then hangs until it times out; that is a property of the test machine's network, not of the app, so every request here starts clean.
+ */
+function rawRequest(method: string, url: string, headers: Record<string, string>, body?: string): Promise<RawResponse> {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const lib = u.protocol === "https:" ? https : http;
+    const req = lib.request(u, { method, headers: { ...headers, ...(body ? { "content-length": String(Buffer.byteLength(body)) } : {}), connection: "close" }, agent: false }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (c: Buffer) => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode ?? 0, text: Buffer.concat(chunks).toString("utf8"), location: (res.headers.location as string | undefined) ?? null }));
+      res.on("error", reject);
+    });
+    req.on("error", reject);
+    req.setTimeout(600_000, () => req.destroy(Object.assign(new Error("no response in 10 minutes"), { code: "ETIMEDOUT" })));
+    if (body) req.write(body);
+    req.end();
+  });
+}
 const service = liveServiceClient();
 const users: string[] = [];
 /** Observations worth reading afterwards (vitest swallows console output); written to LIVE_NOTES when set. */
@@ -33,11 +57,22 @@ async function signIn(login: { email: string; password: string }) {
   if (error) throw error;
   const cookie = [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
   return async (method: "GET" | "POST", path: string, body?: unknown) => {
-    const res = await fetch(`${BASE}${path}`, { method, headers: { cookie, "content-type": "application/json", origin: BASE! }, body: body === undefined ? undefined : JSON.stringify(body), redirect: "manual" });
-    const text = await res.text();
+    // Opening a stage can take a minute or more with nothing sent back, and a network can drop such a wait. Opening a stage is safe to repeat (the same
+    // stage comes back), so, like a student clicking again, try it a few times; every other request is made once.
+    const attempts = path.endsWith("/stage") ? 4 : 1;
+    let res: RawResponse | undefined;
+    for (let attempt = 1; attempt <= attempts && !res; attempt++) {
+      res = await rawRequest(method, `${BASE}${path}`, { cookie, "content-type": "application/json", origin: BASE! }, body === undefined ? undefined : JSON.stringify(body)).catch((e: Error & { code?: string }) => {
+        if (attempt === attempts) throw new Error(`${method} ${path}: ${e.code ?? e.message}`); // say which request failed: a bare "fetch failed" does not
+        note(`${method} ${path}: ${e.code ?? e.message} (try ${attempt} of ${attempts}); trying again`);
+        return undefined;
+      });
+    }
+    if (!res) throw new Error(`${method} ${path}: no response`);
+    const text = res.text;
     let json: Record<string, any> | null = null;
     try { json = JSON.parse(text); } catch { /* not JSON */ }
-    return { status: res.status, json, text, location: res.headers.get("location") };
+    return { status: res.status, json, text, location: res.location };
   };
 }
 type Api = Awaited<ReturnType<typeof signIn>>;

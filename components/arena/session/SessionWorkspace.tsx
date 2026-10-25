@@ -24,7 +24,7 @@ async function post(url: string, body?: unknown): Promise<{ ok: boolean; data: R
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
     return { ok: res.ok, data: await res.json().catch(() => ({})) };
   } catch {
-    return { ok: false, data: { error: "Could not reach the server. Check your connection." } };
+    return { ok: false, data: { error: "Could not reach the server. Check your connection.", network: true } };
   }
 }
 
@@ -65,7 +65,8 @@ export function SessionWorkspace() {
     await post(`/api/arena/sessions/${session.session.id}/events`, { kind: "brief_viewed" });
     const r = await post(`/api/arena/sessions/${session.session.id}/stage`);
     setBusy(false);
-    if (!r.ok) return setError(String(r.data.error ?? "Could not open this stage."));
+    // a stage can take a minute or more to prepare, and a slow connection may give up first; opening it again returns the same stage
+    if (!r.ok) return setError(r.data.network ? "Your stage is taking a while to prepare. Wait a moment, then open it again." : String(r.data.error ?? "Could not open this stage."));
     setPlan("");
     setOpen((r.data as { attempt: PublicAttempt }).attempt);
   };
