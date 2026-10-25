@@ -42,7 +42,32 @@ async function signIn(login: { email: string; password: string }) {
 }
 type Api = Awaited<ReturnType<typeof signIn>>;
 
-const newStudent = async (label: string, role: "data-analyst" | null) => {
+/** What each role's session should look like. Dimensions are what the test's own behaviour (a plan and the brief before each stage, a miss then a fix) must produce. */
+interface RoleCase {
+  label: string;
+  careerKey: string;
+  firstStage: string;
+  areas: string[];
+  titleRe: RegExp;
+  claimRe: RegExp;
+  persona: string;
+  dims: Record<string, number | null>;
+}
+const ROLES: RoleCase[] = [
+  {
+    label: "IT-01 Data Analyst", careerKey: "data-analyst", firstStage: "prepare", areas: ["data_cleaning", "sql", "spreadsheet", "dashboard", "statistics"], titleRe: /evidence-backed recommendation/,
+    claimRe: /^Completed 5 of 5 stage\(s\) of a simulated BrightCart analysis; passed \d+ of \d+ assessment checks\.$/, persona: "a data analyst candidate who just finished a five-stage analysis",
+    dims: { planning: 3, analysis: 1, discovery: 1, judgement: 3, execution: 3, aiCollaboration: null },
+  },
+  {
+    label: "IT-02 Backend Developer", careerKey: "backend-developer", firstStage: "build", areas: ["rest-api", "auth-and-security", "data-and-state", "error-handling", "backend-debugging"], titleRe: /Build, secure, harden and debug a small API/,
+    claimRe: /^Completed 5 of 5 stage\(s\) of a simulated backend API work session; passed \d+ of \d+ assessment checks\.$/, persona: "a backend developer candidate who just finished a five-stage API exercise",
+    // no stage of the code workstation reports exploration, so Discovery is not assessed
+    dims: { planning: 3, analysis: 1, discovery: null, judgement: 3, execution: 3, aiCollaboration: null },
+  },
+];
+
+const newStudent = async (label: string, role: string | null) => {
   const login = await createThrowawayUserWithLogin(service, label);
   users.push(login.userId);
   if (role) {
@@ -62,7 +87,7 @@ afterAll(async () => {
   for (const id of users) await deleteThrowawayUser(service, id);
 });
 
-describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => {
+describe.skipIf(!BASE).each(ROLES)("Proof Session over HTTP: $label", (cfg) => {
   let api: Api;
   let userId: string;
   let sessionId: string;
@@ -84,14 +109,14 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
     const start = await nobody.api("POST", "/api/arena/sessions");
     expect(start.status).toBe(409);
     expect(start.json?.reason).toBe("no_role");
-    // and the daily ticket is not silently given to a Data Analyst
+    // and the daily ticket is not silently given to another role
     const daily = await nobody.api("POST", "/api/arena/domain/attempts", {});
     expect(daily.status).toBe(409);
     expect(daily.json?.reason).toBe("no_role");
   });
 
-  it("starts a Proof Session for a Data Analyst student", async () => {
-    const s = await newStudent("http-da", "data-analyst");
+  it("starts a Proof Session for a student of this role", async () => {
+    const s = await newStudent("http-role", cfg.careerKey);
     api = s.api;
     userId = s.userId;
     const before = await api("GET", "/api/arena/sessions");
@@ -100,8 +125,8 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
     expect(start.status).toBe(200);
     const session = start.json!.session;
     sessionId = session.session.id;
-    expect(session.stages.map((x: { areaKey: string }) => x.areaKey)).toEqual(["data_cleaning", "sql", "spreadsheet", "dashboard", "statistics"]);
-    expect(session.current).toBe("prepare");
+    expect(session.stages.map((x: { areaKey: string }) => x.areaKey)).toEqual(cfg.areas);
+    expect(session.current).toBe(cfg.firstStage);
     expect((await api("POST", "/api/arena/sessions")).json!.session.session.id).toBe(sessionId); // asking again returns the same one
   });
 
@@ -127,7 +152,9 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
       // what the screen does before it opens a stage: report the plan's length (never its text) and that the brief was shown
       expect((await api("POST", `/api/arena/sessions/${sessionId}/events`, { kind: "plan_note", words: 12 })).status).toBe(200);
       expect((await api("POST", `/api/arena/sessions/${sessionId}/events`, { kind: "brief_viewed" })).status).toBe(200);
+      const startedAt = Date.now();
       const stage = await api("POST", `/api/arena/sessions/${sessionId}/stage`);
+      note(`${cfg.label} stage ${i + 1} generated in ${Math.round((Date.now() - startedAt) / 1000)}s (${stage.json?.attempt?.challenge?.tool_type ?? "?"}, ${stage.json?.attempt?.challenge?.title ?? ""})`);
       expect(stage.status, stage.text.slice(0, 200)).toBe(200);
       expect(stage.text).not.toContain("answer_key");
       const attempt = stage.json!.attempt;
@@ -141,7 +168,7 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
       }
       // a well-formed but wrong answer for this tool, so the grader really marks a miss (the stage must stay open)
       const wrongAnswer: Record<string, unknown> = {
-        sql_workspace: { query: "SELECT 1" }, cleaning_workspace: { steps: [] }, spreadsheet_workspace: { cells: {} }, statistics_workspace: { answers: {} },
+        code_workspace: { language: "javascript", outputs: [] }, sql_workspace: { query: "SELECT 1" }, cleaning_workspace: { steps: [] }, spreadsheet_workspace: { cells: {} }, statistics_workspace: { answers: {} },
         dashboard_workspace: { spec: { chart_type: "pie", dimension: "nope", measure: null, aggregation: "count", filters: [], sort: "dimension_asc", limit: null, dimension_grain: "value" } },
       };
       const wrong = await api("POST", `/api/arena/domain/attempts/${attempt.attemptId}/submit`, { submission: wrongAnswer[inst.tool_type!] });
@@ -164,7 +191,7 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
     expect(state.json!.session.current).toBeNull();
     expect(state.json!.anchorAttempt.attemptId).toBe(anchorAttemptId);
     expect((await api("POST", `/api/arena/sessions/${sessionId}/stage`)).status).toBe(409);
-  });
+  }, 900_000); // each stage can wait on AI-written tickets
 
   it("will not interview from a middle stage", async () => {
     const early = await api("POST", `/api/arena/domain/attempts/${attempts[0]}/explain`, { action: "start" });
@@ -176,12 +203,12 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
     const start = await api("POST", `/api/arena/domain/attempts/${anchorAttemptId}/explain`, { action: "start" });
     expect(start.status, start.text.slice(0, 300)).toBe(200);
     expect(start.json!.questions).toHaveLength(4);
-    expect(start.json!.task.title).toMatch(/evidence-backed recommendation/);
+    expect(start.json!.task.title).toMatch(cfg.titleRe);
 
     // a candidate who really did this work: the answers are written from the real submission summary the interview itself shows
     const answerFor = async (questions: string[], task: { submission: string; checks: string[] }) =>
       (await completeJson(
-        `You are a data analyst candidate who just finished a five-stage analysis and is being interviewed about it. Answer each question in 2-4 specific sentences, honestly and concretely, using only what you actually did below. Mention your checks, your assumptions and one thing you would do differently.\n\nWhat you submitted:\n${task.submission}\n\nChecks you passed: ${task.checks.join("; ")}\n\nQuestions:\n${questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nRespond with JSON only: {"answers": [string, string, string, string]}`,
+        `You are ${cfg.persona} and are being interviewed about it. Answer each question in 2-4 specific sentences, honestly and concretely, using only what you actually did below. Mention your checks, your assumptions and one thing you would do differently.\n\nWhat you submitted:\n${task.submission}\n\nChecks you passed: ${task.checks.join("; ")}\n\nQuestions:\n${questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nRespond with JSON only: {"answers": [string, string, string, string]}`,
         "You write the candidate's interview answers.",
         z.object({ answers: z.array(z.string().min(20)).length(4) }),
         { task: "arena_task" }
@@ -200,7 +227,7 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
 
   it("leaves five ratings, five pieces of evidence, no cooldown and a finished session", async () => {
     const { data: completions } = await service.from("arena_attempt_completions").select("skill_area_key").eq("user_id", userId);
-    expect(completions!.map((c) => c.skill_area_key).sort()).toEqual(["dashboard", "data_cleaning", "spreadsheet", "sql", "statistics"]);
+    expect(completions!.map((c) => c.skill_area_key).sort()).toEqual([...cfg.areas].sort());
     const { data: evidence } = await service.from("evidence").select("metadata").eq("user_id", userId);
     expect(evidence).toHaveLength(5);
     expect(evidence!.every((e) => typeof (e.metadata as { explanationScore?: number }).explanationScore === "number")).toBe(true);
@@ -214,12 +241,12 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
     const res = await api("GET", `/api/arena/sessions/${sessionId}/report`);
     expect(res.status).toBe(200);
     const report = res.json!.report;
-    expect(report.claim).toMatch(/^Completed 5 of 5 stage\(s\) of a simulated BrightCart analysis; passed \d+ of \d+ assessment checks\.$/);
+    expect(report.claim).toMatch(cfg.claimRe);
     expect(report.stages).toHaveLength(5);
     note("report dimensions: " + JSON.stringify(Object.fromEntries(Object.entries(report.dimensions).map(([k, v]) => [k, `${(v as { level: number | null }).level} (${(v as { basis: string }).basis})`]))));
     // read from what really happened in this session: a plan before every stage, the brief shown, one query run in the SQL stage, a miss then a fix on every stage
     const level = (d: string) => report.dimensions[d].level;
-    expect({ planning: level("planning"), analysis: level("analysis"), discovery: level("discovery"), judgement: level("judgement"), execution: level("execution"), aiCollaboration: level("aiCollaboration") }).toEqual({ planning: 3, analysis: 1, discovery: 1, judgement: 3, execution: 3, aiCollaboration: null });
+    expect({ planning: level("planning"), analysis: level("analysis"), discovery: level("discovery"), judgement: level("judgement"), execution: level("execution"), aiCollaboration: level("aiCollaboration") }).toEqual(cfg.dims);
     expect(report.dimensions.analysis.trusted).toBe(false);
     expect(report.dimensions.planning.trusted).toBe(false); // the plan's length comes from the browser
     expect(report.dimensions.judgement.trusted).toBe(true); // judgement comes from checks the server ran
@@ -228,7 +255,7 @@ describe.skipIf(!BASE)("Proof Session over HTTP against the running app", () => 
   });
 
   it("keeps another student out of this session over HTTP", async () => {
-    const other = await newStudent("http-other", "data-analyst");
+    const other = await newStudent("http-other", cfg.careerKey);
     for (const [method, path, body] of [["GET", `/api/arena/sessions/${sessionId}/report`], ["POST", `/api/arena/sessions/${sessionId}/stage`], ["POST", `/api/arena/sessions/${sessionId}/events`, { kind: "brief_viewed" }]] as const) {
       const res = await other.api(method, path, body);
       expect(res.status, `${method} ${path}`).toBe(404);

@@ -22,6 +22,10 @@ export interface ProofSessionSpec {
   title: string;
   /** the shared company world: every stage uses the same warehouse, seeded per student */
   worldKey: string;
+  /** what the report says was done, e.g. "a simulated BrightCart analysis" */
+  claimSubject: string;
+  /** shown before the student starts */
+  intro: string;
   /** stages for people who may not yet be served an area that needs experience */
   stagesFor(level: ExperienceLevel): SessionStage[];
   /** what the session does and does not show, repeated in every report */
@@ -42,6 +46,8 @@ export const DATA_ANALYST_STORY: ProofSessionSpec = {
   domainRoleKey: "data-analyst",
   title: "From raw extract to evidence-backed recommendation",
   worldKey: "brightcart",
+  claimSubject: "a simulated BrightCart analysis",
+  intro: "One connected piece of work in five stages, on your own company data: prepare the data, answer the business question, cross-check the number, report it, and explain what is behind it. About an hour or two. You explain your work at the end.",
   stagesFor: (level) => [PREPARE, ANALYSE, CROSSCHECK, REPORT, levelAtLeast(level, AREA_MIN_LEVEL[FINDINGS_JUNIOR.areaKey] ?? "fresher") ? FINDINGS_JUNIOR : FINDINGS_FRESHER],
   limitations: [
     "Each stage is graded by its own tool on data from the same company warehouse. A later stage is not computed from the student's earlier output, so the chain shows the work done, not a single end-to-end pipeline.",

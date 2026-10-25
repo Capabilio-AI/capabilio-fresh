@@ -119,7 +119,7 @@ describe("buildReport", () => {
   const stages = [{ key: "a", title: "A", passed: true, checksPassed: 3, checksTotal: 3 }, { key: "b", title: "B", passed: false, checksPassed: 1, checksTotal: 4 }];
   it("states only what the server verified", () => {
     reset();
-    const r = buildReport({ specKey: "k", specVersion: 1, roleId: "IT-01", worldName: "BrightCart", stages, events: [ev("submitted", "b", { passed: true })], limitations: ["x"] });
+    const r = buildReport({ specKey: "k", specVersion: 1, roleId: "IT-01", claimSubject: "a simulated BrightCart analysis", stages, events: [ev("submitted", "b", { passed: true })], limitations: ["x"] });
     expect(r.claim).toBe("Completed 1 of 2 stage(s) of a simulated BrightCart analysis; passed 4 of 7 assessment checks.");
     expect(r.claim).not.toMatch(/certif|job.ready|professional/i);
     expect(r.dimensions.execution.level).toBe(2); // 1 of 2 stages passed; the log's "passed: true" for stage b is ignored

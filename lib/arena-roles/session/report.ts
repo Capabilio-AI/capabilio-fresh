@@ -28,11 +28,11 @@ export interface SessionReport {
  * Pure. Builds the report. Pass/fail and check counts come ONLY from `stages`, which the server fills from its own grading; the log can lower or
  * explain a dimension but can never change a result. The claim never says more than the numbers: no "certified", no job-readiness.
  */
-export function buildReport(input: { specKey: string; specVersion: number; roleId: string; worldName: string; stages: StageResult[]; events: readonly SessionEvent[]; limitations: string[]; droppedEvents?: number }): SessionReport {
+export function buildReport(input: { specKey: string; specVersion: number; roleId: string; claimSubject: string; stages: StageResult[]; events: readonly SessionEvent[]; limitations: string[]; droppedEvents?: number }): SessionReport {
   const passedStages = input.stages.filter((s) => s.passed).length;
   const checksPassed = input.stages.reduce((n, s) => n + s.checksPassed, 0);
   const checksTotal = input.stages.reduce((n, s) => n + s.checksTotal, 0);
-  const claim = `Completed ${passedStages} of ${input.stages.length} stage(s) of a simulated ${input.worldName} analysis; passed ${checksPassed} of ${checksTotal} assessment checks.`;
+  const claim = `Completed ${passedStages} of ${input.stages.length} stage(s) of ${input.claimSubject}; passed ${checksPassed} of ${checksTotal} assessment checks.`;
   return {
     specKey: input.specKey,
     specVersion: input.specVersion,

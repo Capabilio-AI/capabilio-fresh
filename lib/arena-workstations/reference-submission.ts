@@ -12,6 +12,9 @@ export function referenceSubmission(toolType: string, content: unknown, answerKe
       return { query: key.reference_query ?? key.reference_script };
     case "statistics_workspace":
       return { answers: Object.fromEntries((key.expected as { key: string; value: number | string }[]).map((e) => [e.key, typeof e.value === "number" ? e.value.toFixed(3) : e.value])) };
+    case "code_workspace":
+      // the student's code runs in their browser and what they submit is what it returned; the reference is the answers the server holds
+      return { language: "javascript", outputs: (key.expected as unknown[]).map((value) => ({ ok: true, value })) };
     case "cleaning_workspace":
       return { steps: key.steps };
     case "dashboard_workspace":
