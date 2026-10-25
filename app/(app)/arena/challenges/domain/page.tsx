@@ -37,9 +37,8 @@ function Notice({ title, body, cta }: { title: string; body: string; cta?: { hre
   );
 }
 
-export default async function DomainChallengesPage({ searchParams }: { searchParams: Promise<{ career?: string; sample?: string }> }) {
+export default async function DomainChallengesPage() {
   const { user } = await requireAuthedUser();
-  const params = await searchParams;
   const which = "primary"; // Domain tickets follow the main career; a Plan B must be set to unlock them
   const service = createServiceClient();
   const { stage } = await getStageState(user.id);
@@ -48,21 +47,12 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
   const setCareerHref = isStudent ? SET_CAREER_HREF : "/assessment";
 
   let body: React.ReactNode;
-  if (params.sample === "1") {
-    body = (
-      <>
-        <p className="mb-4 rounded-lg border border-[var(--m-rule)] bg-white px-4 py-2.5 font-lp-body text-[12.5px] text-app-muted">
-          Sample track: Data Analyst. This is not tied to your target career.
-        </p>
-        <TrackChallengesBoard track="domain" />
-      </>
-    );
-  } else if (view.state === "unset" || view.state === "exploring") {
+  if (view.state === "unset" || view.state === "exploring") {
     body = (
       <Notice
         title={view.state === "exploring" ? "You are still exploring" : "Set your target career"}
         body="Domain challenges are real work tickets for the role you want. Pick a career and they appear here — we don't guess one for you."
-        cta={[{ href: setCareerHref, label: isStudent ? "Choose a career in Career Path" : "Choose your target role" }, { href: "?sample=1", label: "Try a sample track" }]}
+        cta={[{ href: setCareerHref, label: isStudent ? "Choose a career in Career Path" : "Choose your target role" }] }
       />
     );
   } else if (view.state === "no_plan_b") {
@@ -99,7 +89,7 @@ export default async function DomainChallengesPage({ searchParams }: { searchPar
           <Notice
             title={`No challenges configured yet for ${view.career.name}`}
             body="We only show real, reviewed challenges. You can try another track while this one is being built."
-            cta={[{ href: "?sample=1", label: "Browse other tracks" }, ...(isStudent ? [{ href: "/arena/challenges/stream", label: "Go to Stream challenges" }] : [])]}
+            cta={[...(isStudent ? [{ href: "/arena/challenges/stream", label: "Go to Stream challenges" }] : [])]}
           />
         )}
       </>
