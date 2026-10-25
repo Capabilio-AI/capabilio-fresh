@@ -1,14 +1,16 @@
+import type { ReactNode } from "react";
 import { Check, Circle } from "lucide-react";
 import type { OrgFacts, PublicOrg, PublicPost, WallEntry } from "@/lib/org/public-org";
 import { MIN_COHORT } from "@/lib/org/insights";
 import { splitEvents } from "@/lib/org/events";
 import { CollegeHeader, type TabId } from "./CollegeHeader";
+import { FollowersButton } from "./FollowersList";
 import { PostCard } from "./PostCard";
 import { PostComposer } from "./PostComposer";
 import { JsonForm } from "./JsonForm";
 import { Collapsible, EmptyState } from "./ui";
 
-function StatStrip({ cells }: { cells: { label: string; value: string; tone: string }[] }) {
+function StatStrip({ cells }: { cells: { label: string; value: ReactNode; tone: string }[] }) {
   return (
     <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[18px] border border-app-border bg-app-border md:grid-cols-4">
       {cells.map((c) => (
@@ -128,7 +130,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
                 cells={[
                   { label: "Students on Capabilio", value: org.studentCount.toLocaleString("en-IN"), tone: "text-app-blue" },
                   { label: "Departments", value: String(facts.departments.length), tone: "text-app-orange" },
-                  { label: "Followers", value: org.followerCount.toLocaleString("en-IN"), tone: "text-app-charcoal" },
+                  { label: "Followers", value: <FollowersButton slug={org.slug} name={org.name} signedIn={signedIn} className="rounded-md text-left hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40">{org.followerCount.toLocaleString("en-IN")}</FollowersButton>, tone: "text-app-charcoal" },
                   facts.placedCount !== null ? { label: "Students placed", value: String(facts.placedCount), tone: "text-app-success" } : { label: "Upcoming events", value: String(facts.upcomingEvents), tone: "text-app-success" },
                 ]}
               />

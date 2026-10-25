@@ -3,6 +3,7 @@ import { BadgeCheck, Camera, ExternalLink, Globe, MapPin, Pencil, Users } from "
 import type { PublicOrg } from "@/lib/org/public-org";
 import { initialsOf } from "@/lib/org/format";
 import { FollowButton, ShareButton } from "./SocialButtons";
+import { FollowersButton } from "./FollowersList";
 import { ImageUploadButton } from "./ImageUploadButton";
 
 export const TABS = [
@@ -111,9 +112,9 @@ export function CollegeHeader({
               <span className="inline-flex items-center gap-1.5">
                 <Users size={13} aria-hidden="true" /> {org.studentCount.toLocaleString("en-IN")} student{org.studentCount === 1 ? "" : "s"} on Capabilio
               </span>
-              <span>
+              <FollowersButton slug={org.slug} name={org.name} signedIn={signedIn} className="rounded-md font-semibold text-app-charcoal underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40">
                 {org.followerCount.toLocaleString("en-IN")} follower{org.followerCount === 1 ? "" : "s"}
-              </span>
+              </FollowersButton>
               {workspace && !org.profile?.is_public && <span className="rounded-full bg-app-warning-container px-2.5 py-1 text-[11px] font-bold text-app-warning">Not public yet</span>}
             </p>
           </div>

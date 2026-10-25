@@ -43,3 +43,11 @@ Defects found and fixed:
 - A failed offer-letter upload left "No letter attached" with no way to retry — added Attach / Replace letter.
 
 Known, outside the org path: `/api/assessment/start` returns 500 for a brand-new student with no profile (student path, untouched by this work).
+
+## College followers list (2026-10-25)
+
+The follower count on a college page (header, and the Followers tile in the workspace) now opens a list, like Instagram or LinkedIn: photo, name, what they are (a student's career goal and ELO, or "Role @ College"), class and branch, an "At this college" mark for members, and a Follow button. Search box; 50 at a time with "Show more". Newest first.
+
+Who sees it: any signed-in person, for a college whose page they may see (public, or one they belong to). Visitors who are not signed in get a sign-in link instead. People blocked in either direction are left out, no email is ever returned, and the list uses the same public fields as Pulse's follower lists. Route: `GET /api/orgs/followers?slug=&before=` (the cursor is the follow time and person of the last row, validated before it reaches a query, so two people who followed at the same moment never get lost between pages). Code: `lib/org/followers.ts`, `components/org/FollowersList.tsx`.
+
+Checked live against a throwaway college (removed afterwards), including through the running app: order, paging across a tie, a blocked person, who is from the college, the viewer's own follow, visitor refused, private college refused, bad cursor refused.
