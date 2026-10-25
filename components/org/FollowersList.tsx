@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft, BadgeCheck, ExternalLink, GraduationCap, Loader2, Search, UserCheck, UserPlus, X } from "lucide-react";
 import type { Follower } from "@/lib/org/followers";
@@ -270,10 +271,14 @@ function FollowersDialog({ slug, name, onClose }: { slug: string; name: string; 
 
 /**
  * The follower count as a button that opens the list. Someone who is not signed in is sent to sign in, because the list is for Capabilio members.
+ *
+ * The dialog is drawn at the top level of the college theme, not where the button is. The page header is its own stacking layer (relative z-10) and the tab bar
+ * under it has the same level and comes later, so a dialog drawn inside the header ended up beneath the tabs. It goes into the nearest `.org-theme` element
+ * (not the document body) so it keeps the theme's colours.
  */
 export function FollowersButton({ slug, name, signedIn, className, children }: { slug: string; name: string; signedIn: boolean; className?: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
+  const [host, setHost] = useState<Element | null>(null);
+  const close = useCallback(() => setHost(null), []);
   if (!signedIn) {
     return (
       <Link href="/login" className={className} title="Sign in to see who follows this college">
@@ -283,10 +288,10 @@ export function FollowersButton({ slug, name, signedIn, className, children }: {
   }
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={className} title={`See who follows ${name}`}>
+      <button type="button" onClick={(e) => setHost(e.currentTarget.closest(".org-theme") ?? document.body)} aria-haspopup="dialog" className={className} title={`See who follows ${name}`}>
         {children}
       </button>
-      {open && <FollowersDialog slug={slug} name={name} onClose={close} />}
+      {host && createPortal(<FollowersDialog slug={slug} name={name} onClose={close} />, host)}
     </>
   );
 }

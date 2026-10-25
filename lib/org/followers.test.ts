@@ -58,3 +58,15 @@ describe("followedOn", () => {
     expect(followedOn("")).toBeNull();
   });
 });
+
+import { readFileSync } from "node:fs";
+
+describe("the followers dialog stays above the page", () => {
+  // The college header is its own stacking layer (relative z-10) and the tab bar after it has the same level, so a dialog drawn inside the header was
+  // painted under the tabs. It must be drawn at the top level of the college theme (not where the button is, and not in <body>: the colours live on .org-theme).
+  const source = readFileSync("components/org/FollowersList.tsx", "utf8");
+  it("is rendered through a portal into the nearest college theme element", () => {
+    expect(source).toMatch(/createPortal\(<FollowersDialog/);
+    expect(source).toMatch(/closest\("\.org-theme"\)/);
+  });
+});
