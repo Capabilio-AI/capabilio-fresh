@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cursorOf, parseCursor } from "./followers";
-import { matchFollowers } from "@/components/org/FollowersList";
+import { followedOn, matchFollowers } from "@/components/org/FollowersList";
 import type { Follower } from "./followers";
 
 const UUID = "3f2b8c1e-5a6d-4e7f-9b0a-1c2d3e4f5a6b";
@@ -31,14 +31,30 @@ describe("matchFollowers", () => {
     expect(matchFollowers(people, "").length).toBe(3);
     expect(matchFollowers(people, "   ").length).toBe(3);
   });
-  it("matches name, goal, headline and class without caring about case", () => {
+  it("finds people by name, without caring about case or spaces around it", () => {
     expect(matchFollowers(people, "asha").map((p) => p.name)).toEqual(["Asha Rao"]);
-    expect(matchFollowers(people, "DATA ANALYST").map((p) => p.name)).toEqual(["Asha Rao"]);
-    expect(matchFollowers(people, "faculty").map((p) => p.name)).toEqual(["Ravi Kumar"]);
-    expect(matchFollowers(people, "class of 2027").map((p) => p.name)).toEqual(["Asha Rao"]);
+    expect(matchFollowers(people, "  KUMAR ").map((p) => p.name)).toEqual(["Ravi Kumar"]);
+    expect(matchFollowers(people, "a").map((p) => p.name)).toEqual(["Asha Rao", "Ravi Kumar"]);
   });
-  it("finds nothing for text no one has, and survives people with no name", () => {
+  it("looks at names only, because the list shows names only: goals, roles and classes are not searched", () => {
+    expect(matchFollowers(people, "data analyst")).toEqual([]);
+    expect(matchFollowers(people, "faculty")).toEqual([]);
+    expect(matchFollowers(people, "class of 2027")).toEqual([]);
+  });
+  it("survives people with no name", () => {
     expect(matchFollowers(people, "zzz")).toEqual([]);
-    expect(matchFollowers(people, "student")).toHaveLength(1);
+    expect(matchFollowers([person({ name: null })], "x")).toEqual([]);
+  });
+});
+
+describe("followedOn", () => {
+  it("writes the date the way Indian readers expect, in Indian time", () => {
+    expect(followedOn("2026-10-20T10:05:00+00:00")).toBe("20 Oct 2026");
+    // 19:00 UTC on the 20th is already the 21st in India
+    expect(followedOn("2026-10-20T19:00:00Z")).toBe("21 Oct 2026");
+  });
+  it("gives nothing for a date it cannot read, rather than 'Invalid Date'", () => {
+    expect(followedOn("not a date")).toBeNull();
+    expect(followedOn("")).toBeNull();
   });
 });
