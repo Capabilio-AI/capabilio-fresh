@@ -15,6 +15,7 @@ import { StartFlow, type StartedSession } from "./steps/StartFlow";
 import { QuestionRunner } from "./runner/QuestionRunner";
 import { ResultPopup } from "./result/ResultPopup";
 import { Button } from "./ui/Button";
+import { PersonalizationStatus } from "./PersonalizationStatus";
 
 type View =
   | { kind: "start" }
@@ -56,6 +57,7 @@ export function AssessFlow({ snapshot }: { snapshot: FlowSnapshot }) {
       <AssessTopBar stage={stage} back={back} graduate={!!snapshot.graduate} trailing={snapshot.graduate && snapshot.stage !== "done" && view.kind === "start" ? <Link href="/dashboard" className="rounded-full px-3.5 py-2 text-[14px] font-bold text-[var(--m-muted)] transition-colors hover:bg-white/70 hover:text-[var(--m-ink)]">Skip to dashboard</Link> : undefined} />
       <main id="main">
         <Screen snapshot={snapshot} view={view} setView={setView} onSubmitted={onSubmitted} advance={advance} />
+        {snapshot.primary && view.kind !== "career-done" && <PersonalizationStatus />}
       </main>
       {leaving && <LeaveDialog onStay={() => setLeaving(false)} onLeave={() => router.push("/dashboard")} />}
     </AssessScope>

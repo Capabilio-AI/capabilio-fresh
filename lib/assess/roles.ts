@@ -47,19 +47,21 @@ async function withSkills(db: Db, rows: { career_id: string; key: string; name: 
 
 export interface RoleOption extends RoleCandidate {
   aliases: string[];
+  description: string | null;
 }
 
 /** Every selectable role with its skills and aliases, for the picker that ships with the page (small: a few hundred rows). */
 export async function loadRoleOptions(db: Db): Promise<RoleOption[]> {
   const [{ data: careers }, { data: aliases }] = await Promise.all([
-    db.from("careers").select("id, key, name, status").eq("is_active", true).order("name"),
+    db.from("careers").select("id, key, name, status, description").eq("is_active", true).order("name"),
     db.from("career_aliases").select("career_id, alias").order("alias").limit(3000),
   ]);
+  const descriptionOf = new Map(((careers ?? []) as { id: string; description: string | null }[]).map((c) => [c.id, c.description]));
   const rows = ((careers ?? []) as { id: string; key: string; name: string; status: RoleCandidate["status"] }[]).map((c) => ({ career_id: c.id, key: c.key, name: c.name, status: c.status, score: 1 }));
   const withS = await withSkills(db, rows);
   const by = new Map<string, string[]>();
   for (const a of (aliases ?? []) as { career_id: string; alias: string }[]) by.set(a.career_id, [...(by.get(a.career_id) ?? []), a.alias]);
-  return withS.filter((r) => r.skills.length > 0).map((r) => ({ ...r, aliases: by.get(r.careerId) ?? [] }));
+  return withS.filter((r) => r.skills.length > 0).map((r) => ({ ...r, aliases: by.get(r.careerId) ?? [], description: descriptionOf.get(r.careerId) ?? null }));
 }
 
 async function matchExisting(db: Db, text: string): Promise<RoleCandidate[]> {
