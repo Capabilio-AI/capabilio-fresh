@@ -9,6 +9,7 @@ import type { SessionView } from "@/lib/arena-roles/session/service";
 
 interface State {
   available: boolean;
+  spec?: { title: string; intro: string };
   session: SessionView | null;
   anchorAttempt: PublicAttempt | null;
   latestFinishedSessionId: string | null;
@@ -75,7 +76,7 @@ export function SessionWorkspace() {
       <section className={`${BOX} mb-6`} aria-label="Proof Session">
         <h3 className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">Proof Session</h3>
         <p className="mt-1 max-w-xl font-lp-body text-[13.5px] leading-relaxed text-app-muted">
-          One connected piece of work in five stages, on your own company data: prepare the data, answer the business question, cross-check the number, report it, and explain what is behind it. About an hour or two. You explain your work at the end.
+          {state.spec?.intro}
         </p>
         {error && <p className="mt-3 font-lp-body text-[13px] text-app-rose">{error}</p>}
         <button type="button" onClick={start} disabled={busy} className={`${PRIMARY} mt-4`}>
