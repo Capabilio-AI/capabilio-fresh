@@ -157,3 +157,28 @@ PR #12 was merged (200b9a9) and deployed to production. Checked on the real site
 - Honest limits (also in every Backend report): the code runs in the student's browser and the server checks its answers, not the code; each stage is a separate exercise, not one growing service; no real HTTP server, database or test runner.
 - A run interrupted by the laptop sleeping left 2 test students and a session in production; they were identified by their test addresses and removed, and the live test's cleanup was confirmed to leave 0 test rows.
 - Full suite: 2007 pass; two `solar-farm` mission tests time out under full-suite load but pass alone (88/88), as the ML test did earlier. Not caused by this change (nothing under `lib/arena-challenges` was touched).
+
+## Coverage by role and track (production, checked 2026-10-25)
+
+**Domain** has two sources: role workstations (per-student tickets) and a small fixed catalog. **Proof Session** is the new connected session. **Stream** is the branch-based track.
+
+| Role | Domain workstation | Proof Session | Notes |
+|---|---|---|---|
+| IT-01 Data Analyst | yes, 8 areas, 6 tools | **yes, live** | also 3 fixed catalog tickets (workstation wins) |
+| IT-02 Backend Developer | yes, 5 areas (code tool) | **built, PR #13** | role row applied |
+| IT-03 Frontend Developer | yes, 6 areas (text-checked editor) | no | |
+| IT-04 Full Stack | no (catalog only, 3 tickets) | no | |
+| IT-05 Data Engineer | yes, 4 areas (SQL) | no | |
+| IT-06 BI Developer | yes, 4 areas | no | |
+| IT-07 AI/ML Engineer | yes, 5 areas (notebook) | no | also 3 catalog tickets |
+| IT-08 Data Scientist | no (matched to AI/ML by keyword) | no | |
+| IT-09 DevOps | yes, 5 areas (text-checked config) | no | |
+| IT-10 Cloud | yes, 6 areas | no | also 3 catalog tickets |
+| IT-11, IT-12, IT-15 | no | no | need the new simulators |
+| IT-13 DBA / SQL Developer | yes (two separate rows today) | no | |
+| IT-14 Software Engineer | yes, 4 areas (code tool) | no | catalog has 14 published tickets |
+| ECE, EEE, Civil, MECH, MBA, MCA (30 roles) | **none** | no | the simulators in `workstation-design.md` are not built |
+
+**Stream (fixed bank, published):** IT cluster 63, Mechanical Engineering 41, plus ten one-off specs (civil 2, cse 2, ece 2, eee 2, mech 2). ECE, EEE, Civil, MBA and MCA have no fixed bank; non-IT students get per-student AI-written Stream tickets (code present: `stream-ai/`), not checked in this pass. Stream opens at 2-1; Domain starts after the Plan B answer (graduates and professionals skip it).
+
+**Plain reading:** 10 of 45 roles have a Domain workstation, 2 have a Proof Session. For the other 35, Domain shows "unavailable" (never another role's tickets). The next roles that need no new infrastructure are IT-03, IT-05, IT-06, IT-07, IT-09, IT-10, IT-14, since their workstations already exist and only need a session spec and the same live test; then IT-13. Roles with no workstation need their simulators first.
