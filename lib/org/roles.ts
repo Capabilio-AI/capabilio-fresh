@@ -88,12 +88,21 @@ export type Permission = keyof typeof ACTION_PERMISSION | (typeof STUDENT_ACTION
 export interface PermissionSubject {
   kind: OrgKind | null;
   permissions: ReadonlySet<OrgPermissionKey>;
+  /** the member's role (for the few actions a role holds by itself); an OrgContext carries it */
+  role?: string | null;
 }
+
+/**
+ * Roles that may set when each semester starts, besides admins and anyone an admin granted "College page". Stored permissions are checked by the
+ * database against a fixed list, so this is a rule on the role and not a new permission. An HOD is further confined to their own branch (branch-scope.ts).
+ */
+export const CALENDAR_ROLES: readonly string[] = ["hod"];
 
 export function can(subject: PermissionSubject | null, action: Permission): boolean {
   if (!subject || !subject.kind) return false;
   if ((STUDENT_ACTIONS as readonly string[]).includes(action)) return subject.kind === "student";
   if (subject.kind === "student") return false;
+  if (action === "manageCalendar" && subject.kind === "staff" && CALENDAR_ROLES.includes(subject.role ?? "")) return true;
   return subject.permissions.has(ACTION_PERMISSION[action as keyof typeof ACTION_PERMISSION]);
 }
 

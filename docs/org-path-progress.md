@@ -43,3 +43,16 @@ Defects found and fixed:
 - A failed offer-letter upload left "No letter attached" with no way to retry — added Attach / Replace letter.
 
 Known, outside the org path: `/api/assessment/start` returns 500 for a brand-new student with no profile (student path, untouched by this work).
+
+## Semester start dates drive the student path (2026-10-25)
+
+Who sets them: admins (principal, vice principal) any branch or college-wide; an **HOD** their own branch only (a date for another branch or "all branches" is refused with a message); faculty and the TPO only if an admin granted "College page" (as before). Staff whose department is not recorded cannot set any, because a date moves unlocks for a whole cohort. The HOD rule is by role, not a new stored permission, so no database change was needed (the permission list is fixed by a CHECK constraint). An HOD sees "Academic calendar" in the sidebar.
+
+What a date does for students (`lib/career/term.ts#isFirstSemesterOpen`, applied in `buildDirection`):
+
+- **3-1, Plan B:** if the college has entered a Year 3 Semester 1 date for the student's branch (or college-wide), Plan B (the career-direction question) opens on that date; with no date it opens when the third year begins, as before.
+- **4-1, final year:** the same rule opens the AI Interview tab and the Launchpad page (`launchpadOpen`).
+- A date only holds a feature back until it arrives. Students already in the second semester, or in a later year, are not affected. A date more than 120 days ahead is treated as next cycle's, entered early, and holds nothing back. A branch's own date beats the college-wide one.
+- Today's date is taken in UTC (as the semester calculation already did), so a date takes effect at 05:30 IST.
+
+Production had no calendar rows when this shipped, so nothing changed for anyone until a college enters a date. Checked live (real database, throwaway college): dates hold and release Plan B and Launchpad at the right day, per branch, with branch dates overriding college-wide ones; through the running app: admin any branch, HOD own branch only, HOD without a branch, faculty, TPO, student and visitor refused.
