@@ -28,12 +28,14 @@ export interface MatrixInput {
   names: ReadonlyMap<string, string>;
   practisable: ReadonlyMap<string, { areaKey: string; areaName: string }>;
   targets: ReadonlyMap<string, number>;
+  /** when given, the matrix shows exactly these skills (the target role's) and nothing else the user happens to have measured */
+  only?: ReadonlySet<string>;
   limit?: number;
 }
 
 /** Measured skills first (strongest first), then the skills Arena can build or the target role needs but nobody has measured yet. */
-export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable, targets, limit = 10 }: MatrixInput): MatrixRow[] {
-  const ids = new Set([...capabilities.keys(), ...practisable.keys(), ...targets.keys()]);
+export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable, targets, only, limit = 10 }: MatrixInput): MatrixRow[] {
+  const ids = only ? new Set(only) : new Set([...capabilities.keys(), ...practisable.keys(), ...targets.keys()]);
   const rows = [...ids].flatMap((skillId): MatrixRow[] => {
     const name = names.get(skillId);
     if (!name) return [];
