@@ -328,3 +328,37 @@ describe("calendar and chat live as tabs under their parent entry", () => {
     expect(labels("faculty", ["page"])).toContain("Academic calendar");
   });
 });
+
+describe("who sets the semester start dates", () => {
+  const sub = (role: string, custom: string[] | null = null) => ({ kind: kindOf(role), role, permissions: effectivePermissions(role, custom) });
+  it("admins and an HOD can; faculty, the TPO and students cannot", () => {
+    expect(can(sub("principal"), "manageCalendar")).toBe(true);
+    expect(can(sub("vice_principal"), "manageCalendar")).toBe(true);
+    expect(can(sub("hod"), "manageCalendar")).toBe(true);
+    expect(can(sub("faculty"), "manageCalendar")).toBe(false);
+    expect(can(sub("tpo"), "manageCalendar")).toBe(false);
+    expect(can({ kind: "student", role: "student", permissions: effectivePermissions("student", null) }, "manageCalendar")).toBe(false);
+  });
+  it("an HOD keeps it even when an admin customised their other permissions, and holding it gives an HOD nothing else", () => {
+    expect(can(sub("hod", ["students"]), "manageCalendar")).toBe(true);
+    expect(can(sub("hod"), "manageProfile")).toBe(false);
+    expect(can(sub("hod"), "manageCurriculum")).toBe(false);
+  });
+  it("faculty an admin granted 'College page' still can, as before", () => {
+    expect(can(sub("faculty", ["page"]), "manageCalendar")).toBe(true);
+  });
+  it("nobody gets it from the role string alone: the subject must be staff", () => {
+    expect(can({ kind: "student", role: "hod", permissions: new Set() }, "manageCalendar")).toBe(false);
+    expect(can({ kind: "tpo", role: "hod", permissions: new Set() }, "manageCalendar")).toBe(false);
+  });
+  it("the calendar appears in an HOD's navigation, and not in faculty's", () => {
+    const labels = (role: string) => orgNavFor(effectivePermissions(role, null), role).map((i) => i.label);
+    expect(labels("hod")).toContain("Academic calendar");
+    expect(labels("faculty")).not.toContain("Academic calendar");
+    expect(labels("tpo")).not.toContain("Academic calendar");
+    // an admin reaches it as a tab inside Curriculum, so it is not listed twice
+    expect(labels("principal")).not.toContain("Academic calendar");
+    // faculty an admin granted "College page" keep the link they always had
+    expect(orgNavFor(effectivePermissions("faculty", ["page"]), "faculty").map((i) => i.href)).toContain("/org/calendar");
+  });
+});

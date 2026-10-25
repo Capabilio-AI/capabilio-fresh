@@ -28,3 +28,22 @@ describe("CalendarEntrySchema", () => {
   it("accepts a valid semester window", () => expect(CalendarEntrySchema.safeParse(ok).success).toBe(true));
   it("rejects an end date before the start", () => expect(CalendarEntrySchema.safeParse({ ...ok, endsOn: "2026-06-01" }).success).toBe(false));
 });
+
+import { firstSemesterStart } from "./academic-calendar";
+
+describe("firstSemesterStart", () => {
+  const rows = [row("*", 0, 1, "2026-07-01"), row("*", 0, 2, "2027-01-05"), row("cse", 3, 1, "2026-08-18"), row("cse", 3, 2, "2027-01-20")];
+  it("is null when the college has not set a first-semester date", () => {
+    expect(firstSemesterStart([], "CSE", 3)).toBeNull();
+    expect(firstSemesterStart([row("*", 0, 2, "2027-01-05")], "CSE", 3)).toBeNull();
+  });
+  it("uses the most specific semester-1 row: branch and year beat the college-wide date", () => {
+    expect(firstSemesterStart(rows, " cse ", 3)).toBe("2026-08-18");
+    expect(firstSemesterStart(rows, "ECE", 3)).toBe("2026-07-01");
+    expect(firstSemesterStart(rows, "CSE", 2)).toBe("2026-07-01");
+  });
+  it("never takes another branch's or another year's date", () => {
+    expect(firstSemesterStart([row("cse", 3, 1, "2026-08-18")], "ECE", 3)).toBeNull();
+    expect(firstSemesterStart([row("cse", 3, 1, "2026-08-18")], "CSE", 4)).toBeNull();
+  });
+});

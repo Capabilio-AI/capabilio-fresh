@@ -79,3 +79,28 @@ describe("term gates (Launchpad 4-1, Plan B from 3-1)", () => {
     expect(at(new Date(2025, 7, 1), { current_semester: 2 }).planBOpen).toBe(false); // still 2nd year
   });
 });
+
+describe("the college's semester-1 date opens Plan B (3-1) and Launchpad with the AI Interview (4-1)", () => {
+  // started 2024, ends 2028, academic year begins in July: July 2026 - June 2027 is the 3rd year, July 2027 - June 2028 the 4th
+  const at = (y: number, m: number, d: number) => new Date(Date.UTC(y, m - 1, d, 12));
+  const dir = (now: Date, firstStart: string | null) =>
+    buildDirection({ id: "m", start_year: 2024, end_year: 2028, year_confirmed_at: null, year_override: null, goal_state: null, goal_state_updated_at: null, goal_state_prompted_at: null, higher_studies_checkin_at: null, active_role_key: null, portfolio_prompt_seen_at: null }, 7, now, null, firstStart);
+
+  it("Plan B waits for the college's 3-1 date when it is set, then opens on it", () => {
+    expect(dir(at(2026, 8, 10), "2026-09-01")).toMatchObject({ planBOpen: false, launchpadOpen: false });
+    expect(dir(at(2026, 9, 1), "2026-09-01").planBOpen).toBe(true);
+    expect(dir(at(2026, 9, 2), "2026-09-01").planBOpen).toBe(true);
+  });
+  it("with no date the third year opens Plan B as it always did", () => {
+    expect(dir(at(2026, 8, 10), null).planBOpen).toBe(true);
+  });
+  it("Launchpad and the AI Interview wait for 4-1, never opening in the third year", () => {
+    expect(dir(at(2026, 9, 5), "2026-09-01").launchpadOpen).toBe(false);
+    expect(dir(at(2027, 8, 10), "2027-09-01")).toMatchObject({ launchpadOpen: false, planBOpen: true });
+    expect(dir(at(2027, 9, 1), "2027-09-01").launchpadOpen).toBe(true);
+    expect(dir(at(2027, 8, 10), null).launchpadOpen).toBe(true);
+  });
+  it("a student already in the second semester is not held back by a first-semester date", () => {
+    expect(dir(at(2027, 2, 10), "2027-09-01").planBOpen).toBe(true);
+  });
+});

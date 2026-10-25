@@ -1,4 +1,4 @@
-import type { OrgPermissionKey } from "./roles";
+import { CALENDAR_ROLES, type OrgPermissionKey } from "./roles";
 
 export interface OrgNavItem {
   label: string;
@@ -15,6 +15,8 @@ export interface OrgNavGroup {
 interface Candidate extends OrgNavItem {
   /** null = every organisation member */
   needs: OrgPermissionKey | null;
+  /** roles that see this page even without the permission */
+  alsoRoles?: readonly string[];
   /** this page is a tab inside the entry that needs this permission: its own link is hidden for anyone who can open that entry */
   tabOf?: OrgPermissionKey;
 }
@@ -37,7 +39,7 @@ const GROUPS: { label: string; items: Candidate[] }[] = [
       { label: "Projects", href: "/org/projects", needs: "classroom" },
       { label: "Company visits", href: "/org/placements", needs: "placements" },
       { label: "Curriculum", href: "/org/curriculum", needs: "curriculum", alsoActiveFor: ["/org/calendar"] },
-      { label: "Academic calendar", href: "/org/calendar", needs: "page", tabOf: "curriculum" },
+      { label: "Academic calendar", href: "/org/calendar", needs: "page", alsoRoles: CALENDAR_ROLES, tabOf: "curriculum" },
       { label: "Team & access", href: "/org/team", needs: "members", alsoActiveFor: ["/org/chat"] },
     ],
   },
@@ -52,18 +54,18 @@ const GROUPS: { label: string; items: Candidate[] }[] = [
   { label: "Collaboration", items: [{ label: "Team chat", href: "/org/chat", needs: "chat", tabOf: "members" }] },
 ];
 
-export function orgNavGroupsFor(permissions: ReadonlySet<OrgPermissionKey>): OrgNavGroup[] {
+export function orgNavGroupsFor(permissions: ReadonlySet<OrgPermissionKey>, role?: string | null): OrgNavGroup[] {
   return GROUPS.map((g) => ({
     label: g.label,
     items: g.items
-      .filter((i) => (i.needs === null || permissions.has(i.needs)) && !(i.tabOf && permissions.has(i.tabOf)))
+      .filter((i) => (i.needs === null || permissions.has(i.needs) || Boolean(role && i.alsoRoles?.includes(role))) && !(i.tabOf && permissions.has(i.tabOf)))
       .map(({ label, href, alsoActiveFor }) => (alsoActiveFor ? { label, href, alsoActiveFor } : { label, href })),
   })).filter((g) => g.items.length > 0);
 }
 
 /** Flat list (used by tests). */
-export function orgNavFor(permissions: ReadonlySet<OrgPermissionKey>): OrgNavItem[] {
-  return orgNavGroupsFor(permissions).flatMap((g) => g.items);
+export function orgNavFor(permissions: ReadonlySet<OrgPermissionKey>, role?: string | null): OrgNavItem[] {
+  return orgNavGroupsFor(permissions, role).flatMap((g) => g.items);
 }
 
 export const ROLE_LABEL: Record<string, string> = {

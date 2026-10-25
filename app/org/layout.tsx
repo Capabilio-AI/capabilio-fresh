@@ -14,7 +14,7 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   if (ctx.kind === "student") redirect("/dashboard");
   return (
     <OrgTheme workspace>
-      <OrgShell institutionName={ctx.institutionName} roleLabel={ROLE_LABEL[ctx.role] ?? ctx.role} groups={orgNavGroupsFor(ctx.permissions)} publicHref={`/o/${ctx.institutionSlug}`}>
+      <OrgShell institutionName={ctx.institutionName} roleLabel={ROLE_LABEL[ctx.role] ?? ctx.role} groups={orgNavGroupsFor(ctx.permissions, ctx.role)} publicHref={`/o/${ctx.institutionSlug}`}>
         {children}
       </OrgShell>
     </OrgTheme>

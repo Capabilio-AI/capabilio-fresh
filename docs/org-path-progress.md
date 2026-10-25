@@ -51,3 +51,15 @@ The follower count on a college page (header, and the Followers tile in the work
 Who sees it: any signed-in person, for a college whose page they may see (public, or one they belong to). Visitors who are not signed in get a sign-in link instead. People blocked in either direction are left out, no email is ever returned, and the list uses the same public fields as Pulse's follower lists. Route: `GET /api/orgs/followers?slug=&before=` (the cursor is the follow time and person of the last row, validated before it reaches a query, so two people who followed at the same moment never get lost between pages). Code: `lib/org/followers.ts`, `components/org/FollowersList.tsx`.
 
 Checked live against a throwaway college (removed afterwards), including through the running app: order, paging across a tie, a blocked person, who is from the college, the viewer's own follow, visitor refused, private college refused, bad cursor refused.
+## Semester start dates drive the student path (2026-10-25)
+
+Who sets them: admins (principal, vice principal) any branch or college-wide; an **HOD** their own branch only (a date for another branch or "all branches" is refused with a message); faculty and the TPO only if an admin granted "College page" (as before). Staff whose department is not recorded cannot set any, because a date moves unlocks for a whole cohort. The HOD rule is by role, not a new stored permission, so no database change was needed (the permission list is fixed by a CHECK constraint). An HOD sees "Academic calendar" in the sidebar.
+
+What a date does for students (`lib/career/term.ts#isFirstSemesterOpen`, applied in `buildDirection`):
+
+- **3-1, Plan B:** if the college has entered a Year 3 Semester 1 date for the student's branch (or college-wide), Plan B (the career-direction question) opens on that date; with no date it opens when the third year begins, as before.
+- **4-1, final year:** the same rule opens the AI Interview tab and the Launchpad page (`launchpadOpen`).
+- A date only holds a feature back until it arrives. Students already in the second semester, or in a later year, are not affected. A date more than 120 days ahead is treated as next cycle's, entered early, and holds nothing back. A branch's own date beats the college-wide one.
+- Today's date is taken in UTC (as the semester calculation already did), so a date takes effect at 05:30 IST.
+
+Production had no calendar rows when this shipped, so nothing changed for anyone until a college enters a date. Checked live (real database, throwaway college): dates hold and release Plan B and Launchpad at the right day, per branch, with branch dates overriding college-wide ones; through the running app: admin any branch, HOD own branch only, HOD without a branch, faculty, TPO, student and visitor refused.

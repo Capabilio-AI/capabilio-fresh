@@ -4,8 +4,9 @@ import { untyped } from "@/lib/org/db";
 import { computeCurrentAcademicYear, DEFAULT_ACADEMIC_START_MONTH, type AcademicYear } from "./academic-year";
 import { isCareerDirectionWindow } from "./trigger";
 import { estimateSemester } from "@/lib/roadmap-engine/position";
-import { isLaunchpadOpen, isPlanBTerm } from "./term";
-import { loadCalendarSemester } from "@/lib/org/academic-calendar";
+import { isFirstSemesterOpen, isLaunchpadOpen, isPlanBTerm, PLAN_B_FIRST_YEAR } from "./term";
+import { programLengthYears } from "./years";
+import { firstSemesterStart, loadCalendarRows, semesterFromCalendar } from "@/lib/org/academic-calendar";
 
 export const GOAL_STATES = ["job", "higher_studies", "entrepreneur", "not_sure"] as const;
 export type GoalState = (typeof GOAL_STATES)[number];
@@ -63,7 +64,11 @@ type MembershipRow = Pick<
     current_semester?: number | null;
   };
 
-export function buildDirection(row: MembershipRow, cycleStartMonth: number, now: Date = new Date(), calendarSemester: 1 | 2 | null = null): StudentDirection {
+/**
+ * `calendarSemester` and `firstSemesterStartsOn` come from the college's academic calendar (null when it has not set them). The college's semester-1 date
+ * can hold Plan B back until 3-1 begins, and Launchpad and the AI Interview until the final year's first semester begins; without a date the year decides.
+ */
+export function buildDirection(row: MembershipRow, cycleStartMonth: number, now: Date = new Date(), calendarSemester: 1 | 2 | null = null, firstSemesterStartsOn: string | null = null): StudentDirection {
   const goalState = isGoalState(row.goal_state) ? row.goal_state : null;
   const academicYear = computeCurrentAcademicYear({
     startYear: row.start_year,
@@ -73,6 +78,9 @@ export function buildDirection(row: MembershipRow, cycleStartMonth: number, now:
     now,
   });
   const semester = calendarSemester ?? estimateSemester(now, cycleStartMonth);
+  const year = academicYear?.year ?? null;
+  const today = now.toISOString().slice(0, 10);
+  const reachedFirstSemester = (milestoneYear: number) => isFirstSemesterOpen({ year, semester, milestoneYear, firstSemesterStartsOn, today });
   return {
     membershipId: row.id,
     startYear: row.start_year,
@@ -82,8 +90,8 @@ export function buildDirection(row: MembershipRow, cycleStartMonth: number, now:
     goalState,
     track: trackFor(goalState),
     inDirectionWindow: isCareerDirectionWindow(row.end_year, now),
-    launchpadOpen: isLaunchpadOpen(academicYear?.year ?? null, row.start_year, row.end_year),
-    planBOpen: isPlanBTerm(academicYear?.year ?? null, semester),
+    launchpadOpen: isLaunchpadOpen(year, row.start_year, row.end_year) && row.start_year != null && row.end_year != null && reachedFirstSemester(programLengthYears(row.start_year, row.end_year)),
+    planBOpen: isPlanBTerm(year, semester) && reachedFirstSemester(PLAN_B_FIRST_YEAR),
     semester,
     semesterFromCollege: calendarSemester !== null,
     goalStateUpdatedAt: row.goal_state_updated_at,
@@ -149,6 +157,8 @@ export async function getStudentDirection(
   const built = buildDirection(best, month, now);
   const year = built.academicYear?.year ?? null;
   if (!best.institution_id || !best.branch || year === null) return built;
-  const fromCollege = await loadCalendarSemester(supabase, best.institution_id, best.branch, year, now);
-  return fromCollege ? buildDirection(best, month, now, fromCollege) : built;
+  const calendar = await loadCalendarRows(supabase, best.institution_id);
+  const fromCollege = semesterFromCalendar(calendar, best.branch, year, now);
+  const firstStart = firstSemesterStart(calendar, best.branch, year);
+  return fromCollege || firstStart ? buildDirection(best, month, now, fromCollege, firstStart) : built;
 }
