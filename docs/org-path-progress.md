@@ -44,6 +44,13 @@ Defects found and fixed:
 
 Known, outside the org path: `/api/assessment/start` returns 500 for a brand-new student with no profile (student path, untouched by this work).
 
+## College followers list (2026-10-25)
+
+The follower count on a college page (header, and the Followers tile in the workspace) now opens a list, like Instagram or LinkedIn: photo, name, what they are (a student's career goal and ELO, or "Role @ College"), class and branch, an "At this college" mark for members, and a Follow button. Search box; 50 at a time with "Show more". Newest first.
+
+Who sees it: any signed-in person, for a college whose page they may see (public, or one they belong to). Visitors who are not signed in get a sign-in link instead. People blocked in either direction are left out, no email is ever returned, and the list uses the same public fields as Pulse's follower lists. Route: `GET /api/orgs/followers?slug=&before=` (the cursor is the follow time and person of the last row, validated before it reaches a query, so two people who followed at the same moment never get lost between pages). Code: `lib/org/followers.ts`, `components/org/FollowersList.tsx`.
+
+Checked live against a throwaway college (removed afterwards), including through the running app: order, paging across a tie, a blocked person, who is from the college, the viewer's own follow, visitor refused, private college refused, bad cursor refused.
 ## Semester start dates drive the student path (2026-10-25)
 
 Who sets them: admins (principal, vice principal) any branch or college-wide; an **HOD** their own branch only (a date for another branch or "all branches" is refused with a message); faculty and the TPO only if an admin granted "College page" (as before). Staff whose department is not recorded cannot set any, because a date moves unlocks for a whole cohort. The HOD rule is by role, not a new stored permission, so no database change was needed (the permission list is fixed by a CHECK constraint). An HOD sees "Academic calendar" in the sidebar.
