@@ -40,3 +40,22 @@ describe("resolveProjectScope", () => {
     expect(resolveProjectScope(null, [])).toEqual({ ok: true, value: null });
   });
 });
+
+import { calendarScope, resolveCalendarBranch } from "./branch-scope";
+
+describe("calendar branch scope", () => {
+  it("lets an admin set any branch, and a branch-scoped member only their own", () => {
+    expect(calendarScope({ kind: "admin", branch: null })).toEqual({ ok: true, scope: null });
+    expect(calendarScope({ kind: "staff", branch: " CSE " })).toEqual({ ok: true, scope: "CSE" });
+    expect(resolveCalendarBranch(null, "ECE")).toEqual({ ok: true, value: "ECE" });
+    expect(resolveCalendarBranch("CSE", "cse ")).toEqual({ ok: true, value: "CSE" });
+  });
+  it("refuses another department and the college-wide '*' rather than quietly changing them", () => {
+    expect(resolveCalendarBranch("CSE", "ECE")).toMatchObject({ ok: false });
+    expect(resolveCalendarBranch("CSE", "*")).toMatchObject({ ok: false });
+  });
+  it("gives staff with no department no scope at all, since a date moves unlocks for a whole cohort", () => {
+    expect(calendarScope({ kind: "staff", branch: null })).toMatchObject({ ok: false });
+    expect(calendarScope({ kind: "staff", branch: "  " })).toMatchObject({ ok: false });
+  });
+});

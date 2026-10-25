@@ -30,11 +30,8 @@ export const CalendarEntrySchema = z
   .refine((v) => v.endsOn > v.startsOn, { message: "The end date must be after the start date.", path: ["endsOn"] });
 export type CalendarEntry = z.infer<typeof CalendarEntrySchema>;
 
-/**
- * Pure. The student's semester from the college's start dates: of the rows that apply to their branch and year, take the most specific per
- * semester, then the semester whose start date is the latest one already reached. null when nothing applies yet (callers fall back to an estimate).
- */
-export function semesterFromCalendar(rows: readonly CalendarRow[], branch: string, yearOfStudy: number, now: Date): 1 | 2 | null {
+/** The most specific row (branch and year beat "all") for each semester that applies to a student of this branch and year. */
+function bestRowPerSemester(rows: readonly CalendarRow[], branch: string, yearOfStudy: number): Map<1 | 2, { score: number; startsOn: string }> {
   const key = branchKey(branch);
   const best = new Map<1 | 2, { score: number; startsOn: string }>();
   for (const r of rows) {
@@ -44,16 +41,33 @@ export function semesterFromCalendar(rows: readonly CalendarRow[], branch: strin
     const score = branchMatch + yearMatch;
     if (!best.has(r.semester) || score > best.get(r.semester)!.score) best.set(r.semester, { score, startsOn: r.startsOn });
   }
+  return best;
+}
+
+/** Pure. When the college says semester 1 starts for a student of this branch and year (YYYY-MM-DD), or null when it has not said. */
+export function firstSemesterStart(rows: readonly CalendarRow[], branch: string, yearOfStudy: number): string | null {
+  return bestRowPerSemester(rows, branch, yearOfStudy).get(1)?.startsOn ?? null;
+}
+
+/**
+ * Pure. The student's semester from the college's start dates: of the rows that apply to their branch and year, take the most specific per
+ * semester, then the semester whose start date is the latest one already reached. null when nothing applies yet (callers fall back to an estimate).
+ */
+export function semesterFromCalendar(rows: readonly CalendarRow[], branch: string, yearOfStudy: number, now: Date): 1 | 2 | null {
+  const best = bestRowPerSemester(rows, branch, yearOfStudy);
   const today = now.toISOString().slice(0, 10);
   const reached = [...best.entries()].filter(([, v]) => v.startsOn <= today).sort((a, b) => a[1].startsOn.localeCompare(b[1].startsOn));
   return reached.at(-1)?.[0] ?? null;
 }
 
 /** ponytail: only the start dates pick the semester (the latest one reached); end dates are recorded and shown for staff. Dates are not tied to an academic year, so staff re-enter them each cycle; stale dates keep the last reached semester. */
-export async function loadCalendarSemester(service: Service, institutionId: string, branch: string, yearOfStudy: number, now: Date): Promise<1 | 2 | null> {
+export async function loadCalendarRows(service: Service, institutionId: string): Promise<CalendarRow[]> {
   const { data } = await untyped(service).from("academic_calendar").select("branch_key, year_of_study, semester, starts_on").eq("institution_id", institutionId);
-  const rows = ((data ?? []) as { branch_key: string; year_of_study: number; semester: 1 | 2; starts_on: string }[]).map((r) => ({ branchKey: r.branch_key, yearOfStudy: r.year_of_study, semester: r.semester, startsOn: r.starts_on }));
-  return semesterFromCalendar(rows, branch, yearOfStudy, now);
+  return ((data ?? []) as { branch_key: string; year_of_study: number; semester: 1 | 2; starts_on: string }[]).map((r) => ({ branchKey: r.branch_key, yearOfStudy: r.year_of_study, semester: r.semester, startsOn: r.starts_on }));
+}
+
+export async function loadCalendarSemester(service: Service, institutionId: string, branch: string, yearOfStudy: number, now: Date): Promise<1 | 2 | null> {
+  return semesterFromCalendar(await loadCalendarRows(service, institutionId), branch, yearOfStudy, now);
 }
 
 export interface CalendarListItem extends CalendarRow {

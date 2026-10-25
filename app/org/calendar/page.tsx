@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { orgPageContext } from "@/lib/org/page";
 import { ALL_BRANCHES, ALL_YEARS, listCalendar } from "@/lib/org/academic-calendar";
 import { loadStudentRows } from "@/lib/curriculum/cohorts";
-import { branchKey } from "@/lib/org/branch-scope";
+import { branchKey, calendarScope } from "@/lib/org/branch-scope";
 import { PageHeader, Panel, EmptyState } from "@/components/org/ui";
 import { JsonForm } from "@/components/org/JsonForm";
 import { SectionTabs } from "@/components/org/SectionTabs";
@@ -17,16 +17,36 @@ const dateLabel = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateStri
 /** Staff set when each semester starts. Every student's current semester follows from these dates; students cannot set it themselves. */
 export default async function OrgCalendarPage() {
   const { ctx, service } = await orgPageContext("manageCalendar");
-  const [entries, students] = await Promise.all([listCalendar(service, ctx.institutionId), loadStudentRows(service, ctx.institutionId)]);
-  const branches = [...new Map(students.filter((s) => branchKey(s.branch)).map((s) => [branchKey(s.branch), (s.branch as string).trim()])).values()].sort();
+  const scope = calendarScope(ctx);
+  const [allEntries, students] = await Promise.all([listCalendar(service, ctx.institutionId), loadStudentRows(service, ctx.institutionId)]);
+  const scopeBranch = scope.ok ? scope.scope : null;
+  // an HOD sees and sets their own department's dates, and sees the college-wide ones (set by an admin) that apply to it
+  const entries = scopeBranch ? allEntries.filter((e) => e.branchKey === ALL_BRANCHES || e.branchKey === branchKey(scopeBranch)) : allEntries;
+  const branches = scopeBranch ? [scopeBranch] : [...new Map(students.filter((s) => branchKey(s.branch)).map((s) => [branchKey(s.branch), (s.branch as string).trim()])).values()].sort();
+  const branchOptions = scopeBranch ? branches.map((b) => ({ value: b, label: b })) : [{ value: ALL_BRANCHES, label: "All branches" }, ...branches.map((b) => ({ value: b, label: b }))];
 
   return (
     <div className="flex flex-col gap-8">
       <SectionTabs label="Curriculum sections" active="/org/calendar" tabs={[{ label: "Curriculum", href: "/org/curriculum", show: can(ctx, "manageCurriculum") }, { label: "Academic calendar", href: "/org/calendar", show: true }]} />
       <PageHeader
         title="Academic calendar"
-        subtitle={`${ctx.institutionName}. Enter when each semester starts and ends. Students' semester updates automatically from the start dates, so they never need to set it. Choose a branch and year, or all branches and all years; a specific row overrides an "all" row.`}
+        subtitle={`${ctx.institutionName}. Enter when each semester starts and ends. Students' semester updates automatically from the start dates, so they never need to set it. ${scopeBranch ? `You set dates for ${scopeBranch}.` : 'Choose a branch and year, or all branches and all years; a specific row overrides an "all" row.'}`}
       />
+      <Panel title="What these dates control for students">
+        <ul className="list-disc pl-5 font-lp-body text-[13px] leading-relaxed text-app-muted">
+          <li>The semester a student sees is the latest start date that has arrived.</li>
+          <li>
+            <strong className="text-[var(--m-ink)]">Year 3, Semester 1:</strong> students are asked to choose their Plan B. If you enter a date, it opens on that date; with no date it opens when their third year begins.
+          </li>
+          <li>
+            <strong className="text-[var(--m-ink)]">Final year, Semester 1 (4-1):</strong> the AI Interview tab and the Launchpad page unlock. Same rule: your date, or the start of the final year.
+          </li>
+          <li>A date only holds a feature back until it arrives. Students already in the second semester of that year are not affected, and a date more than about four months ahead is treated as next cycle&apos;s and holds nothing back.</li>
+        </ul>
+      </Panel>
+      {!scope.ok ? (
+        <EmptyState title="Your department is not set" body={scope.message} />
+      ) : (
       <Panel title="Set a semester's dates">
         <JsonForm
           action="/api/org/calendar"
@@ -34,7 +54,7 @@ export default async function OrgCalendarPage() {
           successMessage="Saved. Students' semesters now follow this date."
           resetOnSuccess={false}
           fields={[
-            { name: "branch", label: "Branch", type: "select", required: true, options: [{ value: ALL_BRANCHES, label: "All branches" }, ...branches.map((b) => ({ value: b, label: b }))] },
+            { name: "branch", label: "Branch", type: "select", required: true, options: branchOptions },
             { name: "yearOfStudy", label: "Year of study", type: "select", required: true, options: YEAR_OPTIONS },
             { name: "semester", label: "Semester", type: "select", required: true, options: [{ value: "1", label: "Semester 1" }, { value: "2", label: "Semester 2" }] },
             { name: "startsOn", label: "Starts on", type: "date", required: true },
@@ -42,6 +62,7 @@ export default async function OrgCalendarPage() {
           ]}
         />
       </Panel>
+      )}
       <Panel title="Dates on file">
         {entries.length === 0 ? (
           <EmptyState title="No dates yet" body="Until you add dates, students see an estimate based on the college's usual start month." />
