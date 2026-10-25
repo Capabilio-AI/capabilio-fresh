@@ -37,6 +37,19 @@ describe("buildSkillMatrix", () => {
     expect(rows.map((r) => r.name)).toEqual(["SQL", "Excel"]);
   });
 
+  it("shows only the target role's skills when asked, however much else the user has measured", () => {
+    const rows = buildSkillMatrix({
+      capabilities: new Map([["sql", cap(82)], ["xl", cap(40)], ["py", cap(30)]]),
+      arenaPasses: new Map(),
+      names,
+      practisable: new Map([["stat", { areaKey: "statistics", areaName: "Statistics" }]]),
+      targets: new Map([["py", 60]]),
+      only: new Set(["py", "bi"]),
+    });
+    expect(rows.map((r) => r.name)).toEqual(["Python", "Power BI"]);
+    expect(rows[1]).toMatchObject({ level: null, label: "Not assessed" });
+  });
+
   it("is empty when there is nothing to show", () => {
     expect(buildSkillMatrix({ capabilities: new Map(), arenaPasses: new Map(), names, practisable: new Map(), targets: new Map() })).toEqual([]);
   });

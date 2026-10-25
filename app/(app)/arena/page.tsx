@@ -5,7 +5,6 @@ import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getStageState } from "@/lib/stage/server";
 import { getLeaderboard } from "@/lib/arena/data";
 import { loadArenaProfile } from "@/lib/arena/profile";
-import { matchCareersForStudent } from "@/lib/career/match";
 import { createServiceClient } from "@/lib/supabase/service";
 import { SkillMatrix } from "@/components/arena/SkillMatrix";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
@@ -17,9 +16,9 @@ const CARD = "group flex h-full flex-col gap-3 rounded-2xl border border-[var(--
 
 export default async function ArenaHubPage() {
   const { supabase, user } = await requireAuthedUser();
-  const [leaderboard, { stage }, careerMatches] = await Promise.all([getLeaderboard(supabase, user.id), getStageState(user.id), matchCareersForStudent(supabase, user.id)]);
+  const [leaderboard, { stage }] = await Promise.all([getLeaderboard(supabase, user.id), getStageState(user.id)]);
   // the skill profile reads the capability model; a problem loading it must never hide the rest of Arena
-  const profile = await loadArenaProfile(createServiceClient(), user.id, careerMatches[0]?.skillGaps ?? []).catch(() => null);
+  const profile = await loadArenaProfile(createServiceClient(), user.id).catch(() => null);
   // Stream challenges are drawn from a study programme, so only students get them.
   const showStream = stage === "student";
   const viewer = leaderboard.find((e) => e.isViewer);
@@ -36,7 +35,7 @@ export default async function ArenaHubPage() {
         nav={<ArenaSubNav />}
       />
 
-      {profile && <SkillMatrix rows={profile.rows} level={profile.level} />}
+      {profile && <SkillMatrix rows={profile.rows} level={profile.level} careerName={profile.careerName} />}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section aria-labelledby="modes-h" className="flex flex-col gap-4">

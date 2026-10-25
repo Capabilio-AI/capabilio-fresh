@@ -36,8 +36,14 @@ describe("SkillMatrix", () => {
     expect(met).not.toContain("Practise SQL");
   });
 
+  it("names the role the skills are for", () => {
+    const out = renderToStaticMarkup(createElement(SkillMatrix, { rows: [row({})], level: "fresher", careerName: "Embedded Systems Engineer" }));
+    expect(out).toContain("Starting skills for Embedded Systems Engineer.");
+  });
+
   it("explains an empty profile instead of showing zeros", () => {
-    const out = html([]);
-    expect(out).toContain("Nothing is measured yet");
+    expect(html([])).toContain("Choose your target career");
+    const unmapped = renderToStaticMarkup(createElement(SkillMatrix, { rows: [], level: "fresher", careerName: "Backend Developer" }));
+    expect(unmapped).toContain("have not mapped the starting skills for Backend Developer");
   });
 });

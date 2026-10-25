@@ -51,7 +51,7 @@ function Row({ row }: { row: MatrixRow }) {
 }
 
 /** The user's measured skills as Arena sees them. A skill nobody has measured is shown as "Not assessed" with an empty bar, never as a low score. */
-export function SkillMatrix({ rows, level }: { rows: MatrixRow[]; level: ExperienceLevel }) {
+export function SkillMatrix({ rows, level, careerName = null }: { rows: MatrixRow[]; level: ExperienceLevel; careerName?: string | null }) {
   return (
     <section aria-labelledby="matrix-h" className="rounded-3xl border border-[var(--m-rule)] bg-white p-6">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
@@ -59,10 +59,14 @@ export function SkillMatrix({ rows, level }: { rows: MatrixRow[]; level: Experie
         <p className="text-[13px] font-semibold text-[var(--m-muted)]">Tickets are matched to your experience: {LEVEL_TEXT[level]}</p>
       </div>
       <p className="mt-1 max-w-2xl font-lp-body text-[13.5px] leading-relaxed text-app-muted">
-        Measured from your assessments, Arena tickets and projects. Each skill has its own level. The dark tick marks what your target role asks for.
+        {careerName ? `Starting skills for ${careerName}. ` : ""}Measured from your assessments, Arena tickets and projects. Each skill has its own level. The dark tick marks what your target role asks for.
       </p>
       {rows.length === 0 ? (
-        <p className="mt-5 rounded-2xl bg-[var(--m-ground)] px-4 py-5 font-lp-body text-[14px] text-[var(--m-muted)]">Nothing is measured yet. Take a ticket in Domain challenges and your first skill will appear here.</p>
+        <p className="mt-5 rounded-2xl bg-[var(--m-ground)] px-4 py-5 font-lp-body text-[14px] text-[var(--m-muted)]">
+          {careerName
+            ? `We have not mapped the starting skills for ${careerName} yet. They will appear here as soon as they are.`
+            : "Choose your target career and the skills it asks for will appear here, each measured as you practise."}
+        </p>
       ) : (
         <ul className="mt-5 grid grid-cols-1 gap-x-10 gap-y-5 md:grid-cols-2">
           {rows.map((row) => <Row key={row.skillId} row={row} />)}
