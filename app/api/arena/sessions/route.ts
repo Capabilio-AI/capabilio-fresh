@@ -26,7 +26,7 @@ export async function GET() {
     const last = session && session.current === null ? session.stages[session.stages.length - 1] : null;
     const anchorAttempt = last?.assignmentId ? await loadPublicAttempt(service, auth.userId, last.assignmentId) : null;
     const { data: finished } = await untyped(service).from("arena_proof_sessions").select("id").eq("user_id", auth.userId).eq("role_key", roleKey).eq("status", "finished").order("started_at", { ascending: false }).limit(1);
-    return NextResponse.json({ available: true, session, anchorAttempt, latestFinishedSessionId: (finished as { id: string }[] | null)?.[0]?.id ?? null });
+    return NextResponse.json({ available: true, spec: { title: SPECS[roleKey].title, intro: SPECS[roleKey].intro }, session, anchorAttempt, latestFinishedSessionId: (finished as { id: string }[] | null)?.[0]?.id ?? null });
   } catch (error) {
     return sessionErrorResponse(error, "arena/sessions");
   }
