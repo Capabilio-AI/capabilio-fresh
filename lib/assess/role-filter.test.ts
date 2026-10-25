@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterRoles, FEATURED } from "./role-filter";
+import { filterRoles, roleBlurb, FEATURED } from "./role-filter";
 
 const roles = [
   { careerId: "1", name: "Cloud Engineer", aliases: ["cloud engineer", "devops", "devops engineer", "sre"] },
@@ -33,5 +33,42 @@ describe("filterRoles", () => {
   });
   it("returns nothing for a role we do not have (the UI then offers 'use as typed')", () => {
     expect(names("zoologist")).toEqual([]);
+  });
+});
+
+describe("suggestions for partial queries", () => {
+  const catalog = [
+    { careerId: "1", name: "Embedded Systems Engineer", aliases: ["embedded engineer", "firmware engineer"] },
+    { careerId: "2", name: "Embedded Firmware Engineer", aliases: ["firmware developer"] },
+    { careerId: "3", name: "Data Analyst", aliases: ["data analyst", "analytics"] },
+    { careerId: "4", name: "Data Engineer", aliases: ["etl engineer"] },
+    { careerId: "5", name: "Cybersecurity Analyst", aliases: ["soc analyst", "security analyst"] },
+    { careerId: "6", name: "Product Designer", aliases: ["ux designer"] },
+  ];
+  const out = (t: string) => filterRoles(catalog, t).map((h) => h.role.name);
+
+  it("offers the embedded roles for 'embed' and nothing unrelated", () => {
+    expect(out("embed")).toEqual(["Embedded Firmware Engineer", "Embedded Systems Engineer"]);
+  });
+  it("narrows 'data an' to Data Analyst first", () => {
+    expect(out("data an")[0]).toBe("Data Analyst");
+    expect(out("data an")).not.toContain("Product Designer");
+  });
+  it("finds security roles for 'cyber' and for an alias like 'soc'", () => {
+    expect(out("cyber")).toEqual(["Cybersecurity Analyst"]);
+    expect(filterRoles(catalog, "soc")[0]).toMatchObject({ role: { name: "Cybersecurity Analyst" }, matched: "soc analyst" });
+  });
+  it("returns nothing for a role the catalog does not have, so the caller can resolve it instead of padding the list", () => {
+    expect(out("financial")).toEqual([]);
+  });
+});
+
+describe("roleBlurb", () => {
+  it("shows a real description, shortened, and hides empty or placeholder ones", () => {
+    expect(roleBlurb("Builds firmware.")).toBe("Builds firmware.");
+    expect(roleBlurb("x".repeat(200))).toHaveLength(110);
+    expect(roleBlurb("AI-proposed profile for Financial Analyst")).toBeNull();
+    expect(roleBlurb(null)).toBeNull();
+    expect(roleBlurb("  ")).toBeNull();
   });
 });

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, BarChart3, Check, ClipboardCheck, Compass, GitFork, RotateCcw, Search, Sparkles } from "lucide-react";
 import type { ResolveOutcome, RoleCandidate, RoleOption } from "@/lib/assess/roles";
-import { filterRoles } from "@/lib/assess/role-filter";
+import { filterRoles, roleBlurb } from "@/lib/assess/role-filter";
 import { ApiError, NetworkError, assessApi } from "../api";
 import { Button } from "../ui/Button";
 
@@ -130,12 +130,16 @@ export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles:
       {!busy && (
         <div className="mx-auto mt-5 w-full max-w-[44rem]">
           <p className="mb-2 px-2 text-[12.5px] font-bold uppercase tracking-wider text-[var(--m-muted)]">{typed ? "Matching roles" : "Popular roles"}</p>
+          <p className="sr-only" role="status" aria-live="polite">{typed ? (hits.length === 0 ? "No matching roles. You can use what you typed." : `${hits.length} matching ${hits.length === 1 ? "role" : "roles"}`) : ""}</p>
           <ul id={LISTBOX} role="listbox" aria-label="Roles" className="a-glass-soft overflow-hidden rounded-3xl p-1.5">
             {visible.map(({ role, matched }, i) => (
               <li key={role.careerId} id={`${LISTBOX}-${i}`} role="option" aria-selected={active === i}>
                 <button type="button" tabIndex={-1} onMouseEnter={() => setActive(i)} onClick={() => choose(role)} className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition-colors duration-150 ${active === i ? "bg-white" : "hover:bg-white/70"}`}>
-                  <span className="text-[16px] font-bold text-[var(--m-ink)]">{highlight(role.name, typed)}</span>
-                  <span className="flex items-center gap-2 text-[13px] text-[var(--m-muted)]">{matched && <span>matches “{matched}”</span>}<ArrowRight className="h-4 w-4 opacity-60" aria-hidden /></span>
+                  <span className="min-w-0">
+                    <span className="block text-[16px] font-bold text-[var(--m-ink)]">{highlight(role.name, typed)}</span>
+                    {roleBlurb(role.description) && <span className="mt-0.5 block text-[13px] leading-snug text-[var(--m-muted)]">{roleBlurb(role.description)}</span>}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-[13px] text-[var(--m-muted)]">{matched && <span>matches “{matched}”</span>}<ArrowRight className="h-4 w-4 opacity-60" aria-hidden /></span>
                 </button>
               </li>
             ))}

@@ -49,3 +49,10 @@ export function filterRoles<T extends FilterableRole>(roles: readonly T[], text:
   }
   return scored.sort((a, b) => a.score - b.score || a.hit.role.name.localeCompare(b.hit.role.name)).map((s) => s.hit);
 }
+
+/** A role's one-line description for the suggestion list, or null when there is nothing worth showing (empty, or the placeholder written for a generated role). */
+export function roleBlurb(description: string | null | undefined): string | null {
+  const text = (description ?? "").trim();
+  if (!text || /^AI-proposed profile for /i.test(text)) return null;
+  return text.length > 110 ? `${text.slice(0, 107).trimEnd()}...` : text;
+}
