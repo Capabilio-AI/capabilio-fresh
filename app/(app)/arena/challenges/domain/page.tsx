@@ -13,6 +13,8 @@ import { TrackChallengesBoard } from "@/components/arena/TrackChallengesBoard";
 import { DomainSetList } from "@/components/arena/domain/DomainSetList";
 import { DomainCountdown } from "@/components/arena/domain/DomainCountdown";
 import { SessionPanel } from "@/components/arena/session/SessionBoundary";
+import { RoleToolkitPanel } from "@/components/arena/RoleToolkitPanel";
+import { toolkitFor } from "@/lib/arena-roles/toolkit";
 
 export const metadata: Metadata = {
   title: "Domain Challenges — Arena — Capabilio AI",
@@ -67,7 +69,9 @@ export default async function DomainChallengesPage() {
   } else {
     // the same role resolution the workstation API uses, so the page and the API cannot disagree
     const [roles, direction, engagedRoleKey] = await Promise.all([listEnabledRoles(service), getStudentDirection(service, user.id), getEngagedRoleKey(service, user.id)]);
-    const hasWorkstation = resolveDomainRole(roles, { activeRoleKey: direction?.activeRoleKey ?? null, engagedRoleKey, statedRole: view.career.name }).role !== null;
+    const resolvedRole = resolveDomainRole(roles, { activeRoleKey: direction?.activeRoleKey ?? null, engagedRoleKey, statedRole: view.career.name }).role;
+    const hasWorkstation = resolvedRole !== null;
+    const toolkit = resolvedRole ? toolkitFor(resolvedRole.role_key) : null;
     const source = chooseDomainSource({ hasWorkstation, catalogItems: view.items.length, catalogCountdown: Boolean(view.unlockAt) });
     body = (
       <>
@@ -77,6 +81,7 @@ export default async function DomainChallengesPage() {
         </div>
         {source === "workstation" ? (
           <>
+            {toolkit && <RoleToolkitPanel toolkit={toolkit} />}
             <SessionPanel />
             <TrackChallengesBoard track="domain" />
           </>

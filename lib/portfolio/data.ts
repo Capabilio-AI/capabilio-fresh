@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
 import { getEducationEntries, type EducationEntry } from "@/lib/dashboard/education";
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
+import { summariseArenaWork, type ArenaWorkRole } from "@/lib/portfolio/arena-work";
 
 export interface ArenaTask {
   attemptId: string;
@@ -62,6 +63,8 @@ export interface PortfolioData {
   items: VaultItem[];
   groups: CapabilityGroup[];
   arenaTasks: ArenaTask[];
+  /** Graded Arena work per role and skill area: exact verified counts and the last pass date. */
+  arenaWork: ArenaWorkRole[];
   github: GithubEvidence | null;
   keyEvidence: string[];
   mostRecent: string | null;
@@ -120,12 +123,15 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
   const groups = buildCapabilityGroups(evidence);
 
   const challengeIds = (completions ?? []).map((c) => c.challenge_id);
-  const [{ data: challenges }, { data: areas }] = await Promise.all([
+  const [{ data: challenges }, { data: areas }, { data: ratings }, { data: roleNames }] = await Promise.all([
     challengeIds.length
       ? supabase.from("arena_challenges").select("id, title, content, requester").in("id", challengeIds)
       : Promise.resolve({ data: [] as { id: string; title: string; content: unknown; requester: string | null }[] }),
     supabase.from("arena_skill_areas").select("role_key, area_key, display_name"),
+    supabase.from("arena_skill_ratings").select("role_key, area_key, verified_count, last_verified_at").eq("user_id", userId).gt("verified_count", 0),
+    supabase.from("arena_domain_roles").select("role_key, display_name"),
   ]);
+  const arenaWork = summariseArenaWork(ratings ?? [], roleNames ?? [], areas ?? []);
   let arenaTasks: ArenaTask[] = (completions ?? []).map((c) => {
     const ch = challenges?.find((x) => x.id === c.challenge_id);
     return {
@@ -192,6 +198,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     items,
     groups,
     arenaTasks,
+    arenaWork,
     graph,
     github: github
       ? {

@@ -14,6 +14,7 @@ import { SkillSignal } from "@/components/portfolio/SkillSignal";
 import { LiveNumber } from "@/components/portfolio/LiveNumber";
 import { LiveStatus } from "@/components/portfolio/LiveStatus";
 import type { PortfolioElo } from "@/lib/portfolio/elo";
+import type { ArenaWorkRole } from "@/lib/portfolio/arena-work";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
 
 const TYPE_ICON: Record<string, LucideIcon> = { certificate: Award, project: Sparkles, resume: FileText, link: Link2, other: FileText };
@@ -46,6 +47,7 @@ export interface PortfolioBodyProps {
   statedRole: string | null;
   groups: CapabilityGroup[];
   arenaTasks: ArenaTask[];
+  arenaWork: ArenaWorkRole[];
   /** Kept so the public share page and the dashboard pass the same data; interview sessions are practice and stay out of the recruiter view. */
   interviews?: InterviewSummary[];
   github: GithubEvidence | null;
@@ -65,7 +67,7 @@ export interface PortfolioBodyProps {
  * The portfolio a student hands a recruiter, laid out like a professional profile: who they are, a factual summary, the work they have
  * completed (each piece opens its full evidence), their measured skills, GitHub, and projects. Everything comes from verified records.
  */
-export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, arenaWork, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   // Work that arrives while the page is open (live updates) is marked "New" for a few seconds so a watching recruiter sees what just landed.
   const seen = useRef(new Set(arenaTasks.map((t) => t.attemptId)));
@@ -169,9 +171,30 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
                   <li key={t.attemptId} className={`flex items-start justify-between gap-4 py-3.5 transition-colors duration-700 first:pt-0 ${fresh.has(t.attemptId) ? "-mx-2 rounded-lg bg-[var(--m-ground)] px-2" : ""}`}>
                     <div className="min-w-0">
                       <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{t.title}{fresh.has(t.attemptId) && <span className="ml-2 rounded-full bg-[var(--m-accent)] px-2 py-0.5 align-middle font-lp-mono text-[11px] font-bold text-white">New</span>}</p>
-                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.score !== undefined ? `Score ${t.score}%` : null, t.explanationScore !== undefined ? `Explained ${t.explanationScore}/100` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
+                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.area, t.score !== undefined ? `Score ${t.score}%` : null, t.explanationScore !== undefined ? `Explained ${t.explanationScore}/100` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
                     </div>
                     <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {arenaWork.length > 0 && (
+            <Section title="Graded Arena work">
+              <ul className="flex flex-col gap-4">
+                {arenaWork.map((r) => (
+                  <li key={r.roleKey}>
+                    <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{r.roleName}</p>
+                    <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[`${r.verifiedCount} graded task${r.verifiedCount === 1 ? "" : "s"} passed`, r.lastPassedAt ? `last passed ${fmtDate(r.lastPassedAt)}` : null].filter(Boolean).join(" · ")}</p>
+                    <ul className="mt-2 flex flex-wrap gap-2">
+                      {r.areas.map((a) => (
+                        <li key={a.areaKey} className="rounded-full border border-[var(--m-rule)] px-2.5 py-1 font-lp-body text-[12px] text-[var(--m-ink)]">
+                          {a.areaName} · {a.verifiedCount}
+                          {a.lastPassedAt && <span className="text-[var(--m-muted)]"> · {fmtDate(a.lastPassedAt)}</span>}
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 ))}
               </ul>

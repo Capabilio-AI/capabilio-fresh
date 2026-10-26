@@ -49,6 +49,10 @@ const TOOL_LABEL: Record<string, string> = {
   code_workspace: "Code editor",
   devops_workspace: "Config editor",
   frontend_workspace: "Frontend editor",
+  pipeline_workspace: "Pipeline Lab",
+  soc_workspace: "SOC console",
+  business_docs_workspace: "Business docs studio",
+  calc_workspace: "Calculation worksheet",
 };
 
 /**
