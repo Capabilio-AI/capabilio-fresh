@@ -1,12 +1,16 @@
 "use client";
 
 import type { ComponentType } from "react";
+import { BusinessDocsTool } from "./BusinessDocsTool";
+import { CalcTool } from "./CalcTool";
 import { CleaningTool } from "./CleaningTool";
 import { CodeTool } from "./CodeTool";
 import { ConfigTool } from "./ConfigTool";
 import { DashboardTool } from "./DashboardTool";
 import { InvestigationTool } from "./InvestigationTool";
 import { MlTool } from "./MlTool";
+import { PipelineTool } from "./PipelineTool";
+import { SocTool } from "./SocTool";
 import { SpreadsheetTool } from "./SpreadsheetTool";
 import { SqlTool } from "./SqlTool";
 import { StatisticsTool } from "./StatisticsTool";
@@ -24,5 +28,9 @@ export const WORKSTATIONS: Record<string, { label: string; component: ComponentT
   devops_workspace: { label: "Config editor", component: ConfigTool as ComponentType<ToolProps<never>> },
   frontend_workspace: { label: "Frontend editor", component: ConfigTool as ComponentType<ToolProps<never>> },
   ml_workspace: { label: "ML notebook", component: MlTool as ComponentType<ToolProps<never>> },
+  calc_workspace: { label: "Calculation worksheet", component: CalcTool as ComponentType<ToolProps<never>> },
+  business_docs_workspace: { label: "Business Docs Studio", component: BusinessDocsTool as ComponentType<ToolProps<never>> },
+  pipeline_workspace: { label: "Pipeline Lab", component: PipelineTool as ComponentType<ToolProps<never>> },
+  soc_workspace: { label: "SOC console", component: SocTool as ComponentType<ToolProps<never>> },
   spreadsheet_workspace: { label: "Excel workbook", component: SpreadsheetTool as ComponentType<ToolProps<never>> },
 };

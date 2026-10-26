@@ -6,6 +6,9 @@ import { templateTiers } from "@/lib/workplace/tickets/pick";
 import { score } from "@/lib/workplace/ml/metrics";
 import { ML_TEMPLATES, type MlContent, type MlDraft, type MlKey } from "@/lib/workplace/ml/tickets";
 import { generateAiMl } from "@/lib/workplace/ml/ai";
+import { ML_ENGINEER_TEMPLATES } from "@/lib/workplace/ml-engineer/tickets";
+import { DATA_SCIENCE_ML_TEMPLATES } from "@/lib/workplace/data-science/ml-templates";
+import { isTemplateOnlyArea } from "../template-only";
 import { logArenaEvent } from "../log";
 
 /** The user works in a notebook in the browser and submits what it produced: predictions for the hidden test rows, or numbers. No user code runs on the server. */
@@ -34,7 +37,7 @@ const challenge = (ctx: GenerationContext, draft: MlDraft, model: string, provid
 
 function fromTemplates(ctx: GenerationContext): GeneratedChallenge {
   const areaKey = ctx.areaKey ?? "model-training";
-  for (const tier of templateTiers(ML_TEMPLATES, { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
+  for (const tier of templateTiers([...ML_TEMPLATES, ...ML_ENGINEER_TEMPLATES, ...DATA_SCIENCE_ML_TEMPLATES], { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
     const fresh = tier.filter((t) => !ctx.avoidTitles.includes(t.title));
     const pool = fresh.length ? fresh : tier;
     const rng = makeRng(ctx.ticketSeed ?? hashSeed("ml"));
@@ -49,7 +52,7 @@ function fromTemplates(ctx: GenerationContext): GeneratedChallenge {
  * it (lib/workplace/ml/ai.ts). The fixed churn tickets are the safety net so a user is never left without a task.
  */
 async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
-  if (process.env.ML_AI_GENERATION !== "off") {
+  if (process.env.ML_AI_GENERATION !== "off" && !isTemplateOnlyArea(ctx.areaKey)) {
     let problem: string | undefined;
     for (let attempt = 1; attempt <= AI_TRIES; attempt++) {
       try {

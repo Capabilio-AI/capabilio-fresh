@@ -39,6 +39,7 @@ export default async function PortfolioPage() {
           statedRole={data.statedRole}
           groups={data.groups}
           arenaTasks={data.arenaTasks}
+          arenaWork={data.arenaWork}
           interviews={data.interviews}
           github={data.github}
           items={data.items}

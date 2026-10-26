@@ -44,6 +44,7 @@ export default async function PublicPortfolioPage({ params }: { params: Promise<
             statedRole={data.statedRole}
             groups={data.groups}
             arenaTasks={data.arenaTasks}
+            arenaWork={data.arenaWork}
             interviews={data.interviews}
             github={data.github}
             items={data.items}

@@ -31,11 +31,29 @@ export async function listEnabledRoles(service: SupabaseClient<Database>): Promi
   return (data ?? []).filter((r) => isServable(r.role_key));
 }
 
-/** Pure. The first enabled role whose configured keywords appear in the student's stated career. */
+/** True when `keyword` occurs in `text` starting at a word boundary, so "soc" is not found inside "associate". */
+const hasKeyword = (text: string, keyword: string): boolean => {
+  for (let i = text.indexOf(keyword); i !== -1; i = text.indexOf(keyword, i + 1)) {
+    if (i === 0 || !/[a-z0-9]/.test(text[i - 1])) return true;
+  }
+  return false;
+};
+
+/**
+ * Pure. The enabled role with the most specific keyword in the student's stated career: the longest matching keyword wins, and a tie goes to the
+ * earlier role. "Big Data Analyst" therefore reaches the Data Engineer's "big data analyst", not the Data Analyst's shorter "data analyst".
+ */
 export function matchRoleForStatedCareer(roles: DomainRoleRow[], statedRole: string | null): DomainRoleRow | null {
   if (!statedRole) return null;
   const text = statedRole.toLowerCase();
-  return roles.find((r) => r.match_keywords.some((k) => text.includes(k.toLowerCase()))) ?? null;
+  let best: { role: DomainRoleRow; length: number } | null = null;
+  for (const role of roles) {
+    for (const raw of role.match_keywords) {
+      const k = raw.toLowerCase();
+      if (k && (!best || k.length > best.length) && hasKeyword(text, k)) best = { role, length: k.length };
+    }
+  }
+  return best?.role ?? null;
 }
 
 /**

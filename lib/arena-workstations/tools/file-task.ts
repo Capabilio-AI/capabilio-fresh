@@ -4,6 +4,7 @@ import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type Ge
 import { hashSeed, makeRng } from "@/lib/workplace/rng";
 import { templateTiers } from "@/lib/workplace/tickets/pick";
 import type { CheckResult, ConfigFile, FileContent, FileDraft, FileTemplate } from "@/lib/workplace/file-tasks/types";
+import { isTemplateOnlyArea } from "../template-only";
 import { logArenaEvent } from "../log";
 
 /** The user edits files in the browser and submits them; the server runs its own checks on the text. Nothing the user writes is executed. */
@@ -59,7 +60,7 @@ export function makeFileTaskTool<K extends { label: string; file: string }>(cfg:
   }
 
   async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
-    if (process.env[cfg.aiSwitch] !== "off") {
+    if (process.env[cfg.aiSwitch] !== "off" && !isTemplateOnlyArea(ctx.areaKey)) {
       let problem: string | undefined;
       for (let attempt = 1; attempt <= AI_TRIES; attempt++) {
         try {

@@ -10,6 +10,9 @@ import type { CleanTemplate, DashboardTemplate, SheetTemplate, StatsTemplate } f
 import { INVESTIGATION_TEMPLATES } from "../investigate/templates";
 import type { InvestigationTemplate } from "../investigate/types";
 import type { Dialect } from "@/lib/arena-workstations/engines/seed-sql";
+import { KAVERI_WORLD } from "../business-docs/world";
+import { KAARYA_WORLD } from "../application-developer/world";
+import { DATA_SCIENCE_WORLD } from "../data-science/world";
 import { BRIGHTCART_PG_TEMPLATES, PG_WORLD_SETUP } from "../tickets/pg-index";
 
 /** A fictional company a role works in: one warehouse per user and the tickets that can be asked of it. */
@@ -53,6 +56,9 @@ const WORLDS: Record<string, World> = {
   "database-admin": BRIGHTCART_POSTGRES,
   "bi-developer": BRIGHTCART_POSTGRES,
   "data-engineer-sql": BRIGHTCART_POSTGRES,
+  "application-developer": KAARYA_WORLD,
+  "data-scientist": DATA_SCIENCE_WORLD,
+  "business-analyst": KAVERI_WORLD,
 };
 
 export const worldForRole = (roleKey: string | undefined): World | null => (roleKey ? (WORLDS[roleKey] ?? null) : null);

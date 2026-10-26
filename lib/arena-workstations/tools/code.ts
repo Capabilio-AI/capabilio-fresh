@@ -6,6 +6,11 @@ import { templateTiers } from "@/lib/workplace/tickets/pick";
 import { same } from "@/lib/workplace/code/compare";
 import { CODE_PROBLEMS, EXAMPLE_COUNT, type CodeContent, type CodeDraft, type CodeKey } from "@/lib/workplace/code/problems";
 import { generateAiProblem } from "@/lib/workplace/code/ai";
+import { EMBEDDED_CODE_PROBLEMS } from "@/lib/workplace/embedded/code-problems";
+import { IOT_CODE_PROBLEMS } from "@/lib/workplace/iot/code-problems";
+import { PLC_CODE_PROBLEMS } from "@/lib/workplace/plc/code-problems";
+import { APP_DEV_CODE_PROBLEMS } from "@/lib/workplace/application-developer/code-problems";
+import { isTemplateOnlyArea } from "../template-only";
 import { logArenaEvent } from "../log";
 
 /** The user's function runs in their browser on every case; they submit what it returned, and the server compares it with its own answers. */
@@ -34,7 +39,7 @@ const challenge = (ctx: GenerationContext, draft: CodeDraft, model: string, prov
 
 function fromTemplates(ctx: GenerationContext): GeneratedChallenge {
   const areaKey = ctx.areaKey ?? "fundamentals";
-  for (const tier of templateTiers(CODE_PROBLEMS, { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
+  for (const tier of templateTiers([...CODE_PROBLEMS, ...APP_DEV_CODE_PROBLEMS, ...EMBEDDED_CODE_PROBLEMS, ...IOT_CODE_PROBLEMS, ...PLC_CODE_PROBLEMS], { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
     const fresh = tier.filter((p) => !ctx.avoidTitles.some((t) => p.build(makeRng(0)).title === t));
     const pool = fresh.length ? fresh : tier;
     const rng = makeRng(ctx.ticketSeed ?? hashSeed("code"));
@@ -49,7 +54,7 @@ function fromTemplates(ctx: GenerationContext): GeneratedChallenge {
  * lib/workplace/code/ai.ts). If that keeps failing, the fixed problems are a safety net so the user is never left without a ticket.
  */
 async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
-  if (process.env.CODE_AI_GENERATION !== "off") {
+  if (process.env.CODE_AI_GENERATION !== "off" && !isTemplateOnlyArea(ctx.areaKey)) {
     let problem: string | undefined;
     for (let attempt = 1; attempt <= AI_TRIES; attempt++) {
       try {
