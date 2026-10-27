@@ -12,7 +12,7 @@ export function PendingApprovalCard({ organisationName, orgType, onBack }: Pendi
   const steps = [
     { label: "Application submitted", done: true },
     { label: "Email confirmed", done: true },
-    { label: "Manual approval by our team", done: false },
+    { label: "Review by our team", done: false },
   ];
   return (
     <CardChrome label="capabilio / approval-status">
@@ -22,8 +22,8 @@ export function PendingApprovalCard({ organisationName, orgType, onBack }: Pendi
         </div>
         <h1 className="mt-4 font-lp-display text-lp-headline-sm font-semibold text-lp-text-ink">Approval pending</h1>
         <p className="mt-2 font-lp-body text-lp-body-sm leading-relaxed text-lp-text-muted">
-          {organisationName ? <strong className="text-lp-text-ink">{organisationName}</strong> : "Your organisation"} is waiting for manual
-          approval. Nothing is wrong &mdash; you can sign in once we have approved it.
+          {organisationName ? <strong className="text-lp-text-ink">{organisationName}</strong> : "Your organisation"} is waiting for review.
+          Nothing is wrong &mdash; you can sign in once we have approved it. Staff who register with their college email are approved automatically.
           {orgType === "company" && " Company accounts aren\u2019t open yet; we\u2019ll be in touch."}
         </p>
       </div>
