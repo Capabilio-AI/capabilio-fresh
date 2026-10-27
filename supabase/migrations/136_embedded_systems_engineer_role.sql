@@ -1,9 +1,7 @@
 -- ECE-01 Embedded Systems Engineer role (wave 2). Firmware LOGIC is simulated: the learner's function runs in their browser (code workstation, client-run)
 -- against scripted virtual inputs (buttons, sensors, ticks) and the server compares the returned pin/serial traces. It is not a real MCU, IDE or
 -- debugger. Circuit calculations use the calc workstation. Templates live in lib/workplace/embedded and lib/workplace/calc/embedded.ts.
-insert into public.careers (key, name, category, description) values
-  ('embedded-systems-engineer', 'Embedded Systems Engineer', 'Electronics', 'Writes the logic that runs on microcontrollers: button and LED state machines, sensor scaling, serial frames, timing, and the circuit maths around them.')
-on conflict (key) do nothing;
+-- No careers row: 'Embedded Systems Engineer' already exists as career 'ai-embedded-systems-engineer' (careers.name is unique), so inserting one would abort.
 
 insert into public.arena_domain_roles (role_key, display_name, parent_skill_name, match_keywords) values
   ('embedded-systems-engineer', 'Embedded Systems Engineer', 'Embedded Systems', array['embedded systems engineer', 'embedded engineer', 'embedded software engineer', 'embedded developer', 'firmware engineer', 'firmware developer', 'embedded firmware engineer'])
