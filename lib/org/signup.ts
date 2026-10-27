@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications/notify";
 import { staffWithPermission } from "@/lib/notifications/audiences";
+import { decideAutoApproval } from "./domain-verification";
 
 export const ORG_TYPES = ["institution", "company"] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
@@ -69,7 +70,8 @@ export async function registerOrganisation(
     return { ok: false, status: 500, message: "We couldn't create your organisation account. Please try again." };
   }
   const row = (created as { institution_id: string; membership_id: string; matched_existing: boolean }[] | null)?.[0];
-  if (row?.matched_existing && input.orgType === "institution") {
+  const activated = row ? await applyDomainVerification(service, input, row) : false;
+  if (row?.matched_existing && input.orgType === "institution" && !activated) {
     // someone is asking to join a college that is already on Capabilio: its approvers need to know
     await notify(service, {
       userIds: await staffWithPermission(service, row.institution_id, "members"),
@@ -82,4 +84,31 @@ export async function registerOrganisation(
     });
   }
   return { ok: true };
+}
+
+/**
+ * Verifies a new college's domain, or activates faculty who join a college on its verified domain (lib/org/domain-verification.ts).
+ * Returns true when the membership was activated. A failure here only leaves the account pending for manual review.
+ */
+async function applyDomainVerification(
+  service: SupabaseClient,
+  input: OrgSignupInput,
+  row: { institution_id: string; membership_id: string; matched_existing: boolean }
+): Promise<boolean> {
+  if (input.orgType !== "institution") return false;
+  const { data: inst } = await service.from("institutions").select("verified_domain").eq("id", row.institution_id).maybeSingle();
+  const decision = decideAutoApproval({
+    email: input.email,
+    role: roleFor(input),
+    orgType: input.orgType,
+    matchedExisting: row.matched_existing,
+    institutionVerifiedDomain: (inst as { verified_domain: string | null } | null)?.verified_domain ?? null,
+  });
+  if (decision.verifyDomain) {
+    // the unique index lets one college hold a domain; if another already does, this one just stays unverified
+    await service.from("institutions").update({ verified_domain: decision.verifyDomain, domain_verified_at: new Date().toISOString() }).eq("id", row.institution_id).is("verified_domain", null);
+  }
+  if (!decision.activate) return false;
+  const { error } = await service.from("institution_memberships").update({ status: "active" }).eq("id", row.membership_id).eq("status", "pending");
+  return !error;
 }

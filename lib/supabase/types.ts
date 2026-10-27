@@ -2949,12 +2949,14 @@ export type Database = {
           college_code: string | null
           college_type: Database["public"]["Enums"]["college_type"]
           created_at: string
+          domain_verified_at: string | null
           id: string
           name: string
           org_type: string
           slug: string
           state: string | null
           updated_at: string
+          verified_domain: string | null
         }
         Insert: {
           academic_start_month?: number
@@ -2962,12 +2964,14 @@ export type Database = {
           college_code?: string | null
           college_type?: Database["public"]["Enums"]["college_type"]
           created_at?: string
+          domain_verified_at?: string | null
           id?: string
           name: string
           org_type?: string
           slug: string
           state?: string | null
           updated_at?: string
+          verified_domain?: string | null
         }
         Update: {
           academic_start_month?: number
@@ -2975,12 +2979,14 @@ export type Database = {
           college_code?: string | null
           college_type?: Database["public"]["Enums"]["college_type"]
           created_at?: string
+          domain_verified_at?: string | null
           id?: string
           name?: string
           org_type?: string
           slug?: string
           state?: string | null
           updated_at?: string
+          verified_domain?: string | null
         }
         Relationships: []
       }
