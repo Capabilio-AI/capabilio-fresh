@@ -111,7 +111,8 @@ export async function saveExtractionAsImport(service: Service, input: PersistInp
     input.courses.forEach((c, i) => c.parsed.units.forEach((u) => u.topics.forEach((text, k) => topicRows.push({ unit_id: unitId.get(`${courseIds[i]}|${u.unitNo}`)!, course_id: courseIds[i], text, sort_order: k }))));
     await insertMany(service, "unit_topics", topicRows);
 
-    await insertMany(service, "program_outcomes", input.outcomes.map((o, i): Insert<"program_outcomes"> => ({ import_id: importId, kind: o.kind, code: o.code, text: o.text, sort_order: i })));
+    const poSeen = new Set<string>();
+    await insertMany(service, "program_outcomes", input.outcomes.filter((o) => !poSeen.has(o.code) && poSeen.add(o.code)).map((o, i): Insert<"program_outcomes"> => ({ import_id: importId, kind: o.kind, code: o.code, text: o.text, sort_order: i })));
 
     const outcomeId = new Map(outcomes.map((o) => [`${o.course_id}|${o.code}`, o.id]));
     const courseMaps: Insert<"course_skill_mappings">[] = [];

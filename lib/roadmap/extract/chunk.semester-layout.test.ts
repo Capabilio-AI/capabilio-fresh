@@ -69,3 +69,77 @@ describe("detectRegulation: running-header style", () => {
     expect(detectRegulation("R23 B.Tech COMPUTER SCIENCE COURSE STRUCTURE")).toEqual({ regulation: "R23", program: "B.Tech" });
   });
 });
+
+import { parseSemesterHeading } from "./semester-heading";
+
+describe("parseSemesterHeading: other colleges' phrasings", () => {
+  const n = (s: string) => parseSemesterHeading(s)?.n ?? null;
+  it("reads the common ways a semester is written", () => {
+    expect([n("B.TECH, I SEMESTER"), n("SEMESTER - III"), n("3rd Semester"), n("Semester 4"), n("Sem V"), n("First Semester"), n("B.E. VI SEM"), n("B.TECH: II SEMESTER")]).toEqual([1, 3, 3, 4, 5, 1, 6, 2]);
+  });
+  it("leaves year-based headings and prose alone", () => {
+    expect(n("II Year I Semester")).toBeNull();
+    expect(n("Semester 9")).toBeNull();
+    expect(n("Students must register for each semester before the deadline announced by the controller of examinations.")).toBeNull();
+    expect(n("Seminar on emerging technologies")).toBeNull();
+  });
+});
+
+describe("chunkSyllabus: another college's headings", () => {
+  const pages = [
+    `SCHEME OF INSTRUCTION
+SEMESTER - III
+Sl.No Subject Code Subject Name L T P Credits
+1 CS301 Data Structures 3 0 0 3
+2 CS302 Discrete Mathematics 3 1 0 4
+Total Credits 7`,
+    `Semester III
+Course Title: Data Structures
+Course Code: CS301
+Course Outcomes:
+CO1: Implement linked lists.`,
+    `Semester I examinations will be held in December. Nothing here is a course.
+Please contact the office.`,
+  ];
+  it("finds the table and the labelled course section without any college-specific rule", () => {
+    const { tables, courses } = chunkSyllabus(pages);
+    expect(tables.map((t) => [t.year, t.semester])).toEqual([[2, 1]]);
+    expect(courses.map((c) => c.title)).toEqual(["Data Structures"]);
+  });
+});
+
+import { parseCourseSection } from "./section";
+import { stripRepeatedChrome } from "./chunk";
+
+describe("parseCourseSection: CO-PO matrix with numeric levels", () => {
+  const lines = `B.TECH I SEMESTER ES L T P C
+3 0 0 3
+23CS1T04 INTRODUCTION TO PROGRAMMING
+Course Outcomes: A student after completion of the course will be able to
+CO1: Understand basics of computers and algorithms.
+CO2: Analyze a problem and develop a program.
+COURSE ARTICULATION MATRIX (Correlation between COs, POs & PSOs):
+COs PO 1 PO 2 PO 3 PO 4
+CO1 3 3 - -
+CO2 3 3 3 -
+Note: Enter Correlation Levels 1 or 2 or 3. If there is no correlation, put '-'1- Slight (Low), 2 - Moderate
+(Medium), 3 - Substantial (High).
+B.Tech - Computer Science & Engineering	Page 14`.split("\n");
+  it("keeps exactly the printed outcomes, with unique codes and no matrix or footer text", () => {
+    const { outcomes } = parseCourseSection(lines);
+    expect(outcomes.map((o) => o.code)).toEqual(["CO1", "CO2"]);
+    expect(outcomes[1].text).toBe("Analyze a problem and develop a program.");
+  });
+});
+
+describe("stripRepeatedChrome", () => {
+  const topics = ["trees", "graphs", "sorting", "hashing", "queues", "stacks", "lists", "heaps"];
+  it("removes a header/footer that repeats on most pages and keeps page content", () => {
+    const pages = topics.map((t, i) => `DVR & Dr. HS MIC College of Technology MIC23 (w.e.f. 2023-24)\n(Autonomous)\nAbout ${t} first\nAbout ${t} second\nAbout ${t} third\nB.Tech - CSE Page ${i + 1}`);
+    expect(stripRepeatedChrome(pages)[3]).toBe("About hashing first\nAbout hashing second\nAbout hashing third");
+  });
+  it("leaves short documents untouched", () => {
+    const pages = ["Header\nBody", "Header\nBody"];
+    expect(stripRepeatedChrome(pages)).toEqual(pages);
+  });
+});

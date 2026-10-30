@@ -14,7 +14,7 @@ const POLL_MS = 2500;
 
 const FAILURE: Record<ExtractionErrorCode, string> = {
   no_text_layer: "We couldn't read this file — it looks like a scan with no selectable text. Start the curriculum by hand, or upload a digitally generated PDF.",
-  unrecognised_format: "We couldn't find semester tables in this PDF. Start the curriculum by hand instead.",
+  unrecognised_format: "We couldn't find semester tables in this PDF. Fill in the downloadable template (.csv) above, which works for any college, or start the curriculum by hand.",
   unreadable: "We couldn't read this file. It may be damaged, password-protected or too long.",
   ai_unavailable: "The reader is unavailable right now. Please try again in a few minutes.",
   internal: "The extraction didn't finish. Please try again.",

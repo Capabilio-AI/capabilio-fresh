@@ -54,15 +54,17 @@ export async function runExtraction(
         model: EXTRACTION_MODEL, version: EXTRACTION_VERSION,
       });
     // A failed save deletes its own draft, so one retry is safe (it rides out a dropped connection among the ~15 writes).
+    let saveError: string | null = null;
     for (let attempt = 1; attempt <= SAVE_ATTEMPTS && !importId; attempt++) {
       try {
         importId = await save();
       } catch (error) {
+        saveError = (error instanceof Error ? error.message : String(error)).slice(0, 500);
         console.error(`[curriculum-extraction] saving the draft import failed (attempt ${attempt}/${SAVE_ATTEMPTS}) for extraction ${job.id}:`, error instanceof Error ? error.message : error);
       }
     }
     if (!importId) warnings.push("The detailed curriculum draft (outcomes, units, labs) could not be saved. The subject list below is unaffected.");
-    await updateExtraction(service, job.id, { status: "ready", result: { rows: built.rows, warnings: [...new Set(warnings)], importId }, import_id: importId, error_code: null });
+    await updateExtraction(service, job.id, { status: "ready", result: { rows: built.rows, warnings: [...new Set(warnings)], importId, ...(saveError && !importId ? { saveError } : {}) }, import_id: importId, error_code: null });
     // The college only uploads the PDF: Capabilio now derives outcomes where the syllabus prints none and suggests skills per course and unit.
     // Bounded by what is left of this job; the college's page and the daily job continue it until it is done.
     if (importId && !depsOverride) {

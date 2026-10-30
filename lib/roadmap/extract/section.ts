@@ -61,7 +61,9 @@ const H = {
 };
 const LTPC_NUMBERS = /^(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?|-)$/;
 // the CO/PO mapping matrix ("PO1 PO2 …" header, "CO1 H M L …" rows) and the "Note:" lines are never content
-const NOISE = /^(PO\s?\d+\b[\sPOS\d]*$|CO\s?\d+\s+[HML-](\s+[HML-])+\s*$|Note\s*:)/i;
+// The matrix rows carry H/M/L or 1-3 correlation levels ("CO1 3 3 - -"); page footers ("B.Tech - CSE  Page 14") and rules are never content.
+const NOISE = /^(PO\s?\d+\b[\sPOS\d]*$|COs?\s+PO\s?\d.*$|CO\s?\d+\s+[HML123-](\s+[HML123-])+\s*$|Note\s*:|_{4,}\s*$|B\.?\s?Tech\b.*\bPage\s+\d+)/i;
+const MATRIX_HEADING = /^COURSE ARTICULATION MATRIX\b/i;
 const OUTCOME_ITEM = /^(CO\s?(\d+)\s*[:.–—-]|\d{1,2}\s*[.)]|[•●▪·*-])\s*(.*)$/i;
 const OUTCOME_STOP = /^(PO\s?\d+\b|UNIT\b|List of Experiments|Course Content|Text ?Books?|Reference|Syllabus|Experiment|Week\b)/i;
 
@@ -139,6 +141,8 @@ export function parseCourseSection(sectionLines: string[]): ParsedSection {
       if (LTPC_NUMBERS.test(lines[i + 1] ?? "")) i++;
       continue;
     }
+    // everything after the CO-PO matrix heading up to the next real heading is the matrix, not an outcome
+    if (MATRIX_HEADING.test(t)) { mode = "none"; continue; }
     if (NOISE.test(t)) continue;
 
     let m: RegExpExecArray | null;
@@ -165,10 +169,13 @@ export function parseCourseSection(sectionLines: string[]): ParsedSection {
     if (m) raw.push({ code: m[2] ? `CO${m[2]}` : null, text: (m[3] ?? "").trim() });
     else if (raw.length > 0) raw[raw.length - 1].text += ` ${t}`;
   }
+  const seenCodes = new Set<string>();
   raw.slice(0, 12).forEach((r, i) => {
     const k = /\(\s*([KL]\d)\s*\)\s*$/i.exec(r.text);
     const text = clean(r.text.replace(/\s*\(\s*[KL]\d\s*\)\s*$/i, ""));
-    if (text.length > 8) outcomes.push({ code: r.code ?? `CO${i + 1}`, text, bloom: bloomFromK(k?.[1]) });
+    const code = r.code ?? `CO${i + 1}`;
+    // the database keeps one outcome per code per course
+    if (text.length > 8 && !seenCodes.has(code)) { seenCodes.add(code); outcomes.push({ code, text, bloom: bloomFromK(k?.[1]) }); }
   });
 
   const objectives: string[] = [];
