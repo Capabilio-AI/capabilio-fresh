@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getOrgContext } from "@/lib/org/context";
 import { orgNavGroupsFor, ROLE_LABEL } from "@/lib/org/nav";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isInstitutionApproved } from "@/lib/org/public-org";
 import { OrgShell } from "@/components/org/OrgShell";
 import { OrgTheme } from "@/components/org/OrgTheme";
 
@@ -12,9 +14,10 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   const ctx = await getOrgContext(supabase, user.id);
   if (!ctx) redirect("/login?path=organisation");
   if (ctx.kind === "student") redirect("/dashboard");
+  const approved = await isInstitutionApproved(createServiceClient(), ctx.institutionId);
   return (
     <OrgTheme workspace>
-      <OrgShell institutionName={ctx.institutionName} roleLabel={ROLE_LABEL[ctx.role] ?? ctx.role} groups={orgNavGroupsFor(ctx.permissions, ctx.role)} publicHref={`/o/${ctx.institutionSlug}`}>
+      <OrgShell approved={approved} institutionName={ctx.institutionName} roleLabel={ROLE_LABEL[ctx.role] ?? ctx.role} groups={orgNavGroupsFor(ctx.permissions, ctx.role)} publicHref={`/o/${ctx.institutionSlug}`}>
         {children}
       </OrgShell>
     </OrgTheme>

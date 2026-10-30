@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ALL_PERMISSION_KEYS, effectivePermissions } from "./roles";
-import { checkGrant, grantablePermissions, hashToken, inviteUrl, isInvitationUsable, joinUrl, newInviteToken, newJoinCode } from "./team";
+import { checkGrant, checkInviterStillMayGrant, grantablePermissions, hashToken, inviteUrl, isInvitationUsable, joinUrl, newInviteToken, newJoinCode } from "./team";
 import { AcceptInviteSchema, InviteSchema, JoinLinkSchema, MemberPermissionsSchema, PostSchema, ProfileSchema } from "./schemas";
 import { MAX_MEDIA_BYTES, mediaPath, ownPathFromPublicUrl, sniffDocument, sniffImage } from "./media";
 import { initialsOf, timeAgo } from "./format";
@@ -10,6 +10,23 @@ import { placementsToCsv } from "./outcomes";
 const admin = { kind: "admin" as const, permissions: effectivePermissions("principal", null) };
 const faculty = { kind: "staff" as const, permissions: effectivePermissions("faculty", null) };
 const withMembers = { kind: "staff" as const, permissions: effectivePermissions("faculty", ["students", "classroom", "members"]) };
+
+describe("inviter standing at accept time", () => {
+  const inv = { role: "faculty", permissions: ["students", "classroom"] };
+  it("accepts an active inviter who still holds what they granted", () => {
+    expect(checkInviterStillMayGrant({ role: "faculty", status: "active", permissions: ["students", "classroom", "chat"] }, inv).ok).toBe(true);
+    expect(checkInviterStillMayGrant({ role: "principal", status: "active", permissions: null }, { role: "vice_principal", permissions: null }).ok).toBe(true);
+  });
+  it("rejects a missing, removed or pending inviter", () => {
+    expect(checkInviterStillMayGrant(null, inv).ok).toBe(false);
+    expect(checkInviterStillMayGrant({ role: "principal", status: "revoked", permissions: null }, inv).ok).toBe(false);
+    expect(checkInviterStillMayGrant({ role: "principal", status: "pending", permissions: null }, inv).ok).toBe(false);
+  });
+  it("rejects an inviter demoted below what they granted", () => {
+    expect(checkInviterStillMayGrant({ role: "faculty", status: "active", permissions: ["students"] }, inv).ok).toBe(false);
+    expect(checkInviterStillMayGrant({ role: "faculty", status: "active", permissions: null }, { role: "vice_principal", permissions: null }).ok).toBe(false);
+  });
+});
 
 describe("invitation tokens", () => {
   it("are long, unique and stored only as a hash", () => {

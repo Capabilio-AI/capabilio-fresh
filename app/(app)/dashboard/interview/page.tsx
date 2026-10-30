@@ -51,7 +51,7 @@ export default async function InterviewPage() {
               className="mt-2 flex cursor-not-allowed items-center gap-2 rounded-lg bg-[var(--m-ink)]/40 px-4 py-2.5 font-lp-body text-[13px] font-semibold text-white"
             >
               <MessagesSquare size={15} />
-              Opens in your final two years
+              Opens in your final year (4-1)
             </button>
           </div>
         )}

@@ -78,13 +78,14 @@ export function summarizeProjects(projects: number, groups: Pick<GroupRow, "stat
 
 export async function loadInsights(service: SupabaseClient<Database>, institutionId: string) {
   const db = untyped(service);
-  const { data: students } = await service
-    .from("institution_memberships")
-    .select("user_id, branch, end_year, goal_state")
-    .eq("institution_id", institutionId)
-    .eq("role", "student")
-    .eq("status", "active");
-  const projects = ((await db.from("class_projects").select("id").eq("institution_id", institutionId)).data ?? []) as Pick<ProjectRow, "id">[];
+  const [studentsRes, projectsRes] = await Promise.all([
+    service.from("institution_memberships").select("user_id, branch, end_year, goal_state").eq("institution_id", institutionId).eq("role", "student").eq("status", "active"),
+    db.from("class_projects").select("id").eq("institution_id", institutionId),
+  ]);
+  if (studentsRes.error) throw new Error(`Insights load failed: ${studentsRes.error.message}`);
+  if (projectsRes.error) throw new Error(`Insights load failed: ${projectsRes.error.message}`);
+  const students = studentsRes.data;
+  const projects = (projectsRes.data ?? []) as Pick<ProjectRow, "id">[];
   const ids = projects.map((p) => p.id);
   const [groupsRes, membersRes, materialsRes] = await Promise.all([
     ids.length ? db.from("class_project_groups").select("id, status").in("project_id", ids) : Promise.resolve({ data: [] }),

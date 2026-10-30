@@ -21,3 +21,9 @@ export const initialsOf = (name: string): string =>
     .slice(0, 2)
     .map((w) => w[0].toUpperCase())
     .join("") || "•";
+
+/** Pure. The calendar date (YYYY-MM-DD) in India, whatever the server's timezone: "today" for deadlines and visit dates. */
+export const istDate = (d: Date = new Date()): string => d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+/** Pure. A date-only deadline (YYYY-MM-DD) closes at the end of that day in India, returned as a UTC ISO instant. */
+export const endOfDayIst = (date: string): string => new Date(`${date}T23:59:00+05:30`).toISOString();

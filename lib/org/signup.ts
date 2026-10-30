@@ -70,7 +70,10 @@ export async function registerOrganisation(
     return { ok: false, status: 500, message: "We couldn't create your organisation account. Please try again." };
   }
   const row = (created as { institution_id: string; membership_id: string; matched_existing: boolean }[] | null)?.[0];
-  const activated = row ? await applyDomainVerification(service, input, row) : false;
+  // The domain is only proof of anything once the registrant has clicked the confirmation link in that mailbox, so the claim
+  // and the auto-activation wait for confirmDomainVerification (auth/confirm). Without it anyone could squat a college's
+  // domain by registering with an address they never owned.
+  const activated = row && data.user.email_confirmed_at ? await applyDomainVerification(service, input, row) : false;
   if (row?.matched_existing && input.orgType === "institution" && !activated) {
     // someone is asking to join a college that is already on Capabilio: its approvers need to know
     await notify(service, {
@@ -93,13 +96,14 @@ export async function registerOrganisation(
 async function applyDomainVerification(
   service: SupabaseClient,
   input: OrgSignupInput,
-  row: { institution_id: string; membership_id: string; matched_existing: boolean }
+  row: { institution_id: string; membership_id: string; matched_existing: boolean },
+  role: string = roleFor(input)
 ): Promise<boolean> {
   if (input.orgType !== "institution") return false;
   const { data: inst } = await service.from("institutions").select("verified_domain").eq("id", row.institution_id).maybeSingle();
   const decision = decideAutoApproval({
     email: input.email,
-    role: roleFor(input),
+    role,
     orgType: input.orgType,
     matchedExisting: row.matched_existing,
     institutionVerifiedDomain: (inst as { verified_domain: string | null } | null)?.verified_domain ?? null,
@@ -111,4 +115,33 @@ async function applyDomainVerification(
   if (!decision.activate) return false;
   const { error } = await service.from("institution_memberships").update({ status: "active" }).eq("id", row.membership_id).eq("status", "pending");
   return !error;
+}
+
+/**
+ * Runs when a registrant confirms their email (auth/confirm): only now does the address prove they control that domain.
+ * A founder (already active) verifies the college's domain; a faculty member who is pending on a college whose verified
+ * domain matches is activated. Anything else stays for manual review. Never throws: a failure just leaves manual review.
+ */
+export async function confirmDomainVerification(service: SupabaseClient, user: { id: string; email?: string | null }): Promise<void> {
+  if (!user.email) return;
+  try {
+    const { data } = await service
+      .from("institution_memberships")
+      .select("id, institution_id, role, status")
+      .eq("user_id", user.id)
+      .in("role", [...INSTITUTION_DESIGNATIONS])
+      .in("status", ["active", "pending"])
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const m = (data as { id: string; institution_id: string; role: string; status: string }[] | null)?.[0];
+    if (!m) return;
+    await applyDomainVerification(
+      service,
+      { orgType: "institution", email: user.email } as OrgSignupInput,
+      { institution_id: m.institution_id, membership_id: m.id, matched_existing: m.status === "pending" },
+      m.role
+    );
+  } catch (error) {
+    console.error("domain verification on confirm failed", error);
+  }
 }

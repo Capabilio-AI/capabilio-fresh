@@ -108,3 +108,17 @@ export function interviewUnlocked(stage: "student" | "graduate" | "professional"
   if (stage === "graduate") return !enforce || planAllows(planId, "aiInterview");
   return true;
 }
+
+/** AI mock interviews included per plan (the plan rows above); an unchosen plan counts as Free. */
+const INTERVIEW_QUOTA: Record<PlanId, number> = { free: 1, pro: 8, elite: 15 };
+
+/** True when the student has used every interview their plan includes. Never true while plans are not enforced. */
+export function interviewQuotaReached(used: number, planId: unknown, enforce: boolean = ENFORCE_PLANS): boolean {
+  if (!enforce) return false;
+  return used >= INTERVIEW_QUOTA[isPlanId(planId) ? planId : "free"];
+}
+
+/** Why a plan cannot be saved right now, or null. Paid plans need a payment record, which does not exist yet, so once plans are enforced only Free can be chosen. */
+export function planSelectionError(planId: PlanId, enforce: boolean = ENFORCE_PLANS): string | null {
+  return enforce && planId !== "free" ? "Payments are not available yet. Choose the Free plan for now." : null;
+}

@@ -18,7 +18,10 @@ export async function GET() {
 
   const service = createServiceClient();
   const { data: ledger, error } = await untyped(service).from("student_career_elo").select("student_id, rating");
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[arena/domain/leaderboard] ledger read failed:", error);
+    return NextResponse.json({ error: "Could not load the leaderboard." }, { status: 500 });
+  }
   const best = new Map<string, number>();
   for (const r of (ledger ?? []) as { student_id: string; rating: number }[]) best.set(r.student_id, Math.max(best.get(r.student_id) ?? 0, r.rating));
   if (best.size === 0) return NextResponse.json({ entries: [] });

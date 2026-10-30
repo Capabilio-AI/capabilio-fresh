@@ -24,7 +24,10 @@ export async function POST(request: Request) {
     p_section: parsed.data.section,
     p_question_count: 10,
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    console.error("[arena/start] start_arena_challenge failed:", error);
+    return NextResponse.json({ error: "Could not start the challenge." }, { status: 400 });
+  }
 
   return NextResponse.json(data);
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { z } from "zod";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { listOpenOpportunities } from "@/lib/launchpad/opportunities";
@@ -16,7 +17,8 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   let initial = null;
   let notFound = false;
   if (job) {
-    const opportunity = (await listOpenOpportunities(supabase)).find((o) => o.id === job);
+    const id = z.string().uuid().safeParse(job);
+    const opportunity = id.success ? (await listOpenOpportunities(supabase, new Date(), id.data))[0] : undefined;
     if (opportunity) initial = await loadPreparation(createServiceClient(), user.id, { title: `${opportunity.role}, ${opportunity.company}`, skills: opportunity.skills });
     else notFound = true;
   }

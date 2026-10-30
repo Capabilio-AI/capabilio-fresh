@@ -3,6 +3,7 @@ import Link from "next/link";
 import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { VISIT_STATUS } from "@/lib/org/visits";
+import { istDate } from "@/lib/org/format";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Pill } from "@/components/org/ui";
 import { GroupTitle, Initial } from "@/components/org/widgets";
@@ -23,19 +24,26 @@ interface VisitRow {
 
 export default async function PlacementsPage() {
   const { ctx, service } = await orgPageContext("postPlacement");
-  const { data } = await untyped(service)
+  const { data, error } = await untyped(service)
     .from("opportunities")
     .select("id, company, role, location, opportunity_type, drive_date, drive_status, ctc_offered, deadline, created_at")
     .eq("institution_id", ctx.institutionId)
     .order("created_at", { ascending: false });
+  if (error) throw new Error(`Visits load failed: ${error.message}`);
   const visits = (data ?? []) as VisitRow[];
   const { data: apps } = visits.length ? await service.from("applications").select("opportunity_id, status").in("opportunity_id", visits.map((d) => d.id)) : { data: [] };
-  const countFor = (id: string) => {
-    const mine = (apps ?? []).filter((a) => a.opportunity_id === id);
-    return { registered: mine.length, review: mine.filter((a) => a.status === "submitted").length, selected: mine.filter((a) => a.status === "accepted").length };
-  };
+  // tallied once per page load, not once per lookup
+  const counts = new Map<string, { registered: number; review: number; selected: number }>();
+  for (const a of apps ?? []) {
+    const c = counts.get(a.opportunity_id) ?? { registered: 0, review: 0, selected: 0 };
+    c.registered += 1;
+    if (a.status === "submitted") c.review += 1;
+    if (a.status === "accepted") c.selected += 1;
+    counts.set(a.opportunity_id, c);
+  }
+  const countFor = (id: string) => counts.get(id) ?? { registered: 0, review: 0, selected: 0 };
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = istDate();
   const isDone = (d: VisitRow) => d.drive_status === "completed" || d.drive_status === "cancelled" || (d.drive_date !== null && d.drive_date < today && d.drive_status !== "registration_open");
   const lanes = [
     { title: "Needs your review", items: visits.filter((d) => !isDone(d) && countFor(d.id).review > 0) },

@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
-  const limit = await checkRateLimit(auth.userId, { bucket: "challenge_attempt_ai_help", maxRequests: 6, windowSeconds: 60 });
+  const limit = await checkRateLimit(auth.userId, { bucket: "challenge_attempt_ai_help", maxRequests: 6, windowSeconds: 60, failClosed: true });
   if (!limit.allowed) return rateLimitedResponse(limit.remaining);
 
   const body = Body.safeParse(await request.json().catch(() => ({})));

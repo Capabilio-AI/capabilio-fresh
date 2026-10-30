@@ -38,17 +38,15 @@ function daysSince(iso: string): number {
 export default async function CodeDnaDetailPage() {
   const { supabase, user } = await requireAuthedUser();
 
-  const { data: connection } = await supabase
-    .from("github_connections")
-    .select("username, profile_url, code_dna_score, recruiter_summary, last_scanned_at, repositories_analyzed")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const { data: repoRows } = await supabase
-    .from("github_repositories")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("stars", { ascending: false });
+  const [{ data: connection }, { data: repoRows }] = await Promise.all([
+    supabase
+      .from("github_connections")
+      .select("username, profile_url, code_dna_score, recruiter_summary, last_scanned_at, repositories_analyzed")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    // '*' kept: rowToFullRepoAnalysis and the signal derivers read most of the row
+    supabase.from("github_repositories").select("*").eq("user_id", user.id).order("stars", { ascending: false }),
+  ]);
 
   const repos = repoRows ?? [];
   const repoIds = repos.map((r) => r.id);

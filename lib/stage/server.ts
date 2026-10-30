@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
 import type { PlanId } from "@/lib/plans/catalog";
@@ -43,17 +44,17 @@ async function advance(userId: string, to: CareerStage, extra: Record<string, un
  * The profile's current stage. A current student whose programme has ended is moved to graduate right here, so the path
  * changes on the very next request with nobody pressing anything.
  */
-export async function getStageState(userId: string): Promise<StageState> {
+export const getStageState = cache(async (userId: string): Promise<StageState> => {
   const { data } = await db().from("profiles").select("student_status, plan_id, employer_name, job_title, primary_role").eq("id", userId).maybeSingle();
   const state = toState(data as ProfileRow | null);
   if (state.stage !== "student" || (data as ProfileRow | null)?.primary_role !== "student") return state;
 
-  const { data: memberships } = await db().from("institution_memberships").select("end_year").eq("user_id", userId);
+  const { data: memberships } = await db().from("institution_memberships").select("end_year").eq("user_id", userId).eq("role", "student").eq("status", "active"); // pending/revoked/staff rows must not graduate someone (the move is one-way)
   const years = ((memberships ?? []) as { end_year: number | null }[]).map((m) => m.end_year).filter((y): y is number => y != null);
   // every programme on file must be over, so a second degree still running keeps them a student
   if (years.length === 0 || !years.every((y) => hasProgrammeEnded(y))) return state;
   return (await advance(userId, "graduate")) ? { ...state, stage: "graduate" } : state;
-}
+});
 
 /** "I have finished my studies": a student becomes a recently graduated user straight away. */
 export const markGraduated = (userId: string) => advance(userId, "graduate");

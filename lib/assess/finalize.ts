@@ -27,7 +27,8 @@ async function sessionObsBySection(db: Db, sessionId: string): Promise<Record<st
   return out;
 }
 
-export async function submitSession(db: Db, userId: string, sessionId: string): Promise<AssessmentResult> {
+/** `onCompleted` fires only when THIS call finalised the session (not for an idempotent re-submit or a lost race). */
+export async function submitSession(db: Db, userId: string, sessionId: string, onCompleted?: (result: AssessmentResult) => void): Promise<AssessmentResult> {
   const session = await loadSession(db, userId, sessionId);
   if (session.status === "COMPLETED" && session.result) return session.result as AssessmentResult;
 
@@ -59,6 +60,7 @@ export async function submitSession(db: Db, userId: string, sessionId: string): 
     await advanceOnboarding(db, userId, "PROFILE_READY");
     await track(db, userId, "career_assessment_completed", { sessionId, careerId: result.career?.id, readiness: result.readiness, elo: result.elo?.newElo });
   }
+  onCompleted?.(result);
   return result;
 }
 

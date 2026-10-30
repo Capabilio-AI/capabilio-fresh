@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -39,6 +39,7 @@ export function JsonForm({
   resetOnSuccess?: boolean;
 }) {
   const router = useRouter();
+  const formId = useId();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -87,7 +88,7 @@ export function JsonForm({
   return (
     <form onSubmit={onSubmit} className="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2" noValidate>
       {fields.map((f) => {
-        const id = `${action}-${f.name}`;
+        const id = `${formId}-${f.name}`;
         const type = f.type ?? "text";
         return (
           <div key={f.name} className={type === "textarea" || type === "checkbox" ? "md:col-span-2" : undefined}>

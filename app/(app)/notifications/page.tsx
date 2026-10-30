@@ -37,7 +37,7 @@ export default async function NotificationsPage() {
 
   let dashboardData;
   try {
-    dashboardData = await getDashboardData(supabase, user.id);
+    dashboardData = await getDashboardData(supabase, user.id, { lenient: true }); // readiness no longer depends on the legacy assessment (same as /dashboard)
   } catch (error) {
     if (error instanceof DashboardNotReadyError) redirect("/assessment");
     throw error;

@@ -15,11 +15,17 @@ export async function POST(_request: Request, { params }: { params: Promise<{ at
   // docs/evidence-engine-audit.md -- deliberately left alone across prior
   // sessions). Evidence is written here, after it succeeds, from its own
   // row -- never by recomputing scoring logic in application code.
+  const service = createServiceClient();
+  const { data: owned } = await service.from("arena_challenge_attempts").select("user_id").eq("id", attemptId).maybeSingle();
+  if (!owned || owned.user_id !== auth.userId) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const { data, error } = await supabase.rpc("finish_arena_challenge", { p_attempt_id: attemptId });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    console.error("[arena/finish] finish_arena_challenge failed:", error);
+    return NextResponse.json({ error: "Could not finish the challenge." }, { status: 400 });
+  }
 
   try {
-    const service = createServiceClient();
     const { data: attempt } = await service
       .from("arena_challenge_attempts")
       .select("id, section, status, answered_count, correct_count, completed_at, rating_before, rating_delta, rating_after")

@@ -6,6 +6,11 @@ import { untyped } from "@/lib/org/db";
 /** Only an org admin edits the public page; `is_public` is what opts the organisation into being browsable. */
 export async function POST(request: Request) {
   return orgRoute(request, ProfileSchema, "manageProfile", async ({ ctx, service }, body) => {
+    // Changing the code re-checks every student's roll number, and a mismatch starts the account-removal clock (roll-number-cleanup cron),
+    // so it is far beyond "edit the college page": admin only, and refused before anything is written.
+    if (body.collegeCode !== undefined && ctx.kind !== "admin") {
+      return NextResponse.json({ error: "Only an admin can change the college code." }, { status: 403 });
+    }
     // logo_url / cover_image_url are deliberately absent: an upsert must not wipe pictures set by the upload route
     const { error } = await untyped(service).from("org_profiles").upsert({
       institution_id: ctx.institutionId,

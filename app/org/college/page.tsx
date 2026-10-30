@@ -5,7 +5,6 @@ import { can } from "@/lib/org/roles";
 import { loadOrgFacts, loadPlacementWall, loadPublicOrg, loadVisiblePosts } from "@/lib/org/public-org";
 import { TABS, type TabId } from "@/components/org/CollegeHeader";
 import { CollegeProfileView } from "@/components/org/CollegeProfileView";
-import { untyped, type OrgPostRow } from "@/lib/org/db";
 import { loadManagedPosts } from "@/lib/org/posts";
 
 export const metadata: Metadata = { title: "College page — Capabilio AI" };
@@ -36,11 +35,7 @@ export default async function OrgCollegePage({ searchParams }: { searchParams: P
   const ids = posts.map((p) => p.id);
   let manageable = new Set<string>();
   if (can(ctx, "publishPost") && ids.length) {
-    if (ctx.kind === "admin") manageable = new Set(ids);
-    else {
-      const { data } = await untyped(service).from("org_posts").select("id, author_membership_id").in("id", ids);
-      manageable = new Set(((data ?? []) as Pick<OrgPostRow, "id" | "author_membership_id">[]).filter((p) => p.author_membership_id === ctx.membershipId).map((p) => p.id));
-    }
+    manageable = new Set(posts.filter((p) => ctx.kind === "admin" || p.author_membership_id === ctx.membershipId).map((p) => p.id));
   }
 
   return (

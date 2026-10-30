@@ -18,8 +18,9 @@ const LABEL = new Map<string, string>(ORG_PERMISSIONS.map((p) => [p.key, p.label
 export default async function TeamPage() {
   const { ctx, service } = await orgPageContext("approveMembers");
   const h = await headers();
+  // a configured site URL wins: forwarded headers can be spoofed into the links admins share
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const origin = `${h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https")}://${host}`;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") || `${h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https")}://${host}`;
   const [team, links] = await Promise.all([loadTeam(service, ctx), loadJoinLinks(service, ctx)]);
   const grantable = [...grantablePermissions(ctx)];
   const isAdmin = ctx.kind === "admin";

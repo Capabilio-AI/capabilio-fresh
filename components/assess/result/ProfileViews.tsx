@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
 import { Lock } from "lucide-react";
 import type { CareerProfile } from "@/lib/assess/career-profile";
 import type { SkillResult } from "@/lib/assess/scoring";
 import { developmentPhrase } from "@/lib/assess/scoring";
 import { useCareerProfile } from "../hooks/useCareerProfile";
+
+// Recharts is heavy; it loads only when the skill graph is shown.
+const SkillRadar = dynamic(() => import("./SkillRadar"), { ssr: false });
 
 // Four surfaces, one object. Each view below is a pure function of CareerProfile; the wrappers feed them from useCareerProfile (the
 // same endpoint everywhere). If you ever need a number on screen, take it from `profile`; do not calculate it again.
@@ -95,15 +98,7 @@ export function SkillGraphView({ profile }: { profile: CareerProfile }) {
         <h2 id="graph-title" className="font-lp-display text-[24px] font-bold text-[var(--m-ink)]">{profile.role?.name} skill graph</h2>
         <p className="mt-1 text-[13.5px] text-[var(--m-muted)]">Every skill this role needs. The dashed outline is the level the role asks for.</p>
         <div className="mt-3 h-[26rem] w-full sm:h-[30rem]" role="img" aria-label={`Radar chart of ${profile.skills.length} skills; the list below has every value`}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={data} outerRadius="66%">
-              <PolarGrid stroke="rgb(23 19 31 / 0.14)" />
-              <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: "var(--m-muted)" }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-              <Radar name="Role target" dataKey="target" stroke="var(--m-off)" strokeDasharray="4 4" fill="none" />
-              <Radar name="You" dataKey="score" stroke="var(--m-accent)" fill="var(--m-accent)" fillOpacity={0.25} strokeWidth={2} />
-            </RadarChart>
-          </ResponsiveContainer>
+          <SkillRadar data={data} />
         </div>
       </div>
       <div className="grid gap-5 md:grid-cols-2">

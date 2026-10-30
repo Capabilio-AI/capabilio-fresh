@@ -24,7 +24,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
     p_question_index: parsed.data.questionIndex,
     p_selected_option: parsed.data.selectedOption,
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    console.error("[arena/answer] record_arena_answer failed:", error);
+    return NextResponse.json({ error: "Could not record that answer." }, { status: 400 });
+  }
 
   return NextResponse.json(data);
 }

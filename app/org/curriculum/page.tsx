@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { orgPageContext } from "@/lib/org/page";
 import { listImports } from "@/lib/curriculum/admin-data";
 import { listEnabledRoles } from "@/lib/arena-workstations/taxonomy";
 import { latestExtraction } from "@/lib/roadmap/extract/store";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { PageHeader } from "@/components/org/ui";
+import { EmptyState, PageHeader } from "@/components/org/ui";
 import { SectionTabs } from "@/components/org/SectionTabs";
 import { can } from "@/lib/org/roles";
 import { Fact, GroupTitle } from "@/components/org/widgets";
@@ -19,10 +18,8 @@ export const metadata: Metadata = { title: "Curriculum — Capabilio AI" };
 /** Inside the organisation workspace. Needs the Curriculum permission; everything is scoped to the caller's own institution. */
 export default async function OrgCurriculumPage() {
   const { ctx, service } = await orgPageContext("manageCurriculum");
-  const roles = await listEnabledRoles(service);
+  const [roles, items, students, staged] = await Promise.all([listEnabledRoles(service), listImports(service, ctx.institutionId), loadStudentRows(service, ctx.institutionId), latestExtraction(service, ctx.institutionId, ctx.userId)]);
   const role = roles[0];
-  if (!role) notFound();
-  const [items, students, staged] = await Promise.all([listImports(service, ctx.institutionId), loadStudentRows(service, ctx.institutionId), latestExtraction(service, ctx.institutionId, ctx.userId)]);
   const boards = buildBoards(items, students);
   // A finished upload already shows up as a draft in the list; the banner is only for one still running, failed, or not saved.
   const extraction = staged && (staged.status !== "ready" || !staged.result?.importId) ? staged : null;
@@ -82,7 +79,7 @@ export default async function OrgCurriculumPage() {
       )}
 
       <div id="new-curriculum">
-        <NewCurriculum extraction={extraction} roleKey={role.role_key} />
+        {role ? <NewCurriculum extraction={extraction} roleKey={role.role_key} /> : <EmptyState title="Uploads aren't available yet" body="No career roles are enabled on the platform right now, so a syllabus can't be mapped. Existing curricula below are unaffected." />}
       </div>
       <BranchBoards boards={boards} />
     </div>

@@ -43,7 +43,9 @@ export default async function DashboardPage() {
   const { supabase, user } = await requireAuthedUser();
 
   // Recently graduated and professional profiles have their own homes: no programme year, no roadmap, no Plan B.
-  const state = await getStageState(user.id);
+  // The onboarding gate is read alongside the stage (both read-only); only students use it.
+  const service = createServiceClient();
+  const [state, gate] = await Promise.all([getStageState(user.id), studentGate(service as unknown as Db, user.id)]);
   if (state.stage !== "student") {
     const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
     if (state.stage === "professional") {
@@ -54,7 +56,6 @@ export default async function DashboardPage() {
   }
 
   // A first-time student sees only the onboarding shell until the career assessment is analysed (never the full dashboard).
-  const gate = await studentGate(createServiceClient() as unknown as Db, user.id);
   if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="your dashboard" />;
 
   let data: Awaited<ReturnType<typeof getDashboardData>>;
@@ -63,15 +64,24 @@ export default async function DashboardPage() {
   let vaultItems: Awaited<ReturnType<typeof getVaultItems>>;
   let statedInterest: string | null;
   let hasSeenIntro: boolean;
+  let rollNotice: Awaited<ReturnType<typeof loadRollNumberNotice>>;
+  let direction: Awaited<ReturnType<typeof getStudentDirection>>;
+  let careerProfile: Awaited<ReturnType<typeof getCareerProfile>>;
   try {
-    const [dashboardData, skillRows, matches, vault, interest, { data: profile }] = await Promise.all([
+    const [dashboardData, skillRows, matches, vault, interest, { data: profile }, roll, dir, career] = await Promise.all([
       getDashboardData(supabase, user.id, { lenient: true }),
       getSkills(supabase, user.id),
       matchCareersForStudent(supabase, user.id),
       getVaultItems(supabase, user.id),
       getStatedCareerInterest(supabase, user.id),
       supabase.from("profiles").select("has_seen_career_direction_intro").eq("id", user.id).single(),
+      loadRollNumberNotice(service, user.id),
+      getStudentDirection(service, user.id),
+      getCareerProfile(service as unknown as Db, user.id),
     ]);
+    rollNotice = roll;
+    direction = dir;
+    careerProfile = career;
     data = dashboardData;
     skills = skillRows;
     careerMatches = matches;
@@ -85,8 +95,6 @@ export default async function DashboardPage() {
     throw error;
   }
 
-  const service = createServiceClient();
-  const [rollNotice, direction, careerProfile] = await Promise.all([loadRollNumberNotice(service, user.id), getStudentDirection(service, user.id), getCareerProfile(service as unknown as Db, user.id)]);
   const overview = buildOverview(careerProfile);
   // Plan B is asked from 3rd year onward, and never again once a real choice is saved.
   const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;

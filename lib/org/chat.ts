@@ -45,24 +45,26 @@ async function ensureGeneral(service: SupabaseClient<Database>, ctx: OrgContext)
 export async function listChannels(service: SupabaseClient<Database>, ctx: OrgContext): Promise<ChatChannel[]> {
   await ensureGeneral(service, ctx);
   const db = untyped(service);
-  const [{ data: all }, { data: mine }, { data: reads }] = await Promise.all([
+  const [{ data: all, error: allError }, { data: mine }, { data: reads }] = await Promise.all([
     db.from("org_chat_channels").select("id, institution_id, name, description, is_private").eq("institution_id", ctx.institutionId).order("created_at"),
     db.from("org_chat_channel_members").select("channel_id").eq("user_id", ctx.userId),
     db.from("org_chat_reads").select("channel_id, last_read_at").eq("user_id", ctx.userId),
   ]);
+  if (allError) throw new Error(`Channels load failed: ${allError.message}`);
   const memberOf = new Set(((mine ?? []) as { channel_id: string }[]).map((m) => m.channel_id));
   const readAt = new Map(((reads ?? []) as { channel_id: string; last_read_at: string }[]).map((r) => [r.channel_id, r.last_read_at]));
   const visible = ((all ?? []) as ChannelRow[]).filter((c) => !c.is_private || memberOf.has(c.id));
 
-  const channels: ChatChannel[] = [];
-  for (const c of visible) {
-    let q = db.from("org_chat_messages").select("id", { count: "exact", head: true }).eq("channel_id", c.id).neq("author_user_id", ctx.userId);
-    const since = readAt.get(c.id);
-    if (since) q = q.gt("created_at", since);
-    const { count } = await q;
-    channels.push({ id: c.id, name: c.name, description: c.description, isPrivate: c.is_private, unread: count ?? 0 });
-  }
-  return channels;
+  // unread badges are best-effort: a failed count shows 0 rather than hiding the channel
+  return Promise.all(
+    visible.map(async (c): Promise<ChatChannel> => {
+      let q = db.from("org_chat_messages").select("id", { count: "exact", head: true }).eq("channel_id", c.id).neq("author_user_id", ctx.userId);
+      const since = readAt.get(c.id);
+      if (since) q = q.gt("created_at", since);
+      const { count } = await q;
+      return { id: c.id, name: c.name, description: c.description, isPrivate: c.is_private, unread: count ?? 0 };
+    })
+  );
 }
 
 /** Same-college and (if private) a member — the only test that lets anyone read or post in a channel. */
@@ -80,7 +82,9 @@ export async function loadMessages(service: SupabaseClient<Database>, channelId:
   const db = untyped(service);
   let q = db.from("org_chat_messages").select("id, author_user_id, body, created_at, attachment_path, attachment_name, attachment_size, attachment_mime").eq("channel_id", channelId);
   q = after ? q.gt("created_at", after).order("created_at", { ascending: true }).limit(MESSAGE_PAGE) : q.order("created_at", { ascending: false }).limit(MESSAGE_PAGE);
-  const rows = ((await q).data ?? []) as ({ id: string; author_user_id: string | null; body: string; created_at: string } & AttachmentColumns)[];
+  const { data: msgData, error: msgError } = await q;
+  if (msgError) throw new Error(`Messages load failed: ${msgError.message}`);
+  const rows = (msgData ?? []) as ({ id: string; author_user_id: string | null; body: string; created_at: string } & AttachmentColumns)[];
   const ordered = after ? rows : rows.reverse();
   const ids = [...new Set(ordered.map((r) => r.author_user_id).filter((x): x is string => Boolean(x)))];
   const { data: profiles } = ids.length ? await service.from("profiles").select("id, full_name, email").in("id", ids) : { data: [] };

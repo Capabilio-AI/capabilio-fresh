@@ -88,15 +88,17 @@ export async function loadTeam(service: SupabaseClient<Database>, ctx: OrgContex
 /** The college always has a general student join link; created the first time an admin opens the team page. */
 export async function loadJoinLinks(service: SupabaseClient<Database>, ctx: OrgContext): Promise<JoinLinkRow[]> {
   const db = untyped(service);
-  let { data } = await db.from("org_join_links").select("*").eq("institution_id", ctx.institutionId).order("created_at");
+  let { data, error: linksError } = await db.from("org_join_links").select("*").eq("institution_id", ctx.institutionId).order("created_at");
+  if (linksError) throw new Error(`Join links load failed: ${linksError.message}`);
   if (!data || data.length === 0) {
+    // ponytail: no unique key per institution on org_join_links (only on code), so two simultaneous first visits can each create a default link; a partial unique index would let this upsert.
     // Use the inserted row rather than re-selecting: an identical repeat GET can be served from Next's fetch cache.
     const created = await db.from("org_join_links").insert({ institution_id: ctx.institutionId, code: newJoinCode(), label: "All students", created_by_membership_id: ctx.membershipId }).select("*");
     if (created.error) throw new Error(`Could not create the student join link: ${created.error.message}`);
     data = created.data;
   }
   const links = (data ?? []) as { id: string; code: string; label: string | null; branch: string | null; end_year: number | null; active: boolean }[];
-  const { data: uses } = links.length ? await db.from("org_join_link_uses").select("join_link_id").in("join_link_id", links.map((l) => l.id)) : { data: [] };
-  const count = (id: string) => ((uses ?? []) as { join_link_id: string }[]).filter((u) => u.join_link_id === id).length;
-  return links.map((l) => ({ id: l.id, code: l.code, label: l.label, branch: l.branch, endYear: l.end_year, active: l.active, joined: count(l.id) }));
+  // one head-only count per link instead of loading every use row
+  const joined = await Promise.all(links.map(async (l) => (await db.from("org_join_link_uses").select("join_link_id", { count: "exact", head: true }).eq("join_link_id", l.id)).count ?? 0));
+  return links.map((l, i) => ({ id: l.id, code: l.code, label: l.label, branch: l.branch, endYear: l.end_year, active: l.active, joined: joined[i] }));
 }

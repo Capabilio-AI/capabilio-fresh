@@ -54,10 +54,11 @@ export async function POST(
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof AssessmentNotStartedError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+      return NextResponse.json({ error: "Assessment not started." }, { status: 404 });
     }
     if (error instanceof InvalidResponseError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error("[assessment/responses] invalid response:", error);
+      return NextResponse.json({ error: "That answer could not be recorded." }, { status: 400 });
     }
     throw error;
   }

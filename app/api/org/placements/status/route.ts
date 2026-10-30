@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { orgRoute } from "@/lib/api/org-route";
 import { VisitStatusSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
+import { canMoveVisit } from "@/lib/org/visits";
 import { notify } from "@/lib/notifications/notify";
 import { activeStudents } from "@/lib/notifications/audiences";
 
 /** Move a company visit through planned → registration open → completed (or cancelled). Own college only. */
 export async function POST(request: Request) {
   return orgRoute(request, VisitStatusSchema, "postPlacement", async ({ ctx, service }, body) => {
+    const { data: current } = await untyped(service).from("opportunities").select("drive_status").eq("id", body.opportunityId).eq("institution_id", ctx.institutionId).maybeSingle();
+    if (current && !canMoveVisit((current as { drive_status: string }).drive_status, body.status)) {
+      return NextResponse.json({ error: "A completed company visit can't be reopened for registration." }, { status: 409 });
+    }
     const { data, error } = await untyped(service).from("opportunities").update({ drive_status: body.status }).eq("id", body.opportunityId).eq("institution_id", ctx.institutionId).select("id, company, eligible_branches");
     if (error) throw error;
     if (!data || data.length === 0) return NextResponse.json({ error: "Company visit not found." }, { status: 404 });

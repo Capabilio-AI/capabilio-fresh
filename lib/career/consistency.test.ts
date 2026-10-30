@@ -98,7 +98,7 @@ describe("assessment section guard (server-decided mode)", () => {
 
 describe("Launchpad never fabricates", () => {
   it("an empty opportunities table yields an empty list", async () => {
-    const q = { select: () => q, order: async () => ({ data: [], error: null }) };
+    const q = { select: () => q, or: () => q, in: () => q, order: () => q, limit: async () => ({ data: [], error: null }) };
     const s = { from: () => q } as unknown as SupabaseClient<Database>;
     expect(await listOpenOpportunities(s)).toEqual([]);
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENFORCE_PLANS, interviewUnlocked, isPlanId, planAllows, planById } from "./catalog";
+import { ENFORCE_PLANS, interviewQuotaReached, interviewUnlocked, isPlanId, planAllows, planById, planSelectionError } from "./catalog";
 
 describe("plan catalog", () => {
   it("recognises only real plan ids", () => {
@@ -29,5 +29,30 @@ describe("interviewUnlocked", () => {
     expect(ENFORCE_PLANS).toBe(false);
     expect(interviewUnlocked("graduate", "free", false)).toBe(true);
     expect(interviewUnlocked("graduate", null, false)).toBe(true);
+  });
+});
+
+describe("interviewQuotaReached", () => {
+  it("never limits while plans are not enforced", () => {
+    expect(interviewQuotaReached(99, "free", false)).toBe(false);
+  });
+  it("applies 1 / 8 / 15 per plan when enforced, Free if unchosen", () => {
+    expect(interviewQuotaReached(1, "free", true)).toBe(true);
+    expect(interviewQuotaReached(1, null, true)).toBe(true);
+    expect(interviewQuotaReached(7, "pro", true)).toBe(false);
+    expect(interviewQuotaReached(8, "pro", true)).toBe(true);
+    expect(interviewQuotaReached(14, "elite", true)).toBe(false);
+    expect(interviewQuotaReached(15, "elite", true)).toBe(true);
+  });
+});
+
+describe("planSelectionError", () => {
+  it("allows everything while plans are not enforced", () => {
+    expect(planSelectionError("pro", false)).toBeNull();
+  });
+  it("refuses paid plans when enforced, but not Free", () => {
+    expect(planSelectionError("pro", true)).toMatch(/Payments are not available/);
+    expect(planSelectionError("elite", true)).not.toBeNull();
+    expect(planSelectionError("free", true)).toBeNull();
   });
 });

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       userIds: await activeStudents(service, ctx.institutionId, scope.value),
       type: "project_posted",
       title: `New project: ${body.title}`,
-      body: `Form a group of ${TEAM_SIZE} before ${deadline.toLocaleDateString("en-IN", { dateStyle: "medium" })}.`,
+      body: `Form a group of ${TEAM_SIZE} before ${deadline.toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" })}.`,
       href: `/arena/projects/${data.id}`,
       actorId: ctx.userId,
       institutionId: ctx.institutionId,

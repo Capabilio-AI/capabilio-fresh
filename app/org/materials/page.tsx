@@ -7,6 +7,7 @@ import { MaterialFileForm } from "@/components/org/MaterialFileForm";
 import { ExternalLink, FileText, Link2, StickyNote, type LucideIcon } from "lucide-react";
 import { Collapsible, EmptyState, PageHeader } from "@/components/org/ui";
 import { GroupTitle, Segmented } from "@/components/org/widgets";
+import { BUCKET, SIGNED_URL_SECONDS } from "@/lib/pulse/media";
 
 export const metadata: Metadata = { title: "Course materials — Capabilio AI" };
 
@@ -17,8 +18,13 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const { ctx, service } = await orgPageContext("uploadMaterial");
   const scope = staffBranchScope(ctx);
-  const type = sp.type && sp.type in TYPE_LABEL ? sp.type : undefined;
+  const type = sp.type && Object.hasOwn(TYPE_LABEL, sp.type) ? sp.type : undefined;
   const [materials, subjects] = await Promise.all([listMaterialsForStaff(service, ctx), listSubjects(service, ctx.institutionId, scope)]);
+
+  // uploaded files have no url: give them a short-lived signed link, as students get in SkillStudio
+  const filePaths = materials.flatMap((m) => (m.file_path ? [m.file_path] : []));
+  const signed = filePaths.length ? await service.storage.from(BUCKET).createSignedUrls(filePaths, SIGNED_URL_SECONDS) : { data: [] };
+  const fileUrl = new Map((signed.data ?? []).flatMap((u) => (u.path && u.signedUrl ? [[u.path, u.signedUrl] as const] : [])));
 
   const shown = type ? materials.filter((m) => m.type === type) : materials;
   const byGroup = new Map<string, typeof shown>();
@@ -67,6 +73,7 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
             <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {items.map((m) => {
                 const Icon = TYPE_ICON[m.type] ?? Link2;
+                const href = m.url ?? (m.file_path ? fileUrl.get(m.file_path) : undefined);
                 return (
                   <li key={m.id} className="o-card flex items-start gap-3 p-4">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-app-orange-container text-app-orange">
@@ -76,8 +83,8 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
                       <p className="truncate text-[14px] font-semibold text-app-charcoal">{m.title}</p>
                       <p className="text-[12.5px] text-app-muted">{TYPE_LABEL[m.type]?.replace(/s$/, "") ?? m.type}</p>
                     </div>
-                    {m.url && (
-                      <a href={m.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${m.title}`} className="o-btn-ghost !px-2.5">
+                    {href && (
+                      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open ${m.title}`} className="o-btn-ghost !px-2.5">
                         <ExternalLink size={14} aria-hidden="true" />
                       </a>
                     )}

@@ -143,3 +143,9 @@ export async function loadOrgFacts(service: SupabaseClient<Database>, institutio
     publishedPosts: postsRes.count ?? 0,
   };
 }
+
+/** A college counts as approved once the Capabilio team has an active principal, vice principal or TPO there (same test as the student join page). */
+export async function isInstitutionApproved(service: SupabaseClient<Database>, institutionId: string): Promise<boolean> {
+  const { count } = await service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", institutionId).eq("status", "active").in("role", ["principal", "vice_principal", "tpo"] as never[]);
+  return (count ?? 0) > 0;
+}

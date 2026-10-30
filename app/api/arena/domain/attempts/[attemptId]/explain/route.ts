@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
 
-  const limited = await checkRateLimit(auth.userId, { bucket: "arena_explain", maxRequests: 20, windowSeconds: 600 });
+  const limited = await checkRateLimit(auth.userId, { bucket: "arena_explain", maxRequests: 20, windowSeconds: 600, failClosed: true });
   if (!limited.allowed) return rateLimitedResponse(limited.remaining);
 
   const body = (await request.json().catch(() => null)) as { action?: unknown; answers?: unknown } | null;

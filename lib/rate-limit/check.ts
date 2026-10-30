@@ -5,6 +5,8 @@ export interface RateLimitConfig {
   bucket: string;
   maxRequests: number;
   windowSeconds: number;
+  /** Block (instead of allow) when the limiter itself errors. Use for buckets that guard paid model calls. */
+  failClosed?: boolean;
 }
 
 /**
@@ -30,11 +32,11 @@ export async function checkRateLimit(
     p_window_start: windowStart,
   });
 
-  // Fail open: if the rate-limit check itself errors, don't block the
-  // underlying feature over an infrastructure hiccup — log and allow.
+  // Fail open by default: if the rate-limit check itself errors, don't block the
+  // underlying feature over an infrastructure hiccup — log and allow. failClosed buckets (paid AI calls) block instead.
   if (error) {
     console.error(`[rate-limit] check failed for bucket "${config.bucket}":`, error.message);
-    return { allowed: true, remaining: config.maxRequests };
+    return config.failClosed ? { allowed: false, remaining: 0 } : { allowed: true, remaining: config.maxRequests };
   }
 
   const hitCount = count ?? 0;

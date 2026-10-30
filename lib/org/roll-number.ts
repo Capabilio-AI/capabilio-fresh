@@ -32,3 +32,15 @@ export async function loadRollNumberNotice(service: SupabaseClient<Database>, us
   const inst = data.institutions as { name: string } | null;
   return { collegeName: inst?.name ?? "your college", kind: data.roll_number ? "mismatch" : "missing", rollNumber: data.roll_number, dueAt: data.roll_number_due_at };
 }
+
+export const BULK_FLAG_SHARE = 0.25;
+export const BULK_FLAG_COUNT = 20;
+
+/**
+ * Pure. Circuit breaker for the roll-number cleanup: a college with more than a quarter of its students flagged (or
+ * more than 20 at once) almost always means a code or config change went wrong, not that many bad roll numbers, so
+ * its accounts are left alone this run for a human to look at.
+ */
+export function isBulkFlag(flagged: number, totalStudents: number): boolean {
+  return flagged > BULK_FLAG_COUNT || (totalStudents > 0 && flagged / totalStudents > BULK_FLAG_SHARE);
+}

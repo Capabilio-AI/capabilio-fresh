@@ -12,6 +12,9 @@ export interface LeaderboardEntry {
 }
 
 const LEADERBOARD_LIMIT = 50;
+// A student has one ledger row per career, so read more rows than students. Sorted by rating, the top rows always contain each top
+// student's best row; this bound only matters if one student held 20+ careers at the same rating.
+const LEDGER_ROW_LIMIT = LEADERBOARD_LIMIT * 20;
 
 /**
  * Global rank by the one career ELO ledger (student_career_elo), the same rating the dashboard and portfolio show. A student with
@@ -21,7 +24,7 @@ export async function getLeaderboard(
   supabase: SupabaseClient<Database>,
   viewerId: string
 ): Promise<LeaderboardEntry[]> {
-  const { data: ledger, error: ratingsError } = await untyped(createServiceClient()).from("student_career_elo").select("student_id, rating");
+  const { data: ledger, error: ratingsError } = await untyped(createServiceClient()).from("student_career_elo").select("student_id, rating").order("rating", { ascending: false }).limit(LEDGER_ROW_LIMIT);
   if (ratingsError) throw ratingsError;
   const best = new Map<string, number>();
   for (const r of (ledger ?? []) as { student_id: string; rating: number }[]) best.set(r.student_id, Math.max(best.get(r.student_id) ?? 0, r.rating));

@@ -7,6 +7,7 @@ import { effectivePermissions, ORG_PERMISSIONS, kindOf } from "@/lib/org/roles";
 import { ROLE_LABEL } from "@/lib/org/nav";
 import { initialsOf } from "@/lib/org/format";
 import { untyped, type OrgProfileRow } from "@/lib/org/db";
+import { isInstitutionApproved } from "@/lib/org/public-org";
 import { OrgTheme } from "@/components/org/OrgTheme";
 import { AcceptInviteForm } from "@/components/org/AcceptInviteForm";
 
@@ -33,11 +34,14 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
   let institutionName = "";
   let logo: string | null = null;
+  let approved = false;
   if (valid) {
-    const [{ data: inst }, { data: profile }] = await Promise.all([
+    const [{ data: inst }, { data: profile }, isApproved] = await Promise.all([
       service.from("institutions").select("name").eq("id", inv.institution_id).maybeSingle(),
       db.from("org_profiles").select("*").eq("institution_id", inv.institution_id).maybeSingle(),
+      isInstitutionApproved(service, inv.institution_id),
     ]);
+    approved = isApproved;
     institutionName = inst?.name ?? "your college";
     logo = (profile as OrgProfileRow | null)?.logo_url ?? null;
   }
@@ -75,9 +79,11 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                 ))
               )}
             </ul>
-            <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-app-muted">
-              <BadgeCheck size={13} className="text-app-success" aria-hidden="true" /> {institutionName} is approved by the Capabilio team.
-            </p>
+            {approved && (
+              <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-app-muted">
+                <BadgeCheck size={13} className="text-app-success" aria-hidden="true" /> {institutionName} is approved by the Capabilio team.
+              </p>
+            )}
             <AcceptInviteForm token={token} email={inv.email} />
           </div>
         ) : (

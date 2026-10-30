@@ -34,7 +34,7 @@ export default async function SettingsPage() {
       </SettingsCard>
 
       <SettingsCard id="acct-h" title="Sign-in email" bare>
-        <SettingsRow icon={Mail} title={viewer.email ?? "No email on file"} description="This is the address you sign in with. To change it, contact support.">
+        <SettingsRow icon={Mail} title={viewer.email || "No email on file"} description="This is the address you sign in with. To change it, contact support.">
           <Link href="/settings/security" className={LINK}>Security →</Link>
         </SettingsRow>
       </SettingsCard>

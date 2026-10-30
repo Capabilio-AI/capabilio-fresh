@@ -9,6 +9,8 @@ import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 import { isNumericAnswerCorrect } from "@/lib/arena-challenges/numeric-answer";
 import { addChallengePoints } from "@/lib/arena-challenges/award";
+import { isFunctionMissing, parseAtomicSubmit } from "@/lib/arena-challenges/atomic-submit";
+import { currentWeekStart } from "@/lib/arena-challenges/week";
 import { deriveArenaChallengeEvidence, ARENA_CHALLENGES_ANALYSIS_VERSION } from "@/lib/evidence/from-arena-challenges";
 import { recordEvidence } from "@/lib/evidence/record";
 import { judge, type TestVerdict } from "@/lib/arena-challenges/leetcode/judge";
@@ -115,40 +117,59 @@ export async function POST(request: Request) {
   const pointsEarned = isCorrect ? pointsForDifficulty(challenge.difficulty) : 0;
   const nowIso = new Date().toISOString();
 
-  // Points/streak are only ever awarded the first time this challenge goes
-  // correct for this student -- a resubmission (retry after a wrong
-  // answer, or re-running an already-solved one) must never double-count.
-  const { data: existing } = await service.from("arena_challenge_completions").select("is_correct").eq("user_id", auth.userId).eq("challenge_id", challenge.id).maybeSingle();
-  const alreadyAwarded = existing?.is_correct === true;
-
-  const { data: completion, error: completionError } = await service
-    .from("arena_challenge_completions")
-    .upsert(
-      {
-        user_id: auth.userId,
-        challenge_id: challenge.id,
-        track: "stream",
-        scope_key: challenge.scope_key,
-        code_submitted: submission,
-        is_correct: isCorrect,
-        elo_delta: pointsEarned,
-        completed_at: nowIso,
-      },
-      { onConflict: "user_id,challenge_id" }
-    )
-    .select("id")
-    .single();
-  if (completionError || !completion) {
+  // Atomic path (migration 142): one locked transaction records the completion and awards points exactly once. Falls back to the
+  // read-modify-write path below while that function is not deployed.
+  let completionId: string | null = null;
+  const rpc = await untyped(service).rpc("record_stream_completion", {
+    p_user_id: auth.userId,
+    p_challenge_id: challenge.id,
+    p_scope_key: challenge.scope_key,
+    p_submission: submission,
+    p_is_correct: isCorrect,
+    p_points: pointsEarned,
+    p_week: currentWeekStart(),
+    p_once: challenge.kind === "mcq",
+  });
+  const atomic = rpc.error ? null : parseAtomicSubmit(rpc.data);
+  if (atomic) {
+    if (atomic.conflict) return NextResponse.json({ error: "You've already answered this question." }, { status: 409 });
+    completionId = atomic.completion_id;
+  } else if (rpc.error && !isFunctionMissing(rpc.error)) {
+    console.error("[arena/challenges/submit] record_stream_completion failed:", rpc.error);
     return NextResponse.json({ error: "Could not record the submission." }, { status: 500 });
-  }
-
-  if (isCorrect && !alreadyAwarded) {
-    await addChallengePoints(service, auth.userId, pointsEarned, nowIso);
+  } else {
+    // Points/streak are only ever awarded the first time this challenge goes correct for this student.
+    const { data: existing } = await service.from("arena_challenge_completions").select("is_correct").eq("user_id", auth.userId).eq("challenge_id", challenge.id).maybeSingle();
+    const alreadyAwarded = existing?.is_correct === true;
+    const { data: completion, error: completionError } = await service
+      .from("arena_challenge_completions")
+      .upsert(
+        {
+          user_id: auth.userId,
+          challenge_id: challenge.id,
+          track: "stream",
+          scope_key: challenge.scope_key,
+          code_submitted: submission,
+          is_correct: alreadyAwarded || isCorrect, // never downgrade
+          elo_delta: alreadyAwarded ? undefined : pointsEarned,
+          completed_at: nowIso,
+        },
+        { onConflict: "user_id,challenge_id" }
+      )
+      .select("id")
+      .single();
+    if (completionError || !completion) {
+      return NextResponse.json({ error: "Could not record the submission." }, { status: 500 });
+    }
+    completionId = completion.id;
+    if (isCorrect && !alreadyAwarded) {
+      await addChallengePoints(service, auth.userId, pointsEarned, nowIso);
+    }
   }
 
   try {
     const evidenceRows = deriveArenaChallengeEvidence({
-      id: completion.id,
+      id: completionId ?? challenge.id,
       challengeTitle: challenge.title,
       track: "stream",
       scopeKey: challenge.scope_key,

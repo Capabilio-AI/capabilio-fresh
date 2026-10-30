@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import type { OrgContext } from "./context";
 import { IN_APP_APPROVABLE_ROLES, type OrgPermissionKey } from "./roles";
 import { untyped, type GroupRow, type OrgPostRow, type ProjectRow } from "./db";
+import { endOfDayIst, istDate } from "./format";
 
 export interface Alert {
   tone: "red" | "amber" | "blue";
@@ -52,38 +53,52 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
   const nowIso = now.toISOString();
   const soonIso = new Date(now.getTime() + 3 * DAY).toISOString();
   const horizonIso = new Date(now.getTime() + 14 * DAY).toISOString();
-  const today = nowIso.slice(0, 10);
-  const soonDate = soonIso.slice(0, 10);
-  const horizonDate = horizonIso.slice(0, 10);
+  // drive deadlines are date-only, so "today" is the Indian calendar date, not the server's UTC date
+  const today = istDate(now);
+  const soonDate = istDate(new Date(soonIso));
+  const horizonDate = istDate(new Date(horizonIso));
   const manages = ctx.permissions.has("classroom");
   const runsPlacements = ctx.permissions.has("placements");
 
-  // projects this person manages (admin: all; staff: own)
-  let pq = db.from("class_projects").select("*").eq("institution_id", ctx.institutionId);
-  if (ctx.kind !== "admin") pq = pq.eq("created_by_membership_id", ctx.membershipId);
-  const projects = manages ? (((await pq).data ?? []) as ProjectRow[]) : [];
-  const projectIds = projects.map((p) => p.id);
-  const groups = projectIds.length ? (((await db.from("class_project_groups").select("id, project_id, name, status, created_at").in("project_id", projectIds)).data ?? []) as GroupRow[]) : [];
+  // two independent chains run side by side: projects -> groups, and drives -> applications (+ the plain counts)
+  const projectChain = async () => {
+    let pq = db.from("class_projects").select("*").eq("institution_id", ctx.institutionId);
+    if (ctx.kind !== "admin") pq = pq.eq("created_by_membership_id", ctx.membershipId);
+    const projectsRes = manages ? await pq : { data: [], error: null };
+    if (projectsRes.error) throw new Error(`Home load failed: ${projectsRes.error.message}`);
+    const projects = (projectsRes.data ?? []) as ProjectRow[];
+    const projectIds = projects.map((p) => p.id);
+    const groupsRes = projectIds.length ? await db.from("class_project_groups").select("id, project_id, name, status, created_at").in("project_id", projectIds) : { data: [], error: null };
+    if (groupsRes.error) throw new Error(`Home load failed: ${groupsRes.error.message}`);
+    const groups = (groupsRes.data ?? []) as GroupRow[];
+    return { projects, groups };
+  };
+  const driveChain = async () => {
+    const [drivesRes, studentsRes, pendingRes, placedRes, eventsRes] = await Promise.all([
+      runsPlacements ? service.from("opportunities").select("id, role, company, deadline, drive_status").eq("institution_id", ctx.institutionId) : Promise.resolve({ data: [] }),
+      service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active"),
+      ctx.permissions.has("members")
+        ? service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("status", "pending").in("role", [...IN_APP_APPROVABLE_ROLES] as never[])
+        : Promise.resolve({ count: 0 }),
+      runsPlacements ? db.from("org_placements").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId) : Promise.resolve({ count: 0 }),
+      db.from("org_posts").select("*").eq("institution_id", ctx.institutionId).eq("type", "event").eq("status", "published").gte("event_starts_at", nowIso).order("event_starts_at").limit(5),
+    ]);
+    if (studentsRes.error) throw new Error(`Home load failed: ${studentsRes.error.message}`);
+    if ("error" in drivesRes && drivesRes.error) throw new Error(`Home load failed: ${drivesRes.error.message}`);
+    const drives = ((drivesRes.data ?? []) as { id: string; role: string; company: string; deadline: string | null; drive_status?: string | null }[]).filter((d) => !d.drive_status || d.drive_status === "planned" || d.drive_status === "registration_open");
+    const driveIds = drives.map((d) => d.id);
+    const appsRes = driveIds.length ? await service.from("applications").select("status, opportunity_id").in("opportunity_id", driveIds) : { data: [], error: null };
+    if (appsRes.error) throw new Error(`Home load failed: ${appsRes.error.message}`);
+    const apps = appsRes.data ?? [];
+    return { drives, apps, studentsRes, pendingRes, placedRes, events: (eventsRes.data ?? []) as OrgPostRow[] };
+  };
+  const [{ projects, groups }, { drives, apps, studentsRes, pendingRes, placedRes, events }] = await Promise.all([projectChain(), driveChain()]);
   const awaiting = groups.filter((g) => g.status === "submitted");
   const openProjects = projects.filter((p) => p.status === "open");
 
   const closingWithForming = openProjects.filter(
     (p) => new Date(p.deadline_at).toISOString() <= soonIso && new Date(p.deadline_at).toISOString() >= nowIso && groups.some((g) => g.project_id === p.id && g.status === "forming")
   );
-
-  const [drivesRes, studentsRes, pendingRes, placedRes, eventsRes] = await Promise.all([
-    runsPlacements ? service.from("opportunities").select("id, role, company, deadline, drive_status").eq("institution_id", ctx.institutionId) : Promise.resolve({ data: [] }),
-    service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active"),
-    ctx.permissions.has("members")
-      ? service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("status", "pending").in("role", [...IN_APP_APPROVABLE_ROLES] as never[])
-      : Promise.resolve({ count: 0 }),
-    runsPlacements ? db.from("org_placements").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId) : Promise.resolve({ count: 0 }),
-    db.from("org_posts").select("*").eq("institution_id", ctx.institutionId).eq("type", "event").eq("status", "published").gte("event_starts_at", nowIso).order("event_starts_at").limit(5),
-  ]);
-  const drives = ((drivesRes.data ?? []) as { id: string; role: string; company: string; deadline: string | null; drive_status?: string | null }[]).filter((d) => !d.drive_status || d.drive_status === "planned" || d.drive_status === "registration_open");
-  const driveIds = drives.map((d) => d.id);
-  const apps = driveIds.length ? ((await service.from("applications").select("status, opportunity_id").in("opportunity_id", driveIds)).data ?? []) : [];
-  const events = (eventsRes.data ?? []) as OrgPostRow[];
 
   const openDrives = drives.filter((d) => !d.deadline || d.deadline >= today);
   const counts: HomeCounts = {
@@ -104,7 +119,7 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
       .map((p): UpcomingItem => ({ kind: "project", title: p.title, at: p.deadline_at, detail: "Project deadline", href: `/org/projects/${p.id}` })),
     ...openDrives
       .filter((d) => d.deadline && d.deadline <= horizonDate)
-      .map((d): UpcomingItem => ({ kind: "drive", title: `${d.role} · ${d.company}`, at: `${d.deadline}T23:59:00Z`, detail: "Registration closes", href: `/org/placements/${d.id}` })),
+      .map((d): UpcomingItem => ({ kind: "drive", title: `${d.role} · ${d.company}`, at: endOfDayIst(d.deadline!), detail: "Registration closes", href: `/org/placements/${d.id}` })),
   ]
     .sort((a, b) => a.at.localeCompare(b.at))
     .slice(0, 6);
