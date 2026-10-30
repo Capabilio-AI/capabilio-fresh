@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Download } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { can } from "@/lib/org/roles";
-import { loadOutcomes } from "@/lib/org/outcomes";
+import { loadOutcomes, searchStudentOptions } from "@/lib/org/outcomes";
 import { MIN_COHORT } from "@/lib/org/insights";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Pill } from "@/components/org/ui";
@@ -10,19 +10,15 @@ import { Fact, GroupTitle, Initial, Meter } from "@/components/org/widgets";
 
 export const metadata: Metadata = { title: "Outcomes — Capabilio AI" };
 
-export default async function OutcomesPage() {
+export default async function OutcomesPage({ searchParams }: { searchParams: Promise<{ pq?: string }> }) {
   const { ctx, service } = await orgPageContext("viewOutcomes");
-  const { placements, stats, funnel, driveCount } = await loadOutcomes(service, ctx.institutionId);
-  const { data: students } = await service
-    .from("institution_memberships")
-    .select("user_id, branch")
-    .eq("institution_id", ctx.institutionId)
-    .eq("role", "student")
-    .eq("status", "active")
-    .limit(500);
-  const ids = (students ?? []).map((s) => s.user_id);
-  const { data: profiles } = ids.length ? await service.from("profiles").select("id, full_name, email").in("id", ids) : { data: [] };
-  const options = (profiles ?? []).map((p) => ({ value: p.id, label: p.full_name ?? p.email })).sort((a, b) => a.label.localeCompare(b.label));
+  const { pq } = await searchParams;
+  const canPost = can(ctx, "postPlacement");
+  // the student picker is searched by name, and only loaded when someone who can record an offer is looking for a student
+  const [{ placements, stats, funnel, driveCount }, options] = await Promise.all([
+    loadOutcomes(service, ctx.institutionId),
+    canPost && pq?.trim() ? searchStudentOptions(service, ctx.institutionId, pq) : Promise.resolve([]),
+  ]);
 
   const stages = [
     { label: "Registered for visits", value: funnel.applied },
@@ -123,9 +119,15 @@ export default async function OutcomesPage() {
         )}
       </section>
 
-      {can(ctx, "postPlacement") && (
-      <Collapsible title="Record an off-campus offer">
+      {canPost && (
+      <Collapsible title="Record an off-campus offer" defaultOpen={Boolean(pq?.trim())}>
         <p className="mb-3 font-lp-body text-[12.5px] text-app-muted">For a placement that didn&apos;t come through one of your drives. It counts only because you confirm it here.</p>
+        <form method="get" role="search" className="mb-3 flex items-center gap-2">
+          <label className="sr-only" htmlFor="pq">Find the student by name or email</label>
+          <input id="pq" name="pq" defaultValue={pq ?? ""} placeholder="Find the student by name or email" className="o-input !w-72" />
+          <button type="submit" className="o-btn">Find</button>
+        </form>
+        {pq?.trim() && options.length === 0 && <p className="mb-3 text-[12.5px] text-app-muted">No student at your college matches “{pq.trim()}”.</p>}
         <JsonForm
           action="/api/org/placements/confirm"
           submitLabel="Confirm placement"

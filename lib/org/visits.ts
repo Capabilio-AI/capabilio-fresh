@@ -12,3 +12,6 @@ export const REGISTRATION_LABEL: Record<string, string> = {
   accepted: "Selected",
   rejected: "Not selected",
 };
+
+/** Pure. A completed visit is final: it can't be reopened for registration (the page only offers "Open registration" before completion). */
+export const canMoveVisit = (from: string, to: string): boolean => !(from === "completed" && to === "registration_open");

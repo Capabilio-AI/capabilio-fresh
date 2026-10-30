@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { MetroScope } from "@/components/metro/MetroScope";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -7,11 +8,18 @@ import { PortfolioBody } from "@/components/portfolio/PortfolioBody";
 
 export const dynamic = "force-dynamic"; // a live record: never serve a cached copy
 
+// generateMetadata and the page both need this row; cache() makes it one query per request.
+const loadOwner = cache(async (slug: string) => {
+  const { data } = await createServiceClient().from("profiles").select("id, full_name, portfolio_public").eq("portfolio_slug", slug).maybeSingle();
+  return data;
+});
+
+// A student's shared portfolio is shared by link, not discovered: never index it (same as the skill passport).
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const service = createServiceClient();
-  const { data: profile } = await service.from("profiles").select("full_name").eq("portfolio_slug", slug).eq("portfolio_public", true).maybeSingle();
-  return { title: profile ? `${profile.full_name ?? "Portfolio"} — Capabilio AI` : "Portfolio — Capabilio AI" };
+  const profile = await loadOwner(slug);
+  const title = profile?.portfolio_public ? `${profile.full_name ?? "Portfolio"} — Capabilio AI` : "Portfolio — Capabilio AI";
+  return { title, robots: { index: false, follow: false } };
 }
 
 /**
@@ -23,12 +31,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
  */
 export default async function PublicPortfolioPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const service = createServiceClient();
-
-  const { data: profile } = await service.from("profiles").select("id, portfolio_public").eq("portfolio_slug", slug).maybeSingle();
+  const profile = await loadOwner(slug);
   if (!profile?.portfolio_public) notFound();
 
-  const data = await getPortfolioData(service, profile.id, { publicView: true });
+  const data = await getPortfolioData(createServiceClient(), profile.id, { publicView: true });
 
   return (
     <MetroScope>

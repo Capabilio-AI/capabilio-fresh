@@ -17,7 +17,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const { supabase, user } = await requireAuthedUser();
 
   // The career stage drives the whole app path. Reading it also moves a student whose programme has ended on to graduate.
-  const [viewer, { stage, planId }] = await Promise.all([getViewerSummary(supabase, user.id), getStageState(user.id)]);
+  const [viewer, { stage, planId }, assessBanner] = await Promise.all([
+    getViewerSummary(supabase, user.id),
+    getStageState(user.id),
+    bannerState(createServiceClient() as unknown as Db, user.id),
+  ]);
   // Year and goal prompts are about study years, so only a current student is asked them.
   const direction = stage === "student" ? viewer.direction : null;
 
@@ -25,8 +29,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // The trigger depends on end_year, so years are confirmed before the goal prompt is shown.
   const askGoal = direction && !askYear ? shouldShowGoalPrompt(direction) : false;
   const reflection = askGoal ? await getEngagementReflection(createServiceClient(), user.id) : null;
-
-  const assessBanner = await bannerState(createServiceClient() as unknown as Db, user.id);
 
   const banner =
     direction && askYear ? (

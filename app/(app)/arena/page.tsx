@@ -18,7 +18,7 @@ const CARD = "group flex h-full flex-col gap-3 rounded-2xl border border-[var(--
 
 export default async function ArenaHubPage() {
   const { supabase, user } = await requireAuthedUser();
-  const [leaderboard, { stage }] = await Promise.all([getLeaderboard(supabase, user.id), getStageState(user.id)]);
+  const [leaderboard, { stage }] = await Promise.all([getLeaderboard(supabase, user.id).catch(() => []), getStageState(user.id)]);
   // the skill profile reads the capability model; a problem loading it must never hide the rest of Arena
   const service = createServiceClient();
   const [profile, tasks] = await Promise.all([

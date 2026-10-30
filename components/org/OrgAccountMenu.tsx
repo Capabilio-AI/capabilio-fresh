@@ -7,7 +7,7 @@ import { BadgeCheck, ChevronDown, ExternalLink, LogOut } from "lucide-react";
 import { signOut } from "@/components/login/auth";
 
 /** The institution's account menu: gold-ringed avatar, an espresso card with the college name, and sign out. */
-export function OrgAccountMenu({ institutionName, roleLabel, publicHref, initials }: { institutionName: string; roleLabel: string; publicHref: string; initials: string }) {
+export function OrgAccountMenu({ institutionName, roleLabel, publicHref, initials, approved }: { approved: boolean; institutionName: string; roleLabel: string; publicHref: string; initials: string }) {
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -56,9 +56,11 @@ export function OrgAccountMenu({ institutionName, roleLabel, publicHref, initial
             <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#fff] text-[18px] font-extrabold text-[#1e1707]">{initials}</span>
             <p className="relative mt-3 text-[18px] font-extrabold leading-tight">{institutionName}</p>
             <p className="relative text-[13px] text-[#fff]/70">{roleLabel}</p>
-            <p className="relative mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-[#7be0b4]">
-              <BadgeCheck size={14} aria-hidden /> Approved by Capabilio
-            </p>
+            {approved && (
+              <p className="relative mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-[#7be0b4]">
+                <BadgeCheck size={14} aria-hidden /> Approved by Capabilio
+              </p>
+            )}
           </div>
           <div className="mt-2 flex flex-col gap-0.5">
             <Link href={publicHref} target="_blank" rel="noopener noreferrer" role="menuitem" onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-[#fff]">

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "./db";
@@ -19,8 +20,9 @@ export interface OrgContext {
 /**
  * The caller's org context, derived ONLY from their own ACTIVE membership (read as the user, under RLS) —
  * never from a request field. A pending or rejected member has no context at all.
+ * cache(): the org layout and the page both ask, so one request runs this query once (same supabase client + user id).
  */
-export async function getOrgContext(supabase: SupabaseClient<Database>, userId: string): Promise<OrgContext | null> {
+export const getOrgContext = cache(async (supabase: SupabaseClient<Database>, userId: string): Promise<OrgContext | null> => {
   // untyped: `permissions` postdates the generated types
   const { data } = await untyped(supabase)
     .from("institution_memberships")
@@ -47,4 +49,4 @@ export async function getOrgContext(supabase: SupabaseClient<Database>, userId: 
     }
   }
   return null;
-}
+});

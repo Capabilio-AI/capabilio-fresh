@@ -58,13 +58,16 @@ export default async function LaunchpadPage() {
     );
   }
 
-  const opportunities = await listOpenOpportunities(supabase);
+  // independent reads, one round trip
   // own rows only (RLS); status is written by the college, never by the student
-  const { data: myApps } = await supabase.from("applications").select("opportunity_id, status").eq("user_id", user.id);
+  // measured capability per catalog skill, read once; each listing is compared with it
+  const [opportunities, { data: myApps }, skillContext] = await Promise.all([
+    listOpenOpportunities(supabase),
+    supabase.from("applications").select("opportunity_id, status").eq("user_id", user.id),
+    loadSkillContext(createGateClient(), user.id),
+  ]);
   const appliedStatus = new Map((myApps ?? []).map((a) => [a.opportunity_id, a.status]));
   const APPLIED_LABEL = REGISTRATION_LABEL;
-  // measured capability per catalog skill, read once; each listing is compared with it
-  const skillContext = await loadSkillContext(createGateClient(), user.id);
 
   return (
     <div>

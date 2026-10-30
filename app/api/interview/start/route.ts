@@ -9,7 +9,7 @@ import { listEnabledRoles, matchRoleForStatedCareer } from "@/lib/arena-workstat
 import { getStudentDirection } from "@/lib/career/direction";
 import { generateInterviewQuestions } from "@/lib/interview/session";
 import { getStageState } from "@/lib/stage/server";
-import { interviewUnlocked } from "@/lib/plans/catalog";
+import { interviewUnlocked, interviewQuotaReached } from "@/lib/plans/catalog";
 
 const BodySchema = z.object({ mode: z.enum(["practice", "technical", "behavioral", "hr"]) });
 
@@ -18,10 +18,11 @@ export async function POST(request: Request) {
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
 
-  const rateLimit = await checkRateLimit(auth.userId, { bucket: "interview_start", maxRequests: 10, windowSeconds: 60 });
+  const rateLimit = await checkRateLimit(auth.userId, { bucket: "interview_start", maxRequests: 10, windowSeconds: 60, failClosed: true });
   if (!rateLimit.allowed) return rateLimitedResponse(rateLimit.remaining);
 
-  const parsed = BodySchema.safeParse(await request.json());
+  const body = await request.json().catch(() => null);
+  const parsed = BodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const service = createServiceClient();
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
   if (!interviewUnlocked(stage, planId, direction?.launchpadOpen ?? false)) {
     const error = stage === "graduate" ? "AI Interview is part of Pro and Elite." : "AI Interview opens when you enter your final year (4-1).";
     return NextResponse.json({ error }, { status: 403 });
+  }
+  const { count: usedSessions } = await service.from("ai_interview_sessions").select("id", { count: "exact", head: true }).eq("user_id", auth.userId);
+  if (interviewQuotaReached(usedSessions ?? 0, planId)) {
+    return NextResponse.json({ error: "You've used every interview included in your plan." }, { status: 403 });
   }
   const statedRole = await getStatedCareerInterest(service, auth.userId);
   const roles = await listEnabledRoles(service);

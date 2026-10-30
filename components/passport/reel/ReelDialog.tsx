@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Play, X } from "lucide-react";
 import type { ReelInput } from "@/lib/passport/reel";
-import { ReelPlayer } from "./ReelPlayer";
+import { ReelPlayerLazy } from "./ReelPlayerLazy";
 
 /** A button that opens the proof reel in a modal. The player mounts only while open, so nothing renders or plays until asked. */
 export function ReelDialog({ input }: { input: ReelInput }) {
@@ -25,7 +25,7 @@ export function ReelDialog({ input }: { input: ReelInput }) {
           <p className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">Your proof reel</p>
           <button type="button" onClick={close} aria-label="Close" className="rounded-full p-1.5 text-[var(--m-ink)] hover:bg-[var(--m-soft)]"><X size={18} aria-hidden /></button>
         </div>
-        {open && <ReelPlayer input={input} />}
+        {open && <ReelPlayerLazy input={input} />}
       </dialog>
     </>
   );

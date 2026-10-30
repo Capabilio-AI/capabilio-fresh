@@ -6,6 +6,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getVerifiedUser } from "@/lib/supabase/aal";
 import { markEmployed, markGraduated } from "@/lib/stage/server";
+import { canDeclareGraduated } from "@/lib/stage/finish-studies";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getStudentDirection } from "@/lib/career/direction";
 
 export interface StageActionState {
   error?: string;
@@ -32,6 +35,9 @@ function landOnDashboard(): never {
 /** "I have finished my studies": the profile becomes a recently graduated one straight away. */
 export async function finishStudies(): Promise<StageActionState> {
   const userId = await signedInUserId();
+  if (!canDeclareGraduated(await getStudentDirection(createServiceClient(), userId))) {
+    return { error: "You can finish your studies once you are in your final year or your programme has ended." };
+  }
   if (!(await markGraduated(userId))) return { error: "Your profile could not be moved. Try again, or contact support." };
   return landOnDashboard();
 }

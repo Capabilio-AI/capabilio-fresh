@@ -20,7 +20,12 @@ export default async function CoursePage({ params }: { params: Promise<{ module:
   const { user } = await requireAuthedUser();
   const load = await loadLearning(createServiceClient(), user.id);
   if (!load.ok) redirect("/skillstudio");
-  const key = decodeURIComponent(raw);
+  let key = raw;
+  try {
+    key = decodeURIComponent(raw);
+  } catch {
+    notFound(); // a stray % in the link is a bad URL, not a server error
+  }
   const m = load.view.modules.find((x) => x.key === key);
   if (!m) notFound();
 

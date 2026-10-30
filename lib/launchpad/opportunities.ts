@@ -24,6 +24,7 @@ export interface Opportunity {
 }
 
 const TYPES: OpportunityType[] = ["job", "internship", "competition", "referral"];
+const OPEN_LIMIT = 200;
 const SkillsSchema = z.array(z.string());
 
 /** Pure: an open listing has no deadline, or a deadline today or later (`today` is YYYY-MM-DD). */
@@ -31,14 +32,22 @@ export function isOpen(deadline: string | null, today: string): boolean {
   return deadline == null || deadline >= today;
 }
 
-/** Real rows only. An empty table yields an empty list — the page shows an honest empty state, never sample data. */
-export async function listOpenOpportunities(supabase: SupabaseClient<Database>, now: Date = new Date()): Promise<Opportunity[]> {
-  const today = now.toISOString().slice(0, 10);
+/** Real rows only (`onlyId` narrows to one listing). An empty table yields an empty list — the page shows an honest empty state, never sample data. */
+export async function listOpenOpportunities(supabase: SupabaseClient<Database>, now: Date = new Date(), onlyId?: string): Promise<Opportunity[]> {
+  // Deadlines are calendar dates in India, so "today" is the IST date (en-CA formats as YYYY-MM-DD).
+  const today = now.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   // untyped: the company-visit columns postdate the generated types
-  const { data } = await untyped(supabase)
+  let query = untyped(supabase)
     .from("opportunities")
     .select("id, role, company, location, opportunity_type, skills, eligibility, deadline, institution_id, drive_date, drive_status, ctc_offered, eligible_branches")
-    .order("deadline", { ascending: true, nullsFirst: false });
+    // filtered in SQL: still open, a type we render, and a company visit that is not completed or cancelled
+    .or(`deadline.is.null,deadline.gte.${today}`)
+    .in("opportunity_type", TYPES)
+    .in("drive_status", ["planned", "registration_open"])
+    .order("deadline", { ascending: true, nullsFirst: false })
+    .limit(OPEN_LIMIT);
+  if (onlyId) query = query.eq("id", onlyId);
+  const { data } = await query;
   type Row = {
     id: string;
     role: string;
@@ -55,8 +64,6 @@ export async function listOpenOpportunities(supabase: SupabaseClient<Database>, 
     eligible_branches: string[] | null;
   };
   return ((data ?? []) as Row[])
-    // a completed or cancelled company visit is no longer something to register for
-    .filter((r) => isOpen(r.deadline, today) && (TYPES as string[]).includes(r.opportunity_type) && (r.drive_status === "planned" || r.drive_status === "registration_open"))
     .map((r) => ({
       id: r.id,
       role: r.role,

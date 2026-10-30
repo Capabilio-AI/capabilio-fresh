@@ -55,7 +55,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
     p_question_index: parsed.data.questionIndex,
   });
   if (gradingError) {
-    return NextResponse.json({ error: gradingError.message }, { status: 400 });
+    console.error("[assessment/coding-submit] get_coding_question_for_grading failed:", gradingError);
+    return NextResponse.json({ error: "Could not load this question." }, { status: 400 });
   }
   const grading = gradingData as unknown as GradingInfo;
   if (!isSupportedLanguage(grading.language)) {
@@ -81,7 +82,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
     p_is_correct: isCorrect,
   });
   if (recordError) {
-    return NextResponse.json({ error: recordError.message }, { status: 400 });
+    console.error("[assessment/coding-submit] record_coding_response failed:", recordError);
+    return NextResponse.json({ error: "Could not record your answer." }, { status: 400 });
   }
 
   return NextResponse.json({ isCorrect, stdout, stderr, recorded: recordData });

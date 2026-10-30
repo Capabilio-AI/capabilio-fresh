@@ -3,6 +3,7 @@ import { orgRoute } from "@/lib/api/org-route";
 import { MemberDecisionSchema } from "@/lib/org/schemas";
 import { IN_APP_APPROVABLE_ROLES } from "@/lib/org/roles";
 import { notify } from "@/lib/notifications/notify";
+import { checkGrant } from "@/lib/org/team";
 
 /** Org admins approve/revoke pending faculty, HOD and TPO of THEIR institution. Admin roles stay operator-approved (no self-promotion by claiming an institution's name). */
 export async function POST(request: Request) {
@@ -16,6 +17,11 @@ export async function POST(request: Request) {
     if (!target || target.status !== "pending") return NextResponse.json({ error: "Membership not found." }, { status: 404 });
     if (!(IN_APP_APPROVABLE_ROLES as readonly string[]).includes(target.role)) {
       return NextResponse.json({ error: "This role can only be approved by the Capabilio team." }, { status: 403 });
+    }
+    // approving gives the account its role's access, so the approver may not hand out more than they hold (same rule as invites)
+    if (body.decision === "approve") {
+      const grant = checkGrant(ctx, target.role, null);
+      if (!grant.ok) return NextResponse.json({ error: grant.message }, { status: 403 });
     }
     const { error } = await service
       .from("institution_memberships")

@@ -17,6 +17,14 @@ export async function POST(request: Request) {
     if (kindOf(target.role) === "admin" && ctx.kind !== "admin") return NextResponse.json({ error: "Only an admin can remove an admin." }, { status: 403 });
     const { error } = await db.from("institution_memberships").update({ status: "revoked" }).eq("id", target.id);
     if (error) throw error;
+    // anything this person invited but nobody has accepted yet dies with their access
+    const { error: revokeError } = await db
+      .from("org_invitations")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("invited_by_membership_id", target.id)
+      .is("accepted_at", null)
+      .is("revoked_at", null);
+    if (revokeError) throw revokeError;
     await notify(service, {
       userIds: [target.user_id],
       type: "access_removed",

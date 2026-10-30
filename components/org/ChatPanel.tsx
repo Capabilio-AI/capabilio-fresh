@@ -21,15 +21,23 @@ export function ChatPanel({ channelId, channelName, initial, myUserId }: { chann
   const [error, setError] = useState<string | null>(null);
   const lastAt = useRef<string | undefined>(initial.at(-1)?.createdAt);
   const endRef = useRef<HTMLDivElement>(null);
+  // relative times need the client clock: render none on the server/first paint (no hydration mismatch), then tick each minute
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const append = useCallback((incoming: ChatMessage[]) => {
+  // advanceCursor is false for the sender's own message: moving the poll cursor past it would skip anything a colleague posted since the last poll (duplicates are already dropped by id)
+  const append = useCallback((incoming: ChatMessage[], advanceCursor = true) => {
     if (incoming.length === 0) return;
     setMessages((prev) => {
       const seen = new Set(prev.map((m) => m.id));
       const fresh = incoming.filter((m) => !seen.has(m.id));
       return fresh.length ? [...prev, ...fresh] : prev;
     });
-    lastAt.current = incoming.at(-1)?.createdAt ?? lastAt.current;
+    if (advanceCursor) lastAt.current = incoming.at(-1)?.createdAt ?? lastAt.current;
   }, []);
 
   useEffect(() => {
@@ -67,7 +75,7 @@ export function ChatPanel({ channelId, channelName, initial, myUserId }: { chann
       const res = await fetch("/api/org/chat/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channelId, body, ...(pending ? { attachment: { path: pending.path, name: pending.name, size: pending.size, mime: pending.mime } } : {}) }) });
       const json = (await res.json().catch(() => null)) as { id?: string; createdAt?: string; attachment?: ChatAttachment | null; error?: string } | null;
       if (!res.ok || !json?.id || !json.createdAt) return setError(json?.error ?? "Message not sent. Try again.");
-      append([{ id: json.id, authorId: myUserId, authorName: "You", body, createdAt: json.createdAt, attachment: json.attachment ?? null }]);
+      append([{ id: json.id, authorId: myUserId, authorName: "You", body, createdAt: json.createdAt, attachment: json.attachment ?? null }], false);
       setText("");
       setPending(null);
     } catch {
@@ -89,7 +97,8 @@ export function ChatPanel({ channelId, channelName, initial, myUserId }: { chann
               return (
                 <li key={m.id} className={`flex flex-col ${mine ? "items-end" : "items-start"}`}>
                   <p className="mb-1 text-[11px] text-app-muted">
-                    <span className="font-bold text-app-charcoal">{mine ? "You" : m.authorName}</span> · {timeAgo(m.createdAt)}
+                    <span className="font-bold text-app-charcoal">{mine ? "You" : m.authorName}</span>
+                    {now && ` · ${timeAgo(m.createdAt, now)}`}
                   </p>
                   <div className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed ${mine ? "text-[var(--o-ink-on-gold)]" : "bg-white/[0.07] text-app-charcoal"}`} style={mine ? { background: "var(--o-gradient)" } : undefined}>
                     {m.attachment && <MessageAttachment attachment={m.attachment} mine={mine} />}

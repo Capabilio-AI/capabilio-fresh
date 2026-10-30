@@ -10,9 +10,11 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export function DomainCountdown({ unlockAt }: { unlockAt: string }) {
   const router = useRouter();
   const target = new Date(unlockAt).getTime();
-  const [left, setLeft] = useState(() => Math.max(0, target - Date.now()));
+  // null until mounted so server and client render the same placeholder.
+  const [left, setLeft] = useState<number | null>(null);
 
   useEffect(() => {
+    setLeft(Math.max(0, target - Date.now()));
     const id = setInterval(() => {
       const next = Math.max(0, target - Date.now());
       setLeft(next);
@@ -24,12 +26,12 @@ export function DomainCountdown({ unlockAt }: { unlockAt: string }) {
     return () => clearInterval(id);
   }, [target, router]);
 
-  const s = Math.floor(left / 1000);
+  const s = Math.floor((left ?? 0) / 1000);
   return (
     <div className="rounded-3xl border border-[var(--m-rule)] bg-white p-6 text-center" role="timer" aria-live="off">
       <Lock size={18} className="mx-auto text-app-muted" />
       <p className="mt-2 font-lp-body text-[13px] text-app-muted">Ticket passed. Your next Domain ticket unlocks in</p>
-      <p className="mt-1 font-lp-mono text-[28px] font-bold text-[var(--m-ink)]">{`${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`}</p>
+      <p className="mt-1 font-lp-mono text-[28px] font-bold text-[var(--m-ink)]">{left === null ? "--:--:--" : `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`}</p>
     </div>
   );
 }

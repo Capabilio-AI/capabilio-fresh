@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { MetroScope } from "@/components/metro/MetroScope";
 import { BadgeWall } from "@/components/passport/badge/BadgeWall";
 import { EvidenceSection } from "@/components/passport/EvidenceSection";
-import { ReelPlayer } from "@/components/passport/reel/ReelPlayer";
+import { ReelPlayerLazy } from "@/components/passport/reel/ReelPlayerLazy";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadReel } from "@/lib/passport/reel-data";
 
@@ -29,7 +29,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
               <svg width="36" height="12" viewBox="0 0 44 14" aria-hidden><path d="M3 7h38" stroke="var(--m-accent)" strokeWidth="4" strokeLinecap="round" /><circle cx="3" cy="7" r="3" fill="var(--m-ink)" stroke="#fff" strokeWidth="2.5" /><circle cx="22" cy="7" r="3" fill="var(--m-ink)" stroke="#fff" strokeWidth="2.5" /><circle cx="41" cy="7" r="3" fill="var(--m-ink)" stroke="#fff" strokeWidth="2.5" /></svg>
               Verified skill passport
             </p>
-            <ReelPlayer input={input} />
+            <ReelPlayerLazy input={input} />
           </div>
 
           <div className="flex flex-col gap-5 text-[var(--m-ink)]">

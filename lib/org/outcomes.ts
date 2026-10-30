@@ -71,7 +71,8 @@ export function buildFunnel(statuses: string[], placedFromDrives: number): Funne
 }
 
 export async function loadPlacements(service: SupabaseClient<Database>, institutionId: string): Promise<PlacementRecord[]> {
-  const { data } = await untyped(service).from("org_placements").select("*").eq("institution_id", institutionId).order("confirmed_at", { ascending: false });
+  const { data, error } = await untyped(service).from("org_placements").select("*").eq("institution_id", institutionId).order("confirmed_at", { ascending: false });
+  if (error) throw new Error(`Placements load failed: ${error.message}`);
   const rows = (data ?? []) as {
     id: string;
     student_user_id: string;
@@ -111,10 +112,11 @@ export async function loadPlacements(service: SupabaseClient<Database>, institut
 }
 
 export async function loadOutcomes(service: SupabaseClient<Database>, institutionId: string) {
-  const placements = await loadPlacements(service, institutionId);
-  const { data: drives } = await service.from("opportunities").select("id").eq("institution_id", institutionId);
-  const driveIds = (drives ?? []).map((d) => d.id);
-  const { data: apps } = driveIds.length ? await service.from("applications").select("status").in("opportunity_id", driveIds) : { data: [] };
+  const [placements, drivesRes] = await Promise.all([loadPlacements(service, institutionId), service.from("opportunities").select("id").eq("institution_id", institutionId)]);
+  if (drivesRes.error) throw new Error(`Visits load failed: ${drivesRes.error.message}`);
+  const driveIds = (drivesRes.data ?? []).map((d) => d.id);
+  const { data: apps, error: appsError } = driveIds.length ? await service.from("applications").select("status").in("opportunity_id", driveIds) : { data: [], error: null };
+  if (appsError) throw new Error(`Applications load failed: ${appsError.message}`);
   const fromDrives = placements.filter((p) => p.opportunityId !== null).length; // every placement is officer-confirmed by construction
   return {
     placements,
@@ -122,6 +124,40 @@ export async function loadOutcomes(service: SupabaseClient<Database>, institutio
     funnel: buildFunnel((apps ?? []).map((a) => a.status), fromDrives),
     driveCount: driveIds.length,
   };
+}
+
+const STUDENT_PICKER_LIMIT = 50;
+const ID_PAGE = 1000;
+const NAME_CHUNK = 200;
+
+/** Name/email search over THIS college's active students only (the off-campus offer picker). Empty query = no options, so a big college never ships a giant list. */
+export async function searchStudentOptions(service: SupabaseClient<Database>, institutionId: string, query: string): Promise<{ value: string; label: string }[]> {
+  const term = query.trim().replace(/[%,()]/g, "");
+  if (!term) return [];
+  const ids: string[] = [];
+  for (let from = 0; ; from += ID_PAGE) {
+    const { data, error } = await service
+      .from("institution_memberships")
+      .select("user_id")
+      .eq("institution_id", institutionId)
+      .eq("role", "student")
+      .eq("status", "active")
+      .order("user_id")
+      .range(from, from + ID_PAGE - 1);
+    if (error) throw new Error(`Student search failed: ${error.message}`);
+    ids.push(...(data ?? []).map((m) => m.user_id));
+    if (!data || data.length < ID_PAGE) break;
+  }
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += NAME_CHUNK) chunks.push(ids.slice(i, i + NAME_CHUNK));
+  const found = await Promise.all(chunks.map((c) => service.from("profiles").select("id, full_name, email").in("id", c).or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)));
+  const failed = found.find((r) => r.error);
+  if (failed?.error) throw new Error(`Student search failed: ${failed.error.message}`);
+  return found
+    .flatMap((r) => r.data ?? [])
+    .map((p) => ({ value: p.id, label: p.full_name ?? p.email }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .slice(0, STUDENT_PICKER_LIMIT);
 }
 
 const csvCell = (v: string | number | null): string => {

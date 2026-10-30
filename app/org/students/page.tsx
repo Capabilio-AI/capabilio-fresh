@@ -13,7 +13,8 @@ type Params = { branch?: string; year?: string; q?: string; flag?: string; page?
 export default async function StudentsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const { ctx, service } = await orgPageContext("viewRoster");
   const sp = await searchParams;
-  const endYear = sp.year && /^\d{4}$/.test(sp.year) ? Number(sp.year) : undefined;
+  // year=none is the "No class" cohort (end_year not set)
+  const endYear = sp.year === "none" ? null : sp.year && /^\d{4}$/.test(sp.year) ? Number(sp.year) : undefined;
   const flag = sp.flag === "roll" || sp.flag === "missing" ? sp.flag : undefined;
   const page = sp.page && /^\d{1,4}$/.test(sp.page) ? Number(sp.page) : 1;
   const o = await loadRosterOverview(service, ctx, { branch: sp.branch || undefined, endYear, q: sp.q, flag, page });
@@ -69,7 +70,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                   <th className="px-2 py-1 font-semibold">Branch</th>
                   {matrix.years.map((y) => (
                     <th key={String(y)} className="px-2 py-1 text-center font-semibold">
-                      <Link href={href({ year: y ? String(y) : undefined, branch: undefined, page: undefined })} className="hover:underline">
+                      <Link href={href({ year: y ? String(y) : "none", branch: undefined, page: undefined })} className="hover:underline">
                         {y ?? "No class"}
                       </Link>
                     </th>
@@ -87,12 +88,12 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                     </th>
                     {matrix.years.map((y) => {
                       const n = matrix.cells[cellKey(b, y)] ?? 0;
-                      const on = sp.branch === b && String(y ?? "") === (sp.year ?? "");
+                      const on = sp.branch === b && (y === null ? "none" : String(y)) === sp.year;
                       return (
                         <td key={String(y)} className="p-0">
                           {n > 0 ? (
                             <Link
-                              href={href({ branch: b, year: y ? String(y) : undefined, page: undefined })}
+                              href={href({ branch: b, year: y ? String(y) : "none", page: undefined })}
                               aria-label={`${b}, class of ${y ?? "not set"}: ${n} students`}
                               aria-current={on}
                               className={`block rounded-lg px-2 py-2 text-center text-[13px] font-extrabold text-app-charcoal transition-transform hover:scale-[1.04] ${on ? "ring-2 ring-[var(--m-ink)]" : ""}`}
@@ -123,7 +124,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
             {filtered ? `${o.total.toLocaleString("en-IN")} matching` : `All ${o.total.toLocaleString("en-IN")} students`}
           </h2>
           {sp.branch && <Pill tone="info">{sp.branch}</Pill>}
-          {sp.year && <Pill tone="info">Class of {sp.year}</Pill>}
+          {sp.year && <Pill tone="info">{sp.year === "none" ? "No class set" : `Class of ${sp.year}`}</Pill>}
           {sp.q && <Pill tone="info">“{sp.q}”</Pill>}
           {flag && <Pill tone="warn">{flag === "roll" ? "Roll not matched" : "Profile incomplete"}</Pill>}
           {filtered && (

@@ -43,13 +43,16 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
   const visit = data as Visit | null;
   if (!visit) notFound();
 
-  const { data: apps } = await service.from("applications").select("id, user_id, status, applied_at").eq("opportunity_id", visit.id).order("applied_at");
+  const [{ data: apps, error: appsError }, placements] = await Promise.all([
+    service.from("applications").select("id, user_id, status, applied_at").eq("opportunity_id", visit.id).order("applied_at"),
+    db.from("org_placements").select("id, student_user_id, offer_letter_path, student_response").eq("opportunity_id", visit.id),
+  ]);
+  if (appsError) throw new Error(`Registrations load failed: ${appsError.message}`);
   const rows = apps ?? [];
   const ids = rows.map((r) => r.user_id);
-  const [profiles, memberships, placements] = await Promise.all([
+  const [profiles, memberships] = await Promise.all([
     ids.length ? service.from("profiles").select("id, full_name, email").in("id", ids) : Promise.resolve({ data: [] }),
     ids.length ? service.from("institution_memberships").select("user_id, branch, end_year").eq("institution_id", ctx.institutionId).in("user_id", ids) : Promise.resolve({ data: [] }),
-    db.from("org_placements").select("id, student_user_id, offer_letter_path, student_response").eq("opportunity_id", visit.id),
   ]);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
   const meta = new Map((memberships.data ?? []).map((m) => [m.user_id, m]));

@@ -1,0 +1,7 @@
+{
+  "tool_name": "mcp__claude_ai_Supabase__execute_sql",
+  "tool_input_preview": "{\"project_id\":\"scjodtixvfzbtpumocay\",\"query\":\"select 'skills' t, count(*), max(created_at) from skills union all select 'project_catalog', count(*), max(created_at) from project_catalog union all sele...",
+  "error": "{\"error\":{\"name\":\"HttpException\",\"message\":\"Failed to run sql query: ERROR:  42703: column \\\"created_at\\\" does not exist\\nLINE 1: select 'skills' t, count(*), max(created_at) from skills union all select 'project_catalog', count(*), max(created_at) from project_catalog union all select 'project_skills', count(*), max(created_at) from project_skills union all select 'roadmap_nodes', count(*), max(created_at) from roadmap_nodes union all select 'roadmap_edges', count(*), max(created_at) from roadm...",
+  "timestamp": "2026-10-30T12:52:25.496Z",
+  "retry_count": 1
+}

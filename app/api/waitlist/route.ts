@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
+import { ipRateLimitKey } from "@/lib/rate-limit/ip";
+import { checkRateLimit } from "@/lib/rate-limit/check";
 
 const WaitlistSchema = z
   .object({
@@ -13,7 +15,7 @@ const WaitlistSchema = z
   })
   .strict();
 
-// Per-instance throttle: a public form with no login, so keep one address from filling the table.
+// Public form with no login: DB-backed limit per hashed IP (migration 143), plus a per-instance counter that still protects until that is applied.
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_WINDOW = 8;
 const hits = new Map<string, number[]>();
@@ -31,7 +33,8 @@ function allowed(key: string, now = Date.now()): boolean {
 /** Early-access list for the Professional and Executive paths. Creates no account and returns the same answer for a repeat email. */
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!allowed(ip)) return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  const dbLimit = await checkRateLimit(ipRateLimitKey(request), { bucket: "waitlist", maxRequests: MAX_PER_WINDOW, windowSeconds: WINDOW_MS / 1000 });
+  if (!dbLimit.allowed || !allowed(ip)) return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
 
   const parsed = WaitlistSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

@@ -12,5 +12,7 @@ export async function setPassportSharing(enabled: boolean): Promise<{ ok: boolea
     return { ok: false };
   }
   revalidatePath("/profile");
+  revalidatePath("/dashboard/passport");
+  revalidatePath("/settings/privacy");
   return { ok: true };
 }

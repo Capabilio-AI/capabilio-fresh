@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { getStudentDirection, type StudentDirection } from "@/lib/career/direction";
@@ -14,10 +15,10 @@ export interface ViewerSummary {
   direction: StudentDirection | null;
 }
 
-export async function getViewerSummary(
+export const getViewerSummary = cache(async (
   supabase: SupabaseClient<Database>,
   userId: string
-): Promise<ViewerSummary> {
+): Promise<ViewerSummary> => {
   const [{ data: profile }, { data: memberships }, direction] = await Promise.all([
     supabase.from("profiles").select("full_name, email, avatar_url").eq("id", userId).single(),
     // A student can have several membership rows; .maybeSingle() returned
@@ -41,7 +42,7 @@ export async function getViewerSummary(
     branch: membership?.branch ?? null,
     direction,
   };
-}
+});
 
 export function initialsOf(name: string | null, email: string): string {
   if (name) {

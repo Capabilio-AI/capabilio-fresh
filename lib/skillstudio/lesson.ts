@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildGraph } from "@/lib/roadmap-visual/graph-build";
 import { loadGraphContext } from "@/lib/roadmap-visual/context";
@@ -14,7 +15,20 @@ export type LearningLoad =
  * The student's whole learning path from one read of their roadmap data: the modules, and a way to explain any topic in them. The same
  * facts the Roadmap shows, so SkillStudio can never disagree with it. Says why when there is nothing to show instead of inventing a path.
  */
-export async function loadLearning(service: SupabaseClient, userId: string): Promise<LearningLoad> {
+export function loadLearning(service: SupabaseClient, userId: string): Promise<LearningLoad> {
+  // one build per user per request; callers each make their own service client, so key on the user id rather than the client
+  const inflight = requestLoads();
+  let load = inflight.get(userId);
+  if (!load) {
+    load = buildLearning(service, userId);
+    inflight.set(userId, load);
+  }
+  return load;
+}
+
+const requestLoads = cache(() => new Map<string, Promise<LearningLoad>>());
+
+async function buildLearning(service: SupabaseClient, userId: string): Promise<LearningLoad> {
   try {
     const loaded = await loadGraphContext(service as never, userId, "primary");
     if (!loaded.ok) return { ok: false, reason: loaded.reason };

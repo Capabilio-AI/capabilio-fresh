@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Check, ChevronRight } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
@@ -16,6 +17,17 @@ const ALERT = {
 } as const;
 
 const KIND_TONE = { event: "info", project: "warn", drive: "ok" } as const;
+
+/** A checklist row links only when the viewer can open the page it points at. */
+function Wrapper({ href, className, children }: { href: string | null; className: string; children: ReactNode }) {
+  return href ? (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  ) : (
+    <div className={className}>{children}</div>
+  );
+}
 
 export default async function OrgHomePage() {
   const { ctx, service } = await orgPageContext();
@@ -44,7 +56,7 @@ export default async function OrgHomePage() {
     projects: projRes.count ?? 0,
     drives: driveRes.count ?? 0,
     students: kpis.students,
-  });
+  }, ctx.permissions);
   const doneCount = steps.filter((s) => s.done).length;
   const showSetup = ctx.permissions.has("members") && doneCount < steps.length;
 
@@ -52,10 +64,10 @@ export default async function OrgHomePage() {
     { label: "Active students", value: kpis.students, sub: "Signed up under your college", href: ctx.permissions.has("students") ? "/org/students" : ctx.permissions.has("insights") ? "/org/insights" : "/org", tone: "text-app-charcoal" },
     canManage && { label: "Open projects", value: kpis.openProjects, sub: `${home.counts.awaitingGrading} awaiting a grade`, href: "/org/projects", tone: "text-app-orange" },
     runsPlacements && { label: "Company visits", value: kpis.openDrives, sub: `${kpis.applicants} applications`, href: "/org/placements", tone: "text-app-blue" },
-    runsPlacements && { label: "Placed", value: kpis.placed, sub: "Confirmed by your team", href: "/org/outcomes", tone: "text-app-success" },
+    runsPlacements && ctx.permissions.has("outcomes") && { label: "Placed", value: kpis.placed, sub: "Confirmed by your team", href: "/org/outcomes", tone: "text-app-success" },
   ].filter(Boolean) as { label: string; value: number; sub: string; href: string; tone: string }[];
 
-  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" });
 
   return (
     <div className="flex flex-col gap-8">
@@ -96,7 +108,7 @@ export default async function OrgHomePage() {
           <ul className="mt-4 grid grid-cols-1 gap-x-8 md:grid-cols-2">
             {steps.map((s) => (
               <li key={s.label} className="border-t border-app-border first:border-t-0 md:[&:nth-child(2)]:border-t-0">
-                <Link href={s.href} className="flex items-start gap-3 rounded-lg px-1 py-3 hover:bg-white/[0.04]">
+                <Wrapper href={s.href} className={`flex items-start gap-3 rounded-lg px-1 py-3 ${s.href ? "hover:bg-white/[0.04]" : ""}`}>
                   <span
                     className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded ${s.done ? "bg-app-success text-[#fff]" : "border-[1.5px] border-[var(--m-soft,#d9cba3)] text-transparent"}`}
                     aria-hidden="true"
@@ -107,7 +119,7 @@ export default async function OrgHomePage() {
                     <span className={`block text-[13.5px] font-semibold ${s.done ? "text-app-muted line-through" : "text-app-charcoal"}`}>{s.label}</span>
                     {!s.done && <span className="block text-[12.5px] text-app-muted">{s.hint}</span>}
                   </span>
-                </Link>
+                </Wrapper>
               </li>
             ))}
           </ul>
@@ -180,8 +192,8 @@ export default async function OrgHomePage() {
                   <li key={`${u.kind}-${u.title}-${u.at}`}>
                     <Link href={u.href} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.035]">
                       <span className="ws-date" aria-hidden="true">
-                        <b>{at.toLocaleDateString("en-IN", { day: "2-digit" })}</b>
-                        <span>{at.toLocaleDateString("en-IN", { month: "short" })}</span>
+                        <b>{at.toLocaleDateString("en-IN", { day: "2-digit", timeZone: "Asia/Kolkata" })}</b>
+                        <span>{at.toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" })}</span>
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13.5px] font-semibold text-app-charcoal">{u.title}</span>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/api/require-user";
 import { MAX_UPLOAD_BYTES } from "@/lib/uploads/limits";
+import { sniffImage, sniffPdf } from "@/lib/pulse/media";
 
 const ALLOWED_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const MAX_BYTES = MAX_UPLOAD_BYTES;
@@ -43,12 +44,19 @@ export async function POST(request: Request) {
   if (file.size === 0 || file.size > MAX_BYTES) {
     return NextResponse.json({ error: "File must be non-empty and under 4MB." }, { status: 400 });
   }
+  // the browser-declared type is only a claim: the file's own first bytes decide what it really is
+  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const image = sniffImage(head);
+  const realType = sniffPdf(head) ? "application/pdf" : image === "image/png" || image === "image/jpeg" ? image : null;
+  if (!realType) {
+    return NextResponse.json({ error: "Only PDF, JPG, or PNG files are accepted." }, { status: 400 });
+  }
 
-  const extension = file.type === "application/pdf" ? "pdf" : file.type === "image/png" ? "png" : "jpg";
+  const extension = realType === "application/pdf" ? "pdf" : realType === "image/png" ? "png" : "jpg";
   const filePath = `${auth.userId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
   const { error: uploadError } = await supabase.storage.from("certificates").upload(filePath, file, {
-    contentType: file.type,
+    contentType: realType,
     upsert: false,
   });
   if (uploadError) {

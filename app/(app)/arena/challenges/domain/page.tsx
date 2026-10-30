@@ -45,7 +45,13 @@ export default async function DomainChallengesPage() {
   const service = createServiceClient();
   const { stage } = await getStageState(user.id);
   const isStudent = stage === "student";
-  const view = await loadDomainSet(service, user.id, which, new Date(), { skipPlanB: !isStudent });
+  // role resolution inputs are independent of the set, so they run alongside it (the same resolution the workstation API uses)
+  const [view, roles, direction, engagedRoleKey] = await Promise.all([
+    loadDomainSet(service, user.id, which, new Date(), { skipPlanB: !isStudent }),
+    listEnabledRoles(service),
+    getStudentDirection(service, user.id),
+    getEngagedRoleKey(service, user.id),
+  ]);
   const setCareerHref = isStudent ? SET_CAREER_HREF : "/assessment";
 
   let body: React.ReactNode;
@@ -58,7 +64,7 @@ export default async function DomainChallengesPage() {
       />
     );
   } else if (view.state === "no_plan_b") {
-    const planBOpen = Boolean((await getStudentDirection(service, user.id))?.planBOpen);
+    const planBOpen = Boolean(direction?.planBOpen);
     body = (
       <Notice
         title="Domain challenges start with your Plan B"
@@ -68,7 +74,6 @@ export default async function DomainChallengesPage() {
     );
   } else {
     // the same role resolution the workstation API uses, so the page and the API cannot disagree
-    const [roles, direction, engagedRoleKey] = await Promise.all([listEnabledRoles(service), getStudentDirection(service, user.id), getEngagedRoleKey(service, user.id)]);
     const resolvedRole = resolveDomainRole(roles, { activeRoleKey: direction?.activeRoleKey ?? null, engagedRoleKey, statedRole: view.career.name }).role;
     const hasWorkstation = resolvedRole !== null;
     const toolkit = resolvedRole ? toolkitFor(resolvedRole.role_key) : null;

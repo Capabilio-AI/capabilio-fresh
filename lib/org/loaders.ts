@@ -44,7 +44,9 @@ export async function listSubjects(service: Service, institutionId: string, bran
 export async function listMaterialsForStaff(service: Service, ctx: OrgContext): Promise<MaterialRow[]> {
   let q = untyped(service).from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(100);
   if (ctx.kind !== "admin") q = q.eq("author_membership_id", ctx.membershipId);
-  return ((await q).data ?? []) as MaterialRow[];
+  const { data, error } = await q;
+  if (error) throw new Error(`Materials load failed: ${error.message}`);
+  return (data ?? []) as MaterialRow[];
 }
 
 export interface ProjectSummary extends ProjectRow {
@@ -57,9 +59,12 @@ export async function listProjectsForStaff(service: Service, ctx: OrgContext): P
   const db = untyped(service);
   let q = db.from("class_projects").select("*").eq("institution_id", ctx.institutionId).order("created_at", { ascending: false });
   if (ctx.kind !== "admin") q = q.eq("created_by_membership_id", ctx.membershipId);
-  const projects = ((await q).data ?? []) as ProjectRow[];
+  const { data: projectData, error: projectError } = await q;
+  if (projectError) throw new Error(`Projects load failed: ${projectError.message}`);
+  const projects = (projectData ?? []) as ProjectRow[];
   if (projects.length === 0) return [];
-  const { data: groups } = await db.from("class_project_groups").select("project_id, status").in("project_id", projects.map((p) => p.id));
+  const { data: groups, error: groupsError } = await db.from("class_project_groups").select("project_id, status").in("project_id", projects.map((p) => p.id));
+  if (groupsError) throw new Error(`Projects load failed: ${groupsError.message}`);
   const rows = (groups ?? []) as Pick<GroupRow, "project_id" | "status">[];
   return projects.map((p) => {
     const g = rows.filter((r) => r.project_id === p.id);
@@ -77,7 +82,9 @@ export interface GroupDetail {
 
 export async function loadProjectGroups(service: Service, projectId: string): Promise<GroupDetail[]> {
   const db = untyped(service);
-  const groups = ((await db.from("class_project_groups").select("*").eq("project_id", projectId).order("created_at")).data ?? []) as GroupRow[];
+  const { data: groupData, error: groupError } = await db.from("class_project_groups").select("*").eq("project_id", projectId).order("created_at");
+  if (groupError) throw new Error(`Groups load failed: ${groupError.message}`);
+  const groups = (groupData ?? []) as GroupRow[];
   if (groups.length === 0) return [];
   const ids = groups.map((g) => g.id);
   const [members, reports, subs, grades] = await Promise.all([
@@ -112,9 +119,9 @@ export const inScope = (scope: string[] | null, branch: string | null) =>
 /** Projects open to this student's department, with their own group and the open-slots board. */
 export async function loadStudentProjects(service: Service, ctx: OrgContext): Promise<StudentProject[]> {
   const db = untyped(service);
-  const projects = (((await db.from("class_projects").select("*").eq("institution_id", ctx.institutionId).neq("status", "archived").order("deadline_at")).data ?? []) as ProjectRow[]).filter((p) =>
-    inScope(p.department_scope, ctx.branch)
-  );
+  const { data: projectData, error: projectError } = await db.from("class_projects").select("*").eq("institution_id", ctx.institutionId).neq("status", "archived").order("deadline_at");
+  if (projectError) throw new Error(`Projects load failed: ${projectError.message}`);
+  const projects = ((projectData ?? []) as ProjectRow[]).filter((p) => inScope(p.department_scope, ctx.branch));
   if (projects.length === 0) return [];
   const ids = projects.map((p) => p.id);
   const [{ data: groupRows }, { data: memberRows }] = await Promise.all([
@@ -149,8 +156,8 @@ export async function loadStudentProjects(service: Service, ctx: OrgContext): Pr
 /** Materials for the student's own branch (case-insensitive) — and, when known, their current year. */
 export async function loadStudentMaterials(service: Service, ctx: OrgContext, currentYear: number | null): Promise<MaterialRow[]> {
   if (!ctx.branch) return [];
-  const rows = (((await untyped(service).from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(200)).data ?? []) as MaterialRow[]).filter(
-    (m) => m.branch.trim().toLowerCase() === ctx.branch!.trim().toLowerCase()
-  );
+  const { data, error } = await untyped(service).from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(200);
+  if (error) throw new Error(`Materials load failed: ${error.message}`);
+  const rows = ((data ?? []) as MaterialRow[]).filter((m) => m.branch.trim().toLowerCase() === ctx.branch!.trim().toLowerCase());
   return currentYear ? rows.filter((m) => m.year === currentYear) : rows;
 }

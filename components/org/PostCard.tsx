@@ -74,8 +74,8 @@ export function PostCard({
       {dated && start && (
         <div className="mt-4 flex items-center gap-3.5">
           <span className="o-date" aria-hidden="true">
-            <b>{start.toLocaleDateString("en-IN", { day: "2-digit" })}</b>
-            <span>{start.toLocaleDateString("en-IN", { month: "short" })}</span>
+            <b>{start.toLocaleDateString("en-IN", { day: "2-digit", timeZone: "Asia/Kolkata" })}</b>
+            <span>{start.toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" })}</span>
           </span>
           <div className="min-w-0">
             {headline && <h3 className="text-[19px] font-extrabold leading-tight tracking-[-0.02em] text-app-charcoal">{headline}</h3>}

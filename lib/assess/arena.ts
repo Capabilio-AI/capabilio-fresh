@@ -39,10 +39,11 @@ export async function recordArenaPass(userId: string, pass: ArenaPass, db: Db = 
     if (ev.replayed) return { elo: ev.newRating, change: ev.change };
 
     const skillIds = [...new Set([pass.skillId, ...(pass.extraSkillIds ?? [])].filter((id): id is string => Boolean(id)))];
+    const { data: skillRows } = skillIds.length ? await db.from("skills").select("id, name").in("id", skillIds) : { data: [] };
+    const skillName = new Map((skillRows ?? []).map((r) => [r.id, r.name]));
     for (const [i, skillId] of skillIds.entries()) {
-      const { data: skill } = await db.from("skills").select("name").eq("id", skillId).maybeSingle();
       await db.from("student_skill_evidence").upsert(
-        { student_id: userId, career_id: career.id, skill_id: skillId, skill_label: skill?.name ?? "Arena skill", source: "ARENA", source_id: i === 0 ? pass.attemptId : `${pass.attemptId}:${skillId}`, correct: true, difficulty: pass.difficulty.toUpperCase() },
+        { student_id: userId, career_id: career.id, skill_id: skillId, skill_label: skillName.get(skillId) ?? "Arena skill", source: "ARENA", source_id: i === 0 ? pass.attemptId : `${pass.attemptId}:${skillId}`, correct: true, difficulty: pass.difficulty.toUpperCase() },
         { onConflict: "source,source_id", ignoreDuplicates: true }
       );
     }

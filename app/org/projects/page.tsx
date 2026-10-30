@@ -55,7 +55,8 @@ export default async function OrgProjectsPage() {
               <GroupTitle count={lane.items.length}>{lane.title}</GroupTitle>
               <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {lane.items.map((p) => {
-                  const days = Math.ceil((new Date(p.deadline_at).getTime() - now) / 86_400_000);
+                  const msLeft = new Date(p.deadline_at).getTime() - now;
+                  const days = msLeft < 0 ? -1 : Math.ceil(msLeft / 86_400_000); // Math.ceil(-0.1) is -0, which would read "Due today" for a deadline that already passed
                   return (
                     <li key={p.id}>
                       <Link href={`/org/projects/${p.id}`} className="o-card block p-4">

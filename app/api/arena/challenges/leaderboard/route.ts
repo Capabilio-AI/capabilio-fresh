@@ -43,7 +43,10 @@ export async function GET(request: Request) {
   if (userIdsInBranch) query = query.in("user_id", userIdsInBranch);
 
   const { data: stats, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[arena/challenges/leaderboard] stats read failed:", error);
+    return NextResponse.json({ error: "Could not load the leaderboard." }, { status: 500 });
+  }
   if (!stats || stats.length === 0) return NextResponse.json({ entries: [] });
 
   const { data: profiles } = await supabase.rpc("get_public_profiles", { p_ids: stats.map((s: StatRow) => s.user_id) });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AcceptInviteSchema } from "@/lib/org/schemas";
 import { createServiceClient } from "@/lib/supabase/service";
-import { hashToken } from "@/lib/org/team";
+import { checkInviterStillMayGrant, hashToken } from "@/lib/org/team";
 import { untyped } from "@/lib/org/db";
 import { notify } from "@/lib/notifications/notify";
 
@@ -40,6 +40,14 @@ export async function POST(request: Request) {
   if (!invitation) return NextResponse.json({ error: "This invitation link is no longer valid. Ask your admin to send a new one." }, { status: 410 });
 
   const release = () => db.from("org_invitations").update({ accepted_at: null }).eq("id", invitation.id);
+
+  // honour the invitation only if the inviter could still send it today (not removed, not demoted below what they granted)
+  const { data: inviterRow } = await db.from("institution_memberships").select("role, status, permissions").eq("id", invitation.invited_by_membership_id).eq("institution_id", invitation.institution_id).maybeSingle();
+  const standing = checkInviterStillMayGrant(inviterRow as { role: string; status: string; permissions: string[] | null } | null, invitation);
+  if (!standing.ok) {
+    await release();
+    return NextResponse.json({ error: `${standing.message} Ask your admin to send a new invitation.` }, { status: 403 });
+  }
 
   const { data: created, error: createError } = await service.auth.admin.createUser({
     email: invitation.email,

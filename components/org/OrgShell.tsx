@@ -4,7 +4,7 @@ import { Fragment, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, BarChart3, BookOpen, Briefcase, Eye, FolderKanban, GraduationCap, LayoutDashboard, Megaphone, MessagesSquare, School, Settings, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
+import { Bell, BarChart3, CalendarDays, BookOpen, Briefcase, Eye, FolderKanban, GraduationCap, LayoutDashboard, Megaphone, MessagesSquare, School, Settings, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import "@/components/metro/metro.css";
 import type { OrgNavGroup } from "@/lib/org/nav";
@@ -26,6 +26,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/org/insights": BarChart3,
   "/org/outcomes": Trophy,
   "/org/chat": MessagesSquare,
+  "/org/calendar": CalendarDays,
 };
 
 function isActive(pathname: string, href: string): boolean {
@@ -62,12 +63,14 @@ export function OrgShell({
   roleLabel,
   groups,
   publicHref,
+  approved,
   children,
 }: {
   institutionName: string;
   roleLabel: string;
   groups: OrgNavGroup[];
   publicHref: string;
+  approved: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -109,7 +112,7 @@ export function OrgShell({
               <Settings size={18} strokeWidth={2.2} />
             </Dock>
             <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
-            <OrgAccountMenu institutionName={institutionName} roleLabel={roleLabel} publicHref={publicHref} initials={initialsOf(institutionName)} />
+            <OrgAccountMenu approved={approved} institutionName={institutionName} roleLabel={roleLabel} publicHref={publicHref} initials={initialsOf(institutionName)} />
           </div>
         </div>
       </header>

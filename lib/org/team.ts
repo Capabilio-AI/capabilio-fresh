@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { OrgContext } from "./context";
-import { ALL_PERMISSION_KEYS, effectivePermissions, kindOf, type OrgPermissionKey } from "./roles";
+import { ALL_PERMISSION_KEYS, effectivePermissions, kindOf, type OrgKind, type OrgPermissionKey } from "./roles";
 
 export const INVITE_TTL_DAYS = 7;
 
@@ -35,6 +35,21 @@ export function checkGrant(ctx: Pick<OrgContext, "kind" | "permissions">, role: 
   const beyond = [...effective].filter((p) => !allowed.has(p));
   if (beyond.length > 0) return { ok: false, message: "You can only give permissions you hold yourself." };
   return { ok: true };
+}
+
+/**
+ * Pure. At accept time an invitation is only as good as its inviter's CURRENT standing: they must still be an active
+ * member who could grant this role and these permissions today (removed or demoted inviters can't leave live invites behind).
+ */
+export function checkInviterStillMayGrant(
+  inviter: { role: string; status: string; permissions: readonly string[] | null } | null,
+  invitation: { role: string; permissions: readonly string[] | null }
+): GrantCheck {
+  if (!inviter || inviter.status !== "active") return { ok: false, message: "The person who invited you no longer has access to this college." };
+  const kind = kindOf(inviter.role) as OrgKind | null;
+  if (!kind) return { ok: false, message: "The person who invited you no longer has access to this college." };
+  const granted = checkGrant({ kind, permissions: effectivePermissions(inviter.role, inviter.permissions) }, invitation.role, invitation.permissions as readonly OrgPermissionKey[] | null);
+  return granted.ok ? granted : { ok: false, message: "The person who invited you can no longer give this access." };
 }
 
 /** Pure (given `now`): an invitation is usable only if unused, not cancelled and not past its expiry. */

@@ -57,7 +57,7 @@ const DAY = 86_400_000;
  * that branch by default scope; admins and unscoped staff see the whole institution.
  */
 export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgContext, filters: RosterFilters): Promise<{ rows: RosterRow[]; branches: string[]; years: number[]; truncated: boolean }> {
-  const { data } = await service
+  const { data, error } = await service
     .from("institution_memberships")
     .select("user_id, branch, end_year, roll_number, roll_number_status")
     .eq("institution_id", ctx.institutionId)
@@ -65,6 +65,7 @@ export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgCont
     .eq("status", "active")
     .order("branch")
     .limit(MAX_ROWS + 1);
+  if (error) throw new Error(`Roster load failed: ${error.message}`);
   const all = data ?? [];
   const truncated = all.length > MAX_ROWS;
 
@@ -116,7 +117,8 @@ export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgCont
 
 export interface RosterOverviewFilters {
   branch?: string;
-  endYear?: number;
+  /** a class-of year; null = the "No class" cohort (end_year not set); undefined = any */
+  endYear?: number | null;
   q?: string;
   flag?: "roll" | "missing";
   page?: number;
@@ -137,6 +139,7 @@ export interface RosterOverview {
 export const PAGE_SIZE = 25;
 const PAGE_FETCH = 1000;
 const MAX_STUDENTS = 20_000;
+const NAME_SEARCH_CHUNK = 200;
 export const cellKey = (branch: string, year: number | null) => `${branch}\u0000${year ?? ""}`;
 
 /**
@@ -146,7 +149,7 @@ export const cellKey = (branch: string, year: number | null) => `${branch}\u0000
 export async function loadRosterOverview(service: SupabaseClient<Database>, ctx: OrgContext, f: RosterOverviewFilters): Promise<RosterOverview> {
   const members: { user_id: string; branch: string | null; end_year: number | null; roll_number: string | null; roll_number_status: string | null }[] = [];
   for (let from = 0; from < MAX_STUDENTS; from += PAGE_FETCH) {
-    const { data } = await service
+    const { data, error } = await service
       .from("institution_memberships")
       .select("user_id, branch, end_year, roll_number, roll_number_status")
       .eq("institution_id", ctx.institutionId)
@@ -154,6 +157,7 @@ export async function loadRosterOverview(service: SupabaseClient<Database>, ctx:
       .eq("status", "active")
       .order("user_id")
       .range(from, from + PAGE_FETCH - 1);
+    if (error) throw new Error(`Roster load failed: ${error.message}`);
     members.push(...(data ?? []));
     if (!data || data.length < PAGE_FETCH) break;
   }
@@ -189,8 +193,15 @@ export async function loadRosterOverview(service: SupabaseClient<Database>, ctx:
   if (q) {
     const ql = q.toLowerCase();
     const byRoll = new Set(visible.filter((m) => (m.roll_number ?? "").toLowerCase().includes(ql)).map((m) => m.user_id));
-    const { data: named } = await service.from("profiles").select("id").or(`full_name.ilike.%${q.replace(/[%,()]/g, "")}%,email.ilike.%${q.replace(/[%,()]/g, "")}%`).limit(500);
-    const byName = new Set((named ?? []).map((p) => p.id));
+    // search only this college's students (chunked id lists), so a common name can't be crowded out by other colleges' profiles
+    const term = q.replace(/[%,()]/g, "");
+    const idList = visible.map((m) => m.user_id);
+    const chunks: string[][] = [];
+    for (let i = 0; i < idList.length; i += NAME_SEARCH_CHUNK) chunks.push(idList.slice(i, i + NAME_SEARCH_CHUNK));
+    const found = await Promise.all(chunks.map((c) => service.from("profiles").select("id").in("id", c).or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)));
+    const failed = found.find((r) => r.error);
+    if (failed?.error) throw new Error(`Roster search failed: ${failed.error.message}`);
+    const byName = new Set(found.flatMap((r) => (r.data ?? []).map((p) => p.id)));
     visible = visible.filter((m) => byRoll.has(m.user_id) || byName.has(m.user_id));
   }
 

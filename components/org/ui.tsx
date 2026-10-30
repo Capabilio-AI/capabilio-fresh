@@ -57,7 +57,7 @@ export function Stat({ label, value, hint, tone = "text-app-charcoal" }: { label
 
 export function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
 }
 
 /** Add-forms sit behind a button so lists lead the page; native <details>, so it works without JavaScript. */
