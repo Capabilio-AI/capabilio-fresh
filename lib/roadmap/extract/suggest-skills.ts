@@ -15,6 +15,17 @@ const CONCURRENCY = 2;
 export const DEFAULT_COURSES_PER_REQUEST = 12;
 const MARK = "_skillsSuggestedAt";
 
+/** Pure. First occurrence wins. The mapping tables are UNIQUE per (course, skill) / (outcome, skill); a repeat inside one insert rejects the whole batch. */
+export function uniqueBy<T>(rows: T[], key: (row: T) => string): T[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    const k = key(r);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 export type SuggestSkillsResult =
   | { ok: true; processed: number; remaining: number; suggested: number; unresolved: number; failedBatches: number }
   | { ok: false; status: number; message: string };
@@ -121,13 +132,22 @@ export async function suggestSkillsForImport(
     }
   });
 
-  if (newCourseRows.length) {
-    const { error } = await service.from("course_skill_mappings").insert(newCourseRows);
-    if (error) return { ok: false, status: 500, message: "Could not save the suggestions." };
+  // Two names for one skill, or one skill suggested twice for a course, must collapse to a single row.
+  const courseRows = uniqueBy(newCourseRows, (r) => `${r.course_id}|${r.skill_id}`);
+  const outcomeRows = uniqueBy(newOutcomeRows, (r) => `${r.course_outcome_id}|${r.skill_id}`);
+  if (courseRows.length) {
+    const { error } = await service.from("course_skill_mappings").insert(courseRows);
+    if (error) {
+      console.error("[suggest-skills] saving course mappings failed:", error.message);
+      return { ok: false, status: 500, message: "Could not save the suggestions." };
+    }
   }
-  if (newOutcomeRows.length) {
-    const { error } = await service.from("course_outcome_skill_mappings").insert(newOutcomeRows);
-    if (error) return { ok: false, status: 500, message: "Could not save the suggestions." };
+  if (outcomeRows.length) {
+    const { error } = await service.from("course_outcome_skill_mappings").insert(outcomeRows);
+    if (error) {
+      console.error("[suggest-skills] saving outcome mappings failed:", error.message);
+      return { ok: false, status: 500, message: "Could not save the suggestions." };
+    }
   }
   // Every write is checked: a progress mark that silently failed would make the next call redo (and re-bill) the same courses.
   const now = new Date().toISOString();
@@ -137,5 +157,5 @@ export async function suggestSkillsForImport(
   ]);
   if (writes.some((w) => w.error)) return { ok: false, status: 500, message: "Could not record progress. Try again — nothing was duplicated." };
 
-  return { ok: true, processed: handled.size, remaining: pending.length - handled.size, suggested, unresolved, failedBatches };
+  return { ok: true, processed: handled.size, remaining: pending.length - handled.size, suggested: courseRows.length, unresolved, failedBatches };
 }
