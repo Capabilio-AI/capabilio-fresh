@@ -69,3 +69,41 @@ describe("detectRegulation: running-header style", () => {
     expect(detectRegulation("R23 B.Tech COMPUTER SCIENCE COURSE STRUCTURE")).toEqual({ regulation: "R23", program: "B.Tech" });
   });
 });
+
+import { parseSemesterHeading } from "./semester-heading";
+
+describe("parseSemesterHeading: other colleges' phrasings", () => {
+  const n = (s: string) => parseSemesterHeading(s)?.n ?? null;
+  it("reads the common ways a semester is written", () => {
+    expect([n("B.TECH, I SEMESTER"), n("SEMESTER - III"), n("3rd Semester"), n("Semester 4"), n("Sem V"), n("First Semester"), n("B.E. VI SEM"), n("B.TECH: II SEMESTER")]).toEqual([1, 3, 3, 4, 5, 1, 6, 2]);
+  });
+  it("leaves year-based headings and prose alone", () => {
+    expect(n("II Year I Semester")).toBeNull();
+    expect(n("Semester 9")).toBeNull();
+    expect(n("Students must register for each semester before the deadline announced by the controller of examinations.")).toBeNull();
+    expect(n("Seminar on emerging technologies")).toBeNull();
+  });
+});
+
+describe("chunkSyllabus: another college's headings", () => {
+  const pages = [
+    `SCHEME OF INSTRUCTION
+SEMESTER - III
+Sl.No Subject Code Subject Name L T P Credits
+1 CS301 Data Structures 3 0 0 3
+2 CS302 Discrete Mathematics 3 1 0 4
+Total Credits 7`,
+    `Semester III
+Course Title: Data Structures
+Course Code: CS301
+Course Outcomes:
+CO1: Implement linked lists.`,
+    `Semester I examinations will be held in December. Nothing here is a course.
+Please contact the office.`,
+  ];
+  it("finds the table and the labelled course section without any college-specific rule", () => {
+    const { tables, courses } = chunkSyllabus(pages);
+    expect(tables.map((t) => [t.year, t.semester])).toEqual([[2, 1]]);
+    expect(courses.map((c) => c.title)).toEqual(["Data Structures"]);
+  });
+});
