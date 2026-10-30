@@ -107,3 +107,39 @@ Please contact the office.`,
     expect(courses.map((c) => c.title)).toEqual(["Data Structures"]);
   });
 });
+
+import { parseCourseSection } from "./section";
+import { stripRepeatedChrome } from "./chunk";
+
+describe("parseCourseSection: CO-PO matrix with numeric levels", () => {
+  const lines = `B.TECH I SEMESTER ES L T P C
+3 0 0 3
+23CS1T04 INTRODUCTION TO PROGRAMMING
+Course Outcomes: A student after completion of the course will be able to
+CO1: Understand basics of computers and algorithms.
+CO2: Analyze a problem and develop a program.
+COURSE ARTICULATION MATRIX (Correlation between COs, POs & PSOs):
+COs PO 1 PO 2 PO 3 PO 4
+CO1 3 3 - -
+CO2 3 3 3 -
+Note: Enter Correlation Levels 1 or 2 or 3. If there is no correlation, put '-'1- Slight (Low), 2 - Moderate
+(Medium), 3 - Substantial (High).
+B.Tech - Computer Science & Engineering	Page 14`.split("\n");
+  it("keeps exactly the printed outcomes, with unique codes and no matrix or footer text", () => {
+    const { outcomes } = parseCourseSection(lines);
+    expect(outcomes.map((o) => o.code)).toEqual(["CO1", "CO2"]);
+    expect(outcomes[1].text).toBe("Analyze a problem and develop a program.");
+  });
+});
+
+describe("stripRepeatedChrome", () => {
+  const topics = ["trees", "graphs", "sorting", "hashing", "queues", "stacks", "lists", "heaps"];
+  it("removes a header/footer that repeats on most pages and keeps page content", () => {
+    const pages = topics.map((t, i) => `DVR & Dr. HS MIC College of Technology MIC23 (w.e.f. 2023-24)\n(Autonomous)\nAbout ${t} first\nAbout ${t} second\nAbout ${t} third\nB.Tech - CSE Page ${i + 1}`);
+    expect(stripRepeatedChrome(pages)[3]).toBe("About hashing first\nAbout hashing second\nAbout hashing third");
+  });
+  it("leaves short documents untouched", () => {
+    const pages = ["Header\nBody", "Header\nBody"];
+    expect(stripRepeatedChrome(pages)).toEqual(pages);
+  });
+});

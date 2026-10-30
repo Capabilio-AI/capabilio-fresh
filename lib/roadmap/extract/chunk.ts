@@ -128,7 +128,33 @@ export function trimTable(text: string): string {
   return out.join("\n").trim();
 }
 
-export function chunkSyllabus(pages: string[]): { tables: SemesterChunk[]; courses: CourseSection[] } {
+/**
+ * Pure. A running header/footer (college name, "(Autonomous)", "Page 14") repeats on most pages; those lines are never content.
+ * Only the first 3 and last 2 lines of a page are considered, and only when they recur on at least 30% of pages (and 5+ pages).
+ */
+export function stripRepeatedChrome(pages: string[]): string[] {
+  if (pages.length < 5) return pages;
+  const norm = (l: string) => l.trim().replace(/\d+/g, "#").replace(/\s+/g, " ");
+  const edge = (p: string) => {
+    const ls = p.split(/\r?\n/).map((l, i, all) => ({ l, i, n: all.length })).filter(({ l }) => l.trim());
+    return [...ls.slice(0, 3), ...ls.slice(-2)];
+  };
+  const count = new Map<string, number>();
+  for (const p of pages) for (const k of new Set(edge(p).map(({ l }) => norm(l)))) count.set(k, (count.get(k) ?? 0) + 1);
+  const threshold = Math.max(5, Math.ceil(pages.length * 0.3));
+  // a recurring heading-like line ("UNIT-I", a semester heading) is content even when it sits at a page edge
+  const contentLike = (k: string) => parseSemesterHeading(k) !== null || /^(unit|course|syllabus|text ?books?|reference)/i.test(k);
+  const chrome = new Set([...count].filter(([k, n]) => n >= threshold && k.length > 3 && !contentLike(k)).map(([k]) => k));
+  if (chrome.size === 0) return pages;
+  return pages.map((p) => {
+    const keep = new Set(edge(p).filter(({ l }) => !chrome.has(norm(l))).map(({ i }) => i));
+    const edgeIdx = new Set(edge(p).map(({ i }) => i));
+    return p.split(/\r?\n/).filter((_, i) => !edgeIdx.has(i) || keep.has(i)).join("\n");
+  });
+}
+
+export function chunkSyllabus(rawPages: string[]): { tables: SemesterChunk[]; courses: CourseSection[] } {
+  const pages = stripRepeatedChrome(rawPages);
   const lines = pages.join("\n").split(/\r?\n/);
   // line index -> 1-based page number, so every section can say where in the PDF it came from
   const pageOfLine: number[] = [];
