@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { OrgSignupSchema, registerOrganisation, roleFor } from "./signup";
+import { OrgSignupSchema, confirmDomainVerification, registerOrganisation, roleFor } from "./signup";
 
 const base = { orgName: "ZZ College", fullName: "Asha Rao", email: "a@b.co", password: "longenough1" };
 
@@ -67,5 +67,44 @@ describe("migration 036", () => {
     expect(fn).toMatch(/lower\(i\.name\) = lower\(clean_name\)/);
     expect(fn).toMatch(/revoke all on function public\.create_org_signup/);
     expect(sql + fn).not.toMatch(/similarity|levenshtein|pg_trgm|ilike|soundex/i);
+  });
+});
+
+describe("confirmDomainVerification", () => {
+  /** Chainable fake: every query method returns the builder; awaiting it (or .maybeSingle) yields the data queued for that table+op. */
+  function fake(memberships: unknown[], instVerifiedDomain: string | null) {
+    const updates: { table: string; values: unknown }[] = [];
+    let memberSelects = 0;
+    const from = (table: string) => {
+      let op = "select";
+      let values: unknown;
+      const b: Record<string, unknown> = {};
+      const result = () => {
+        if (op === "update") { updates.push({ table, values }); return { error: null }; }
+        if (table === "institutions") return { data: { verified_domain: instVerifiedDomain } };
+        return { data: memberships[memberSelects++] };
+      };
+      for (const m of ["select", "eq", "in", "is", "order", "limit"]) b[m] = () => b;
+      b.update = (v: unknown) => { op = "update"; values = v; return b; };
+      b.maybeSingle = () => Promise.resolve(result());
+      b.then = (resolve: (v: unknown) => unknown) => resolve(result());
+      return b;
+    };
+    return { service: { from } as unknown as SupabaseClient, updates };
+  }
+  const me = { id: "m2", institution_id: "i1", role: "faculty", status: "active" };
+  const user = { id: "u2", email: "late@other.ac.in" };
+
+  it("does not let an admin-approved later joiner stamp a domain on the college", async () => {
+    // first lookup: my membership; second: the college's earliest membership belongs to someone else
+    const { service, updates } = fake([[me], [{ id: "m1" }]], null);
+    await confirmDomainVerification(service, user);
+    expect(updates.filter((u) => u.table === "institutions")).toEqual([]);
+  });
+  it("lets the founder verify the college's domain", async () => {
+    const founder = { ...me, id: "m1", role: "principal" };
+    const { service, updates } = fake([[founder], [{ id: "m1" }]], null);
+    await confirmDomainVerification(service, { id: "u1", email: "head@mvrcet.ac.in" });
+    expect(updates.find((u) => u.table === "institutions")?.values).toMatchObject({ verified_domain: "mvrcet.ac.in" });
   });
 });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
-import { ipRateLimitKey } from "@/lib/rate-limit/ip";
+import { clientIp, ipRateLimitKey } from "@/lib/rate-limit/ip";
 import { checkRateLimit } from "@/lib/rate-limit/check";
 
 const WaitlistSchema = z
@@ -32,7 +32,7 @@ function allowed(key: string, now = Date.now()): boolean {
 
 /** Early-access list for the Professional and Executive paths. Creates no account and returns the same answer for a repeat email. */
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = clientIp(request);
   const dbLimit = await checkRateLimit(ipRateLimitKey(request), { bucket: "waitlist", maxRequests: MAX_PER_WINDOW, windowSeconds: WINDOW_MS / 1000 });
   if (!dbLimit.allowed || !allowed(ip)) return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
 

@@ -10,7 +10,7 @@ import { OrgSignupSchema, registerOrganisation } from "@/lib/org/signup";
 /** Organisation signup. Role, org type handling and pending status are decided here, never by the browser. */
 export async function POST(request: Request) {
   // sends a verification email to an arbitrary address, so throttle per IP (DB-backed; effective once migration 143 is applied)
-  const limit = await checkRateLimit(ipRateLimitKey(request), { bucket: "org_signup", maxRequests: 5, windowSeconds: 3600 });
+  const limit = await checkRateLimit(ipRateLimitKey(request), { bucket: "org_signup", maxRequests: 5, windowSeconds: 3600, failClosed: true } /* sends a verification email, so a limiter outage must not become an open relay */);
   if (!limit.allowed) return rateLimitedResponse(limit.remaining);
   const parsed = OrgSignupSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

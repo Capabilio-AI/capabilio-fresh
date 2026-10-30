@@ -15,7 +15,10 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       // the address is now proven, so a college's email domain can be trusted for auto-verification
-      if (data.user?.email_confirmed_at && !next.startsWith("/reset-password")) await confirmDomainVerification(createServiceClient(), data.user);
+      if (data.user?.email_confirmed_at && !next.startsWith("/reset-password")) {
+        // never let a failure here skip the sign-out below
+        try { await confirmDomainVerification(createServiceClient(), data.user); } catch (e) { console.error("[auth/confirm] domain verification", e); }
+      }
       // Password reset needs the session exchangeCodeForSession just created
       // (updateUser requires an active session). Every other confirmation
       // link (signup verification, resent verification) must not leave the
