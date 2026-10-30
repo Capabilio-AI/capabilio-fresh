@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Rocket } from "lucide-react";
 import type { ImportStatus } from "@/lib/curriculum/mapping-rules";
 import { Panel } from "@/components/org/ui";
 import { api } from "./api";
@@ -63,8 +63,10 @@ export function PublishStep({ importId, status, branch, regulation, versionNo }:
       </ul>
       <button type="button" className="o-btn mt-4" onClick={() => setOpen(true)}>Publish curriculum</button>
       {error && <p className="mt-3 font-lp-body text-[12.5px] text-app-rose" role="alert">{error}</p>}
-      <ConfirmDialog open={open} title="Publish this curriculum?" confirmLabel={busy ? "Publishing…" : "Publish"} busy={busy} onCancel={() => setOpen(false)} onConfirm={publish}>
-        <p>This can&apos;t be undone — a published version is permanent. Students in {branch} will see their roadmap built from it.</p>
+      <ConfirmDialog open={open} title="Publish this curriculum?" confirmLabel={busy ? "Publishing…" : "Publish"} icon={<Rocket size={20} />} busy={busy} onCancel={() => setOpen(false)} onConfirm={publish}>
+        <p>
+          {branch}{regulation ? ` (${regulation})` : ""} students will see their roadmap built from this version. <strong className="font-semibold text-app-charcoal">This can&apos;t be undone</strong>: a published version is permanent, and any change after this becomes a new version.
+        </p>
         {busy && <Loader2 size={14} className="mt-2 animate-spin" aria-hidden="true" />}
       </ConfirmDialog>
     </Panel>
