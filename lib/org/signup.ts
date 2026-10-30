@@ -135,10 +135,13 @@ export async function confirmDomainVerification(service: SupabaseClient, user: {
       .limit(1);
     const m = (data as { id: string; institution_id: string; role: string; status: string }[] | null)?.[0];
     if (!m) return;
+    // only the registrant who created the college may claim its domain: an admin-approved later joiner is "active" too, so status alone proves nothing
+    const { data: first } = await service.from("institution_memberships").select("id").eq("institution_id", m.institution_id).order("created_at", { ascending: true }).order("id", { ascending: true }).limit(1);
+    const matchedExisting = (first as { id: string }[] | null)?.[0]?.id !== m.id;
     await applyDomainVerification(
       service,
       { orgType: "institution", email: user.email } as OrgSignupInput,
-      { institution_id: m.institution_id, membership_id: m.id, matched_existing: m.status === "pending" },
+      { institution_id: m.institution_id, membership_id: m.id, matched_existing: matchedExisting },
       m.role
     );
   } catch (error) {
