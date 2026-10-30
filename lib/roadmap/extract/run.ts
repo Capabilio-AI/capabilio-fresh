@@ -22,10 +22,10 @@ export async function runExtraction(
   job: { id: string; institutionId: string; userId: string; branch: string; fileName: string; bytes: Uint8Array; roleKey: string; /** typed by the college at upload; wins over what the PDF header says */ regulation?: string | null },
   depsOverride?: ExtractionDeps
 ): Promise<void> {
-  const fail = (code: ExtractionErrorCode) => updateExtraction(service, job.id, { status: "failed", error_code: code }).catch((e) => console.error("[curriculum-extraction] could not record the failure:", e instanceof Error ? e.message : e));
+  const fail = (code: ExtractionErrorCode, detail?: string) => updateExtraction(service, job.id, { status: "failed", error_code: code, ...(detail ? { result: { error_detail: detail } } : {}) }).catch((e) => console.error("[curriculum-extraction] could not record the failure:", e instanceof Error ? e.message : e));
   try {
     const text = await extractPdfPages(job.bytes);
-    if (!text.ok) return await fail(text.code);
+    if (!text.ok) return await fail(text.code, text.detail);
     await reportProgress(service, job.id, { page_count: text.pages.length });
 
     const { role, areas } = await loadRoleTaxonomy(service, job.roleKey);

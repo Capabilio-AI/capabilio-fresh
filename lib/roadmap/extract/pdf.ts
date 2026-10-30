@@ -34,7 +34,7 @@ export function stripPageChrome(pageText: string): string {
 }
 
 /** `header` = the first pages BEFORE page chrome is stripped (the regulation lives in the running header). */
-export type PdfText = { ok: true; pages: string[]; header: string } | { ok: false; code: ExtractionErrorCode };
+export type PdfText = { ok: true; pages: string[]; header: string } | { ok: false; code: ExtractionErrorCode; /** the underlying reason, stored with the failed job for operators (never shown to users) */ detail?: string };
 
 export async function extractPdfPages(bytes: Uint8Array): Promise<PdfText> {
   const parser = new PDFParse({ data: bytes.slice() }) // pdfjs detaches the buffer it is given — hand it a copy;
@@ -49,8 +49,9 @@ export async function extractPdfPages(bytes: Uint8Array): Promise<PdfText> {
     if (pages.length === 0 || chars / pages.length < MIN_CHARS_PER_PAGE) return { ok: false, code: "no_text_layer" };
     return { ok: true, pages, header: result.pages.slice(0, 3).map((p) => p.text).join("\n") };
   } catch (e) {
-    console.error("[pdf] could not read the file:", e instanceof Error ? `${e.name}: ${e.message}` : e);
-    return { ok: false, code: "unreadable" };
+    const detail = (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).slice(0, 500);
+    console.error("[pdf] could not read the file:", detail);
+    return { ok: false, code: "unreadable", detail };
   } finally {
     await parser.destroy().catch(() => undefined);
   }
