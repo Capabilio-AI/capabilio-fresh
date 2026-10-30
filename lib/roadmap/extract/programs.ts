@@ -35,6 +35,11 @@ export function parseProgramOutcomes(pages: string[]): { pos: ProgramOutcome[]; 
 /** The regulation is read from the "R23 B.Tech … COURSE STRUCTURE" style header only — never guessed from body text. */
 export function detectRegulation(headerText: string): { regulation: string | null; program: string | null } {
   const m = /\b(R\d{2})\s+(B\.?\s?Tech|M\.?\s?Tech|B\.?\s?Pharm|MBA|MCA)\b/i.exec(headerText);
-  if (!m) return { regulation: null, program: null };
+  if (!m) {
+    // autonomous-college style: "MIC23 (w.e.f. 2023-24)" in the running header, programme from "B.TECH, I SEMESTER"
+    const w = /\b([A-Z]{1,6}\d{2})\s*\(\s*w\.?e\.?f\b/i.exec(headerText);
+    const prog = /\bB\.?\s?Tech\b/i.test(headerText) ? "B.Tech" : null;
+    return w ? { regulation: w[1].toUpperCase(), program: prog } : { regulation: null, program: null };
+  }
   return { regulation: m[1].toUpperCase(), program: m[2].replace(/\s+/g, "").replace(/^B\.?Tech$/i, "B.Tech").replace(/^M\.?Tech$/i, "M.Tech") };
 }
