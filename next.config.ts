@@ -5,9 +5,10 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdf-parse", "pdfjs-dist", "sql.js", "@electric-sql/pglite"],
   // pdfjs loads @napi-rs/canvas (DOMMatrix) through a dynamic require the file tracer cannot see; without it the PDF routes
   // crash on Vercel with "DOMMatrix is not defined". Ship the package and its platform binary with those routes.
+  // It also imports its worker (legacy/build/pdf.worker.mjs) dynamically; without that file every read fails with "Setting up fake worker failed".
   outputFileTracingIncludes: {
-    "/api/admin/curriculum/extractions": ["./node_modules/@napi-rs/canvas*/**/*"],
-    "/api/graduate/resume": ["./node_modules/@napi-rs/canvas*/**/*"],
+    "/api/admin/curriculum/extractions": ["./node_modules/@napi-rs/canvas*/**/*", "./node_modules/pdfjs-dist/legacy/build/**/*"],
+    "/api/graduate/resume": ["./node_modules/@napi-rs/canvas*/**/*", "./node_modules/pdfjs-dist/legacy/build/**/*"],
     // the SQL workspace runs queries in workers that load sql.js and PGlite (plus its starting snapshot) from disk, which the tracer cannot see
     "/api/arena/domain/**/*": ["./node_modules/sql.js/dist/**/*", "./node_modules/@electric-sql/pglite/dist/**/*", "./lib/workplace/sql/assets/*"],
   },
