@@ -1,5 +1,6 @@
 "use client";
 
+import { tidyTitle } from "@/lib/curriculum/title";
 import Link from "next/link";
 import { useState } from "react";
 import type { SubjectNode, SubjectStatus } from "@/lib/roadmap-visual/syllabus-map";
@@ -72,7 +73,7 @@ export function SyllabusMap({ syllabus, careerName, onOpenTopic }: { syllabus: S
                     return (
                       <li key={s.courseId}>
                         <button type="button" aria-pressed={sel} onClick={() => setOpen(sel ? null : s.courseId)} className={`w-full space-y-1.5 rounded-lg border bg-white p-3 text-left transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${sel ? "border-[var(--m-ink)] shadow-[0_0_0_2px_var(--m-ink)]" : "border-[var(--m-rule)]"} ${s.status === "NOT_MAPPED" ? "opacity-80" : ""}`}>
-                          <span className="block text-[13.5px] font-bold leading-snug text-[var(--m-ink)]">{s.title}</span>
+                          <span className="block text-[13.5px] font-bold leading-snug text-[var(--m-ink)]">{tidyTitle(s.title)}</span>
                           <ProofBar s={s} />
                           <span className="flex items-center justify-between gap-2 text-[11.5px]">
                             <span className={`font-bold ${st.text}`}>{st.label}</span>
@@ -94,7 +95,7 @@ export function SyllabusMap({ syllabus, careerName, onOpenTopic }: { syllabus: S
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[11.5px] font-bold uppercase tracking-wide text-app-muted">{termLabel(chosen)}{TIMING[chosen.timing] ? ` · ${TIMING[chosen.timing]}` : ""}{chosen.code ? ` · ${chosen.code}` : ""}</p>
-              <h3 className="font-lp-display text-[20px] font-bold leading-tight">{chosen.title}</h3>
+              <h3 className="font-lp-display text-[20px] font-bold leading-tight">{tidyTitle(chosen.title)}</h3>
             </div>
             <button type="button" onClick={() => setOpen(null)} className="rounded-md border border-[var(--m-rule)] px-3 py-1 text-[12.5px] font-bold hover:border-[var(--m-ink)]">Close</button>
           </div>
