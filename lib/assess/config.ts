@@ -53,9 +53,6 @@ export const QUESTION_VERSION = 2;
 export const CONFIDENCE_LEVELS = ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT"] as const;
 export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
 
-/** Readiness counts a skill by weight x confidence factor, so thin evidence cannot swing the number. */
-export const CONFIDENCE_FACTOR: Record<Confidence, number> = { HIGH: 1, MEDIUM: 0.8, LOW: 0.5, INSUFFICIENT: 0 };
-
 export const ONBOARDING_STATUSES = [
   "ASSESSMENT_REQUIRED",
   "COMMON_ASSESSMENT_COMPLETE",

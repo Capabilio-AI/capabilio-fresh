@@ -4,7 +4,7 @@ import { templateCareer, templateCommon } from "./feedback";
 import type { SectionBar, SkillResult } from "./scoring";
 import type { AssessmentResult } from "./types";
 
-const skill = (name: string, score: number | null): SkillResult => ({ skillId: name, key: name, name, category: "Data", importance: "HIGH", targetLevel: 70, weight: 3, score, confidence: score === null ? "INSUFFICIENT" : "MEDIUM", evidenceCount: score === null ? 0 : 2 });
+const skill = (name: string, score: number | null): SkillResult => ({ skillId: name, key: name, name, category: "Data", importance: "HIGH", targetLevel: 70, weight: 3, score, confidence: score === null ? "INSUFFICIENT" : "MEDIUM", evidenceCount: score === null ? 0 : 2, proof: 0 });
 const bars: SectionBar[] = [
   { section: "verbal_communication", label: "Communication", score: 82, confidence: "HIGH", correct: 8, total: 10 },
   { section: "programming_fundamentals", label: "Basic Programming", score: 41, confidence: "HIGH", correct: 4, total: 10 },

@@ -50,10 +50,10 @@ export async function getCareerProfile(db: Db, userId: string): Promise<CareerPr
   if (!career || !snap) return { ...EMPTY(status, true), role: career ?? null };
 
   const meta = new Map(taxonomy.map((t) => [t.skillId, t]));
-  type Stored = { skillId: string; score: number | null; confidence: SkillResult["confidence"]; evidenceCount: number };
+  type Stored = { skillId: string; score: number | null; confidence: SkillResult["confidence"]; evidenceCount: number; proof?: number };
   const skills: SkillResult[] = (snap.skills as Stored[]).flatMap((s) => {
     const t = meta.get(s.skillId);
-    return t ? [{ skillId: s.skillId, key: t.key, name: t.name, category: t.category, importance: t.importance, targetLevel: t.targetLevel, weight: t.weight, score: s.score, confidence: s.confidence, evidenceCount: s.evidenceCount }] : [];
+    return t ? [{ skillId: s.skillId, key: t.key, name: t.name, category: t.category, importance: t.importance, targetLevel: t.targetLevel, weight: t.weight, score: s.score, confidence: s.confidence, evidenceCount: s.evidenceCount, proof: s.proof ?? 0 }] : [];
   });
   const history: EloPoint[] = (events ?? []).map((e: { created_at: string; source: EloPoint["source"]; change: number; new_rating: number }) => ({ at: e.created_at, source: e.source, change: e.change, newRating: e.new_rating }));
   return {

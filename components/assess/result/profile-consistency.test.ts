@@ -6,7 +6,7 @@ import { displayRating } from "@/lib/assess/career-profile";
 import { EloCardView, SkillsView } from "./ProfileViews";
 import { CommonProgress } from "./CommonProgress";
 
-const skill = (i: number, score: number | null) => ({ skillId: `id-${i}`, key: `K${i}`, name: `Skill ${i}`, category: "Data", importance: "HIGH" as const, targetLevel: 70, weight: 3, score, confidence: score === null ? ("INSUFFICIENT" as const) : ("MEDIUM" as const), evidenceCount: score === null ? 0 : 2 });
+const skill = (i: number, score: number | null) => ({ skillId: `id-${i}`, key: `K${i}`, name: `Skill ${i}`, category: "Data", importance: "HIGH" as const, targetLevel: 70, weight: 3, score, confidence: score === null ? ("INSUFFICIENT" as const) : ("MEDIUM" as const), evidenceCount: score === null ? 0 : 2, proof: 0 });
 const profile: CareerProfile = {
   status: "PROFILE_READY", unlocked: true, role: { id: "r", key: "data-analyst", name: "Data Analyst" },
   elo: { rating: 458, fromAssessment: 58, fromArena: 0, events: 22, history: [] }, readiness: 63, coverage: 90,

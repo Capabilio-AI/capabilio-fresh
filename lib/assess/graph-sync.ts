@@ -4,7 +4,7 @@
 import { computeSkillGraph } from "./finalize";
 import { track, type Db } from "./db";
 
-export type SnapshotTrigger = "ARENA" | "PROOF_OF_WORK";
+export type SnapshotTrigger = "ARENA" | "PROOF_OF_WORK" | "RECALIBRATION";
 
 /** Recomputes the role's graph from ALL evidence, upserts the skill scores, appends a snapshot at the current rating. */
 export async function syncSkillGraph(db: Db, userId: string, careerId: string, trigger: SnapshotTrigger): Promise<{ readiness: number } | null> {
@@ -20,7 +20,7 @@ export async function syncSkillGraph(db: Db, userId: string, careerId: string, t
   );
   const { error } = await db.from("career_skill_graph_snapshots").insert({
     student_id: userId, career_id: careerId, session_id: null, trigger, elo: elo.rating, readiness: graph.readiness,
-    skills: graph.results.map((s) => ({ skillId: s.skillId, key: s.key, name: s.name, score: s.score, confidence: s.confidence, evidenceCount: s.evidenceCount, importance: s.importance, targetLevel: s.targetLevel })),
+    skills: graph.results.map((s) => ({ skillId: s.skillId, key: s.key, name: s.name, score: s.score, confidence: s.confidence, evidenceCount: s.evidenceCount, proof: s.proof, importance: s.importance, targetLevel: s.targetLevel })),
   });
   if (error) throw error;
   void track(db, userId, "skill_estimated", { trigger, readiness: graph.readiness });

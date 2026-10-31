@@ -2,7 +2,7 @@
 // persists an append-only skill-graph snapshot, feeds the existing capability/roadmap pipeline, and advances onboarding.
 // Idempotent: submitting twice returns the stored result and writes nothing again.
 
-import { buildSectionBars, buildSkillResults, computeReadiness, highlights, nextBestAction, summariseElo, type RoleSkill } from "./scoring";
+import { buildSectionBars, buildSkillResults, computeReadiness, highlights, nextBestAction, summariseElo, type RoleSkill, type SourcedObs } from "./scoring";
 import { advanceOnboarding, loadCareer, loadCareerSkills, track, type Db } from "./db";
 import type { Obs } from "./engine";
 import { GENERAL_SECTIONS } from "./general";
@@ -78,10 +78,10 @@ async function buildGeneralResult(db: Db, sessionId: string): Promise<Assessment
  */
 export async function computeSkillGraph(db: Db, userId: string, careerId: string) {
   const skills = await loadCareerSkills(db, careerId);
-  const { data: ev, error } = await db.from("student_skill_evidence").select("skill_id, correct, difficulty").eq("student_id", userId).in("skill_id", skills.map((s) => s.skillId));
+  const { data: ev, error } = await db.from("student_skill_evidence").select("skill_id, correct, difficulty, source").eq("student_id", userId).in("skill_id", skills.map((s) => s.skillId));
   if (error) throw error;
-  const bySkill: Record<string, Obs[]> = {};
-  for (const e of ev ?? []) (bySkill[e.skill_id] ??= []).push({ difficulty: e.difficulty, correct: e.correct });
+  const bySkill: Record<string, SourcedObs[]> = {};
+  for (const e of ev ?? []) (bySkill[e.skill_id] ??= []).push({ difficulty: e.difficulty, correct: e.correct, practical: e.source === "ARENA" || e.source === "PROOF_OF_WORK" });
   const results = buildSkillResults(skills as RoleSkill[], bySkill);
   return { results, ...computeReadiness(results), highlights: highlights(results) };
 }
@@ -118,7 +118,7 @@ async function persistSnapshot(db: Db, userId: string, sessionId: string, result
   const { error: snapError } = await db.from("career_skill_graph_snapshots").upsert({
     student_id: userId, career_id: result.career!.id, session_id: sessionId, trigger: "ASSESSMENT",
     elo: result.elo!.newElo, readiness: result.readiness!,
-    skills: result.skills.map((s) => ({ skillId: s.skillId, key: s.key, name: s.name, score: s.score, confidence: s.confidence, evidenceCount: s.evidenceCount, importance: s.importance, targetLevel: s.targetLevel })),
+    skills: result.skills.map((s) => ({ skillId: s.skillId, key: s.key, name: s.name, score: s.score, confidence: s.confidence, evidenceCount: s.evidenceCount, proof: s.proof, importance: s.importance, targetLevel: s.targetLevel })),
   }, { onConflict: "session_id", ignoreDuplicates: true });
   if (snapError) throw snapError;
 }
