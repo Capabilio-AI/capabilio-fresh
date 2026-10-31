@@ -5,38 +5,38 @@ import { ArrowLeft } from "lucide-react";
 import { getOrgContext } from "@/lib/org/context";
 import { getAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
-import { loadOrgFacts, loadPlacementWall, loadPublicOrg, loadVisiblePosts } from "@/lib/org/public-org";
-import { TABS, type TabId } from "@/components/org/CollegeHeader";
-import { CollegeProfileView } from "@/components/org/CollegeProfileView";
+import { loadPublicOrg, loadVisiblePosts } from "@/lib/org/public-org";
+import { PUBLIC_TABS, PublicCollegePage, type PublicTabId } from "@/components/org/PublicCollegePage";
 import { OrgTheme } from "@/components/org/OrgTheme";
 
 export const metadata: Metadata = { title: "College — Capabilio AI" };
 
-const isTab = (v: string | undefined): v is TabId => TABS.some((t) => t.id === v);
+const isTab = (v: string | undefined): v is PublicTabId => PUBLIC_TABS.some((t) => t.id === v);
 
 /** The college's page as visitors see it. Public only when the college opted in; otherwise members-only (404 for others). */
 export default async function OrgPublicPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ tab?: string }> }) {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
-  const tab: TabId = isTab(sp.tab) ? sp.tab : "home";
+  const tab: PublicTabId = isTab(sp.tab) ? sp.tab : "home";
   const { supabase, user } = await getAuthedUser();
   const service = createServiceClient();
   const org = await loadPublicOrg(service, slug, user?.id ?? null);
   if (!org) notFound();
   const member = user ? await getOrgContext(supabase, user.id) : null;
   const workspace = member && member.kind !== "student" ? member : null;
-  const [posts, wall, facts] = await Promise.all([loadVisiblePosts(service, org, user?.id ?? null), loadPlacementWall(service, org.institutionId), loadOrgFacts(service, org.institutionId)]);
+  // A visitor sees posts, events and the follower count only: no student counts, departments or placement records are even loaded.
+  const posts = await loadVisiblePosts(service, org, user?.id ?? null);
 
   return (
-    <OrgTheme>
+    <OrgTheme visitor>
       {workspace && (
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-app-border bg-black/80 px-4 py-2.5 backdrop-blur">
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-app-border bg-[#fff]/90 px-4 py-2.5 backdrop-blur">
           <Link href={workspace.institutionId === org.institutionId ? "/org/college" : "/org"} className="o-btn-ghost !h-9 !px-3">
             <ArrowLeft size={14} aria-hidden="true" /> Back to workspace
           </Link>
           <span className="text-[12px] text-app-muted">You are viewing this page as a visitor sees it.</span>
         </div>
       )}
-      <CollegeProfileView org={org} facts={facts} wall={wall} posts={posts} tab={tab} signedIn={Boolean(user)} basePath={`/o/${org.slug}`} />
+      <PublicCollegePage org={org} posts={posts} tab={tab} signedIn={Boolean(user)} />
     </OrgTheme>
   );
 }

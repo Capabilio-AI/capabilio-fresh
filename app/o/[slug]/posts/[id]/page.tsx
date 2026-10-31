@@ -24,7 +24,7 @@ export default async function OrgPostPage({ params }: { params: Promise<{ slug: 
   if (!post) notFound();
 
   return (
-    <OrgTheme>
+    <OrgTheme visitor>
       <main className="mx-auto max-w-2xl px-4 py-10">
         <Link href={`/o/${org.slug}`} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-app-muted hover:text-app-charcoal">
           <ArrowLeft size={14} aria-hidden="true" /> {org.name}
