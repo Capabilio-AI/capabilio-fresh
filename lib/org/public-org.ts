@@ -1,3 +1,4 @@
+import { onlyCurrentStudents } from "./current-students";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped, type OrgPostRow, type OrgProfileRow } from "./db";
@@ -34,7 +35,7 @@ export async function loadPublicOrg(service: SupabaseClient<Database>, slug: str
     viewerId ? db.from("org_follows").select("user_id").eq("institution_id", inst.id).eq("user_id", viewerId).maybeSingle() : Promise.resolve({ data: null }),
     db.from("org_follows").select("user_id", { count: "exact", head: true }).eq("institution_id", inst.id),
     service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", inst.id).eq("status", "active").in("role", ["principal", "vice_principal", "tpo"] as never[]),
-    service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", inst.id).eq("role", "student").eq("status", "active"),
+    onlyCurrentStudents(service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", inst.id).eq("role", "student").eq("status", "active")),
   ]);
   const isMember = Boolean(memberRes.data);
   const p = (profile as OrgProfileRow | null) ?? null;
@@ -118,7 +119,7 @@ export async function loadOrgFacts(service: SupabaseClient<Database>, institutio
   const db = untyped(service);
   const nowIso = new Date().toISOString();
   const [studentsRes, placementsRes, eventsRes, postsRes] = await Promise.all([
-    service.from("institution_memberships").select("branch").eq("institution_id", institutionId).eq("role", "student").eq("status", "active").limit(5000),
+    onlyCurrentStudents(service.from("institution_memberships").select("branch").eq("institution_id", institutionId).eq("role", "student").eq("status", "active")).limit(5000),
     db.from("org_placements").select("student_user_id, company").eq("institution_id", institutionId).neq("student_response", "declined"),
     db.from("org_posts").select("id", { count: "exact", head: true }).eq("institution_id", institutionId).eq("status", "published").eq("type", "event").gte("event_starts_at", nowIso),
     db.from("org_posts").select("id", { count: "exact", head: true }).eq("institution_id", institutionId).eq("status", "published"),

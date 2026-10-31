@@ -5,6 +5,8 @@ import { orgPageContext } from "@/lib/org/page";
 import { PAGE_SIZE, cellKey, loadRosterOverview } from "@/lib/org/roster";
 import { EmptyState, PageHeader, Pill } from "@/components/org/ui";
 import { Fact, GroupTitle, Initial, Pager } from "@/components/org/widgets";
+import { ActionButton } from "@/components/org/ActionButton";
+import { can } from "@/lib/org/roles";
 
 export const metadata: Metadata = { title: "Students — Capabilio AI" };
 
@@ -165,6 +167,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                     <Pill tone={r.groups ? "info" : "neutral"}>{r.groups} group{r.groups === 1 ? "" : "s"}</Pill>
                     <Pill tone={r.gradedProjects ? "ok" : "neutral"}>{r.gradedProjects} graded</Pill>
                     <Pill tone={r.arenaLast30 ? "ok" : "neutral"}>{r.arenaLast30} Arena · 30d</Pill>
+                    {can(ctx, "approveMembers") && <ActionButton action="/api/org/students/remove" body={{ userId: r.userId }} label="Remove" variant="ghost" confirm={`Remove ${r.name} from your college? They stop being counted here. Their account and work stay with them.`} />}
                   </p>
                 </li>
               ))}

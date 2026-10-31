@@ -1,3 +1,4 @@
+import { onlyCurrentStudents } from "./current-students";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import type { OrgContext } from "./context";
@@ -76,7 +77,7 @@ export async function loadHome(service: SupabaseClient<Database>, ctx: OrgContex
   const driveChain = async () => {
     const [drivesRes, studentsRes, pendingRes, placedRes, eventsRes] = await Promise.all([
       runsPlacements ? service.from("opportunities").select("id, role, company, deadline, drive_status").eq("institution_id", ctx.institutionId) : Promise.resolve({ data: [] }),
-      service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active"),
+      onlyCurrentStudents(service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active")),
       ctx.permissions.has("members")
         ? service.from("institution_memberships").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("status", "pending").in("role", [...IN_APP_APPROVABLE_ROLES] as never[])
         : Promise.resolve({ count: 0 }),

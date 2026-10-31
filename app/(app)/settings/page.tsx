@@ -10,6 +10,7 @@ import { SettingsCard } from "@/components/settings/SettingsCard";
 import { SignOutButton } from "@/components/settings/SignOutButton";
 import { getStageState } from "@/lib/stage/server";
 import { planById } from "@/lib/plans/catalog";
+import { LeaveCollegeCard } from "@/components/stage/LeaveCollegeCard";
 import { FinishStudiesCard } from "@/components/stage/FinishStudiesCard";
 import { JobForm } from "@/components/stage/JobForm";
 
@@ -59,6 +60,11 @@ export default async function SettingsPage() {
         {stage === "student" && (
           <SettingsRow icon={GraduationCap} title="Current student" description="Finished early, or your college has not updated your dates? Move to the recently graduated path now.">
             <FinishStudiesCard />
+          </SettingsRow>
+        )}
+        {stage === "student" && (
+          <SettingsRow icon={GraduationCap} title="Change or leave your college" description="Left your college, or joined by mistake? You stop appearing in its student count. Your account and your work stay with you.">
+            <LeaveCollegeCard />
           </SettingsRow>
         )}
         {stage === "graduate" && (
