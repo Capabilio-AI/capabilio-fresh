@@ -24,9 +24,9 @@ export function ChatPanel({ channelId, channelName, initial, myUserId }: { chann
   // relative times need the client clock: render none on the server/first paint (no hydration mismatch), then tick each minute
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
-    setNow(new Date());
+    const first = setTimeout(() => setNow(new Date()), 0);
     const timer = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(timer);
+    return () => { clearTimeout(first); clearInterval(timer); };
   }, []);
 
   // advanceCursor is false for the sender's own message: moving the poll cursor past it would skip anything a colleague posted since the last poll (duplicates are already dropped by id)

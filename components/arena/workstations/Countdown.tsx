@@ -12,9 +12,9 @@ export function Countdown({ target, onDone }: { target: string; onDone: () => vo
   const done = now !== null && remaining === 0;
 
   useEffect(() => {
-    setNow(Date.now());
+    const first = setTimeout(() => setNow(Date.now()), 0);
     const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
+    return () => { clearTimeout(first); clearInterval(id); };
   }, []);
 
   useEffect(() => {

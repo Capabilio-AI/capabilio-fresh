@@ -24,6 +24,7 @@ export function BranchBoards({ boards }: { boards: BranchBoard[] }) {
   const [removing, setRemoving] = useState<ImportListItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   async function remove() {
     if (!removing) return;
@@ -36,13 +37,16 @@ export function BranchBoards({ boards }: { boards: BranchBoard[] }) {
   }
 
   if (boards.length === 0) {
-    return <p className="rounded-xl border border-dashed border-app-border px-4 py-8 text-center font-lp-body text-[13px] text-app-muted">No curricula yet. Upload a syllabus above, one branch and regulation at a time, or start one by hand.</p>;
+    return <p className="rounded-xl border border-dashed border-app-border px-4 py-8 text-center font-lp-body text-[13px] text-app-muted">No curricula yet. Upload a syllabus above, one branch and regulation at a time.</p>;
   }
 
   return (
     <div className="flex flex-col gap-5">
       {error && <p className="font-lp-body text-[12.5px] text-app-rose" role="alert">{error}</p>}
-      {boards.map((b) => (
+      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Branches">
+        {boards.map((b) => <BranchCard key={b.key} board={b} open={b.key === openKey} onToggle={() => setOpenKey(b.key === openKey ? null : b.key)} />)}
+      </ul>
+      {boards.filter((b) => b.key === openKey).map((b) => (
         <section key={b.key} className="o-card flex flex-col gap-4 p-5" aria-label={b.branch}>
           <header className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -71,6 +75,20 @@ export function BranchBoards({ boards }: { boards: BranchBoard[] }) {
         It disappears from your list. Nothing has been published, so students are not affected.
       </ConfirmDialog>
     </div>
+  );
+}
+
+/** One compact card per branch, so a college with many departments stays scannable; opening one shows its regulations below. */
+function BranchCard({ board: b, open, onToggle }: { board: BranchBoard; open: boolean; onToggle: () => void }) {
+  const published = b.imports.filter((i) => i.status === "PUBLISHED").length;
+  return (
+    <li>
+      <button type="button" onClick={onToggle} aria-expanded={open} className={`o-card flex h-full w-full flex-col gap-2 p-4 text-left transition-shadow hover:shadow-md ${open ? "ring-2 ring-app-orange" : ""}`}>
+        <span className="font-lp-body text-[14.5px] font-extrabold leading-snug text-app-charcoal">{b.branch}</span>
+        <span className="font-lp-body text-[12px] text-app-muted">{plural(b.students, "student")} · {plural(b.imports.length, "curriculum")}{b.imports.length > 0 ? ` · ${published} published` : ""}</span>
+        <span className="mt-auto pt-1"><StudentLinkStatus board={b} /></span>
+      </button>
+    </li>
   );
 }
 

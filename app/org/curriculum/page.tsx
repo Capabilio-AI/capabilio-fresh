@@ -27,7 +27,8 @@ export default async function OrgCurriculumPage() {
   const published = items.filter((i) => i.status === "PUBLISHED").length;
   const inProgress = items.filter((i) => i.status !== "PUBLISHED" && i.status !== "ARCHIVED").length;
   const waiting = boards.reduce((n, b) => n + (b.publishedRegulations.length === 0 ? b.students : b.withoutPublished), 0);
-  const toReview = items.reduce((n, i) => n + i.summary.mappingsNeedingReview, 0);
+  // Only drafts: a published curriculum's leftover suggestions have no effect on students, and "Do next" below skips them too.
+  const toReview = items.filter((i) => i.status !== "PUBLISHED" && i.status !== "ARCHIVED").reduce((n, i) => n + i.summary.mappingsNeedingReview, 0);
 
   // what to do next, most useful first
   const next: { key: string; text: string; sub: string; href: string }[] = [];
