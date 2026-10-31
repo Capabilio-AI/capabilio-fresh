@@ -7,7 +7,7 @@ import { getImportOverview } from "@/lib/curriculum/admin-data";
 import { stepFrom, type StepKey } from "@/lib/curriculum/steps";
 import type { ImportStatus } from "@/lib/curriculum/mapping-rules";
 import { PageHeader } from "@/components/org/ui";
-import { SummaryCard, StatusPill } from "@/components/curriculum/bits";
+import { PersonChip, SummaryCard, StatusPill } from "@/components/curriculum/bits";
 import { WizardNav } from "@/components/curriculum/WizardNav";
 import { UploadStep } from "@/components/curriculum/UploadStep";
 import { StructureStep } from "@/components/curriculum/StructureStep";
@@ -44,6 +44,10 @@ export default async function CurriculumWizardPage({ params, searchParams }: { p
       <div><Link href="/org/curriculum" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-app-charcoal"><ArrowLeft size={13} aria-hidden="true" /> All curricula</Link></div>
       <PageHeader title={`${imp.branch}${imp.regulation ? ` · ${imp.regulation}` : ""}`} subtitle="Review what was read from the syllabus, confirm the skills each course builds, then publish. Nothing reaches students until you do." action={<StatusPill status={status} />} />
       <AutoAnalysis importId={importId} initial={(imp as { enrichment?: { state?: "RUNNING" | "DONE"; total?: number; outcomesPending?: number; skillsPending?: number; unitsPending?: number } }).enrichment ?? null} published={!editable} />
+      <div className="o-card flex flex-wrap gap-x-10 gap-y-3 p-4" aria-label="Who worked on this curriculum">
+        <PersonChip label="Uploaded by" person={overview.uploadedBy} at={imp.created_at} />
+        {overview.reviewedBy && <PersonChip label="Confirmed by" person={overview.reviewedBy} />}
+      </div>
       <SummaryCard summary={summary} />
       <WizardNav importId={importId} current={step} badges={badges} />
 

@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, Trash2 } from "lucide-react";
 import type { ImportListItem } from "@/lib/curriculum/admin-data";
 import type { BranchBoard } from "@/lib/curriculum/cohorts";
 import { COURSE_GROUPS, GROUP_LABEL } from "@/lib/curriculum/composition";
 import { Pill } from "@/components/org/ui";
 import { Meter, StageTrack } from "@/components/org/widgets";
-import { StatusPill } from "./bits";
+import { PersonChip, StatusPill } from "./bits";
 import { api } from "./api";
 import { AddRegulation } from "./AddRegulation";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -83,8 +83,11 @@ function BranchCard({ board: b, open, onToggle }: { board: BranchBoard; open: bo
   const published = b.imports.filter((i) => i.status === "PUBLISHED").length;
   return (
     <li>
-      <button type="button" onClick={onToggle} aria-expanded={open} className={`o-card flex h-full w-full flex-col gap-2 p-4 text-left transition-shadow hover:shadow-md ${open ? "ring-2 ring-app-orange" : ""}`}>
-        <span className="font-lp-body text-[14.5px] font-extrabold leading-snug text-app-charcoal">{b.branch}</span>
+      <button type="button" onClick={onToggle} aria-expanded={open} className={`o-card group flex h-full w-full cursor-pointer flex-col gap-2 p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/60 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${open ? "ring-2 ring-app-orange" : ""}`}>
+        <span className="flex items-start justify-between gap-2">
+          <span className="font-lp-body text-[14.5px] font-extrabold leading-snug text-app-charcoal">{b.branch}</span>
+          <ChevronDown size={16} aria-hidden="true" className={`mt-0.5 shrink-0 text-app-muted transition-transform group-hover:text-app-charcoal ${open ? "rotate-180" : ""}`} />
+        </span>
         <span className="font-lp-body text-[12px] text-app-muted">{plural(b.students, "student")} · {plural(b.imports.length, "curriculum")}{b.imports.length > 0 ? ` · ${published} published` : ""}</span>
         <span className="mt-auto pt-1"><StudentLinkStatus board={b} /></span>
       </button>
@@ -136,6 +139,10 @@ function RegulationRow({ item, board, onRemove }: { item: ImportListItem; board:
         {!frozen && <button type="button" aria-label={`Delete ${item.branch}${item.regulation ? ` ${item.regulation}` : ""}`} className="text-app-muted hover:text-app-charcoal" onClick={onRemove}><Trash2 size={14} aria-hidden="true" /></button>}
       </div>
 
+      <div className="mt-3 flex flex-wrap gap-x-8 gap-y-2">
+        <PersonChip label="Uploaded by" person={item.uploadedBy} at={item.createdAt} />
+        {item.reviewedBy && <PersonChip label="Confirmed by" person={item.reviewedBy} />}
+      </div>
       <div className="mt-3">
         <StageTrack
           steps={[

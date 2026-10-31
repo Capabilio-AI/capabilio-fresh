@@ -8,10 +8,10 @@ import { initialsOf } from "@/lib/org/format";
 import { POST_KINDS, type PostKindId } from "./post-kinds";
 
 /** The one place a college posts: pick what you're sharing, fill what that kind needs, post now or save a draft. */
-export function PostComposer({ orgName, logoUrl }: { orgName: string; logoUrl: string | null }) {
+export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }: { orgName: string; logoUrl: string | null; initialKind?: PostKindId }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [kindId, setKindId] = useState<PostKindId>("announcement");
+  const [kindId, setKindId] = useState<PostKindId>(initialKind);
   const [headline, setHeadline] = useState("");
   const [body, setBody] = useState("");
   const [image, setImage] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export function PostComposer({ orgName, logoUrl }: { orgName: string; logoUrl: s
 
   const reset = () => {
     setOpen(false);
-    setKindId("announcement");
+    setKindId(initialKind);
     setHeadline("");
     setBody("");
     setImage(null);
