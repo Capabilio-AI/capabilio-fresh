@@ -24,7 +24,20 @@ export interface ImportSummary {
   confirmedMappings: number;
   status: ImportStatus;
 }
+export interface Person { name: string; avatarUrl: string | null }
+
+/** Who these accounts belong to, so a curriculum shows the people behind it. */
+async function loadPeople(service: Service, ids: (string | null)[]): Promise<Map<string, Person>> {
+  const unique = [...new Set(ids.filter((x): x is string => Boolean(x)))];
+  if (unique.length === 0) return new Map();
+  const { data } = await service.from("profiles").select("id, full_name, email, avatar_url").in("id", unique);
+  return new Map((data ?? []).map((p) => [p.id, { name: p.full_name ?? p.email ?? "Team member", avatarUrl: p.avatar_url }]));
+}
+
 export interface ImportListItem {
+  /** who uploaded it, and who confirmed it; null when the account is gone or the step has not happened */
+  uploadedBy: Person | null;
+  reviewedBy: Person | null;
   id: string;
   branch: string;
   regulation: string | null;
@@ -106,8 +119,10 @@ export async function listImports(service: Service, institutionId: string): Prom
   const { data: imports } = await service.from("curriculum_imports").select("*").eq("institution_id", institutionId).is("deleted_at", null).order("created_at", { ascending: false });
   const { data: versions } = await service.from("curriculum_versions").select("import_id, version_no").eq("institution_id", institutionId);
   const versionOf = new Map((versions ?? []).map((v) => [v.import_id, v.version_no]));
+  const people = await loadPeople(service, (imports ?? []).flatMap((i) => [i.created_by, i.reviewed_by]));
   return Promise.all(
     (imports ?? []).map(async (i) => ({
+      uploadedBy: (i.created_by && people.get(i.created_by)) || null, reviewedBy: (i.reviewed_by && people.get(i.reviewed_by)) || null,
       id: i.id, branch: i.branch, regulation: i.regulation, status: i.status as ImportStatus, createdAt: i.created_at, publishedAt: i.published_at,
       versionNo: versionOf.get(i.id) ?? null, summary: await summarise(service, i),
     }))
@@ -134,8 +149,11 @@ export async function getImportOverview(service: Service, institutionId: string,
     confirmed: count(maps, c.id, (m) => m.status === "CONFIRMED"), suggested: count(maps, c.id, (m) => m.status === "SUGGESTED"), rejected: count(maps, c.id, (m) => m.status === "REJECTED"),
     skillsSuggested: Boolean((c.provenance as Record<string, unknown> | null)?._skillsSuggestedAt),
   });
+  const people = await loadPeople(service, [imp.created_by, imp.reviewed_by]);
   return {
     import: imp,
+    uploadedBy: (imp.created_by && people.get(imp.created_by)) || null,
+    reviewedBy: (imp.reviewed_by && people.get(imp.reviewed_by)) || null,
     summary: await summarise(service, imp),
     courses: (rows ?? []).filter((c) => !c.deleted_at).map(toRow),
     removed: (rows ?? []).filter((c) => c.deleted_at).map(toRow),
