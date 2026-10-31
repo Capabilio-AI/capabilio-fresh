@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { FileText, ImagePlus, Loader2, X } from "lucide-react";
 import { ImageUploadButton } from "./ImageUploadButton";
 import { initialsOf } from "@/lib/org/format";
 import { POST_KINDS, type PostKindId } from "./post-kinds";
@@ -22,6 +22,10 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const pdfInput = useRef<HTMLInputElement>(null);
+  const [reading, setReading] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
   const kind = POST_KINDS.find((k) => k.id === kindId) ?? POST_KINDS[0];
 
   const reset = () => {
@@ -34,7 +38,49 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
     setLocation("");
     setLink("");
     setError(null);
+    setNote(null);
   };
+
+  /** A circular PDF: we read it, and the composer opens with the draft for the college to check. */
+  async function readPdf(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setReading(true);
+    setError(null);
+    setNote(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/org/posts/from-pdf", { method: "POST", body: form });
+      const json = (await res.json().catch(() => null)) as { error?: string; note?: string; imageUrl?: string | null; draft?: { headline: string; body: string; startsAt: string | null; location: string | null; isFest: boolean } | null } | null;
+      if (!res.ok || !json) return setError(json?.error ?? "We couldn't read that PDF.");
+      setOpen(true);
+      if (json.imageUrl) setImage(json.imageUrl);
+      const d = json.draft;
+      if (d) {
+        setKindId(d.startsAt ? (d.isFest ? "fest" : "event") : "announcement");
+        setHeadline(d.headline);
+        setBody(d.body);
+        setStartsAt(d.startsAt ?? "");
+        setLocation(d.location ?? "");
+        setNote("Read from your PDF. Check the details, then post.");
+      } else setNote(json.note ?? null);
+    } catch {
+      setError("Connection problem. Please try again.");
+    } finally {
+      setReading(false);
+    }
+  }
+
+  const pdfButton = (
+    <>
+      <input ref={pdfInput} type="file" accept="application/pdf,.pdf" className="sr-only" tabIndex={-1} onChange={readPdf} aria-label="Upload a circular PDF" />
+      <button type="button" className="o-btn-ghost !px-3" disabled={reading} onClick={() => pdfInput.current?.click()}>
+        {reading ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <FileText size={14} aria-hidden="true" />} {reading ? "Reading the circular…" : "Upload circular PDF"}
+      </button>
+    </>
+  );
 
   async function submit(e: FormEvent, publish: boolean) {
     e.preventDefault();
@@ -82,12 +128,16 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
   return (
     <section className="o-card p-4" aria-label="Create a post">
       {!open ? (
+        <>
         <div className="flex items-center gap-3">
           {avatar}
           <button type="button" onClick={() => setOpen(true)} className="flex-1 rounded-full border border-app-border px-4 py-3 text-left text-[13.5px] text-app-muted hover:bg-white/[0.04]">
             Share an update, event, poster or achievement…
           </button>
+          {pdfButton}
         </div>
+        {error && <p role="alert" className="mt-2 text-[12.5px] text-app-rose">{error}</p>}
+        </>
       ) : (
         <form onSubmit={(e) => submit(e, true)}>
           <div className="flex items-center gap-3">
@@ -97,6 +147,12 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
               <p className="text-[12px] text-app-muted">{kind.heading}</p>
             </div>
           </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {pdfButton}
+            <span className="text-[12px] text-app-muted">Colleges send circulars as PDFs: upload one and we fill this in.</span>
+          </div>
+          {note && <p role="status" className="mt-2 text-[12.5px] text-app-success">{note}</p>}
 
           <div role="radiogroup" aria-label="What are you sharing?" className="mt-3 flex flex-wrap gap-1.5">
             {POST_KINDS.map((k) => {
