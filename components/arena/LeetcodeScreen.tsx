@@ -9,10 +9,11 @@ import type { ChallengeDetail } from "./ChallengeSolvePanel";
 
 // Full-screen, LeetCode-style workspace: problem on the left, editor and test console on the right.
 // Colours are explicit hex on purpose: this screen is dark whatever the surrounding page theme is.
-const C = { bg: "#0f1115", panel: "#171a21", line: "#262b36", text: "#e8eaed", soft: "#9aa3b2", accent: "#ff7a45", ok: "#22c58b", bad: "#ff5a76" };
+// Light, high-contrast palette: students code outdoors in sunlight, where a dark screen is unreadable. Every text colour is at least 4.5:1 on white.
+const C = { bg: "#ffffff", panel: "#f5f2ea", line: "#aeb6c4", text: "#0b0d12", soft: "#3a4352", accent: "#c2410c", ok: "#0a7d4f", bad: "#b3162e", okBg: "#d9f4e6", badBg: "#fde0e6" };
 const LANGS = [{ id: "python", label: "Python 3" }, { id: "c", label: "C" }] as const;
 type Lang = (typeof LANGS)[number]["id"];
-const DIFF_COLOR: Record<string, string> = { easy: "#22c58b", medium: "#ffc83d", hard: "#ff5a76" };
+const DIFF_COLOR: Record<string, string> = { easy: "#0a7d4f", medium: "#8a5a00", hard: "#b3162e" };
 
 interface RunResult { index: number; passed: boolean; input: string; expected: string; actual: string; error: string }
 interface TestRow { index: number; passed: boolean; hidden: boolean; input?: string; expected?: string; actual?: string; error?: string }
@@ -77,7 +78,7 @@ export function LeetcodeScreen({ challenge, problem, onDone }: { challenge: Chal
   const btn = "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-bold disabled:opacity-50";
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: C.bg, color: C.text }}>
+    <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: C.bg, color: C.text, colorScheme: "light" }}>
       <header className="flex flex-wrap items-center gap-3 px-4 py-2.5" style={{ borderBottom: `1px solid ${C.line}`, background: C.panel }}>
         <button type="button" onClick={onDone} className="inline-flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: C.soft }}><ArrowLeft size={15} /> Challenges</button>
         <span className="text-[14px] font-extrabold">{challenge.title}</span>
@@ -120,10 +121,10 @@ export function LeetcodeScreen({ challenge, problem, onDone }: { challenge: Chal
 
         <section className={`${pane === "code" ? "flex" : "hidden"} min-h-0 flex-col lg:flex`}>
           {locked && (
-            <div className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold" style={{ background: "#12301f", color: C.ok }}><Lock size={14} /> Completed. This challenge is locked and can no longer be edited.</div>
+            <div className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold" style={{ background: C.okBg, color: C.ok }}><Lock size={14} /> Completed. This challenge is locked and can no longer be edited.</div>
           )}
           <div className="relative flex min-h-0 flex-[3] font-mono text-[13.5px] leading-[1.6]">
-            <pre ref={gutter} aria-hidden className="m-0 select-none overflow-hidden px-3 py-3 text-right" style={{ color: "#566074", background: C.panel, minWidth: 44 }}>{Array.from({ length: lines }, (_, i) => i + 1).join("\n")}</pre>
+            <pre ref={gutter} aria-hidden className="m-0 select-none overflow-hidden px-3 py-3 text-right" style={{ color: "#3a4352", background: C.panel, minWidth: 44 }}>{Array.from({ length: lines }, (_, i) => i + 1).join("\n")}</pre>
             <textarea value={code} readOnly={locked} spellCheck={false} aria-label="Code editor"
               onChange={(e) => edit(e.target.value)}
               onScroll={(e) => { if (gutter.current) gutter.current.scrollTop = e.currentTarget.scrollTop; }}
@@ -131,7 +132,7 @@ export function LeetcodeScreen({ challenge, problem, onDone }: { challenge: Chal
                 if (e.key === "Tab") { e.preventDefault(); const t = e.currentTarget, s = t.selectionStart; edit(code.slice(0, s) + "    " + code.slice(t.selectionEnd)); requestAnimationFrame(() => { t.selectionStart = t.selectionEnd = s + 4; }); }
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !disabled) { e.preventDefault(); void run(false); }
               }}
-              className="min-h-0 flex-1 resize-none whitespace-pre px-3 py-3 outline-none" style={{ background: C.bg, color: C.text, tabSize: 4, overflow: "auto" }} />
+              className="min-h-0 flex-1 resize-none whitespace-pre px-3 py-3 outline-none" style={{ background: C.bg, color: C.text, caretColor: C.text, tabSize: 4, overflow: "auto" }} />
           </div>
 
           <div className="flex min-h-0 flex-[2] flex-col" style={{ borderTop: `1px solid ${C.line}`, background: C.panel }}>
@@ -176,7 +177,7 @@ function SubmitResult({ out }: { out: Extract<Console, { kind: "submit" }> }) {
         <span className="text-[12.5px] font-semibold" style={{ color: C.soft }}>{passed}/{out.tests.length} tests passed</span>
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {out.tests.map((t) => <span key={t.index} className="rounded-md px-2 py-0.5 text-[11.5px] font-bold" style={{ background: t.passed ? "#12301f" : "#3a1520", color: t.passed ? C.ok : C.bad }}>{t.hidden ? "Hidden" : "Example"} {t.index + 1}</span>)}
+        {out.tests.map((t) => <span key={t.index} className="rounded-md px-2 py-0.5 text-[11.5px] font-bold" style={{ background: t.passed ? C.okBg : C.badBg, color: t.passed ? C.ok : C.bad }}>{t.hidden ? "Hidden" : "Example"} {t.index + 1}</span>)}
       </div>
       {out.tests.filter((t) => !t.passed && !t.hidden).map((t) => (
         <div key={t.index} className="mt-3"><Pair label="Input" value={t.input ?? ""} /><Pair label="Expected" value={t.expected ?? ""} /><Pair label="Your output" value={t.actual || "(no output)"} />{t.error && <pre className="mt-1 whitespace-pre-wrap font-mono text-[12.5px]" style={{ color: C.bad }}>{t.error}</pre>}</div>
