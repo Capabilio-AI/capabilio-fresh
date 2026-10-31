@@ -15,6 +15,8 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
   const [headline, setHeadline] = useState("");
   const [body, setBody] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  /** later pages of an uploaded circular, shown after the first */
+  const [moreImages, setMoreImages] = useState<string[]>([]);
   const [startsAt, setStartsAt] = useState("");
   const [location, setLocation] = useState("");
   const [link, setLink] = useState("");
@@ -34,6 +36,7 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
     setHeadline("");
     setBody("");
     setImage(null);
+    setMoreImages([]);
     setStartsAt("");
     setLocation("");
     setLink("");
@@ -53,10 +56,13 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
       const form = new FormData();
       form.append("file", file);
       const res = await fetch("/api/org/posts/from-pdf", { method: "POST", body: form });
-      const json = (await res.json().catch(() => null)) as { error?: string; note?: string; imageUrl?: string | null; draft?: { headline: string; body: string; startsAt: string | null; location: string | null; isFest: boolean } | null } | null;
+      const json = (await res.json().catch(() => null)) as { error?: string; note?: string; imageUrls?: string[]; draft?: { headline: string; body: string; startsAt: string | null; location: string | null; isFest: boolean } | null } | null;
       if (!res.ok || !json) return setError(json?.error ?? "We couldn't read that PDF.");
       setOpen(true);
-      if (json.imageUrl) setImage(json.imageUrl);
+      if (json.imageUrls?.length) {
+        setImage(json.imageUrls[0]);
+        setMoreImages(json.imageUrls.slice(1));
+      }
       const d = json.draft;
       if (d) {
         setKindId(d.startsAt ? (d.isFest ? "fest" : "event") : "announcement");
@@ -99,6 +105,7 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
           body: body.trim(),
           ...(kind.headline && headline.trim() ? { title: headline.trim() } : {}),
           ...(image ? { coverImageUrl: image } : {}),
+          ...(image && moreImages.length ? { imageUrls: moreImages } : {}),
           ...(kind.dated ? { eventStartsAt: new Date(startsAt).toISOString(), ...(location.trim() ? { eventLocation: location.trim() } : {}) } : {}),
           ...(link.trim() ? { eventLink: link.trim() } : {}),
           isPublic: audience === "public",
@@ -187,9 +194,13 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
 
           {image && (
             <div className="relative mt-3">
-              {/* eslint-disable-next-line @next/next/no-img-element -- our own storage URL */}
-              <img src={image} alt="Attached" className="max-h-72 w-full rounded-2xl border border-app-border object-cover" />
-              <button type="button" onClick={() => setImage(null)} className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-[#fff]" aria-label="Remove photo">
+              <div className="flex flex-col gap-2">
+                {[image, ...moreImages].map((src, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element -- our own storage URL
+                  <img key={src} src={src} alt={`Attached page ${i + 1}`} className="h-auto w-full rounded-2xl border border-app-border bg-white object-contain" />
+                ))}
+              </div>
+              <button type="button" onClick={() => { setImage(null); setMoreImages([]); }} className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-[#fff]" aria-label="Remove photo">
                 <X size={14} />
               </button>
             </div>
