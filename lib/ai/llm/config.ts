@@ -13,6 +13,7 @@ const TASK_PREFIX: Record<LlmTask, string> = {
   general: "GENERAL",
   arena_task: "ARENA",
   resume: "RESUME",
+  syllabus: "SYLLABUS",
 };
 
 // openai/gpt-oss-120b is the largest chat model this account's Groq key can reach (see lib/ai/groq.ts).
@@ -24,6 +25,14 @@ const DEFAULT_MODEL = "openai/gpt-oss-120b";
  */
 export function routeFor(task: LlmTask, env: Env = process.env): { primary: ModelRoute; fallback: ModelRoute | null } {
   const p = TASK_PREFIX[task];
+  // Reading a syllabus is many large calls per upload, so it runs on Groq by default whatever the rest of the app uses; SYLLABUS_PROVIDER/SYLLABUS_MODEL override.
+  // If Groq is rate limited or down, the app-wide route (LLM_PROVIDER/LLM_MODEL) takes over as the fallback.
+  if (task === "syllabus" && !env.SYLLABUS_PROVIDER) {
+    const primary = { provider: "groq", model: (env.SYLLABUS_MODEL || env.GROQ_MODEL || DEFAULT_MODEL).trim() };
+    const fb = (env.SYLLABUS_FALLBACK_PROVIDER || env.LLM_PROVIDER || "").trim().toLowerCase();
+    const fbModel = (env.SYLLABUS_FALLBACK_MODEL || env.LLM_MODEL || "").trim();
+    return { primary, fallback: fb && fbModel && (fb !== primary.provider || fbModel !== primary.model) ? { provider: fb, model: fbModel } : null };
+  }
   const provider = (env[`${p}_PROVIDER`] || env.LLM_PROVIDER || "groq").trim().toLowerCase();
   const model = (env[`${p}_MODEL`] || env.LLM_MODEL || (provider === "groq" ? env.GROQ_MODEL : "") || (provider === "groq" ? DEFAULT_MODEL : "")).trim();
   const fbProvider = (env[`${p}_FALLBACK_PROVIDER`] || env.LLM_FALLBACK_PROVIDER || (env.GROQ_FALLBACK_MODEL ? "groq" : "")).trim().toLowerCase();

@@ -102,6 +102,11 @@ describe("routing and fallback by configuration only", () => {
   it("per-task overrides beat the global route; the legacy GROQ_MODEL name still works", () => {
     expect(routeFor("question", { QUESTION_MODEL: "q", LLM_MODEL: "g" }).primary).toEqual({ provider: "groq", model: "q" });
     expect(routeFor("feedback", { QUESTION_MODEL: "q", LLM_PROVIDER: "openai-compatible", LLM_MODEL: "g" }).primary).toEqual({ provider: "openai-compatible", model: "g" });
+    // syllabus reading stays on Groq even when the app uses Claude, with the app route as the fallback
+    const app = { LLM_PROVIDER: "anthropic", LLM_MODEL: "claude-haiku-5-5", GROQ_MODEL: "openai/gpt-oss-120b" };
+    expect(routeFor("syllabus", app)).toEqual({ primary: { provider: "groq", model: "openai/gpt-oss-120b" }, fallback: { provider: "anthropic", model: "claude-haiku-5-5" } });
+    expect(routeFor("general", app).primary.provider).toBe("anthropic");
+    expect(routeFor("syllabus", { ...app, SYLLABUS_PROVIDER: "anthropic", SYLLABUS_MODEL: "m" }).primary).toEqual({ provider: "anthropic", model: "m" });
     expect(routeFor("question", { GROQ_MODEL: "legacy" }).primary.model).toBe("legacy");
     expect(routeFor("role_profile", { ROLE_PROFILE_PROVIDER: "bedrock", ROLE_PROFILE_MODEL: "claude" }).primary).toEqual({ provider: "bedrock", model: "claude" });
   });

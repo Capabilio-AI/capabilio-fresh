@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { completeJson, GROQ_MODEL } from "@/lib/ai/groq";
+import { completeJson as completeAnyJson, GROQ_MODEL } from "@/lib/ai/groq";
+
+/** Every call in this file reads a syllabus, so all of them take the syllabus route (Groq by default, see lib/ai/llm/config.ts). */
+const completeJson = <T>(prompt: string, system: string, schema: z.ZodType<T>) => completeAnyJson(prompt, system, schema, { task: "syllabus" });
 
 /** Re-exported so callers that record provenance never import the AI provider themselves. */
 export const EXTRACTION_MODEL = GROQ_MODEL;
