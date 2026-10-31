@@ -258,3 +258,27 @@
 .org-theme.org-ws .o-date {
   background: var(--m-accent-soft);
 }
+
+/*
+ * Public college page (/o/<slug>) — a LinkedIn-company-page look on the workspace tokens: flat warm-grey ground, white
+ * cards with a hairline border, no glass. Applied as `.org-theme.org-ws.org-public`.
+ */
+.org-theme.org-ws.org-public {
+  --m-ground: #f4f2ee;
+  background: var(--m-ground);
+  background-attachment: scroll;
+  min-height: 100vh;
+}
+.org-theme.org-ws.org-public .o-pub-card {
+  background: #fff;
+  border: 1px solid var(--m-rule);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgb(60 40 0 / 0.05);
+}
+.org-theme.org-ws.org-public .o-card {
+  background: #fff;
+  border-color: var(--m-rule);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 1px 2px rgb(60 40 0 / 0.05);
+}
