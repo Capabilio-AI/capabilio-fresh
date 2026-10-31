@@ -3,7 +3,7 @@
 import type { CareerProfile } from "@/lib/assess/career-profile";
 import { getTier, type EloTier } from "@/lib/portfolio/elo";
 
-/** Readiness at which a student counts as job-ready for the role (the same line the gap analysis uses for "Ready"). */
+/** Readiness at which a student counts as job-ready for the role (the same line the gap analysis uses for "Ready"). It also needs every CRITICAL skill at target. */
 export const JOB_READY_AT = 85;
 /** The stations on the way to the goal, as readiness percentages. */
 export const MILESTONES = [
@@ -32,7 +32,13 @@ export interface Overview {
   /** the next station not yet reached, for "you are here" */
   nextMilestone: { at: number; label: string } | null;
   measured: number;
+  /** skills backed by at least one passed practical task (Arena / verified proof), not just screening answers */
+  proven: number;
   total: number;
+  /** readiness is at the line AND every critical skill is at target; the only state allowed to say "job-ready" */
+  jobReady: boolean;
+  /** critical skills still below target, the reason a high readiness can still be "not yet" */
+  missingCritical: string[];
   strengths: OverviewSkill[];
   lagging: OverviewSkill[];
   /** the one thing to do next: the biggest weighted gap, or the most important skill still unmeasured */
@@ -52,6 +58,7 @@ export function buildOverview(profile: CareerProfile): Overview | null {
   const tier = getTier(elo);
   const upper = tier.max >= 9999 ? null : ELO_NEXT[tier.label] ?? null;
   const readiness = Math.round(profile.readiness ?? 0);
+  const missingCritical = profile.skills.filter((k) => k.importance === "CRITICAL" && (k.score ?? 0) < k.targetLevel).map((k) => k.name);
 
   const weighted = profile.skills.map((k) => ({ k, s: asSkill(k), pressure: k.weight * Math.max(0, k.targetLevel - (k.score ?? 0)) }));
   const measuredSkills = weighted.filter((w) => w.s.score !== null);
@@ -72,6 +79,9 @@ export function buildOverview(profile: CareerProfile): Overview | null {
     pointsToGoal: Math.max(0, JOB_READY_AT - readiness),
     nextMilestone: MILESTONES.find((m) => readiness < m.at) ?? null,
     measured: measuredSkills.length,
+    proven: profile.skills.filter((k) => k.proof > 0).length,
+    jobReady: readiness >= JOB_READY_AT && missingCritical.length === 0,
+    missingCritical,
     total: profile.skills.length,
     strengths,
     lagging,

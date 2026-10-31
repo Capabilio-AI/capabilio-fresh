@@ -62,7 +62,8 @@ function SkillRow({ skill, tone }: { skill: OverviewSkill; tone: "good" | "gap" 
 
 export function OverviewHub({ o, vaultCount, yearLabel }: { o: Overview; vaultCount: number; yearLabel: string | null }) {
   const stats = [
-    { label: "Skills measured", value: `${o.measured}/${o.total}` },
+    { label: "Skills proven in real work", value: `${o.proven}/${o.total}` },
+    { label: "Skills screened", value: `${o.measured}/${o.total}` },
     { label: "Proof in your vault", value: vaultCount },
     { label: "Your stage", value: yearLabel ?? "–" },
   ];
@@ -78,9 +79,11 @@ export function OverviewHub({ o, vaultCount, yearLabel }: { o: Overview; vaultCo
           <div className="min-w-0">
             <p id="where" className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-white/60"><Flag size={13} aria-hidden />Your goal: {o.roleName}</p>
             <h2 className="mt-1.5 font-lp-display text-[24px] font-bold leading-tight sm:text-[28px]">
-              {o.pointsToGoal === 0 ? "You've reached job-ready. Keep proving it." : `${o.pointsToGoal} points to job-ready`}
+              {o.jobReady ? "You've reached job-ready. Keep proving it." : o.pointsToGoal === 0 ? `Prove ${o.missingCritical.slice(0, 2).join(" and ")} to be job-ready` : `${o.proven} of ${o.total} skills proven`}
             </h2>
-            <p className="mt-1 text-[13.5px] text-white/70">{o.nextMilestone ? `Next station: ${o.nextMilestone.label} at ${o.nextMilestone.at}%.` : "Every station on the road is behind you."}</p>
+            <p className="mt-1 text-[13.5px] text-white/70">
+              {o.jobReady ? "Every station on the road is behind you." : `Assessment answers only screen you (they count up to 40% of a skill). Passing Arena missions is what proves it.${o.nextMilestone ? ` Next station: ${o.nextMilestone.label} at ${o.nextMilestone.at}%.` : ""}`}
+            </p>
           </div>
           <div className="rounded-xl bg-white/10 px-5 py-4 text-center md:text-right">
             <p className="flex items-center justify-center gap-1.5 font-lp-mono text-[11px] uppercase tracking-wide text-white/60 md:justify-end"><Trophy size={13} aria-hidden />{o.roleName} ELO</p>
@@ -107,9 +110,9 @@ export function OverviewHub({ o, vaultCount, yearLabel }: { o: Overview; vaultCo
           <h3 id="next" className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Do this next</h3>
           {o.next ? (
             <>
-              <p className="mt-3 font-lp-display text-[20px] font-bold leading-tight text-[var(--m-ink)]">{o.next.reason === "gap" ? `Level up ${o.next.name}` : `Measure ${o.next.name}`}</p>
+              <p className="mt-3 font-lp-display text-[20px] font-bold leading-tight text-[var(--m-ink)]">{o.next.reason === "gap" ? `Prove ${o.next.name} in Arena` : `Measure ${o.next.name}`}</p>
               <p className="mt-1.5 text-[13.5px] text-app-muted">
-                {o.next.reason === "gap" ? `You're at ${o.next.score}% and ${o.roleName} roles ask for ${o.next.target}%. It is the biggest lever on your readiness.` : `It matters a lot for ${o.roleName} and nothing has measured it yet. One Arena mission will.`}
+                {o.next.reason === "gap" ? `${o.next.score}% proven so far; ${o.roleName} roles ask for ${o.next.target}%. Passing Arena missions on it is the fastest way up.` : `It matters a lot for ${o.roleName} and nothing has measured it yet. One Arena mission will.`}
               </p>
               <div className="mt-auto flex flex-wrap gap-2 pt-4">
                 <Link href="/arena" className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--m-ink)] px-4 py-2.5 text-[13px] font-bold text-white transition-transform hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"><Swords size={14} aria-hidden />Start an Arena mission</Link>
@@ -120,7 +123,7 @@ export function OverviewHub({ o, vaultCount, yearLabel }: { o: Overview; vaultCo
         </section>
       </div>
 
-      <ul className="grid grid-cols-3 gap-3" aria-label="At a glance">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="At a glance">
         {stats.map((s) => <li key={s.label} className="rounded-xl border border-[var(--m-rule)] bg-white px-4 py-3"><p className="truncate font-lp-display text-[20px] font-bold text-[var(--m-ink)]">{s.value}</p><p className="text-[12px] text-app-muted">{s.label}</p></li>)}
       </ul>
     </div>
