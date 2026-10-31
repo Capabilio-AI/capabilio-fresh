@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/admin/curriculum/extractions": ["./node_modules/@napi-rs/canvas*/**/*", "./node_modules/pdfjs-dist/legacy/build/**/*"],
     "/api/graduate/resume": ["./node_modules/@napi-rs/canvas*/**/*", "./node_modules/pdfjs-dist/legacy/build/**/*"],
+    "/api/org/posts/from-pdf": ["./node_modules/@napi-rs/canvas*/**/*", "./node_modules/pdfjs-dist/legacy/build/**/*"],
     // the SQL workspace runs queries in workers that load sql.js and PGlite (plus its starting snapshot) from disk, which the tracer cannot see
     "/api/arena/domain/**/*": ["./node_modules/sql.js/dist/**/*", "./node_modules/@electric-sql/pglite/dist/**/*", "./lib/workplace/sql/assets/*"],
   },

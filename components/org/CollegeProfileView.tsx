@@ -122,8 +122,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
       <CollegeHeader org={org} signedIn={signedIn} tab={tab} basePath={basePath} canEditPage={canEditPage} workspace={workspace} />
       <main className={`grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px] ${workspace ? "py-6" : "mx-auto max-w-[1120px] px-4 py-8 sm:px-8"}`}>
         <div className="flex min-w-0 flex-col gap-6">
-          {/* keyed by tab so its open/closed state never follows you to another tab */}
-          <div key={tab} className="contents">{editForm}</div>
+          {tab === "about" && editForm}
 
           {tab === "home" && (
             <>

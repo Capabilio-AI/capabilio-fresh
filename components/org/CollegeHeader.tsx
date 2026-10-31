@@ -122,7 +122,7 @@ export function CollegeHeader({
             {workspace ? (
               <>
                 {canEditPage && (
-                  <Link href="/org/college?edit=1" className="o-btn">
+                  <Link href="/org/college?tab=about&edit=1" className="o-btn">
                     <Pencil size={14} aria-hidden="true" /> Edit page
                   </Link>
                 )}
