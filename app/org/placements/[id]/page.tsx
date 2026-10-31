@@ -72,6 +72,7 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
             {visit.drive_status !== "cancelled" && visit.drive_status !== "completed" && (
               <ActionButton action="/api/org/placements/status" body={{ opportunityId: visit.id, status: "cancelled" }} label="Cancel visit" variant="danger" confirm="Cancel this company visit? Students can no longer register." />
             )}
+            <ActionButton action="/api/org/placements/delete" body={{ opportunityId: visit.id }} label="Delete visit" variant="danger" redirectTo="/org/placements" confirm="Delete this company visit? Registrations are removed and registered students are told. This can't be undone." />
             <Link href="/org/placements" className="text-[13px] font-semibold text-app-muted hover:text-app-charcoal">
               All visits
             </Link>

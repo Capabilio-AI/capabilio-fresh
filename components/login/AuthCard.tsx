@@ -73,7 +73,9 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
       ? "Password updated. Sign in with your new password."
       : params.get("error") === "auth-link-invalid"
         ? "That email link has expired or was already used. Use \u201cForgot password?\u201d to get a new one."
-        : null;
+        : params.get("error") === "auth-link-used"
+          ? "This verification link was already used, which usually means your email is verified. Try signing in. If it still says unverified, sign up again to get a fresh link."
+          : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<ErrorStatus | undefined>();

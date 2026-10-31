@@ -31,5 +31,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth-link-invalid`);
+  // a reset link that fails needs a new reset; any other link (sign-up verification) usually means it was opened twice, and the first open verified the email
+  return NextResponse.redirect(`${origin}/login?error=${next.startsWith("/reset-password") ? "auth-link-invalid" : "auth-link-used"}`);
 }
