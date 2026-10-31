@@ -9,6 +9,7 @@ import type { CourseRow } from "@/lib/curriculum/admin-data";
 import { COURSE_GROUPS, GROUP_LABEL, composition, courseGroup, type CourseGroup } from "@/lib/curriculum/composition";
 import { Panel, Pill } from "@/components/org/ui";
 import { api } from "./api";
+import { tidyTitle } from "@/lib/curriculum/title";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Props {
@@ -115,7 +116,7 @@ export function CoursesStep({ importId, courses, removed, editable }: Props) {
                 <li key={c.id} className="o-card !rounded-xl flex flex-wrap items-center gap-3 p-3.5">
                   {editable && <input type="checkbox" aria-label={`Select ${c.title}`} checked={selected.has(c.id)} onChange={() => toggle(c.id)} />}
                   <div className="min-w-0 flex-1">
-                    <Link href={`/org/curriculum/${importId}/courses/${c.id}`} className="font-lp-body text-[13.5px] font-medium text-app-charcoal hover:underline">{c.title}</Link>
+                    <Link href={`/org/curriculum/${importId}/courses/${c.id}`} className="font-lp-body text-[13.5px] font-medium text-app-charcoal hover:underline">{tidyTitle(c.title)}</Link>
                     <p className="font-lp-mono text-[11px] text-app-muted">{[c.code, c.category, c.kind !== "course" ? c.kind.replace("_", " ") : null, c.credits != null ? `${c.credits} credits` : null].filter(Boolean).join(" · ") || "No code or category stated"}</p>
                   </div>
                   <Pill tone={c.outcomes ? "neutral" : "warn"}>{c.outcomes ? `${c.outcomes} outcomes` : "No outcomes"}</Pill>

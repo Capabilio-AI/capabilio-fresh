@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { loadImportRelevance } from "@/lib/careers/data";
 import { EmptyState, Panel } from "@/components/org/ui";
 import { RelevancePill, WhyRelevant } from "./RelevanceBits";
+import { tidyTitle } from "@/lib/curriculum/title";
 
 type Data = Awaited<ReturnType<typeof loadImportRelevance>>;
 const TOP = 6;
@@ -28,7 +29,7 @@ export function RelevanceStep({ importId, data }: { importId: string; data: Data
               <li key={r.courseId} className="rounded-xl border border-app-border p-3">
                 <details>
                   <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 [&::-webkit-details-marker]:hidden">
-                    <Link href={`/org/curriculum/${importId}/courses/${r.courseId}`} className="font-lp-body text-[13px] font-medium text-app-charcoal hover:underline">{r.title}</Link>
+                    <Link href={`/org/curriculum/${importId}/courses/${r.courseId}`} className="font-lp-body text-[13px] font-medium text-app-charcoal hover:underline">{tidyTitle(r.title)}</Link>
                     <span className="font-lp-mono text-[11px] text-app-muted">Year {r.year}</span>
                     <RelevancePill label={r.relevance.label} />
                     <span className="ml-auto font-lp-mono text-[11px] text-app-muted">Why?</span>
