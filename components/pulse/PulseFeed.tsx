@@ -171,16 +171,23 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
       {view.mode === "community" && !view.canPost && <p className="rounded-2xl border border-dashed border-[var(--m-rule)] bg-white px-5 py-3 text-center font-lp-body text-[12.5px] text-app-muted">Join this community to post.</p>}
 
       {posts === null ? (
-        <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-app-orange" aria-label="Loading" /></div>
+        <div className="flex flex-col gap-4" role="status" aria-label="Loading your feed">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+              <div className="flex items-center gap-3"><span className="pulse-skeleton h-10 w-10 rounded-full" /><span className="flex flex-1 flex-col gap-2"><span className="pulse-skeleton h-3 w-1/3 rounded" /><span className="pulse-skeleton h-2.5 w-1/4 rounded" /></span></div>
+              <span className="pulse-skeleton mt-4 block h-3 w-full rounded" /><span className="pulse-skeleton mt-2 block h-3 w-5/6 rounded" /><span className="pulse-skeleton mt-2 block h-3 w-2/3 rounded" />
+            </div>
+          ))}
+        </div>
       ) : posts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-12 text-center">
           <p className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">{EMPTY[view.mode].title}</p>
           <p className="mx-auto mt-1 max-w-sm font-lp-body text-[13px] text-app-muted">{EMPTY[view.mode].body}</p>
         </div>
       ) : (
-        posts.map((it) =>
+        posts.map((it, i) =>
           it.type === "page" ? (
-            <PagePostCard key={`g-${it.page.id}`} page={it.page} reason={it.reason} />
+            <div key={`g-${it.page.id}`} className="pulse-rise" style={{ animationDelay: `${Math.min(i, 6) * 50}ms` }}><PagePostCard page={it.page} reason={it.reason} /></div>
           ) : (
             <PostCard
               key={it.post.id}
