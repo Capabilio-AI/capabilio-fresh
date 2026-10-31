@@ -14,7 +14,7 @@ export function DomainCountdown({ unlockAt }: { unlockAt: string }) {
   const [left, setLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    setLeft(Math.max(0, target - Date.now()));
+    const first = setTimeout(() => setLeft(Math.max(0, target - Date.now())), 0);
     const id = setInterval(() => {
       const next = Math.max(0, target - Date.now());
       setLeft(next);
@@ -23,7 +23,7 @@ export function DomainCountdown({ unlockAt }: { unlockAt: string }) {
         router.refresh();
       }
     }, 1000);
-    return () => clearInterval(id);
+    return () => { clearTimeout(first); clearInterval(id); };
   }, [target, router]);
 
   const s = Math.floor((left ?? 0) / 1000);
