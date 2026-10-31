@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { officialOnly, type MappingSource, type MappingStatus } from "@/lib/curriculum/mapping-rules";
+import { usableOnly, type MappingSource, type MappingStatus } from "@/lib/curriculum/mapping-rules";
+import { selectInChunks } from "@/lib/curriculum/fetch-chunks";
 import type { RoadmapSubject } from "./build";
 
 /**
@@ -33,11 +34,11 @@ export async function loadPublishedSubjects(service: SupabaseClient<Database>, i
   const ids = (courses ?? []).map((c) => c.id);
   if (ids.length === 0) return { subjects: [], regulationMismatch: false };
 
-  const [{ data: maps }, { data: areas }] = await Promise.all([
-    service.from("course_skill_mappings").select("course_id, skill_id, status, mapping_source").in("course_id", ids),
+  const [maps, { data: areas }] = await Promise.all([
+    selectInChunks(ids, (chunk) => service.from("course_skill_mappings").select("course_id, skill_id, status, mapping_source, confidence, evidence_source").in("course_id", chunk)),
     service.from("arena_skill_areas").select("area_key, skill_id").eq("role_key", roleKey).not("skill_id", "is", null),
   ]);
-  const official = officialOnly((maps ?? []).map((m) => ({ ...m, status: m.status as MappingStatus, source: m.mapping_source as MappingSource })));
+  const official = usableOnly((maps ?? []).map((m) => ({ ...m, status: m.status as MappingStatus, source: m.mapping_source as MappingSource, evidence: m.evidence_source })));
   const areasOf = (skillId: string) => (areas ?? []).filter((a) => a.skill_id === skillId).map((a) => a.area_key);
   return {
     regulationMismatch: false,

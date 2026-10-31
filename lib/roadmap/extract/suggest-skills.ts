@@ -46,12 +46,12 @@ export async function suggestSkillsForImport(
   service: Service,
   ctx: { institutionId: string },
   importId: string,
-  opts: { limit?: number; suggest?: Suggest } = {}
+  opts: { limit?: number; suggest?: Suggest; /** platform jobs only: the system may keep analysing a curriculum that is already live */ allowPublished?: boolean } = {}
 ): Promise<SuggestSkillsResult> {
   const suggest: Suggest = opts.suggest ?? suggestSkillsForCourses;
   const { data: imp } = await service.from("curriculum_imports").select("id, status, institution_id, deleted_at").eq("id", importId).eq("institution_id", ctx.institutionId).is("deleted_at", null).maybeSingle();
   if (!imp) return { ok: false, status: 404, message: "Curriculum not found." };
-  if (imp.status === "PUBLISHED" || imp.status === "ARCHIVED") return { ok: false, status: 409, message: "A published curriculum can't be changed. Create a new version." };
+  if (imp.status === "ARCHIVED" || (imp.status === "PUBLISHED" && !opts.allowPublished)) return { ok: false, status: 409, message: "A published curriculum can't be changed. Create a new version." };
 
   const { data: all } = await service.from("courses").select("id, title, objectives, provenance").eq("import_id", importId).order("sort_order");
   // A course that was read but ended with no skill of any kind is retried (twice at most): an empty answer is a failed read, never a finding.
