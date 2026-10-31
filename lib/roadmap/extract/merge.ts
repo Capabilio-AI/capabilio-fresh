@@ -5,6 +5,9 @@ const STOP = new Set(["and", "the", "of", "to", "through", "using", "in", "for",
 const words = (s: string) =>
   s
     .toLowerCase()
+    // "A.I" and "AI" are one word ("Generative A.I" must match the syllabus page titled "GENERATIVE AI"); twice for "A.I.M.L"
+    .replace(/\b([a-z])\.([a-z])\b/g, "$1$2")
+    .replace(/\b([a-z]{2})\.([a-z])\b/g, "$1$2")
     .replace(/\([^)]*\)/g, " ")
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, " ")

@@ -9,10 +9,12 @@ interface Props {
   importId: string;
   summary: ImportSummary;
   coursesWithoutOutcomes: number;
+  /** titles of courses with no confirmed skill: students see these as "Not tracked here" in their roadmap */
+  coursesWithoutSkills?: string[];
 }
 
 /** A plain checklist, then one decision. Warnings never block — they say what students will and won't see. */
-export function ConfirmStep({ importId, summary, coursesWithoutOutcomes }: Props) {
+export function ConfirmStep({ importId, summary, coursesWithoutOutcomes, coursesWithoutSkills = [] }: Props) {
   const confirmed = summary.status === "CONFIRMED";
   const frozen = summary.status === "PUBLISHED" || summary.status === "ARCHIVED";
   const checks: { ok: boolean; text: string }[] = [
@@ -20,6 +22,7 @@ export function ConfirmStep({ importId, summary, coursesWithoutOutcomes }: Props
     { ok: Boolean(summary.regulation), text: summary.regulation ? `Regulation ${summary.regulation}` : "No regulation stated (fine for a single curriculum; a new regulation should be named so versions stay separate)." },
     { ok: coursesWithoutOutcomes === 0, text: coursesWithoutOutcomes === 0 ? "Every course has learning outcomes." : `${coursesWithoutOutcomes} course(s) have no learning outcomes.` },
     { ok: summary.confirmedMappings > 0, text: summary.confirmedMappings > 0 ? `${summary.confirmedMappings} confirmed skill mapping${summary.confirmedMappings === 1 ? "" : "s"} — these are what students' roadmaps use.` : "No confirmed skill mappings yet — students' roadmaps will have nothing to match until you confirm some." },
+    { ok: coursesWithoutSkills.length === 0, text: coursesWithoutSkills.length === 0 ? "Every course has at least one confirmed skill." : `${coursesWithoutSkills.length} of ${summary.courses} courses have no confirmed skill, so students' roadmaps show them as "Not tracked here": ${coursesWithoutSkills.slice(0, 8).join(", ")}${coursesWithoutSkills.length > 8 ? ` and ${coursesWithoutSkills.length - 8} more` : ""}. Some (for example Constitution of India) rightly have none; check the others in Skill mappings.` },
     { ok: summary.mappingsNeedingReview === 0, text: summary.mappingsNeedingReview === 0 ? "No suggestions waiting for review." : `${summary.mappingsNeedingReview} suggested mapping(s) are still unreviewed. They stay suggestions and have no effect on students.` },
   ];
   return (

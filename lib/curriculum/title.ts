@@ -5,7 +5,9 @@ const SMALL = new Set(["a", "an", "and", "as", "at", "by", "for", "in", "of", "o
  * in title case so the list reads evenly; mixed-case names (DevOps, Linear Algebra & Calculus) are left exactly as written.
  * Short all-caps words (AI, IoT-style codes, roman numerals) are kept as they are.
  */
-export function tidyTitle(title: string): string {
+export function tidyTitle(rawTitle: string): string {
+  // "Digital Logic& Computer Organization" -> "Digital Logic & Computer Organization" (a typo in the source file)
+  const title = rawTitle.replace(/(\S)&(\s)/g, "$1 &$2");
   const letters = title.replace(/[^A-Za-z]/g, "");
   if (letters.length < 4 || letters !== letters.toUpperCase()) return title;
   return title

@@ -15,3 +15,8 @@ describe("tidyTitle", () => {
     expect(tidyTitle("Linear Algebra & Calculus")).toBe("Linear Algebra & Calculus");
   });
 });
+
+describe("tidyTitle spacing", () => {
+  it("adds the missing space before an ampersand", () => expect(tidyTitle("Digital Logic& Computer Organization")).toBe("Digital Logic & Computer Organization"));
+  it("leaves R&D alone", () => expect(tidyTitle("R&D Methods")).toBe("R&D Methods"));
+});
