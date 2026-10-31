@@ -147,7 +147,8 @@ export async function getImportOverview(service: Service, institutionId: string,
     id: c.id, year: c.year, semester: c.semester, title: c.title, code: c.course_code, category: c.category, kind: c.kind, credits: num(c.credits),
     outcomes: count(outcomes, c.id), units: count(units, c.id), experiments: count(labs, c.id),
     confirmed: count(maps, c.id, (m) => m.status === "CONFIRMED"), suggested: count(maps, c.id, (m) => m.status === "SUGGESTED"), rejected: count(maps, c.id, (m) => m.status === "REJECTED"),
-    skillsSuggested: Boolean((c.provenance as Record<string, unknown> | null)?._skillsSuggestedAt),
+    // read, and either found skills or has been retried: a course that came back with nothing still counts as waiting
+    skillsSuggested: Boolean((c.provenance as Record<string, unknown> | null)?._skillsSuggestedAt) && (count(maps, c.id) > 0 || Number((c.provenance as Record<string, unknown> | null)?._skillsAttempts ?? 0) >= 2),
   });
   const people = await loadPeople(service, [imp.created_by, imp.reviewed_by]);
   return {

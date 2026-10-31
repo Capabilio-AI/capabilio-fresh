@@ -84,6 +84,9 @@ describe("file validation", () => {
 describe("matching and grounding", () => {
   it("matches the same course across the table and the course section", () => {
     expect(sameCourse("Full Stack Development –I", "FULL STACK DEVELOPMENT – 1")).toBe(true);
+    // the MIC23 AI/ML book prints the table row "Generative A.I" and the syllabus page "GENERATIVE AI": one course, not two
+    expect(sameCourse("Generative A.I", "GENERATIVE AI")).toBe(true);
+    expect(sameCourse("Generative A.I", "Generative Adversarial Networks")).toBe(false);
     expect(sameCourse("Soft skills / / SWAYAM Plus - 21st Century Employability Skills", "SOFT SKILLS")).toBe(true);
     expect(sameCourse("Database Management Systems", "DATABASE MANAGEMENT SYSTEMS")).toBe(true);
   });

@@ -9,6 +9,8 @@ import { pool } from "./pool";
 type Service = SupabaseClient<Database>;
 export type Suggest = (courses: CourseForSkills[], catalog: { name: string; category: string }[]) => Promise<SkillCandidates["results"]>;
 
+const ATTEMPTS = "_skillsAttempts";
+const MAX_ATTEMPTS = 2;
 const BATCH = 4;
 const CONCURRENCY = 3; // a request is 12 courses = 3 batches, so they all run at once (one model round trip)
 /** Courses handled per request: keeps one call well inside the 300 s route limit; the caller repeats until `remaining` is 0. */
@@ -52,7 +54,10 @@ export async function suggestSkillsForImport(
   if (imp.status === "PUBLISHED" || imp.status === "ARCHIVED") return { ok: false, status: 409, message: "A published curriculum can't be changed. Create a new version." };
 
   const { data: all } = await service.from("courses").select("id, title, objectives, provenance").eq("import_id", importId).order("sort_order");
-  const pending = (all ?? []).filter((c) => !(c.provenance as Record<string, unknown> | null)?.[MARK]);
+  // A course that was read but ended with no skill of any kind is retried (twice at most): an empty answer is a failed read, never a finding.
+  const withSkills = await courseIdsWithMappings(service, (all ?? []).map((c) => c.id));
+  const attemptsOf = (c: { provenance: unknown }) => Number((c.provenance as Record<string, unknown> | null)?.[ATTEMPTS] ?? 0);
+  const pending = (all ?? []).filter((c) => !(c.provenance as Record<string, unknown> | null)?.[MARK] || (!withSkills.has(c.id) && attemptsOf(c) < MAX_ATTEMPTS));
   const todo = pending.slice(0, opts.limit ?? DEFAULT_COURSES_PER_REQUEST);
   if (todo.length === 0) return { ok: true, processed: 0, remaining: 0, suggested: 0, unresolved: 0, failedBatches: 0 };
   const ids = todo.map((c) => c.id);
@@ -154,9 +159,19 @@ export async function suggestSkillsForImport(
   const now = new Date().toISOString();
   const writes = await Promise.all([
     ...updates,
-    ...todo.filter((c) => handled.has(c.id)).map((c) => service.from("courses").update({ provenance: { ...((c.provenance as Record<string, unknown> | null) ?? {}), [MARK]: now } as never }).eq("id", c.id)),
+    ...todo.filter((c) => handled.has(c.id)).map((c) => service.from("courses").update({ provenance: { ...((c.provenance as Record<string, unknown> | null) ?? {}), [MARK]: now, [ATTEMPTS]: attemptsOf(c) + 1 } as never }).eq("id", c.id)),
   ]);
   if (writes.some((w) => w.error)) return { ok: false, status: 500, message: "Could not record progress. Try again — nothing was duplicated." };
 
   return { ok: true, processed: handled.size, remaining: pending.length - handled.size, suggested: courseRows.length, unresolved, failedBatches };
+}
+
+/** Which of these courses already have a mapping of any status (suggested, confirmed or rejected). Chunked: PostgREST returns at most 1000 rows per request. */
+async function courseIdsWithMappings(service: Service, courseIds: string[]): Promise<Set<string>> {
+  const have = new Set<string>();
+  for (let i = 0; i < courseIds.length; i += 40) {
+    const { data } = await service.from("course_skill_mappings").select("course_id").in("course_id", courseIds.slice(i, i + 40)).limit(1000);
+    for (const r of data ?? []) have.add(r.course_id);
+  }
+  return have;
 }

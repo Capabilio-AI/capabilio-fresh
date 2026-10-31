@@ -6,6 +6,7 @@ import { orgPageContext } from "@/lib/org/page";
 import { getImportOverview } from "@/lib/curriculum/admin-data";
 import { stepFrom, type StepKey } from "@/lib/curriculum/steps";
 import type { ImportStatus } from "@/lib/curriculum/mapping-rules";
+import { tidyTitle } from "@/lib/curriculum/title";
 import { PageHeader } from "@/components/org/ui";
 import { PersonChip, SummaryCard, StatusPill } from "@/components/curriculum/bits";
 import { WizardNav } from "@/components/curriculum/WizardNav";
@@ -58,7 +59,7 @@ export default async function CurriculumWizardPage({ params, searchParams }: { p
         {step === "outcomes" && <OutcomesStep importId={importId} courses={courses} />}
         {step === "mappings" && <MappingsStep importId={importId} courses={courses} editable={editable} />}
         {step === "relevance" && <RelevanceStep importId={importId} data={await loadImportRelevance(service, courses.map((c) => ({ id: c.id, title: c.title, year: c.year })))} />}
-        {step === "confirm" && <ConfirmStep importId={importId} summary={summary} coursesWithoutOutcomes={withoutOutcomes} />}
+        {step === "confirm" && <ConfirmStep importId={importId} summary={summary} coursesWithoutOutcomes={withoutOutcomes} coursesWithoutSkills={courses.filter((c) => c.confirmed === 0).map((c) => tidyTitle(c.title))} />}
         {step === "publish" && <PublishStep importId={importId} status={status} branch={imp.branch} regulation={imp.regulation} versionNo={overview.versionNo} />}
       </div>
     </div>
