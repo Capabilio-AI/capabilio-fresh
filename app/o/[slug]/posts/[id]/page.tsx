@@ -6,6 +6,7 @@ import { getAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadPublicOrg, loadVisiblePosts } from "@/lib/org/public-org";
 import { OrgTheme } from "@/components/org/OrgTheme";
+import { StudentBar } from "@/components/org/StudentBar";
 import { PostCard } from "@/components/org/PostCard";
 
 export const metadata: Metadata = { title: "Post — Capabilio AI" };
@@ -25,6 +26,7 @@ export default async function OrgPostPage({ params }: { params: Promise<{ slug: 
 
   return (
     <OrgTheme visitor>
+      {user && <StudentBar />}
       <main className="mx-auto max-w-2xl px-4 py-10">
         <Link href={`/o/${org.slug}`} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-app-muted hover:text-app-charcoal">
           <ArrowLeft size={14} aria-hidden="true" /> {org.name}
