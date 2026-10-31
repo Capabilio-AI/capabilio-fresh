@@ -26,10 +26,6 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
 
   return (
     <article className="pulse-card overflow-hidden rounded-2xl border border-[var(--m-rule)] bg-white">
-      {page.coverImageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element -- college-supplied image, arbitrary origin
-        <img src={page.coverImageUrl} alt="" loading="lazy" className="h-auto w-full bg-white object-contain" />
-      )}
       <div className="p-5">
         {reason && <p className="mb-2 font-lp-body text-[11.5px] font-medium text-app-muted">{reason}</p>}
         <header className="flex items-center gap-3">
@@ -59,6 +55,11 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
             {page.eventLocation && <li className="flex items-center gap-1.5"><MapPin size={12} aria-hidden="true" /> {page.eventLocation}</li>}
           </ul>
         )}
+
+        {[page.coverImageUrl, ...page.imageUrls].filter((u): u is string => Boolean(u)).map((src) => (
+          // eslint-disable-next-line @next/next/no-img-element -- college-supplied image, arbitrary origin
+          <img key={src} src={src} alt="" loading="lazy" className="mt-3 h-auto w-full rounded-xl border border-[var(--m-rule)] bg-[#fff] object-contain" />
+        ))}
 
         <footer className="mt-4 flex items-center gap-4 border-t border-[var(--m-rule)] pt-3">
           <button type="button" onClick={toggle} aria-pressed={liked} className={clsx("flex items-center gap-1.5 font-lp-body text-[13px]", liked ? "text-app-rose" : "text-app-muted hover:text-[var(--m-ink)]")}>

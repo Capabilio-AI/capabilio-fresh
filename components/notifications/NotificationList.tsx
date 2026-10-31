@@ -112,7 +112,7 @@ export function NotificationList() {
               <button
                 type="button"
                 onClick={() => open(n)}
-                className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors hover:bg-app-background ${n.read ? "border-app-border bg-white" : "border-app-orange/30 bg-app-orange/5"}`}
+                className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors hover:bg-app-background ${n.read ? "border-app-border bg-[#fff]" : "border-app-orange/30 bg-app-orange/5"}`}
               >
                 <span aria-hidden="true" className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-app-orange"}`} />
                 <span className="min-w-0 flex-1">

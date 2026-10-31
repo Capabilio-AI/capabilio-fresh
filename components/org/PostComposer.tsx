@@ -197,7 +197,7 @@ export function PostComposer({ orgName, logoUrl, initialKind = "announcement" }:
               <div className="flex flex-col gap-2">
                 {[image, ...moreImages].map((src, i) => (
                   // eslint-disable-next-line @next/next/no-img-element -- our own storage URL
-                  <img key={src} src={src} alt={`Attached page ${i + 1}`} className="h-auto w-full rounded-2xl border border-app-border bg-white object-contain" />
+                  <img key={src} src={src} alt={`Attached page ${i + 1}`} className="h-auto w-full rounded-2xl border border-app-border bg-[#fff] object-contain" />
                 ))}
               </div>
               <button type="button" onClick={() => { setImage(null); setMoreImages([]); }} className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-[#fff]" aria-label="Remove photo">

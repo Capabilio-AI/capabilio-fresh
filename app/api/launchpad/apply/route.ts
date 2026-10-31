@@ -1,3 +1,4 @@
+import { branchMatchesAny } from "@/lib/org/branch-scope";
 import { NextResponse } from "next/server";
 import { orgRoute } from "@/lib/api/org-route";
 import { ApplySchema } from "@/lib/org/schemas";
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     if (opp.drive_status !== "registration_open") return NextResponse.json({ error: "Registration for this visit isn't open." }, { status: 409 });
     if (opp.deadline && opp.deadline < new Date().toISOString().slice(0, 10)) return NextResponse.json({ error: "Registration for this visit has closed." }, { status: 409 });
     const branches = opp.eligible_branches ?? [];
-    if (branches.length > 0 && !branches.some((b) => b.trim().toLowerCase() === (ctx.branch ?? "").trim().toLowerCase())) {
+    if (branches.length > 0 && !branchMatchesAny(branches, ctx.branch)) {
       return NextResponse.json({ error: "This visit isn't open to your branch." }, { status: 403 });
     }
 

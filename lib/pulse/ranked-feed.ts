@@ -68,7 +68,7 @@ async function loadPagePosts(service: Service, viewerId: string, mode: RankedMod
       followed: followed.has(p.institution_id),
       page: {
         id: p.id, institutionId: p.institution_id, orgName: i.name, orgSlug: i.slug, logoUrl: profile.get(p.institution_id)?.logo_url ?? null, type: p.type, title: p.title, body: p.body,
-        coverImageUrl: p.cover_image_url, eventStartsAt: p.event_starts_at, eventLocation: p.event_location, eventLink: p.event_link, publishedAt: p.published_at ?? p.created_at,
+        coverImageUrl: p.cover_image_url, imageUrls: p.image_urls ?? [], eventStartsAt: p.event_starts_at, eventLocation: p.event_location, eventLink: p.event_link, publishedAt: p.published_at ?? p.created_at,
         likeCount: likeRows.filter((l) => l.post_id === p.id).length, likedByMe: likeRows.some((l) => l.post_id === p.id && l.user_id === viewerId),
       },
     };
