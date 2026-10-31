@@ -30,9 +30,10 @@ export async function POST(request: Request) {
 
   const parser = new PDFParse({ data: bytes.slice() });
   try {
-    const [text, shot] = await Promise.all([parser.getText({ first: 2 }), parser.getScreenshot({ first: 1, desiredWidth: 1400, imageBuffer: true })]);
-
-    const page = shot.pages[0]?.data;
+    // one after the other: pdfjs hands the same document to its worker, and overlapping calls fail with "Cannot transfer object of unsupported type"
+    const text = await parser.getText({ first: 2 });
+    // the picture is a bonus: if rendering fails on this host the text is still read
+    const page = await parser.getScreenshot({ first: 1, desiredWidth: 1400, imageBuffer: true }).then((r) => r.pages[0]?.data, (e) => { console.error("[posts/from-pdf] render failed:", e instanceof Error ? e.message : e); return undefined; });
     let imageUrl: string | null = null;
     if (page) {
       const path = mediaPath(ctx.institutionId, "post", "png", randomUUID());
