@@ -137,6 +137,7 @@ export const PlacementConsentSchema = z.object({ placementId: uuid, show: z.bool
 export const PlacementResponseSchema = z.object({ placementId: uuid, response: z.enum(["accepted", "declined"]) }).strict();
 export const DRIVE_STATUSES = ["planned", "registration_open", "completed", "cancelled"] as const;
 export const VisitStatusSchema = z.object({ opportunityId: uuid, status: z.enum(DRIVE_STATUSES) }).strict();
+export const DeleteVisitSchema = z.object({ opportunityId: uuid }).strict();
 export const RsvpSchema = z.object({ postId: uuid, going: z.boolean() }).strict();
 
 // ---- team & access ----

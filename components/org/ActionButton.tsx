@@ -11,12 +11,15 @@ export function ActionButton({
   label,
   variant = "primary",
   confirm,
+  redirectTo,
 }: {
   action: string;
   body: Record<string, unknown>;
   label: string;
   variant?: "primary" | "ghost" | "danger";
   confirm?: string;
+  /** go here after success instead of refreshing (for a button that deletes the page you are on) */
+  redirectTo?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -34,7 +37,8 @@ export function ActionButton({
         if (res.status === 401) window.location.href = "/login";
         return;
       }
-      router.refresh();
+      if (redirectTo) router.push(redirectTo);
+      else router.refresh();
     } catch {
       setError("Connection problem.");
     } finally {
