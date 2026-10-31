@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Check, Circle } from "lucide-react";
 import type { OrgFacts, PublicOrg, PublicPost, WallEntry } from "@/lib/org/public-org";
 import { MIN_COHORT } from "@/lib/org/insights";
@@ -8,7 +9,7 @@ import { FollowersButton } from "./FollowersList";
 import { PostCard } from "./PostCard";
 import { PostComposer } from "./PostComposer";
 import { JsonForm } from "./JsonForm";
-import { Collapsible, EmptyState } from "./ui";
+import { EmptyState } from "./ui";
 
 function StatStrip({ cells }: { cells: { label: string; value: ReactNode; tone: string }[] }) {
   return (
@@ -97,7 +98,11 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
   );
 
   const editForm = canEditPage && (
-    <Collapsible title="Edit page details" defaultOpen={openEdit}>
+    <section className="o-card p-5" aria-label="Edit page details">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-[13px] font-extrabold text-app-charcoal">Edit page details</h2>
+        <Link href={`${basePath}?tab=about`} className="o-btn-ghost !py-1.5">Close</Link>
+      </div>
       <JsonForm
         action="/api/org/profile"
         submitLabel="Save page"
@@ -114,7 +119,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
           { name: "isPublic", label: "Make this page public — anyone with the link can see it, and events are visible to everyone", type: "checkbox", defaultValue: org.profile?.is_public ?? false },
         ]}
       />
-    </Collapsible>
+    </section>
   );
 
   return (
@@ -122,7 +127,7 @@ export function CollegeProfileView({ org, facts, wall, posts, tab, signedIn, bas
       <CollegeHeader org={org} signedIn={signedIn} tab={tab} basePath={basePath} canEditPage={canEditPage} workspace={workspace} />
       <main className={`grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px] ${workspace ? "py-6" : "mx-auto max-w-[1120px] px-4 py-8 sm:px-8"}`}>
         <div className="flex min-w-0 flex-col gap-6">
-          {tab === "about" && editForm}
+          {tab === "about" && openEdit && editForm}
 
           {tab === "home" && (
             <>
