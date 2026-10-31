@@ -10,7 +10,7 @@ type Service = SupabaseClient<Database>;
 export type Suggest = (courses: CourseForSkills[], catalog: { name: string; category: string }[]) => Promise<SkillCandidates["results"]>;
 
 const BATCH = 4;
-const CONCURRENCY = 2;
+const CONCURRENCY = 3; // a request is 12 courses = 3 batches, so they all run at once (one model round trip)
 /** Courses handled per request: keeps one call well inside the 300 s route limit; the caller repeats until `remaining` is 0. */
 export const DEFAULT_COURSES_PER_REQUEST = 12;
 const MARK = "_skillsSuggestedAt";
@@ -136,14 +136,15 @@ export async function suggestSkillsForImport(
   const courseRows = uniqueBy(newCourseRows, (r) => `${r.course_id}|${r.skill_id}`);
   const outcomeRows = uniqueBy(newOutcomeRows, (r) => `${r.course_outcome_id}|${r.skill_id}`);
   if (courseRows.length) {
-    const { error } = await service.from("course_skill_mappings").insert(courseRows);
+    // ignoreDuplicates: a second run racing this one (the automatic analysis and the button) must not fail, and must never overwrite a reviewed row
+    const { error } = await service.from("course_skill_mappings").upsert(courseRows, { onConflict: "course_id,skill_id", ignoreDuplicates: true });
     if (error) {
       console.error("[suggest-skills] saving course mappings failed:", error.message);
       return { ok: false, status: 500, message: "Could not save the suggestions." };
     }
   }
   if (outcomeRows.length) {
-    const { error } = await service.from("course_outcome_skill_mappings").insert(outcomeRows);
+    const { error } = await service.from("course_outcome_skill_mappings").upsert(outcomeRows, { onConflict: "course_outcome_id,skill_id", ignoreDuplicates: true });
     if (error) {
       console.error("[suggest-skills] saving outcome mappings failed:", error.message);
       return { ok: false, status: 500, message: "Could not save the suggestions." };
