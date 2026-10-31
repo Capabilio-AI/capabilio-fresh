@@ -85,17 +85,23 @@ export default async function OutcomesPage({ searchParams }: { searchParams: Pro
       </section>
 
       <section aria-label="Confirmed placements">
-        <GroupTitle count={placements.length}>Confirmed placements</GroupTitle>
+        <GroupTitle count={placements.length}>Selected students (on campus and confirmed)</GroupTitle>
         {placements.length === 0 ? (
           <EmptyState title="No confirmed placements" body="Select an applicant on a drive and confirm the placement, or record an off-campus offer below." />
         ) : (
           <ul className="o-card ws-rows overflow-hidden">
             {placements.map((p) => (
               <li key={p.id} className="grid grid-cols-[42px_minmax(0,1fr)] items-center gap-3 px-4 py-3 md:grid-cols-[42px_minmax(0,1.3fr)_minmax(0,1fr)_auto]">
-                <Initial text={p.company} size={42} />
+                {p.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- our own storage URL
+                  <img src={p.avatarUrl} alt="" className="h-[42px] w-[42px] rounded-full object-cover" />
+                ) : (
+                  <Initial text={p.studentName} size={42} />
+                )}
                 <div className="min-w-0">
                   <p className="truncate text-[14px] font-semibold text-app-charcoal">{p.studentName}</p>
-                  <p className="truncate text-[12.5px] text-app-muted">{p.branch ?? "Branch not set"}</p>
+                  <p className="truncate text-[12.5px] text-app-muted">{[p.rollNumber, p.branch ?? "Branch not set", p.endYear ? `Class of ${p.endYear}` : null].filter(Boolean).join(" · ")}</p>
+                  {p.email && <p className="truncate text-[12px] text-app-muted">{p.email}</p>}
                 </div>
                 <div className="hidden min-w-0 md:block">
                   <p className="truncate text-[13.5px] font-semibold text-app-charcoal">{p.company}</p>
