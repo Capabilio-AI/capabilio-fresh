@@ -1,3 +1,4 @@
+import { onlyCurrentStudents } from "./current-students";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped, type GradeRow, type GroupMemberRow, type GroupRow, type MaterialRow, type ProjectRow } from "./db";
@@ -79,7 +80,7 @@ export function summarizeProjects(projects: number, groups: Pick<GroupRow, "stat
 export async function loadInsights(service: SupabaseClient<Database>, institutionId: string) {
   const db = untyped(service);
   const [studentsRes, projectsRes] = await Promise.all([
-    service.from("institution_memberships").select("user_id, branch, end_year, goal_state").eq("institution_id", institutionId).eq("role", "student").eq("status", "active"),
+    onlyCurrentStudents(service.from("institution_memberships").select("user_id, branch, end_year, goal_state").eq("institution_id", institutionId).eq("role", "student").eq("status", "active")),
     db.from("class_projects").select("id").eq("institution_id", institutionId),
   ]);
   if (studentsRes.error) throw new Error(`Insights load failed: ${studentsRes.error.message}`);

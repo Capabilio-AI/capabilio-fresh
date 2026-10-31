@@ -1,3 +1,4 @@
+import { onlyCurrentStudents } from "@/lib/org/current-students";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
@@ -16,13 +17,7 @@ export interface StudentRow {
 
 /** Every active student of the institution, reduced to the three fields that decide which curriculum they get. */
 export async function loadStudentRows(service: Service, institutionId: string): Promise<StudentRow[]> {
-  const { data } = await untyped(service)
-    .from("institution_memberships")
-    .select("branch, regulation, end_year")
-    .eq("institution_id", institutionId)
-    .eq("role", "student")
-    .eq("status", "active")
-    .limit(MAX_STUDENTS);
+  const { data } = await onlyCurrentStudents(untyped(service).from("institution_memberships").select("branch, regulation, end_year").eq("institution_id", institutionId).eq("role", "student").eq("status", "active")).limit(MAX_STUDENTS);
   return ((data ?? []) as { branch: string | null; regulation: string | null; end_year: number | null }[]).map((r) => ({ branch: r.branch, regulation: r.regulation, endYear: r.end_year }));
 }
 

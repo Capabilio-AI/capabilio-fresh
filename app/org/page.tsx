@@ -6,6 +6,7 @@ import { orgPageContext } from "@/lib/org/page";
 import { loadHome } from "@/lib/org/home";
 import { buildSetupChecklist } from "@/lib/org/setup";
 import { untyped } from "@/lib/org/db";
+import { loadJoiningTrend } from "@/lib/org/joining";
 import { EmptyState, Pill, formatDateTime } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Home — Capabilio AI" };
@@ -32,8 +33,9 @@ function Wrapper({ href, className, children }: { href: string | null; className
 export default async function OrgHomePage() {
   const { ctx, service } = await orgPageContext();
   const db = untyped(service);
-  const [home, profileRes, postsRes, matsRes, projRes, driveRes, nameRes] = await Promise.all([
+  const [home, joining, profileRes, postsRes, matsRes, projRes, driveRes, nameRes] = await Promise.all([
     loadHome(service, ctx),
+    loadJoiningTrend(service, ctx.institutionId),
     db.from("org_profiles").select("is_public, bio, website_url").eq("institution_id", ctx.institutionId).maybeSingle(),
     db.from("org_posts").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId).eq("status", "published"),
     db.from("class_materials").select("id", { count: "exact", head: true }).eq("institution_id", ctx.institutionId),
@@ -126,6 +128,27 @@ export default async function OrgHomePage() {
         </section>
       )}
 
+      {joining.length > 0 && (
+        <section aria-label="New students each year" className="o-card p-5">
+          <h2 className="text-[15px] font-bold text-app-charcoal">New students each year</h2>
+          <p className="mt-0.5 text-[12.5px] text-app-muted">How many students joined Capabilio from your college, by year.</p>
+          <ul className="mt-4 flex flex-col gap-2.5">
+            {joining.map((y) => {
+              const top = Math.max(...joining.map((j) => j.joined), 1);
+              return (
+                <li key={y.year} className="grid grid-cols-[48px_1fr_auto] items-center gap-3 text-[13px]">
+                  <span className="font-semibold text-app-charcoal">{y.year}</span>
+                  <span className="h-2.5 overflow-hidden rounded-full bg-app-border" role="img" aria-label={`${y.joined} joined in ${y.year}`}>
+                    <span className="block h-full rounded-full" style={{ width: `${(y.joined / top) * 100}%`, background: "var(--o-gradient)" }} />
+                  </span>
+                  <span className="w-10 text-right font-bold tabular-nums text-app-charcoal">{y.joined}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-6">
           <section aria-label="Needs attention">
@@ -181,9 +204,10 @@ export default async function OrgHomePage() {
         </div>
 
         <section aria-label="Coming up">
-          <h2 className="mb-2.5 text-[15px] font-bold text-app-charcoal">Coming up</h2>
+          <h2 className="mb-0.5 text-[15px] font-bold text-app-charcoal">Coming up</h2>
+          <p className="mb-2.5 text-[12.5px] text-app-muted">Dates in the next 14 days: events you posted, project deadlines, and the last day for students to register for a company visit.</p>
           {upcoming.length === 0 ? (
-            <EmptyState title="Nothing scheduled" body="Events, project deadlines and drive apply-by dates in the next two weeks appear here." />
+            <EmptyState title="Nothing in the next 14 days" body="When an event, a project deadline or a company-visit registration deadline is coming, it shows here with its date." />
           ) : (
             <ul className="o-card ws-rows overflow-hidden">
               {upcoming.map((u) => {

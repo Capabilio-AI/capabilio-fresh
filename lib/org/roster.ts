@@ -1,3 +1,4 @@
+import { onlyCurrentStudents } from "./current-students";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import type { OrgContext } from "./context";
@@ -57,12 +58,7 @@ const DAY = 86_400_000;
  * that branch by default scope; admins and unscoped staff see the whole institution.
  */
 export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgContext, filters: RosterFilters): Promise<{ rows: RosterRow[]; branches: string[]; years: number[]; truncated: boolean }> {
-  const { data, error } = await service
-    .from("institution_memberships")
-    .select("user_id, branch, end_year, roll_number, roll_number_status")
-    .eq("institution_id", ctx.institutionId)
-    .eq("role", "student")
-    .eq("status", "active")
+  const { data, error } = await onlyCurrentStudents(service.from("institution_memberships").select("user_id, branch, end_year, roll_number, roll_number_status").eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active"))
     .order("branch")
     .limit(MAX_ROWS + 1);
   if (error) throw new Error(`Roster load failed: ${error.message}`);
@@ -149,12 +145,7 @@ export const cellKey = (branch: string, year: number | null) => `${branch}\u0000
 export async function loadRosterOverview(service: SupabaseClient<Database>, ctx: OrgContext, f: RosterOverviewFilters): Promise<RosterOverview> {
   const members: { user_id: string; branch: string | null; end_year: number | null; roll_number: string | null; roll_number_status: string | null }[] = [];
   for (let from = 0; from < MAX_STUDENTS; from += PAGE_FETCH) {
-    const { data, error } = await service
-      .from("institution_memberships")
-      .select("user_id, branch, end_year, roll_number, roll_number_status")
-      .eq("institution_id", ctx.institutionId)
-      .eq("role", "student")
-      .eq("status", "active")
+    const { data, error } = await onlyCurrentStudents(service.from("institution_memberships").select("user_id, branch, end_year, roll_number, roll_number_status").eq("institution_id", ctx.institutionId).eq("role", "student").eq("status", "active"))
       .order("user_id")
       .range(from, from + PAGE_FETCH - 1);
     if (error) throw new Error(`Roster load failed: ${error.message}`);
