@@ -28,7 +28,7 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
     <article className="overflow-hidden rounded-2xl border border-[var(--m-rule)] bg-white">
       {page.coverImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- college-supplied image, arbitrary origin
-        <img src={page.coverImageUrl} alt="" loading="lazy" className="h-40 w-full object-cover" />
+        <img src={page.coverImageUrl} alt="" loading="lazy" className="h-auto w-full bg-white object-contain" />
       )}
       <div className="p-5">
         {reason && <p className="mb-2 font-lp-body text-[11.5px] font-medium text-app-muted">{reason}</p>}
