@@ -8,6 +8,7 @@ import type { CourseRow } from "@/lib/curriculum/admin-data";
 import type { HighConfidencePreview } from "@/lib/curriculum/mapping-writes";
 import { Panel, Pill } from "@/components/org/ui";
 import { api } from "./api";
+import { tidyTitle } from "@/lib/curriculum/title";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Props {
@@ -84,7 +85,7 @@ export function MappingsStep({ importId, courses, editable }: Props) {
         {courses.map((c) => (
           <li key={c.id} className="o-card !rounded-xl flex flex-wrap items-center gap-3 p-3.5">
             <div className="min-w-0 flex-1">
-              <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">{c.title}</p>
+              <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">{tidyTitle(c.title)}</p>
               <p className="font-lp-mono text-[11px] text-app-muted">Year {c.year}{c.semester ? ` · Semester ${c.semester}` : ""}</p>
             </div>
             {c.confirmed > 0 && <Pill tone="ok">{c.confirmed} confirmed</Pill>}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CourseRow } from "@/lib/curriculum/admin-data";
 import { Panel, Pill } from "@/components/org/ui";
+import { tidyTitle } from "@/lib/curriculum/title";
 
 /** Which courses have learning outcomes, units and lab work, and which still need a look. Editing happens on each course's page. */
 export function OutcomesStep({ importId, courses }: { importId: string; courses: CourseRow[] }) {
@@ -15,7 +16,7 @@ export function OutcomesStep({ importId, courses }: { importId: string; courses:
         {courses.map((c) => (
           <li key={c.id} className="o-card !rounded-xl flex flex-wrap items-center gap-3 p-3.5">
             <div className="min-w-0 flex-1">
-              <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">{c.title}</p>
+              <p className="font-lp-body text-[13.5px] font-medium text-app-charcoal">{tidyTitle(c.title)}</p>
               <p className="font-lp-mono text-[11px] text-app-muted">Year {c.year}{c.semester ? ` · Semester ${c.semester}` : ""}</p>
             </div>
             <Pill tone={c.outcomes ? "ok" : "warn"}>{c.outcomes ? `${c.outcomes} outcomes` : "No outcomes"}</Pill>
