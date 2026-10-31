@@ -94,6 +94,8 @@ export interface OrgPostRow {
   title: string;
   body: string;
   cover_image_url: string | null;
+  /** further pictures after the cover, in order (e.g. the later pages of a circular) */
+  image_urls?: string[] | null;
   event_starts_at: string | null;
   event_location: string | null;
   event_link: string | null;

@@ -7,6 +7,7 @@ import { checkPdfBytes } from "@/lib/roadmap/extract/pdf";
 import { mediaPath } from "@/lib/org/media";
 import { readCircularImage } from "@/lib/org/circular-vision";
 import { CIRCULAR_SYSTEM, CircularDraftSchema, cleanStartsAt } from "@/lib/org/circular";
+import { MAX_POST_IMAGES } from "@/lib/org/schemas";
 import { MAX_UPLOAD_BYTES } from "@/lib/uploads/limits";
 
 const BUCKET = "org-media";
@@ -32,24 +33,25 @@ export async function POST(request: Request) {
   try {
     // one after the other: pdfjs hands the same document to its worker, and overlapping calls fail with "Cannot transfer object of unsupported type"
     const text = await parser.getText({ first: 2 });
-    // the picture is a bonus: if rendering fails on this host the text is still read
-    const page = await parser.getScreenshot({ first: 1, desiredWidth: 1400, imageBuffer: true }).then((r) => r.pages[0]?.data, (e) => { console.error("[posts/from-pdf] render failed:", e instanceof Error ? e.message : e); return undefined; });
-    let imageUrl: string | null = null;
-    if (page) {
+    // the pictures are a bonus: if rendering fails on this host the text is still read. Every page, whole, in order.
+    const pages = await parser.getScreenshot({ first: MAX_POST_IMAGES, desiredWidth: 1400, imageBuffer: true }).then((r) => r.pages, (e) => { console.error("[posts/from-pdf] render failed:", e instanceof Error ? e.message : e); return []; });
+    const imageUrls: string[] = [];
+    for (const p of pages) {
       const path = mediaPath(ctx.institutionId, "post", "png", randomUUID());
-      const { error } = await service.storage.from(BUCKET).upload(path, page, { contentType: "image/png", upsert: false });
-      if (!error) imageUrl = service.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      const { error } = await service.storage.from(BUCKET).upload(path, p.data, { contentType: "image/png", upsert: false });
+      if (!error) imageUrls.push(service.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
     }
+    const page = pages[0]?.data;
 
     const content = text.text.trim().slice(0, MAX_TEXT_CHARS);
     if (content.length < 40) {
       // a scan has no text layer: read the page as a picture instead
       const seen = page ? await readCircularImage(page).catch(() => null) : null;
-      if (seen) return NextResponse.json({ ok: true, imageUrl, draft: { ...seen, startsAt: cleanStartsAt(seen.startsAt) } });
-      return NextResponse.json({ ok: true, imageUrl, draft: null, note: "We couldn't read this PDF automatically. The page is attached; add the details yourself." });
+      if (seen) return NextResponse.json({ ok: true, imageUrls, draft: { ...seen, startsAt: cleanStartsAt(seen.startsAt) } });
+      return NextResponse.json({ ok: true, imageUrls, draft: null, note: "We couldn't read this PDF automatically. The page is attached; add the details yourself." });
     }
     const { value } = await completeJsonDetailed(`Circular text:\n"""\n${content}\n"""`, CIRCULAR_SYSTEM, CircularDraftSchema, { maxTokens: 1500, temperature: 0.1 });
-    return NextResponse.json({ ok: true, imageUrl, draft: { ...value, startsAt: cleanStartsAt(value.startsAt) } });
+    return NextResponse.json({ ok: true, imageUrls, draft: { ...value, startsAt: cleanStartsAt(value.startsAt) } });
   } catch (e) {
     console.error("[posts/from-pdf]", e instanceof Error ? e.message : e);
     return NextResponse.json({ error: "We couldn't read that PDF. Try another file, or write the post yourself." }, { status: 422 });

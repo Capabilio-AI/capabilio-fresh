@@ -16,6 +16,10 @@ export async function POST(request: Request) {
     if (body.coverImageUrl && !ownPathFromPublicUrl(body.coverImageUrl, "org-media", ctx.institutionId)) {
       return NextResponse.json({ error: "Upload the photo from here instead of pasting a link." }, { status: 400 });
     }
+    const extra = body.imageUrls ?? [];
+    if (extra.some((u) => !ownPathFromPublicUrl(u, "org-media", ctx.institutionId))) {
+      return NextResponse.json({ error: "Upload the photos from here instead of pasting links." }, { status: 400 });
+    }
     const isEvent = body.type === "event";
     const { data: created, error } = await untyped(service).from("org_posts").insert({
       institution_id: ctx.institutionId,
@@ -25,6 +29,8 @@ export async function POST(request: Request) {
       title: (body.title ?? body.body.split("\n")[0]).slice(0, 200),
       body: body.body,
       cover_image_url: body.coverImageUrl ?? null,
+      // only sent when there are extra pictures, so ordinary posts never depend on migration 144
+      ...(extra.length ? { image_urls: extra } : {}),
       event_starts_at: isEvent ? startsAt!.toISOString() : null,
       event_location: isEvent ? (body.eventLocation ?? null) : null,
       event_link: body.eventLink ?? null,

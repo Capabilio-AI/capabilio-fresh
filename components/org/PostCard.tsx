@@ -32,7 +32,6 @@ export function PostCard({
   const dated = post.type === "event" && Boolean(post.event_starts_at);
   const start = dated ? new Date(post.event_starts_at as string) : null;
   const headline = post.title && post.title !== post.body.split("\n")[0].slice(0, 200) ? post.title : null;
-  const isPoster = kind.id === "poster";
 
   return (
     <article className="o-card overflow-hidden p-5">
@@ -94,10 +93,11 @@ export function PostCard({
 
       <p className={`whitespace-pre-wrap text-[14px] leading-relaxed text-app-charcoal ${dated || headline ? "mt-2.5" : "mt-4"}`}>{post.body}</p>
 
-      {post.cover_image_url && (
+      {/* pictures are shown whole, never cropped or height-capped: a circular must stay readable */}
+      {[post.cover_image_url, ...(post.image_urls ?? [])].filter((u): u is string => Boolean(u)).map((src, i) => (
         // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded image from our own storage bucket
-        <img src={post.cover_image_url} alt="" loading="lazy" className={`mt-4 w-full rounded-2xl border border-app-border object-cover ${isPoster ? "max-h-[600px] bg-black/5" : "max-h-[420px]"}`} />
-      )}
+        <img key={src} src={src} alt={i === 0 ? "" : `Page ${i + 1}`} loading="lazy" className="mt-4 h-auto w-full rounded-2xl border border-app-border bg-white object-contain" />
+      ))}
 
       {post.event_link && (
         <a href={post.event_link} target="_blank" rel="noopener noreferrer" className="o-btn-ghost mt-3 !inline-flex">

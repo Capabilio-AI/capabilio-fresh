@@ -75,6 +75,8 @@ export const PlacementSchema = z
   })
   .strict();
 
+export const MAX_POST_IMAGES = 10;
+
 export const PostSchema = z
   .object({
     type: z.enum(["event", "announcement"]),
@@ -83,6 +85,7 @@ export const PostSchema = z
     title: optionalText(200),
     body: z.string().trim().min(1).max(5000),
     coverImageUrl: optionalUrl,
+    imageUrls: z.array(z.string().url().max(2000)).max(MAX_POST_IMAGES).optional(),
     eventStartsAt: z.string().min(1).optional().or(z.literal("").transform(() => undefined)),
     eventLocation: optionalText(300),
     eventLink: optionalUrl,
