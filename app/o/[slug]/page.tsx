@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { loadPublicOrg, loadVisiblePosts } from "@/lib/org/public-org";
 import { PUBLIC_TABS, PublicCollegePage, type PublicTabId } from "@/components/org/PublicCollegePage";
 import { OrgTheme } from "@/components/org/OrgTheme";
+import { StudentBar } from "@/components/org/StudentBar";
 
 export const metadata: Metadata = { title: "College — Capabilio AI" };
 
@@ -36,6 +37,7 @@ export default async function OrgPublicPage({ params, searchParams }: { params: 
           <span className="text-[12px] text-app-muted">You are viewing this page as a visitor sees it.</span>
         </div>
       )}
+      {user && !workspace && <StudentBar />}
       <PublicCollegePage org={org} posts={posts} tab={tab} signedIn={Boolean(user)} />
     </OrgTheme>
   );
