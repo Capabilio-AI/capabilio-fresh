@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { untyped } from "@/lib/org/db";
 import type { Database } from "@/lib/supabase/types";
 import { composition, yearCoverage, type Composition, type YearCoverage } from "./composition";
 import type { ImportStatus, MappingImportance, MappingSource, MappingStatus } from "./mapping-rules";
@@ -142,13 +143,18 @@ export async function getImportOverview(service: Service, institutionId: string,
     service.from("curriculum_versions").select("version_no").eq("import_id", importId).maybeSingle(),
     service.from("program_outcomes").select("kind").eq("import_id", importId),
   ]);
+  const attempts = new Map<string, number>();
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data: att } = await untyped(service).from("curriculum_analysis_attempts").select("course_id, attempts").in("course_id", ids.slice(i, i + 100));
+    for (const r of (att ?? []) as { course_id: string; attempts: number }[]) attempts.set(r.course_id, r.attempts);
+  }
   const count = <T extends { course_id: string }>(list: T[] | null, id: string, pred: (x: T) => boolean = () => true) => (list ?? []).filter((x) => x.course_id === id && pred(x)).length;
   const toRow = (c: NonNullable<typeof rows>[number]): CourseRow => ({
     id: c.id, year: c.year, semester: c.semester, title: c.title, code: c.course_code, category: c.category, kind: c.kind, credits: num(c.credits),
     outcomes: count(outcomes, c.id), units: count(units, c.id), experiments: count(labs, c.id),
     confirmed: count(maps, c.id, (m) => m.status === "CONFIRMED"), suggested: count(maps, c.id, (m) => m.status === "SUGGESTED"), rejected: count(maps, c.id, (m) => m.status === "REJECTED"),
     // read, and either found skills or has been retried: a course that came back with nothing still counts as waiting
-    skillsSuggested: Boolean((c.provenance as Record<string, unknown> | null)?._skillsSuggestedAt) && (count(maps, c.id) > 0 || Number((c.provenance as Record<string, unknown> | null)?._skillsAttempts ?? 0) >= 2),
+    skillsSuggested: Boolean((c.provenance as Record<string, unknown> | null)?._skillsSuggestedAt) && (count(maps, c.id) > 0 || (attempts.get(c.id) ?? 0) >= 2),
   });
   const people = await loadPeople(service, [imp.created_by, imp.reviewed_by]);
   return {

@@ -4,12 +4,12 @@ import { loadSkillIndex, recordUnresolved } from "@/lib/skills/store";
 import { proposeAiMapping, type MappingImportance, type MappingRow, type MappingSource, type MappingStatus } from "@/lib/curriculum/mapping-rules";
 import { suggestSkillsForCourses, type CourseForSkills, type SkillCandidates } from "../suggest";
 import { resolveCandidates } from "./enrich";
+import { untyped } from "@/lib/org/db";
 import { pool } from "./pool";
 
 type Service = SupabaseClient<Database>;
 export type Suggest = (courses: CourseForSkills[], catalog: { name: string; category: string }[]) => Promise<SkillCandidates["results"]>;
 
-const ATTEMPTS = "_skillsAttempts";
 const MAX_ATTEMPTS = 2;
 const BATCH = 4;
 const CONCURRENCY = 3; // a request is 12 courses = 3 batches, so they all run at once (one model round trip)
@@ -55,9 +55,14 @@ export async function suggestSkillsForImport(
 
   const { data: all } = await service.from("courses").select("id, title, objectives, provenance").eq("import_id", importId).order("sort_order");
   // A course that was read but ended with no skill of any kind is retried (twice at most): an empty answer is a failed read, never a finding.
-  const withSkills = await courseIdsWithMappings(service, (all ?? []).map((c) => c.id));
-  const attemptsOf = (c: { provenance: unknown }) => Number((c.provenance as Record<string, unknown> | null)?.[ATTEMPTS] ?? 0);
-  const pending = (all ?? []).filter((c) => !(c.provenance as Record<string, unknown> | null)?.[MARK] || (!withSkills.has(c.id) && attemptsOf(c) < MAX_ATTEMPTS));
+  // A live (published) curriculum is frozen in the database: only new evidence-checked suggestions may be added to it, and nothing on the course
+  // rows can change, so progress there is kept in curriculum_analysis_attempts instead of on the course.
+  const frozen = imp.status === "PUBLISHED";
+  const allIds = (all ?? []).map((c) => c.id);
+  const [withSkills, attempts] = await Promise.all([courseIdsWithMappings(service, allIds), attemptsByCourse(service, allIds)]);
+  const attemptsOf = (c: { id: string }) => attempts.get(c.id) ?? 0;
+  const marked = (c: { provenance: unknown }) => Boolean((c.provenance as Record<string, unknown> | null)?.[MARK]);
+  const pending = (all ?? []).filter((c) => (frozen ? !withSkills.has(c.id) && attemptsOf(c) < MAX_ATTEMPTS : !marked(c) || (!withSkills.has(c.id) && attemptsOf(c) < MAX_ATTEMPTS)));
   const todo = pending.slice(0, opts.limit ?? DEFAULT_COURSES_PER_REQUEST);
   if (todo.length === 0) return { ok: true, processed: 0, remaining: 0, suggested: 0, unresolved: 0, failedBatches: 0 };
   const ids = todo.map((c) => c.id);
@@ -93,6 +98,7 @@ export async function suggestSkillsForImport(
   const newCourseRows: Database["public"]["Tables"]["course_skill_mappings"]["Insert"][] = [];
   const newOutcomeRows: Database["public"]["Tables"]["course_outcome_skill_mappings"]["Insert"][] = [];
   const updates: PromiseLike<{ error: { message: string } | null }>[] = [];
+  const touch = (q: PromiseLike<{ error: { message: string } | null }>) => { if (!frozen) updates.push(q); }; // refinements of existing rows are not allowed on a live curriculum
   const empty = todo.filter((c) => { const x = content.get(c.id)!.course; return x.objectives.length + x.outcomes.length + x.unitTitles.length + x.experiments.length === 0; });
   empty.forEach((c) => handled.add(c.id)); // nothing to read: marked, so it is not retried forever
 
@@ -123,7 +129,7 @@ export async function suggestSkillsForImport(
           newCourseRows.push({ course_id: id, skill_id: m.skillId, mapping_source: "AI_SUGGESTED", confidence: m.confidence, evidence_source: m.evidence.slice(0, 500), status: "SUGGESTED" });
           suggested++;
         } else if (proposal.action === "update") {
-          updates.push(service.from("course_skill_mappings").update({ confidence: m.confidence, evidence_source: m.evidence.slice(0, 500) }).eq("course_id", id).eq("skill_id", m.skillId).eq("status", "SUGGESTED"));
+          touch(service.from("course_skill_mappings").update({ confidence: m.confidence, evidence_source: m.evidence.slice(0, 500) }).eq("course_id", id).eq("skill_id", m.skillId).eq("status", "SUGGESTED"));
         }
         for (const code of m.outcomeCodes) {
           const outcome = (outcomes ?? []).find((o) => o.course_id === id && o.code === code);
@@ -157,11 +163,13 @@ export async function suggestSkillsForImport(
   }
   // Every write is checked: a progress mark that silently failed would make the next call redo (and re-bill) the same courses.
   const now = new Date().toISOString();
+  const done = todo.filter((c) => handled.has(c.id));
   const writes = await Promise.all([
     ...updates,
-    ...todo.filter((c) => handled.has(c.id)).map((c) => service.from("courses").update({ provenance: { ...((c.provenance as Record<string, unknown> | null) ?? {}), [MARK]: now, [ATTEMPTS]: attemptsOf(c) + 1 } as never }).eq("id", c.id)),
+    ...(frozen ? [] : done.map((c) => service.from("courses").update({ provenance: { ...((c.provenance as Record<string, unknown> | null) ?? {}), [MARK]: now } as never }).eq("id", c.id))),
   ]);
   if (writes.some((w) => w.error)) return { ok: false, status: 500, message: "Could not record progress. Try again — nothing was duplicated." };
+  await recordAttempts(service, done.map((c) => ({ course_id: c.id, attempts: attemptsOf(c) + 1, last_attempt_at: now })));
 
   return { ok: true, processed: handled.size, remaining: pending.length - handled.size, suggested: courseRows.length, unresolved, failedBatches };
 }
@@ -174,4 +182,20 @@ async function courseIdsWithMappings(service: Service, courseIds: string[]): Pro
     for (const r of data ?? []) have.add(r.course_id);
   }
   return have;
+}
+
+/** How many times each course has been read (curriculum_analysis_attempts, migration 147). A missing table reads as zero attempts. */
+export async function attemptsByCourse(service: Service, courseIds: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  for (let i = 0; i < courseIds.length; i += 100) {
+    const { data } = await untyped(service).from("curriculum_analysis_attempts").select("course_id, attempts").in("course_id", courseIds.slice(i, i + 100));
+    for (const r of (data ?? []) as { course_id: string; attempts: number }[]) out.set(r.course_id, r.attempts);
+  }
+  return out;
+}
+
+async function recordAttempts(service: Service, rows: { course_id: string; attempts: number; last_attempt_at: string }[]): Promise<void> {
+  if (rows.length === 0) return;
+  const { error } = await untyped(service).from("curriculum_analysis_attempts").upsert(rows, { onConflict: "course_id" });
+  if (error) console.error("[suggest-skills] could not record attempts (is migration 147 applied?):", error.message);
 }
