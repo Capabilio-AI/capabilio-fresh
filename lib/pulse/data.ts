@@ -54,6 +54,8 @@ export interface PagePost {
   title: string;
   body: string;
   coverImageUrl: string | null;
+  /** pictures after the cover (later pages of a circular), in order */
+  imageUrls: string[];
   eventStartsAt: string | null;
   eventLocation: string | null;
   eventLink: string | null;

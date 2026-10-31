@@ -68,7 +68,7 @@ export function AutoAnalysis({ importId, initial, published }: { importId: strin
   if (published) return null;
   const left = (state?.outcomesPending ?? 0) + (state?.skillsPending ?? 0) + (state?.unitsPending ?? 0);
   return (
-    <section aria-label="Syllabus analysis" className="rounded-xl border border-app-border bg-white p-5">
+    <section aria-label="Syllabus analysis" className="rounded-xl border border-app-border bg-[#fff] p-5">
       <h2 className="font-lp-display text-[16px] font-semibold text-app-charcoal">{done ? "Your syllabus has been analysed" : "Capabilio is analysing your syllabus"}</h2>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">
         {done

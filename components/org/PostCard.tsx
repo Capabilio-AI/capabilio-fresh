@@ -96,7 +96,7 @@ export function PostCard({
       {/* pictures are shown whole, never cropped or height-capped: a circular must stay readable */}
       {[post.cover_image_url, ...(post.image_urls ?? [])].filter((u): u is string => Boolean(u)).map((src, i) => (
         // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded image from our own storage bucket
-        <img key={src} src={src} alt={i === 0 ? "" : `Page ${i + 1}`} loading="lazy" className="mt-4 h-auto w-full rounded-2xl border border-app-border bg-white object-contain" />
+        <img key={src} src={src} alt={i === 0 ? "" : `Page ${i + 1}`} loading="lazy" className="mt-4 h-auto w-full rounded-2xl border border-app-border bg-[#fff] object-contain" />
       ))}
 
       {post.event_link && (

@@ -4,6 +4,27 @@ import type { OrgContext } from "./context";
 export const branchKey = (b: string | null | undefined) => (b ?? "").trim().toLowerCase();
 export const sameBranch = (a: string | null | undefined, b: string | null | undefined) => branchKey(a) !== "" && branchKey(a) === branchKey(b);
 
+const words = (b: string) => b.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+
+/**
+ * Whether a company visit open to `eligible` ("CSE", "ECE, IT" or a full name) covers a student whose branch is stored as
+ * "Computer Science and Engineering (CSE)". Colleges type short codes while students pick the full name, so an exact comparison reached nobody.
+ * Matches on the whole name or on the code in brackets; "CS" never matches "ECE" because the comparison is on whole words.
+ */
+export function branchMatches(eligible: string, studentBranch: string | null | undefined): boolean {
+  const e = branchKey(eligible);
+  const s = branchKey(studentBranch);
+  if (!e || !s) return false;
+  if (e === s) return true;
+  const code = s.match(/\(([^)]+)\)/)?.[1];
+  if (code && branchKey(code) === e) return true;
+  const ew = words(e);
+  const sw = words(s);
+  return ew.length > 0 && (ew.length === 1 ? sw.includes(ew[0]) && ew[0].length >= 2 : ew.every((w) => sw.includes(w)));
+}
+
+export const branchMatchesAny = (eligible: readonly string[], studentBranch: string | null | undefined) => eligible.some((e) => branchMatches(e, studentBranch));
+
 /** Faculty / HoD whose membership names a branch are confined to it. Admins and staff with no branch are not. */
 export function staffBranchScope(ctx: Pick<OrgContext, "kind" | "branch">): string | null {
   return ctx.kind === "staff" && branchKey(ctx.branch) ? (ctx.branch as string).trim() : null;
