@@ -19,6 +19,11 @@ export interface PlacementRecord {
   /** the student's answer to the offer */
   studentResponse?: "pending" | "accepted" | "declined";
   hasLetter?: boolean;
+  rollNumber?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  /** graduating year, "Class of" */
+  endYear?: number | null;
 }
 
 export interface PlacementStats {
@@ -89,11 +94,13 @@ export async function loadPlacements(service: SupabaseClient<Database>, institut
   if (rows.length === 0) return [];
   const ids = [...new Set(rows.map((r) => r.student_user_id))];
   const [{ data: profiles }, { data: memberships }] = await Promise.all([
-    service.from("profiles").select("id, full_name, email").in("id", ids),
-    service.from("institution_memberships").select("user_id, branch").eq("institution_id", institutionId).in("user_id", ids),
+    service.from("profiles").select("id, full_name, email, avatar_url").in("id", ids),
+    service.from("institution_memberships").select("user_id, branch, roll_number, end_year").eq("institution_id", institutionId).in("user_id", ids),
   ]);
   const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? p.email]));
   const branches = new Map((memberships ?? []).map((m) => [m.user_id, m.branch]));
+  const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
+  const memberById = new Map((memberships ?? []).map((m) => [m.user_id, m]));
   return rows.map((r) => ({
     id: r.id,
     studentUserId: r.student_user_id,
@@ -108,6 +115,10 @@ export async function loadPlacements(service: SupabaseClient<Database>, institut
     opportunityId: r.opportunity_id,
     studentResponse: r.student_response,
     hasLetter: Boolean(r.offer_letter_path),
+    rollNumber: memberById.get(r.student_user_id)?.roll_number ?? null,
+    email: profileById.get(r.student_user_id)?.email ?? null,
+    avatarUrl: profileById.get(r.student_user_id)?.avatar_url ?? null,
+    endYear: memberById.get(r.student_user_id)?.end_year ?? null,
   }));
 }
 
@@ -169,7 +180,7 @@ const csvCell = (v: string | number | null): string => {
 
 /** Pure. Confirmed placements as CSV (NAAC-style working sheet). */
 export function placementsToCsv(rows: PlacementRecord[]): string {
-  const header = ["Student", "Branch", "Company", "Role", "CTC (LPA)", "Offer date", "Confirmed on"];
-  const lines = rows.map((r) => [r.studentName, r.branch, r.company, r.roleTitle, r.ctcLpa, r.offerDate, r.confirmedAt.slice(0, 10)].map(csvCell).join(","));
+  const header = ["Student", "Branch", "Company", "Role", "CTC (LPA)", "Offer date", "Confirmed on", "Roll number", "Email", "Class of", "Student response"];
+  const lines = rows.map((r) => [r.studentName, r.branch, r.company, r.roleTitle, r.ctcLpa, r.offerDate, r.confirmedAt.slice(0, 10), r.rollNumber ?? "", r.email ?? "", r.endYear ?? "", r.studentResponse ?? ""].map(csvCell).join(","));
   return [header.join(","), ...lines].join("\n");
 }
