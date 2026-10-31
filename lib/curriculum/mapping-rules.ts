@@ -49,6 +49,18 @@ export function rejectMapping(existing: MappingRow, _by: { userId: string; now: 
   return { ...existing, status: "REJECTED", approvedBy: null, approvedAt: null };
 }
 
+/** A suggestion the system itself has verified: high confidence and a quoted line from the syllabus (the quote is checked against the course text when it is made). */
+export const AI_TRUST_CONFIDENCE = 0.9;
+export const isVerifiedAi = (r: Pick<MappingRow, "status" | "source"> & Partial<Pick<MappingRow, "confidence" | "evidence">>): boolean =>
+  r.status === "SUGGESTED" && r.source === "AI_SUGGESTED" && (r.confidence ?? 0) >= AI_TRUST_CONFIDENCE && Boolean(r.evidence?.trim()) && process.env.ROADMAP_TRUST_VERIFIED_AI !== "off";
+
+/**
+ * What may drive a student's roadmap: skills a person confirmed, and skills the system verified itself (see isVerifiedAi). The system decides
+ * from the syllabus; staff are not a required step, and a college that rejects a skill removes it (REJECTED is never usable).
+ */
+export const isUsable = (r: Pick<MappingRow, "status" | "source"> & Partial<Pick<MappingRow, "confidence" | "evidence">>): boolean => isOfficial(r) || isVerifiedAi(r);
+export const usableOnly = <T extends Pick<MappingRow, "status" | "source"> & Partial<Pick<MappingRow, "confidence" | "evidence">>>(rows: T[]): T[] => rows.filter(isUsable);
+
 export const isOfficial = (r: Pick<MappingRow, "status" | "source">): boolean => r.status === "CONFIRMED" && r.source !== "AI_SUGGESTED";
 export const officialOnly = <T extends Pick<MappingRow, "status" | "source">>(rows: T[]): T[] => rows.filter(isOfficial);
 

@@ -16,6 +16,10 @@
       "schedule": "0 5 * * *"
     },
     {
+      "path": "/api/cron/curriculum-quality",
+      "schedule": "30 3 * * *"
+    },
+    {
       "path": "/api/cron/roadmap-refresh",
       "schedule": "0 2 * * *"
     }

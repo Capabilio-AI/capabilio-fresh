@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { officialOnly, type MappingImportance, type MappingSource, type MappingStatus } from "@/lib/curriculum/mapping-rules";
+import { usableOnly, type MappingImportance, type MappingSource, type MappingStatus } from "@/lib/curriculum/mapping-rules";
+import { selectInChunks } from "@/lib/curriculum/fetch-chunks";
 import type { CourseInput } from "./types";
 
 type Service = SupabaseClient<Database>;
@@ -27,11 +28,11 @@ export async function loadPublishedCurriculum(service: Service, institutionId: s
   ]);
   const ids = (courses ?? []).map((c) => c.id);
   if (ids.length === 0) return { found: false, regulationMismatch: false };
-  const [{ data: maps }, { data: omaps }] = await Promise.all([
-    service.from("course_skill_mappings").select("course_id, skill_id, importance, status, mapping_source").in("course_id", ids),
-    service.from("course_outcome_skill_mappings").select("course_id, skill_id, status, mapping_source").in("course_id", ids),
+  const [maps, omaps] = await Promise.all([
+    selectInChunks(ids, (chunk) => service.from("course_skill_mappings").select("course_id, skill_id, importance, status, mapping_source, confidence, evidence_source").in("course_id", chunk)),
+    selectInChunks(ids, (chunk) => service.from("course_outcome_skill_mappings").select("course_id, skill_id, status, mapping_source, confidence, evidence_source").in("course_id", chunk)),
   ]);
-  const official = <T extends { status: string; mapping_source: string }>(rows: T[] | null) => officialOnly((rows ?? []).map((m) => ({ ...m, status: m.status as MappingStatus, source: m.mapping_source as MappingSource })));
+  const official = <T extends { status: string; mapping_source: string; confidence: number | null; evidence_source: string | null }>(rows: T[] | null) => usableOnly((rows ?? []).map((m) => ({ ...m, status: m.status as MappingStatus, source: m.mapping_source as MappingSource, evidence: m.evidence_source })));
   const courseMaps = official(maps);
   const outcomeMaps = official(omaps);
   return {

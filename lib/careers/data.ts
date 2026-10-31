@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { officialOnly, type MappingImportance, type MappingSource, type MappingStatus } from "@/lib/curriculum/mapping-rules";
+import { usableOnly, type MappingImportance, type MappingSource, type MappingStatus } from "@/lib/curriculum/mapping-rules";
+import { selectInChunks } from "@/lib/curriculum/fetch-chunks";
 import { rankCareersForCourse, rankCoursesForCareer, type CareerWithRequirements, type CourseSkill, type RequirementImportance } from "./relevance";
 
 type Service = SupabaseClient<Database>;
@@ -26,8 +27,8 @@ export async function loadCareers(service: Service, opts: { activeOnly?: boolean
 export async function loadOfficialCourseSkills(service: Service, courseIds: string[]): Promise<Map<string, CourseSkill[]>> {
   const out = new Map<string, CourseSkill[]>();
   if (courseIds.length === 0) return out;
-  const { data } = await service.from("course_skill_mappings").select("course_id, skill_id, importance, status, mapping_source").in("course_id", courseIds);
-  const rows = officialOnly((data ?? []).map((m) => ({ ...m, status: m.status as MappingStatus, source: m.mapping_source as MappingSource })));
+  const data = await selectInChunks(courseIds, (chunk) => service.from("course_skill_mappings").select("course_id, skill_id, importance, status, mapping_source, confidence, evidence_source").in("course_id", chunk));
+  const rows = usableOnly(data.map((m) => ({ ...m, status: m.status as MappingStatus, source: m.mapping_source as MappingSource, evidence: m.evidence_source })));
   for (const m of rows) out.set(m.course_id, [...(out.get(m.course_id) ?? []), { skillId: m.skill_id, importance: m.importance as MappingImportance | null }]);
   return out;
 }
