@@ -15,8 +15,8 @@ export async function POST(request: Request) {
   const admin = await requireOrgAdmin(supabase);
   if ("error" in admin) return admin.error;
 
-  const limit = await checkRateLimit(admin.userId, { bucket: "curriculum_upload", maxRequests: 10, windowSeconds: 3600 });
-  if (!limit.allowed) return rateLimitedResponse(limit.remaining);
+  const limit = await checkRateLimit(admin.userId, { bucket: "curriculum_upload", maxRequests: 40, windowSeconds: 3600 });
+  if (!limit.allowed) return rateLimitedResponse(limit.remaining, 3600);
 
   const body = (await request.json().catch(() => null)) as { size?: unknown } | null;
   const size = typeof body?.size === "number" ? body.size : 0;
