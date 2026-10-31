@@ -44,9 +44,12 @@ export async function checkRateLimit(
 }
 
 /** Standard 429 response for a route that's over its limit. */
-export function rateLimitedResponse(remaining: number) {
+export function rateLimitedResponse(remaining: number, windowSeconds?: number) {
+  // fixed windows reset on the clock, so the wait is the time left in the current one
+  const waitSeconds = windowSeconds ? windowSeconds - (Math.floor(Date.now() / 1000) % windowSeconds) : null;
+  const minutes = waitSeconds ? Math.max(1, Math.ceil(waitSeconds / 60)) : null;
   return NextResponse.json(
-    { error: "Too many requests — please slow down and try again shortly." },
-    { status: 429, headers: { "X-RateLimit-Remaining": String(remaining) } }
+    { error: minutes ? `You've reached the limit for now. You can try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.` : "Too many requests — please slow down and try again shortly." },
+    { status: 429, headers: { "X-RateLimit-Remaining": String(remaining), ...(waitSeconds ? { "Retry-After": String(waitSeconds) } : {}) } }
   );
 }

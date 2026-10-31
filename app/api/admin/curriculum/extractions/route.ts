@@ -26,13 +26,16 @@ export async function POST(request: Request) {
   }
 }
 
+// One person uploads a college's whole set of syllabi (10-15 branch and regulation combinations) in a sitting; this is per person, so colleges never share it.
+const EXTRACT_PER_HOUR = 20;
+
 async function startExtraction(request: Request) {
   const supabase = await createClient();
   const admin = await requireOrgAdmin(supabase);
   if ("error" in admin) return admin.error;
 
-  const limit = await checkRateLimit(admin.userId, { bucket: "curriculum_extract", maxRequests: 5, windowSeconds: 3600 });
-  if (!limit.allowed) return rateLimitedResponse(limit.remaining);
+  const limit = await checkRateLimit(admin.userId, { bucket: "curriculum_extract", maxRequests: EXTRACT_PER_HOUR, windowSeconds: 3600 });
+  if (!limit.allowed) return rateLimitedResponse(limit.remaining, 3600);
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const path = String(body?.path ?? "");
