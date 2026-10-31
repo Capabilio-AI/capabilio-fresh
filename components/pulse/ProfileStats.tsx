@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, X } from "lucide-react";
-import type { Connection, ConnectionType } from "@/lib/pulse/connections";
+import { Building2, Loader2, X } from "lucide-react";
+import type { Connection, ConnectionType, FollowedCollege } from "@/lib/pulse/connections";
 import { Avatar } from "./Avatar";
 import { FollowButton } from "./FollowButton";
 import { MentorBadge } from "./MentorBadge";
@@ -14,13 +14,13 @@ const TITLE: Record<ConnectionType, string> = { followers: "Followers", followin
 function ConnectionsDialog({ userId, type, name, onClose }: { userId: string; type: ConnectionType; name: string; onClose: () => void }) {
   const router = useRouter();
   const closeRef = useRef<HTMLButtonElement>(null);
-  const [state, setState] = useState<{ people: Connection[]; total: number } | "loading" | "failed">("loading");
+  const [state, setState] = useState<{ people: Connection[]; colleges: FollowedCollege[]; total: number } | "loading" | "failed">("loading");
 
   useEffect(() => {
     let live = true;
     fetch(`/api/pulse/connections/${userId}?type=${type}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad"))))
-      .then((d: { people: Connection[]; total: number }) => live && setState(d))
+      .then((d: { people: Connection[]; colleges: FollowedCollege[]; total: number }) => live && setState(d))
       .catch(() => live && setState("failed"));
     return () => { live = false; };
   }, [userId, type]);
@@ -44,9 +44,18 @@ function ConnectionsDialog({ userId, type, name, onClose }: { userId: string; ty
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
           {state === "loading" && <p className="flex items-center justify-center gap-2 py-10 text-[13px] text-app-muted"><Loader2 size={15} className="animate-spin" aria-hidden />Loading…</p>}
           {state === "failed" && <p role="alert" className="py-10 text-center text-[13px] text-app-rose">Couldn&apos;t load this list. Close it and try again.</p>}
-          {typeof state === "object" && state.people.length === 0 && <p className="py-10 text-center text-[13.5px] text-app-muted">{type === "followers" ? `${name} has no followers yet.` : `${name} isn't following anyone yet.`}</p>}
-          {typeof state === "object" && state.people.length > 0 && (
+          {typeof state === "object" && state.people.length === 0 && state.colleges.length === 0 && <p className="py-10 text-center text-[13.5px] text-app-muted">{type === "followers" ? `${name} has no followers yet.` : `${name} isn't following anyone yet.`}</p>}
+          {typeof state === "object" && (state.people.length > 0 || state.colleges.length > 0) && (
             <ul className="flex flex-col gap-4 py-1">
+              {state.colleges.map((c) => (
+                <li key={c.id} className="flex items-center gap-3">
+                  <Link href={`/o/${c.slug}`} onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-app-orange-container text-app-orange"><Building2 size={16} aria-hidden /></Link>
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/o/${c.slug}`} onClick={onClose} className="block truncate font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)] hover:underline">{c.name}</Link>
+                    <p className="font-lp-body text-[11.5px] text-app-muted">College page</p>
+                  </div>
+                </li>
+              ))}
               {state.people.map((p) => (
                 <li key={p.id} className="flex items-center gap-3">
                   <Link href={`/pulse/u/${p.id}`} onClick={onClose}><Avatar person={p} size="sm" /></Link>

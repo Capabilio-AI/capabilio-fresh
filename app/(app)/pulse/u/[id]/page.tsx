@@ -30,7 +30,7 @@ export default async function PulseProfilePage({ params }: { params: Promise<{ i
     loadPeople(service, [id]),
     blockedWith(service, user.id),
     followingIds(service, user.id),
-    profileCounts(service, id),
+    profileCounts(service, id, user.id),
     untyped(service).from("profiles").select("pulse_discoverable, portfolio_public, portfolio_slug").eq("id", id).maybeSingle(),
     loadPeople(service, [user.id]),
   ]);

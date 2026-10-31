@@ -80,13 +80,15 @@ export interface ProfileCounts {
   following: number;
   posts: number;
 }
-export async function profileCounts(service: Service, userId: string): Promise<ProfileCounts> {
+/** Your own "Following" also counts the college pages you follow; other people's lists stay people-only. */
+export async function profileCounts(service: Service, userId: string, viewerId: string = userId): Promise<ProfileCounts> {
   const db = untyped(service);
   const head = { count: "exact", head: true } as const;
-  const [a, b, c] = await Promise.all([
+  const [a, b, c, d] = await Promise.all([
     db.from("follows").select("follower_id", head).eq("followee_id", userId),
     db.from("follows").select("followee_id", head).eq("follower_id", userId),
     db.from("posts").select("id", head).eq("user_id", userId),
+    viewerId === userId ? db.from("org_follows").select("institution_id", head).eq("user_id", userId) : Promise.resolve({ count: 0 }),
   ]);
-  return { followers: a.count ?? 0, following: b.count ?? 0, posts: c.count ?? 0 };
+  return { followers: a.count ?? 0, following: (b.count ?? 0) + (d.count ?? 0), posts: c.count ?? 0 };
 }

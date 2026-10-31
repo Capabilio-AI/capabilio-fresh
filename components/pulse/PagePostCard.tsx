@@ -25,7 +25,7 @@ export function PagePostCard({ page, reason }: { page: PagePost; reason: string 
   }
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--m-rule)] bg-white">
+    <article className="pulse-card overflow-hidden rounded-2xl border border-[var(--m-rule)] bg-white">
       {page.coverImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- college-supplied image, arbitrary origin
         <img src={page.coverImageUrl} alt="" loading="lazy" className="h-auto w-full bg-white object-contain" />

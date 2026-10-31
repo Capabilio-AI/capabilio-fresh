@@ -88,7 +88,7 @@ export function PostCard({ post, viewerId, apiBase = "/api/pulse/posts", canDele
   }
 
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+    <article className="pulse-card pulse-rise relative overflow-hidden rounded-2xl border border-[var(--m-rule)] bg-white p-5">
       {kind && <span className={clsx("absolute inset-y-0 left-0 w-1", kind.bar)} aria-hidden="true" />}
       {post.reason && <Reason text={post.reason} />}
       <header className="flex items-start gap-3">

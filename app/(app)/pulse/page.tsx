@@ -4,6 +4,8 @@ import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { profileCounts } from "@/lib/pulse/graph";
 import { loadPeople } from "@/lib/pulse/people";
+import { followedColleges } from "@/lib/pulse/connections";
+import { Building2 } from "lucide-react";
 import { Avatar } from "@/components/pulse/Avatar";
 import { CommunitiesDirectory } from "@/components/pulse/CommunitiesDirectory";
 import { MentorsHub } from "@/components/pulse/MentorsHub";
@@ -22,7 +24,7 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
   const tab: PulseTab = TABS.has(rawTab as PulseTab) ? (rawTab as PulseTab) : "for-you";
   const { user } = await requireAuthedUser();
   const service = createServiceClient();
-  const [people, counts] = await Promise.all([loadPeople(service, [user.id]), profileCounts(service, user.id)]);
+  const [people, counts, colleges] = await Promise.all([loadPeople(service, [user.id]), profileCounts(service, user.id), followedColleges(service, user.id)]);
   const me = people.get(user.id) ?? { id: user.id, name: null, avatarUrl: null, headline: null, role: null };
   const viewer = { id: user.id, name: me.name, avatarUrl: me.avatarUrl };
 
@@ -41,6 +43,16 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
               <span className="mt-0.5 font-lp-body text-[12px] text-app-muted">{me.headline ?? "Student"}</span>
             </Link>
             <ProfileStats userId={user.id} name={me.name ?? "You"} counts={counts} />
+            {colleges.length > 0 && (
+              <div className="mt-4 border-t border-[var(--m-rule)] pt-3">
+                <p className="font-lp-body text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">Colleges you follow</p>
+                <ul className="mt-2 flex flex-col gap-1">
+                  {colleges.slice(0, 4).map((c) => (
+                    <li key={c.id}><Link href={`/o/${c.slug}`} className="group flex items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-app-background"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-app-orange-container text-app-orange"><Building2 size={14} aria-hidden="true" /></span><span className="truncate font-lp-body text-[12.5px] font-medium text-[var(--m-ink)] group-hover:underline">{c.name}</span></Link></li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
           <PulseNav active={tab} variant="rail" />
         </div>
