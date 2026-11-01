@@ -7,7 +7,7 @@ const skill = (name: string, score: number | null, targetLevel: number, weight =
 
 const profile = (over: Partial<CareerProfile> = {}): CareerProfile => ({
   status: "PROFILE_READY", unlocked: true, role: { id: "r", key: "ai", name: "AI/ML Engineer" },
-  elo: { rating: 374, fromAssessment: -26, fromArena: 0, events: 1, history: [] }, readiness: 34, coverage: 0.5,
+  elo: { rating: 374, fromAssessment: -26, fromArena: 0, events: 1, history: [] }, readiness: 60, proven: 34, coverage: 0.5,
   skills: [skill("Python", 19, 80, 2), skill("ML", 35, 85, 3), skill("SQL", 90, 70), skill("NLP", null, 70, 5)],
   common: null, snapshotId: "s", updatedAt: null, ...over,
 } as CareerProfile);
@@ -19,7 +19,7 @@ describe("buildOverview", () => {
   });
   it("reports where the student stands and the distance to the goal", () => {
     const o = buildOverview(profile())!;
-    expect(o).toMatchObject({ elo: 374, readiness: 34, pointsToGoal: 51, measured: 3, total: 4 });
+    expect(o).toMatchObject({ elo: 374, readiness: 34, screened: 60, pointsToGoal: 51, measured: 3, total: 4 });
     expect(o.tier.label).toBe("Rookie");
     expect(o.nextMilestone?.label).toBe("Core skills");
   });
@@ -34,8 +34,15 @@ describe("buildOverview", () => {
     expect(o.next).toMatchObject({ name: "NLP", reason: "measure" });
     expect(o.lagging).toEqual([]);
   });
+  it("headlines what is proven, not what the sign-up answers show", () => {
+    const o = buildOverview(profile({ readiness: 50, proven: 0 }))!;
+    expect(o.readiness).toBe(0);
+    expect(o.screened).toBe(50);
+    expect(o.jobReady).toBe(false);
+    expect(o.nextMilestone?.label).toBe("Foundations");
+  });
   it("never goes negative once past the goal", () => {
-    expect(buildOverview(profile({ readiness: 92 }))!.pointsToGoal).toBe(0);
-    expect(buildOverview(profile({ readiness: 92 }))!.nextMilestone).toBeNull();
+    expect(buildOverview(profile({ proven: 92 }))!.pointsToGoal).toBe(0);
+    expect(buildOverview(profile({ proven: 92 }))!.nextMilestone).toBeNull();
   });
 });

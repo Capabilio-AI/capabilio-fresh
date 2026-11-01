@@ -9,7 +9,7 @@ import { CommonProgress } from "./CommonProgress";
 const skill = (i: number, score: number | null) => ({ skillId: `id-${i}`, key: `K${i}`, name: `Skill ${i}`, category: "Data", importance: "HIGH" as const, targetLevel: 70, weight: 3, score, confidence: score === null ? ("INSUFFICIENT" as const) : ("MEDIUM" as const), evidenceCount: score === null ? 0 : 2, proof: 0 });
 const profile: CareerProfile = {
   status: "PROFILE_READY", unlocked: true, role: { id: "r", key: "data-analyst", name: "Data Analyst" },
-  elo: { rating: 458, fromAssessment: 58, fromArena: 0, events: 22, history: [] }, readiness: 63, coverage: 90,
+  elo: { rating: 458, fromAssessment: 58, fromArena: 0, events: 22, history: [] }, readiness: 63, proven: 0, coverage: 90,
   skills: [skill(1, 81), skill(2, 44), skill(3, null)], common: [{ section: "verbal_communication", label: "Communication", score: 82, confidence: "HIGH", correct: 8, total: 10 }],
   snapshotId: "s1", updatedAt: "2026-10-09",
 };

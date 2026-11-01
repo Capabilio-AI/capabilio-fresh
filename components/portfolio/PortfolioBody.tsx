@@ -94,7 +94,7 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
   const facts: [string, React.ReactNode][] = [
     ...(role ? [["Target role", role] as [string, React.ReactNode]] : []),
     ["ELO score", <LiveNumber key="elo" value={elo.rating} />],
-    ...(graph ? [["Role readiness", <LiveNumber key="ready" value={graph.readiness} suffix="%" />] as [string, React.ReactNode]] : []),
+    ...(graph ? [["Proven readiness", <LiveNumber key="ready" value={graph.readiness} suffix="%" />] as [string, React.ReactNode]] : []),
     ["Verified tickets", <LiveNumber key="tickets" value={arenaTasks.length} />],
     ...(averageScore !== null ? [["Average score", <LiveNumber key="avg" value={averageScore} suffix="%" />] as [string, React.ReactNode]] : []),
   ];

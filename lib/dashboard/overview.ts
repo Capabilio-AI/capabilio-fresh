@@ -27,7 +27,10 @@ export interface Overview {
   tier: EloTier;
   tierProgress: number;
   nextTier: string | null;
+  /** PROVEN readiness: only skills backed by passed tasks. The headline, the milestones and the job-ready line all use this. */
   readiness: number;
+  /** what the sign-up answers alone show; where the student starts, never proof */
+  screened: number;
   pointsToGoal: number;
   /** the next station not yet reached, for "you are here" */
   nextMilestone: { at: number; label: string } | null;
@@ -57,7 +60,8 @@ export function buildOverview(profile: CareerProfile): Overview | null {
   const elo = Math.round(profile.elo.rating);
   const tier = getTier(elo);
   const upper = tier.max >= 9999 ? null : ELO_NEXT[tier.label] ?? null;
-  const readiness = Math.round(profile.readiness ?? 0);
+  const readiness = Math.round(profile.proven ?? 0);
+  const screened = Math.round(profile.readiness ?? 0);
   const missingCritical = profile.skills.filter((k) => k.importance === "CRITICAL" && (k.score ?? 0) < k.targetLevel).map((k) => k.name);
 
   const weighted = profile.skills.map((k) => ({ k, s: asSkill(k), pressure: k.weight * Math.max(0, k.targetLevel - (k.score ?? 0)) }));
@@ -76,6 +80,7 @@ export function buildOverview(profile: CareerProfile): Overview | null {
     tierProgress: tier.max >= 9999 ? 100 : Math.round(((elo - tier.min) / (tier.max - tier.min)) * 100),
     nextTier: upper,
     readiness,
+    screened,
     pointsToGoal: Math.max(0, JOB_READY_AT - readiness),
     nextMilestone: MILESTONES.find((m) => readiness < m.at) ?? null,
     measured: measuredSkills.length,
