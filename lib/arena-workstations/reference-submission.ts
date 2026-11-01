@@ -1,5 +1,6 @@
 import { columnLetters } from "./engines/formula";
 import type { SpreadsheetPublicContent } from "./tools/spreadsheet";
+import { referenceNote, type NoteKey } from "@/lib/workplace/findings-note";
 
 // TEST SUPPORT ONLY (*.live.test.ts): builds the correct submission for a
 // generated instance from its server-side answer key, to drive end-to-end
@@ -18,12 +19,23 @@ export function referenceSubmission(toolType: string, content: unknown, answerKe
     case "cleaning_workspace":
       return { steps: key.steps };
     case "dashboard_workspace":
-      return { spec: key.spec };
+      return { spec: key.spec, note: key.note ? referenceNote(key.note as NoteKey) : undefined };
+    case "investigation_workspace":
+      return { answers: key.answers, note: key.note ? referenceNote(key.note as NoteKey) : undefined };
     case "spreadsheet_workspace":
-      return { cells: referenceFormulas(content as SpreadsheetPublicContent) };
+      return { cells: referenceFormulas(content as SpreadsheetPublicContent), pivots: referencePivots(content as SpreadsheetPublicContent) };
     default:
       throw new Error(`no reference submission for ${toolType}`);
   }
+}
+
+/** The PivotTable setup that answers each pivot task, keyed by task index. */
+export function referencePivots(content: SpreadsheetPublicContent): Record<string, { rows: string; values: string | null; fn: "SUM" | "AVERAGE" | "COUNT" }> {
+  const out: Record<string, { rows: string; values: string | null; fn: "SUM" | "AVERAGE" | "COUNT" }> = {};
+  content.tasks.forEach((t, i) => {
+    if (t.type === "pivot") out[String(i)] = { rows: t.row_column, values: t.value_column, fn: t.fn };
+  });
+  return out;
 }
 
 export function referenceFormulas(content: SpreadsheetPublicContent): Record<string, string> {
@@ -44,6 +56,12 @@ export function referenceFormulas(content: SpreadsheetPublicContent): Record<str
       target.cells.forEach((cell, r) => (cells[cell] = `=VLOOKUP(${col(t.key_column)}${r + 2},${range},2,FALSE)`));
     } else if (t.type === "summary") {
       cells[target.cells[0]] = `=ROUND(${t.fn}(${col(t.column)}2:${col(t.column)}${n + 1}),${t.decimals})`;
+    } else if (t.type === "pivot") {
+      // a PivotTable has no cells: the reference setup is returned by referencePivots
+    } else if (t.type === "multi_conditional_summary") {
+      const rng = (c: string) => `${col(c)}2:${col(c)}${n + 1}`;
+      const crit = t.criteria.map((c) => `${rng(c.column)},"${c.value}"`).join(",");
+      cells[target.cells[0]] = t.fn === "COUNTIFS" ? `=COUNTIFS(${crit})` : `=ROUND(${t.fn}(${rng(t.column)},${crit}),${t.decimals})`;
     } else {
       const crit = `${col(t.criteria_column)}2:${col(t.criteria_column)}${n + 1}`;
       const vals = `${col(t.column)}2:${col(t.column)}${n + 1}`;

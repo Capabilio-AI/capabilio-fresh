@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import { investigationTool, type InvestigationContent } from "@/lib/arena-workstations/tools/investigation";
 import { runExploratoryQuery, sqlTool, type SqlContent } from "@/lib/arena-workstations/tools/sql";
 import { hashSeed } from "./rng";
+import { referenceNote, type NoteKey } from "./findings-note";
 
 const ctx = (areaKey: string, userId: string, n: number, difficulty: "easy" | "medium" | "hard") => ({
   roleName: "Data Analyst", parentSkill: "Data Analysis", areaName: areaKey, difficulty, avoidTitles: [], level: "senior" as const, recentKinds: [],
   roleKey: "data-analyst", areaKey, worldSeed: hashSeed(userId, "data-analyst", "world"), ticketSeed: hashSeed(userId, "data-analyst", "ticket", n),
 });
 const answersOf = (g: { answer_key: unknown }) => (g.answer_key as { answers: Record<string, string | number> }).answers;
+/** senior level: the note to the requester is part of the work, so a correct submission carries one */
+const noteOf = (g: { answer_key: unknown }) => referenceNote((g.answer_key as { note: NoteKey }).note);
 
 describe("investigation tool (detective and incident)", () => {
   for (const [area, difficulty] of [["investigation", "medium"], ["incident", "hard"]] as const) {
@@ -21,11 +24,11 @@ describe("investigation tool (detective and incident)", () => {
       expect(g.requester).toMatch(/·/);
 
       const right = answersOf(g);
-      expect((await investigationTool.grade(g.content, g.answer_key, { answers: right })).passed).toBe(true);
+      expect((await investigationTool.grade(g.content, g.answer_key, { answers: right, note: noteOf(g) })).passed).toBe(true);
 
       // a wrong finding fails, and the message does not give the right one away
       const firstText = content.fields.find((f) => f.type !== "number")!;
-      const wrong = await investigationTool.grade(g.content, g.answer_key, { answers: { ...right, [firstText.key]: "Nowhere" } });
+      const wrong = await investigationTool.grade(g.content, g.answer_key, { answers: { ...right, [firstText.key]: "Nowhere" }, note: noteOf(g) });
       expect(wrong.passed).toBe(false);
       expect(JSON.stringify(wrong)).not.toContain(String(right[firstText.key]));
       expect((await investigationTool.grade(g.content, g.answer_key, { answers: {} })).passed).toBe(false);
@@ -39,8 +42,8 @@ describe("investigation tool (detective and incident)", () => {
     const pretty = `₹ ${Number(right.impact).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
     const text = String(right.value ?? right.channel ?? right.where);
     const textKey = "value" in right ? "value" : "channel" in right ? "channel" : "where";
-    expect((await investigationTool.grade(g.content, g.answer_key, { answers: { ...right, impact: pretty, [textKey]: `  ${text.toUpperCase()}  ` } })).passed).toBe(true);
-    expect((await investigationTool.grade(g.content, g.answer_key, { answers: { ...right, impact: Number(right.impact) + key.tolerance.impact + 5 } })).passed).toBe(false);
+    expect((await investigationTool.grade(g.content, g.answer_key, { answers: { ...right, impact: pretty, [textKey]: `  ${text.toUpperCase()}  ` }, note: noteOf(g) })).passed).toBe(true);
+    expect((await investigationTool.grade(g.content, g.answer_key, { answers: { ...right, impact: Number(right.impact) + key.tolerance.impact + 5 }, note: noteOf(g) })).passed).toBe(false);
   }, 60_000);
 
   it("lets the user explore the data with SQL while investigating", async () => {

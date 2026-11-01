@@ -26,6 +26,7 @@ const PBI = {
 const PALETTE = ["#118dff", "#12239e", "#e66c37", "#6b007b", "#e044a7", "#744ec2", "#d9b300", "#d64550"];
 const SORT_LABEL: Record<(typeof SORTS)[number], string> = { dimension_asc: "Axis, A → Z", measure_desc: "Value, high → low", measure_asc: "Value, low → high" };
 const AGG_LABEL: Record<(typeof AGGREGATIONS)[number], string> = { sum: "Sum", avg: "Average", count: "Count", min: "Minimum", max: "Maximum" };
+const DAX_STARTER = "SUM([revenue])";
 const QUICK_LABEL: Record<(typeof QUICK_MEASURES)[number], string> = { none: "None", percent_of_total: "Percent of total", running_total: "Running total", ratio: "Ratio (A ÷ B)" };
 const VISUALS = [
   { type: "bar", label: "Clustered column chart", icon: BarChart3 },
@@ -40,9 +41,10 @@ type View = "report" | "data";
 export function DashboardTool({ attemptId, content, closed, submitting, onSubmit }: ToolProps<DashboardContent>) {
   const { dataset } = content;
   const numeric = dataset.columns.filter((c) => c.type === "number").map((c) => c.name);
-  const initial: BiSpec = { chart_type: "bar", dimension: dataset.columns[0].name, dimension_grain: "value", measure: numeric[0] ?? null, aggregation: numeric.length ? "sum" : "count", quick: "none", measure2: null, filters: [], sort: "dimension_asc", limit: null };
+  const initial: BiSpec = { chart_type: "bar", dimension: dataset.columns[0].name, dimension_grain: "value", measure: numeric[0] ?? null, aggregation: numeric.length ? "sum" : "count", quick: "none", measure2: null, dax: null, filters: [], sort: "dimension_asc", limit: null };
   const [spec, setSpec] = useDraft<BiSpec>(attemptId, "spec", initial);
   const [view, setView] = useState<View>("report");
+  const [note, setNote] = useDraft(attemptId, "note", "");
   const update = (patch: Partial<BiSpec>) => setSpec({ ...spec, ...patch });
   const dimIsDate = dataset.columns.find((c) => c.name === spec.dimension)?.type === "date";
 
@@ -55,12 +57,15 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
   }, [dataset, spec]);
 
   const base = spec.aggregation === "count" || !spec.measure ? "Count of rows" : `${AGG_LABEL[spec.aggregation]} of ${spec.measure}`;
-  const valueName = spec.quick === "percent_of_total" ? `${base} as % of total` : spec.quick === "running_total" ? `Running total of ${base.toLowerCase()}` : spec.quick === "ratio" && spec.measure2 ? `${spec.measure} ÷ ${spec.measure2}` : base;
+  const valueName = spec.dax !== null ? "Measure" : spec.quick === "percent_of_total" ? `${base} as % of total` : spec.quick === "running_total" ? `Running total of ${base.toLowerCase()}` : spec.quick === "ratio" && spec.measure2 ? `${spec.measure} ÷ ${spec.measure2}` : base;
   const visualTitle = `${valueName} by ${spec.dimension}`;
 
   /** Choosing a quick measure keeps the rest of the spec valid: shares and running totals need a sum, a ratio needs a sum and a second numeric field. */
-  function setQuick(quick: BiSpec["quick"]) {
+  function setQuick(choice: BiSpec["quick"] | "dax") {
     if (closed) return;
+    if (choice === "dax") return update({ dax: spec.dax ?? DAX_STARTER, quick: "none", measure2: null });
+    const quick = choice;
+    if (spec.dax !== null) setSpec({ ...spec, dax: null });
     const second = numeric.find((n) => n !== spec.measure) ?? null;
     if (quick === "ratio") update({ quick, aggregation: "sum", measure: spec.measure ?? numeric[0] ?? null, measure2: spec.measure2 ?? second });
     else if (quick === "none") update({ quick, measure2: null });
@@ -83,7 +88,7 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
         <span className="min-w-0 truncate text-[13px] font-semibold">{dataset.name} report</span>
         <span className="hidden text-[11.5px] text-[var(--pbi-muted)] sm:inline">Power BI-style builder · one visual per page</span>
         {!closed && (
-          <button type="button" onClick={() => onSubmit({ spec })} disabled={submitting || Boolean(series.error)} className="ml-auto flex items-center gap-1.5 rounded-sm bg-[var(--pbi-yellow)] px-3.5 py-1 text-[12.5px] font-semibold hover:brightness-95 disabled:opacity-50">
+          <button type="button" onClick={() => onSubmit({ spec, note: note.trim() || undefined })} disabled={submitting || Boolean(series.error) || (content.noteRequired === true && note.trim() === "")} className="ml-auto flex items-center gap-1.5 rounded-sm bg-[var(--pbi-yellow)] px-3.5 py-1 text-[12.5px] font-semibold hover:brightness-95 disabled:opacity-50">
             {submitting && <Loader2 size={13} className="animate-spin" />}
             Publish
           </button>
@@ -146,6 +151,12 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
                     </ResponsiveContainer>
                   )}
                 </div>
+                {content.noteRequired && (
+                  <label className="mt-3 block border-t border-[var(--pbi-line)] pt-3 text-[12.5px] font-semibold">
+                    Takeaway for the reader <span className="font-normal text-[var(--pbi-muted)]">(required: which one stands out, its value, and what you would do)</span>
+                    <textarea value={note} disabled={closed} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={2000} aria-required className={`${field} mt-1.5 w-full resize-y text-[13px] font-normal`} />
+                  </label>
+                )}
               </div>
             </div>
           ) : (
@@ -187,14 +198,14 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
 
             <Well label="Y-axis (values)">
               <div className="flex items-center gap-1">
-                <select value={spec.aggregation} disabled={closed} onChange={(e) => update({ aggregation: e.target.value as BiSpec["aggregation"], measure: e.target.value === "count" ? null : spec.measure ?? numeric[0] ?? null })} aria-label="Summarisation" className={field}>
+                <select value={spec.aggregation} disabled={closed || spec.dax !== null} onChange={(e) => update({ aggregation: e.target.value as BiSpec["aggregation"], measure: e.target.value === "count" ? null : spec.measure ?? numeric[0] ?? null })} aria-label="Summarisation" className={field}>
                   {AGGREGATIONS.map((a) => (
                     <option key={a} value={a}>
                       {AGG_LABEL[a]}
                     </option>
                   ))}
                 </select>
-                <select value={spec.measure ?? ""} disabled={closed || spec.aggregation === "count"} onChange={(e) => update({ measure: e.target.value || null })} aria-label="Value field" className={`${field} flex-1`}>
+                <select value={spec.measure ?? ""} disabled={closed || spec.dax !== null || spec.aggregation === "count"} onChange={(e) => update({ measure: e.target.value || null })} aria-label="Value field" className={`${field} flex-1`}>
                   {spec.aggregation === "count" && <option value="">of rows</option>}
                   {numeric.map((m) => (
                     <option key={m}>{m}</option>
@@ -205,14 +216,15 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
 
             <Well label="Quick measure">
               <div className="flex items-center gap-1">
-                <select value={spec.quick} disabled={closed} onChange={(e) => setQuick(e.target.value as BiSpec["quick"])} aria-label="Quick measure" className={`${field} flex-1`}>
+                <select value={spec.dax !== null ? "dax" : spec.quick} disabled={closed} onChange={(e) => setQuick(e.target.value as BiSpec["quick"] | "dax")} aria-label="Quick measure" className={`${field} flex-1`}>
                   {QUICK_MEASURES.map((q) => (
                     <option key={q} value={q}>
                       {QUICK_LABEL[q]}
                     </option>
                   ))}
+                  <option value="dax">New measure (DAX)</option>
                 </select>
-                {spec.quick === "ratio" && (
+                {spec.quick === "ratio" && spec.dax === null && (
                   <>
                     <span className="text-[12px] text-[var(--pbi-muted)]" aria-hidden>
                       ÷
@@ -225,6 +237,12 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
                   </>
                 )}
               </div>
+              {spec.dax !== null && (
+                <div className="mt-1.5">
+                  <textarea value={spec.dax} disabled={closed} onChange={(e) => update({ dax: e.target.value })} rows={4} spellCheck={false} aria-label="DAX formula" placeholder={'Measure = DIVIDE(SUM([revenue]), COUNTROWS())'} className={`${field} w-full resize-y font-lp-mono text-[12px] leading-snug [font-variant-ligatures:none]`} />
+                  <p className="mt-1 text-[11px] leading-snug text-[var(--pbi-muted)]">SUM AVERAGE MIN MAX COUNT COUNTROWS DISTINCTCOUNT DIVIDE CALCULATE ALL IF ROUND ABS SUMX AVERAGEX. Columns are written [like_this]. Each bar is its own filter context; CALCULATE changes it.</p>
+                </div>
+              )}
             </Well>
 
             <Well label="Filters on this visual">

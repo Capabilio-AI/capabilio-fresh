@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowDownToLine, Eraser, Loader2, Send, Sigma } from "lucide-react";
+import { ArrowDownToLine, Eraser, Loader2, Send, Sigma, Table2 } from "lucide-react";
 import { address, columnLetters, evaluateSheet, isError, parseAddress, shiftFormulaRows, SUPPORTED_FUNCTIONS, type CellValue } from "@/lib/arena-workstations/engines/formula";
+import { pivotSeries, type PivotConfig } from "@/lib/arena-workstations/engines/spreadsheet";
 import type { SpreadsheetPublicContent } from "@/lib/arena-workstations/tools/spreadsheet";
 import { useDraft, type ToolProps } from "./useDraft";
 
@@ -24,7 +25,7 @@ const XL = {
   "--xl-error": "#c42b1c",
 } as React.CSSProperties;
 
-type Tab = "Home" | "Formulas";
+type Tab = "Home" | "Insert" | "Formulas";
 type Range = { c1: number; r1: number; c2: number; r2: number };
 
 function display(v: CellValue | undefined): string {
@@ -42,6 +43,7 @@ function rangeOf(a: { col: number; row: number }, b: { col: number; row: number 
 export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubmit }: ToolProps<SpreadsheetPublicContent>) {
   const { layout } = content;
   const [cells, setCells] = useDraft<Record<string, string>>(attemptId, "cells", {});
+  const [pivots, setPivots] = useDraft<Record<string, PivotConfig>>(attemptId, "pivots", {});
   const [active, setActive] = useState("A1");
   const [extent, setExtent] = useState("A1");
   const [editing, setEditing] = useState(false);
@@ -175,7 +177,8 @@ export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubm
     }
   }
 
-  const doneTargets = layout.targets.filter((t) => t.cells.every((c) => (cells[c] ?? "").startsWith("="))).length;
+  const pivotTasks = layout.targets.filter((t) => t.pivot);
+  const doneTargets = layout.targets.filter((t) => (t.pivot ? Boolean(pivots[String(t.task)]) : t.cells.every((c) => (cells[c] ?? "").startsWith("=")))).length;
   const nameBox = isRange ? `${address(sel.c1, sel.r1)}:${address(sel.c2, sel.r2)}` : active;
   const sheetName = content.data.name.replace(/_/g, " ");
   const money = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -192,7 +195,7 @@ export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubm
           {doneTargets}/{layout.targets.length} tasks have formulas
         </span>
         {!closed && (
-          <button type="button" onClick={() => onSubmit({ cells })} disabled={submitting} className="flex items-center gap-1.5 rounded bg-white px-3 py-1 text-[12.5px] font-semibold text-[var(--xl-green-dark)] hover:bg-[var(--xl-green-tint)] disabled:opacity-50">
+          <button type="button" onClick={() => onSubmit({ cells, pivots })} disabled={submitting} className="flex items-center gap-1.5 rounded bg-white px-3 py-1 text-[12.5px] font-semibold text-[var(--xl-green-dark)] hover:bg-[var(--xl-green-tint)] disabled:opacity-50">
             {submitting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
             Submit workbook
           </button>
@@ -200,14 +203,19 @@ export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubm
       </div>
 
       <div role="tablist" aria-label="Ribbon" className="flex gap-0.5 border-b border-[var(--xl-grid)] bg-[var(--xl-head)] px-2 pt-1">
-        {(["Home", "Formulas"] as Tab[]).map((t) => (
+        {((pivotTasks.length > 0 ? ["Home", "Insert", "Formulas"] : ["Home", "Formulas"]) as Tab[]).map((t) => (
           <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`rounded-t px-3.5 py-1 text-[12.5px] ${tab === t ? "border border-b-white border-[var(--xl-grid)] bg-white font-semibold text-[var(--xl-green-dark)]" : "border border-transparent text-[var(--xl-muted)] hover:bg-white/60"}`}>
             {t}
           </button>
         ))}
       </div>
       <div className="flex min-h-[54px] flex-wrap items-center gap-1 border-b border-[var(--xl-grid)] bg-white px-3 py-1.5">
-        {tab === "Home" ? (
+        {tab === "Insert" ? (
+          <p className="flex items-center gap-2 text-[12.5px] text-[var(--xl-muted)]">
+            <Table2 size={16} className="text-[var(--xl-green-dark)]" aria-hidden />
+            PivotTable: set the fields for each pivot below the grid. The table updates as you choose.
+          </p>
+        ) : tab === "Home" ? (
           <>
             <RibbonButton icon={<Sigma size={17} />} label="AutoSum" hint="Sum the numbers above the active cell" onClick={autoSum} disabled={!canEdit} />
             <RibbonButton icon={<ArrowDownToLine size={17} />} label="Fill Down" hint="Copy the top cell's formula down the selection (Ctrl+D)" onClick={fillDown} disabled={closed || (!isRange && !selectedTarget)} />
@@ -303,6 +311,80 @@ export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubm
           </tbody>
         </table>
       </div>
+
+      {tab === "Insert" && pivotTasks.length > 0 && (
+        <div className="grid gap-3 border-t border-[var(--xl-grid)] bg-[#fafafa] p-3 md:grid-cols-2" aria-label="PivotTables">
+          {pivotTasks.map((t) => {
+            const key = String(t.task);
+            const task = content.tasks[t.task] as Extract<SpreadsheetPublicContent["tasks"][number], { type: "pivot" }>;
+            const cfg: PivotConfig = pivots[key] ?? { rows: content.data.columns[0].name, values: null, fn: "COUNT" };
+            const numeric = content.data.columns.filter((c) => c.type === "number").map((c) => c.name);
+            let table: { label: string; value: number }[] = [];
+            let problem: string | null = null;
+            try {
+              table = pivotSeries(content.data, cfg);
+            } catch (e) {
+              problem = (e as Error).message;
+            }
+            const set = (patch: Partial<PivotConfig>) => {
+              if (closed) return;
+              const next = { ...cfg, ...patch };
+              if (next.fn === "COUNT") next.values = null;
+              else if (next.values === null) next.values = numeric[0] ?? null;
+              setPivots({ ...pivots, [key]: next });
+            };
+            return (
+              <section key={key} className="rounded-sm border border-[var(--xl-grid)] bg-white p-2.5">
+                <h4 className="text-[12.5px] font-semibold">PivotTable: {task.label}</h4>
+                <div className="mt-1.5 flex flex-wrap items-end gap-2 text-[11.5px] text-[var(--xl-muted)]">
+                  <label className="flex flex-col gap-0.5">Rows
+                    <select value={cfg.rows} disabled={closed} onChange={(e) => set({ rows: e.target.value })} className="rounded-sm border border-[var(--xl-grid)] bg-white px-1.5 py-1 text-[12.5px] text-[var(--xl-ink)]">
+                      {content.data.columns.map((c) => <option key={c.name}>{c.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-0.5">Values
+                    <select value={cfg.values ?? ""} disabled={closed || cfg.fn === "COUNT"} onChange={(e) => set({ values: e.target.value || null })} className="rounded-sm border border-[var(--xl-grid)] bg-white px-1.5 py-1 text-[12.5px] text-[var(--xl-ink)] disabled:opacity-50">
+                      {cfg.fn === "COUNT" && <option value="">(rows)</option>}
+                      {numeric.map((m) => <option key={m}>{m}</option>)}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-0.5">Summarise by
+                    <select value={cfg.fn} disabled={closed} onChange={(e) => set({ fn: e.target.value as PivotConfig["fn"] })} className="rounded-sm border border-[var(--xl-grid)] bg-white px-1.5 py-1 text-[12.5px] text-[var(--xl-ink)]">
+                      <option value="SUM">Sum</option>
+                      <option value="AVERAGE">Average</option>
+                      <option value="COUNT">Count</option>
+                    </select>
+                  </label>
+                </div>
+                {problem ? (
+                  <p className="mt-2 text-[12px] text-[var(--xl-error)]">{problem}</p>
+                ) : (
+                  <table className="mt-2 w-full border-collapse text-[12.5px]">
+                    <thead>
+                      <tr className="bg-[var(--xl-head)] text-left">
+                        <th className="border border-[var(--xl-grid)] px-2 py-1 font-semibold">{cfg.rows}</th>
+                        <th className="border border-[var(--xl-grid)] px-2 py-1 text-right font-semibold">{cfg.fn === "COUNT" ? "Count of rows" : `${cfg.fn === "SUM" ? "Sum" : "Average"} of ${cfg.values}`}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {table.map((r) => (
+                        <tr key={r.label}>
+                          <td className="border border-[var(--xl-grid)] px-2 py-0.5">{r.label}</td>
+                          <td className="border border-[var(--xl-grid)] px-2 py-0.5 text-right tabular-nums">{r.value.toLocaleString("en-IN")}</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-[var(--xl-head)] font-semibold">
+                        <td className="border border-[var(--xl-grid)] px-2 py-0.5">Grand total</td>
+                        <td className="border border-[var(--xl-grid)] px-2 py-0.5 text-right tabular-nums">{cfg.fn === "AVERAGE" ? "" : table.reduce((a, r) => a + r.value, 0).toLocaleString("en-IN")}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex items-end gap-0.5 border-t border-[var(--xl-grid)] bg-[var(--xl-head)] px-2 pt-1">
         <span className="rounded-t border border-b-white border-[var(--xl-grid)] bg-white px-4 py-0.5 text-[12.5px] font-semibold text-[var(--xl-green-dark)]" style={{ marginBottom: -1 }}>

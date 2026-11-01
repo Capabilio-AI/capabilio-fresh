@@ -15,9 +15,13 @@ export function levelAtLeast(level: ExperienceLevel, minimum: ExperienceLevel): 
   return LEVELS.indexOf(level) >= LEVELS.indexOf(minimum);
 }
 
-/** Students and recent graduates are freshers; professionals are graded by years since their earliest recorded job (under 1, 1-3, 3-6, 6-10, 10+). */
+/**
+ * Students are freshers. A recent graduate has finished the programme and is job-ready, so they are served junior (more professional, multi-step) tickets
+ * rather than first-year exercises. Professionals are graded by years since their earliest recorded job (under 1, 1-3, 3-6, 6-10, 10+).
+ */
 export function experienceLevel({ stage, startDates, now = new Date() }: { stage: CareerStage; startDates: readonly (string | null)[]; now?: Date }): ExperienceLevel {
-  if (stage !== "professional") return "fresher";
+  if (stage === "student") return "fresher";
+  if (stage === "graduate") return "junior";
   const years = startDates.flatMap((d) => (d ? [yearsSince(d, now)] : [])).filter((y): y is number => y !== null);
   if (years.length === 0) return "junior";
   const longest = Math.max(...years);

@@ -7,6 +7,8 @@ import { GenerationRejected, TIME_LIMIT_MINUTES, type GenerationContext, type Ge
 import { hashSeed, makeRng } from "@/lib/workplace/rng";
 import { checkDashboard, pickOffice } from "@/lib/workplace/office/pick";
 import { worldForRole, type World } from "@/lib/workplace/worlds";
+import { levelAtLeast } from "@/lib/workplace/level";
+import { gradeNote, type NoteKey } from "@/lib/workplace/findings-note";
 import { HeaderSchema, avoidLine, requesterLine, systemPreamble, withProblems } from "./common";
 
 const GenerationSchema = HeaderSchema.extend({ dataset: DatasetSchema, spec: BiSpecSchema });
@@ -15,6 +17,14 @@ export interface DashboardContent {
   company: string;
   dataset: Dataset;
   requirements: string[];
+  /** from junior level up the chart comes with a takeaway for the reader, and it is graded */
+  noteRequired?: boolean;
+}
+
+/** The takeaway of a chart is its standout: the group with the highest value and that value. */
+function takeawayKey(dataset: Dataset, spec: BiSpec): NoteKey {
+  const top = [...evaluateSpec(dataset, spec)].sort((a, b) => b.value - a.value)[0];
+  return top ? { figures: [{ value: top.value, tolerance: top.value < 1000 ? 0.5 : 1 }], names: [top.label] } : { figures: [], names: [] };
 }
 
 function problemsIn(raw: z.infer<typeof GenerationSchema>): string[] {
@@ -77,7 +87,8 @@ function generateFromWorld(ctx: GenerationContext, world: World): GeneratedChall
   );
   if (!picked) throw new GenerationRejected("no valid dashboard ticket could be built for this user");
   const { draft } = picked;
-  const content: DashboardContent = { company: world.name, dataset: draft.dataset, requirements: describeSpec(draft.spec) };
+  const noteRequired = levelAtLeast(ctx.level ?? "fresher", "junior");
+  const content: DashboardContent = { company: world.name, dataset: draft.dataset, requirements: [...describeSpec(draft.spec), ...(noteRequired ? ["Add a takeaway for the reader: which one stands out, its value, and what you would do about it."] : [])], noteRequired };
   return {
     title: draft.title,
     category: ctx.areaName,
@@ -87,7 +98,7 @@ function generateFromWorld(ctx: GenerationContext, world: World): GeneratedChall
     skill_tags: draft.skillTags,
     time_limit_minutes: TIME_LIMIT_MINUTES[ctx.difficulty],
     content: content as unknown as Json,
-    answer_key: { spec: draft.spec } as unknown as Json,
+    answer_key: { spec: draft.spec, note: noteRequired ? takeawayKey(draft.dataset, draft.spec) : undefined } as unknown as Json,
     origin: { provider: "template", model: `${world.key}.dashboard.v1` },
   };
 }
@@ -97,7 +108,7 @@ async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
   return world?.office && ctx.worldSeed !== undefined ? generateFromWorld(ctx, world) : generateWithAi(ctx);
 }
 
-const SubmissionSchema = z.object({ spec: BiSpecSchema });
+const SubmissionSchema = z.object({ spec: BiSpecSchema, note: z.string().max(2000).optional() });
 export type DashboardSubmission = z.infer<typeof SubmissionSchema>;
 
 export const dashboardTool: ToolDefinition<DashboardSubmission> = {
@@ -108,7 +119,12 @@ export const dashboardTool: ToolDefinition<DashboardSubmission> = {
   submissionSchema: SubmissionSchema,
   async grade(content, answerKey, submission) {
     const c = content as unknown as DashboardContent;
-    const key = answerKey as unknown as { spec: BiSpec };
-    return gradeDashboard(c.dataset, key.spec, submission.spec);
+    const key = answerKey as unknown as { spec: BiSpec; note?: NoteKey };
+    const chart = gradeDashboard(c.dataset, key.spec, submission.spec);
+    if (!c.noteRequired || !key.note) return chart;
+    const note = gradeNote(submission.note, key.note);
+    const checks = [...chart.checks, ...note.checks.map((n) => ({ label: `Takeaway: ${n.label.charAt(0).toLowerCase()}${n.label.slice(1)}`, passed: n.passed }))];
+    const passed = chart.passed && note.passed;
+    return { passed, message: chart.passed && !note.passed ? "The chart is right. Now fix the takeaway: state the standout value, name which one it is, and say what to do." : chart.message, checks };
   },
 };

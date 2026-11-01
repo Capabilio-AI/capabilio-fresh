@@ -7,6 +7,8 @@ import { pickOffice } from "@/lib/workplace/office/pick";
 import { checkInvestigation } from "@/lib/workplace/investigate/check";
 import type { AnswerField, AnswerValue } from "@/lib/workplace/investigate/types";
 import { worldForRole, type World } from "@/lib/workplace/worlds";
+import { levelAtLeast } from "@/lib/workplace/level";
+import { gradeNote, type NoteKey } from "@/lib/workplace/findings-note";
 
 /** What the user sees: the company's data (with the fault in it) and the form to report their findings. Never the answers. */
 export interface InvestigationContent {
@@ -18,11 +20,23 @@ export interface InvestigationContent {
   mode: "query";
   engine: "sqlite";
   deliverable: string;
+  /** from junior level up, a short note to the requester is part of the work and is graded */
+  noteRequired?: boolean;
 }
 
 interface InvestigationKey {
   answers: Record<string, AnswerValue>;
   tolerance: Record<string, number>;
+  /** what a good note must contain, derived from the answers */
+  note?: NoteKey;
+}
+
+/** The figures a note must state are the numeric answers; the places it must name are the free-text answers (a channel, a product, a date). */
+function noteKeyFor(fields: AnswerField[], answers: Record<string, AnswerValue>, tolerance: Record<string, number>): NoteKey {
+  return {
+    figures: fields.filter((f) => f.type === "number").map((f) => ({ value: parseAmount(answers[f.key]) ?? 0, tolerance: Math.max(tolerance[f.key] ?? 0, 1) })),
+    names: fields.filter((f) => f.type === "text").map((f) => String(answers[f.key])),
+  };
 }
 
 /** Investigations take longer than a single query, so they get a longer clock. */
@@ -47,8 +61,9 @@ function generateFromWorld(ctx: GenerationContext, world: World): GeneratedChall
   const content: InvestigationContent = {
     company: world.name, tables: draft.tables, fields: draft.fields, kind: draft.mode, mode: "query", engine: "sqlite",
     deliverable: draft.fields.map((f, i) => `${i + 1}. ${f.label}`).join("\n"),
+    noteRequired: levelAtLeast(ctx.level ?? "fresher", "junior"),
   };
-  const key: InvestigationKey = { answers: draft.answers, tolerance: draft.tolerance };
+  const key: InvestigationKey = { answers: draft.answers, tolerance: draft.tolerance, note: noteKeyFor(draft.fields, draft.answers, draft.tolerance) };
   return {
     title: draft.title,
     category: ctx.areaName,
@@ -93,11 +108,16 @@ export const investigationTool: ToolDefinition<InvestigationSubmission> = {
     const c = content as unknown as InvestigationContent;
     const key = answerKey as unknown as InvestigationKey;
     const checks = c.fields.map((f) => ({ label: f.label, passed: gradeField(f, key.answers[f.key], key.tolerance[f.key] ?? 0, submission.answers[f.key]) }));
-    const passed = checks.every((x) => x.passed);
+    const findingsOk = checks.every((x) => x.passed);
+    const note = c.noteRequired && key.note ? gradeNote(submission.note, key.note) : null;
+    const all = note ? [...checks, ...note.checks.map((n) => ({ label: `Note: ${n.label.charAt(0).toLowerCase()}${n.label.slice(1)}`, passed: n.passed }))] : checks;
+    const passed = findingsOk && (note?.passed ?? true);
     return {
       passed,
-      message: passed ? "Your findings match what the data shows." : `${checks.filter((x) => !x.passed).length} of ${checks.length} findings do not match the data. Go back to the data and check them.`,
-      checks,
+      message: !findingsOk
+        ? `${checks.filter((x) => !x.passed).length} of ${checks.length} findings do not match the data. Go back to the data and check them.`
+        : passed ? "Your findings match what the data shows." : "Your findings are right. Now fix the note to the requester: it must state the key figure, name where it is, and say what to do next.",
+      checks: all,
     };
   },
 };

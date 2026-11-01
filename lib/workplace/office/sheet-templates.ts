@@ -29,6 +29,9 @@ const D: Record<string, Spec> = {
   margin: { id: "sheet-unit-margin", difficulty: "easy", minLevel: "fresher" },
   gst: { id: "sheet-gst-lookup", difficulty: "medium", minLevel: "fresher" },
   channel: { id: "sheet-channel-report", difficulty: "medium", minLevel: "fresher" },
+  twoWay: { id: "sheet-two-way-report", difficulty: "medium", minLevel: "junior" },
+  pivotPack: { id: "sheet-pivot-summary", difficulty: "medium", minLevel: "junior" },
+  analysisPack: { id: "sheet-analysis-pack", difficulty: "hard", minLevel: "mid" },
   markup: { id: "sheet-markup", difficulty: "medium", minLevel: "junior" },
   profit: { id: "sheet-cost-profit", difficulty: "hard", minLevel: "junior" },
   returns: { id: "sheet-returns", difficulty: "hard", minLevel: "mid" },
@@ -96,6 +99,71 @@ export const SHEET_TEMPLATES: SheetTemplate[] = [
       }, {
         title: `Channel report, ${w.label}`, requester: cast.marketing, skillTags: ["Excel", "SUMIF", "COUNTIF", "AVERAGEIF"],
         scenario: "Hello, I'm comparing our sales channels before the budget meeting. In this sample I need the revenue of each line, how many units went through one channel, how many lines went through another, and the average price in one category. Formulas only, please, so I can change the sample.",
+      });
+    },
+  },
+  {
+    ...D.twoWay, areas: AREAS,
+    build(rng, tables) {
+      const w = quarterWindow(rng.int(1, 3));
+      return make(D.twoWay, rng, tables, {
+        n: 45, columns: ["orderId", "product", "category", "channel", "quantity", "unitPrice"], filter: { statuses: ["delivered"], window: w },
+        tasks: (lines) => {
+          const pick = rng.pick(lines);
+          const category = String(pick.category);
+          const channel = String(pick.channel);
+          return [
+            { type: "row_formula", header: "Revenue", op: "multiply", left: "quantity", right: "unit_price", decimals: 2 },
+            { type: "multi_conditional_summary", label: `${category} units via ${channel}`, fn: "SUMIFS", criteria: [{ column: "category", value: category }, { column: "channel", value: channel }], column: "quantity", decimals: 0 },
+            { type: "multi_conditional_summary", label: `${category} lines via ${channel}`, fn: "COUNTIFS", criteria: [{ column: "category", value: category }, { column: "channel", value: channel }], column: "quantity", decimals: 0 },
+            { type: "summary", label: "Median unit price", fn: "MEDIAN", column: "unit_price", decimals: 2 },
+          ];
+        },
+      }, {
+        title: `Where do ${w.label} sales overlap? A two-way report`, requester: cast.marketing, skillTags: ["Excel", "SUMIFS", "COUNTIFS", "MEDIAN"],
+        scenario: "Hi, I need to size one segment of the business: a particular category sold through a particular channel. For this sample please give me each line's revenue, the units and the number of lines in that category-and-channel combination (both conditions must hold), and the median unit price, which I trust more than the average because of a few premium items.",
+      });
+    },
+  },
+  {
+    ...D.pivotPack, areas: AREAS,
+    build(rng, tables) {
+      const w = quarterWindow(rng.int(1, 3));
+      return make(D.pivotPack, rng, tables, {
+        n: 50, columns: ["orderId", "product", "category", "channel", "quantity", "unitPrice"], filter: { statuses: ["delivered"], window: w },
+        tasks: () => [
+          { type: "row_formula", header: "Revenue", op: "multiply", left: "quantity", right: "unit_price", decimals: 2 },
+          { type: "pivot", label: "Units by category", row_column: "category", value_column: "quantity", fn: "SUM" },
+          { type: "pivot", label: "Average price by channel", row_column: "channel", value_column: "unit_price", fn: "AVERAGE" },
+          { type: "summary", label: "Price spread (std dev)", fn: "STDEV", column: "unit_price", decimals: 2 },
+        ],
+      }, {
+        title: `Summarise ${w.label} with PivotTables`, requester: cast.category, skillTags: ["Excel", "PivotTable", "STDEV"],
+        scenario: "Hello, I need a quick summary I can paste into the review deck. Build two PivotTables from this sample (total units by category, and the average unit price by channel), add each line's revenue, and tell me how spread out the unit prices are with a standard deviation formula.",
+      });
+    },
+  },
+  {
+    ...D.analysisPack, areas: AREAS,
+    build(rng, tables) {
+      const w = quarterWindow(rng.int(1, 3));
+      return make(D.analysisPack, rng, tables, {
+        n: 70, columns: ["orderId", "product", "category", "channel", "city", "quantity", "unitPrice"], filter: { statuses: ["delivered"], window: w }, lookup: GST,
+        tasks: (lines) => {
+          const pick = rng.pick(lines);
+          const category = String(pick.category);
+          const channel = String(pick.channel);
+          return [
+            { type: "row_formula", header: "Revenue", op: "multiply", left: "quantity", right: "unit_price", decimals: 2 },
+            { type: "lookup", header: "GST %", key_column: "category" },
+            { type: "multi_conditional_summary", label: `Avg ${category} price via ${channel}`, fn: "AVERAGEIFS", criteria: [{ column: "category", value: category }, { column: "channel", value: channel }], column: "unit_price", decimals: 2 },
+            { type: "summary", label: "Median units per line", fn: "MEDIAN", column: "quantity", decimals: 1 },
+            { type: "pivot", label: "Units by city", row_column: "city", value_column: "quantity", fn: "SUM" },
+          ];
+        },
+      }, {
+        title: `${w.label} analysis pack for the regional head`, requester: cast.sales, skillTags: ["Excel", "PivotTable", "AVERAGEIFS", "MEDIAN", "Lookups"],
+        scenario: "Hi, the regional head wants one workbook that does it all from a single sample: line revenue, the GST rate from the rate table (use whichever lookup you prefer, INDEX/MATCH or XLOOKUP are fine), the average price for one category-and-channel combination, the median units per line, and a PivotTable of units by city. Formulas, not typed values.",
       });
     },
   },

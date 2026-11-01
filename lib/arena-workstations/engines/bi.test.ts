@@ -69,7 +69,7 @@ describe("quick measures", () => {
     columns: [{ name: "month", type: "text" }, { name: "region", type: "text" }, { name: "revenue", type: "number" }, { name: "units", type: "number" }],
     rows: [["2026-01", "N", 100, 10], ["2026-01", "S", 300, 10], ["2026-02", "N", 200, 40], ["2026-03", "N", 400, 20], ["2026-03", "S", 0, 0]],
   };
-  const base: BiSpec = { chart_type: "bar", dimension: "region", dimension_grain: "value", measure: "revenue", aggregation: "sum", quick: "none", measure2: null, filters: [], sort: "dimension_asc", limit: null };
+  const base: BiSpec = { chart_type: "bar", dimension: "region", dimension_grain: "value", measure: "revenue", aggregation: "sum", quick: "none", measure2: null, dax: null, filters: [], sort: "dimension_asc", limit: null };
 
   it("percent of total adds up to 100 and is a share of the filtered data", () => {
     const pts = evaluateSpec(ds, { ...base, quick: "percent_of_total" });

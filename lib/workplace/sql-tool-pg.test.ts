@@ -1,3 +1,4 @@
+import { referenceNote, type NoteKey } from "./findings-note";
 import { describe, expect, it } from "vitest";
 import { sqlTool, runExploratoryQuery, type SqlContent } from "@/lib/arena-workstations/tools/sql";
 import { hashSeed } from "./rng";
@@ -16,8 +17,9 @@ describe("dashboards for the BI Developer", () => {
   it("serves a dashboard ticket on the company data to the BI Developer role", async () => {
     const g = await dashboardTool.generate(ctx("bi-developer", "dashboard", "bi-user", 0, "medium"));
     expect(g.origin?.provider).toBe("template");
-    const spec = (g.answer_key as unknown as { spec: BiSpec }).spec;
-    expect((await dashboardTool.grade(g.content, g.answer_key, { spec })).passed).toBe(true);
+    const { spec, note } = g.answer_key as unknown as { spec: BiSpec; note?: NoteKey };
+    // at senior level the takeaway is part of the work
+    expect((await dashboardTool.grade(g.content, g.answer_key, { spec, note: note ? referenceNote(note) : undefined })).passed).toBe(true);
   });
 });
 

@@ -2,7 +2,7 @@
 // evaluator. No eval/Function. Shared by the browser grid (live values) and
 // the server grader, so both compute identical results.
 
-export type FormulaError = "#DIV/0!" | "#VALUE!" | "#REF!" | "#NAME?" | "#N/A" | "#CIRC!" | "#ERROR!";
+export type FormulaError = "#DIV/0!" | "#VALUE!" | "#REF!" | "#NAME?" | "#N/A" | "#CIRC!" | "#ERROR!" | "#NUM!";
 export type CellValue = number | string | boolean | null | { error: FormulaError };
 export type Sheet = Record<string, string>; // "A1" -> raw input ("=SUM(A1:A3)", "12", "Delhi")
 
@@ -251,7 +251,7 @@ const round = (x: number, digits: number) => {
   return Math.sign(x) * Math.round(Math.abs(x) * f) / f;
 };
 
-export const SUPPORTED_FUNCTIONS = ["SUM", "AVERAGE", "MIN", "MAX", "COUNT", "COUNTA", "COUNTIF", "SUMIF", "AVERAGEIF", "IF", "ROUND", "ABS", "IFERROR", "AND", "OR", "VLOOKUP"] as const;
+export const SUPPORTED_FUNCTIONS = ["SUM", "AVERAGE", "MEDIAN", "STDEV", "MIN", "MAX", "COUNT", "COUNTA", "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS", "AVERAGEIF", "AVERAGEIFS", "IF", "ROUND", "ABS", "IFERROR", "AND", "OR", "VLOOKUP", "XLOOKUP", "INDEX", "MATCH"] as const;
 
 export function evaluateSheet(sheet: Sheet): Record<string, CellValue> {
   const cache = new Map<string, CellValue>();
@@ -373,6 +373,85 @@ export function evaluateSheet(sheet: Sheet): Record<string, CellValue> {
         if (!Array.isArray(v)) return v;
         if (v.length === 0) return 0;
         return name === "MIN" ? Math.min(...v) : Math.max(...v);
+      }
+      case "MEDIAN": {
+        const v = numericValues(args());
+        if (!Array.isArray(v)) return v;
+        if (v.length === 0) return err("#NUM!");
+        const sorted = [...v].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      }
+      case "STDEV": {
+        const v = numericValues(args());
+        if (!Array.isArray(v)) return v;
+        if (v.length < 2) return err("#DIV/0!");
+        const m = v.reduce((s, x) => s + x, 0) / v.length;
+        return Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / (v.length - 1));
+      }
+      case "COUNTIFS":
+      case "SUMIFS":
+      case "AVERAGEIFS": {
+        // SUMIFS / AVERAGEIFS(value_range, criteria_range1, criteria1, ...); COUNTIFS(criteria_range1, criteria1, ...)
+        const a = args();
+        const lead = name === "COUNTIFS" ? 0 : 1;
+        if (a.length < lead + 2 || (a.length - lead) % 2 !== 0) return err("#VALUE!");
+        const target = lead ? a[0] : null;
+        if (lead && !Array.isArray(target)) return err("#VALUE!");
+        const pairs: { rng: CellValue[]; crit: CellValue }[] = [];
+        for (let i = lead; i < a.length; i += 2) {
+          const r = a[i];
+          if (!Array.isArray(r)) return err("#VALUE!");
+          pairs.push({ rng: r.flat(), crit: scalar(a[i + 1]) });
+        }
+        const size = pairs[0].rng.length;
+        if (pairs.some((p) => p.rng.length !== size) || (target && (target as CellValue[][]).flat().length !== size)) return err("#VALUE!");
+        const values = target ? (target as CellValue[][]).flat() : null;
+        const picked: number[] = [];
+        let count = 0;
+        for (let i = 0; i < size; i++) {
+          if (!pairs.every((p) => matchesCriteria(p.rng[i], p.crit))) continue;
+          count++;
+          if (values && typeof values[i] === "number") picked.push(values[i] as number);
+        }
+        if (name === "COUNTIFS") return count;
+        if (name === "SUMIFS") return picked.reduce((s, x) => s + x, 0);
+        return picked.length === 0 ? err("#DIV/0!") : picked.reduce((s, x) => s + x, 0) / picked.length;
+      }
+      case "MATCH": {
+        if (argNodes.length < 2 || argNodes.length > 3) return err("#VALUE!");
+        const [needle, rng, type] = args();
+        if (!Array.isArray(rng)) return err("#VALUE!");
+        if (type !== undefined && scalar(type) !== 0 && scalar(type) !== false) return err("#VALUE!"); // only exact match (0) is supported
+        const key = toText(scalar(needle)).trim().toLowerCase();
+        const at = rng.flat().findIndex((v) => toText(v).trim().toLowerCase() === key);
+        return at === -1 ? err("#N/A") : at + 1;
+      }
+      case "INDEX": {
+        if (argNodes.length < 2 || argNodes.length > 3) return err("#VALUE!");
+        const [rng, rowArg, colArg] = args();
+        if (!Array.isArray(rng)) return err("#VALUE!");
+        const r = toNumber(scalar(rowArg));
+        const c = colArg === undefined ? 1 : toNumber(scalar(colArg));
+        if (typeof r !== "number" || typeof c !== "number") return err("#VALUE!");
+        // a single row (or single column) range takes the position as its only index, as in Excel
+        const oneRow = rng.length === 1 && colArg === undefined;
+        const row = oneRow ? 1 : r;
+        const col = oneRow ? r : c;
+        if (row < 1 || col < 1 || row > rng.length || col > (rng[0]?.length ?? 0)) return err("#REF!");
+        return rng[row - 1][col - 1];
+      }
+      case "XLOOKUP": {
+        if (argNodes.length < 3 || argNodes.length > 4) return err("#VALUE!");
+        const [needle, lookupRng, returnRng, ifMissing] = args();
+        if (!Array.isArray(lookupRng) || !Array.isArray(returnRng)) return err("#VALUE!");
+        const keys = lookupRng.flat();
+        const outs = returnRng.flat();
+        if (keys.length !== outs.length) return err("#VALUE!");
+        const key = toText(scalar(needle)).trim().toLowerCase();
+        const at = keys.findIndex((v) => toText(v).trim().toLowerCase() === key);
+        if (at !== -1) return outs[at];
+        return ifMissing === undefined ? err("#N/A") : scalar(ifMissing);
       }
       case "COUNT": return flatten(args()).filter((v) => typeof v === "number").length;
       case "COUNTA": return flatten(args()).filter((v) => v !== null && v !== "").length;

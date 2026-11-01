@@ -126,10 +126,13 @@ export function InvestigationTool({ attemptId, content, closed, submitting, onSu
         {!closed && (
           <>
             <label className="mt-4 block font-lp-body text-[12px] font-semibold text-app-charcoal">
-              Note to the requester <span className="font-normal text-app-muted">(optional: how you found it, what you would do next)</span>
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={2000} className={FIELD} />
+              Note to the requester{" "}
+              <span className="font-normal text-app-muted">
+                {content.noteRequired ? "(required: 2 to 4 sentences with the key figure, where it is, and what you would do next)" : "(optional: how you found it, what you would do next)"}
+              </span>
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={content.noteRequired ? 5 : 3} maxLength={2000} className={FIELD} aria-required={content.noteRequired} />
             </label>
-            <button type="button" onClick={() => onSubmit({ answers, note: note.trim() || undefined })} disabled={submitting || !complete} className="mt-4 flex items-center gap-1.5 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white disabled:opacity-50">
+            <button type="button" onClick={() => onSubmit({ answers, note: note.trim() || undefined })} disabled={submitting || !complete || (content.noteRequired === true && note.trim() === "")} className="mt-4 flex items-center gap-1.5 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white disabled:opacity-50">
               {submitting ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Send size={14} aria-hidden />} Submit findings
             </button>
           </>

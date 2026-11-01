@@ -9,7 +9,7 @@ export const HARD_TEMPLATES: TicketTemplate[] = [
   {
     id: "mom-growth",
     difficulty: "hard",
-    minLevel: "mid",
+    minLevel: "junior",
     taskKind: "retrieval",
     build(rng) {
       const month = rng.int(5, 9);
@@ -19,7 +19,7 @@ export const HARD_TEMPLATES: TicketTemplate[] = [
         templateId: "mom-growth",
         difficulty: "hard",
         kind: "query",
-        minLevel: "mid",
+        minLevel: "junior",
         taskKind: "retrieval",
         title: `Month-on-month growth up to ${monthName(month)}`,
         requester: cast.finance,
@@ -34,7 +34,7 @@ export const HARD_TEMPLATES: TicketTemplate[] = [
   {
     id: "win-back",
     difficulty: "hard",
-    minLevel: "mid",
+    minLevel: "junior",
     taskKind: "retrieval",
     build(rng) {
       const w = quarterWindow(rng.int(2, 3));
@@ -43,7 +43,7 @@ export const HARD_TEMPLATES: TicketTemplate[] = [
         templateId: "win-back",
         difficulty: "hard",
         kind: "query",
-        minLevel: "mid",
+        minLevel: "junior",
         taskKind: "retrieval",
         title: `Win-back list for ${w.label}`,
         requester: cast.marketing,
@@ -58,7 +58,7 @@ export const HARD_TEMPLATES: TicketTemplate[] = [
   {
     id: "running-total",
     difficulty: "hard",
-    minLevel: "mid",
+    minLevel: "junior",
     taskKind: "retrieval",
     build(rng) {
       const category = rng.pick(BRIGHTCART.categories);
@@ -67,7 +67,7 @@ export const HARD_TEMPLATES: TicketTemplate[] = [
         templateId: "running-total",
         difficulty: "hard",
         kind: "query",
-        minLevel: "mid",
+        minLevel: "junior",
         taskKind: "retrieval",
         title: `${category}: revenue so far this year`,
         requester: cast.category,

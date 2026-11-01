@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { type Cell, type Dataset } from "./dataset";
+import { evaluateMeasure, type ContextFilter } from "./dax";
 
 // A constrained BI builder: the candidate's chart is a structured spec. Both
 // the expected and the candidate spec are evaluated on the same dataset and
@@ -23,6 +24,8 @@ export const BiSpecSchema = z.object({
   quick: z.enum(QUICK_MEASURES).default("none"),
   /** the denominator field of a ratio (the measure is the numerator) */
   measure2: z.string().nullable().default(null),
+  /** a DAX measure; when present it supplies each bar's value and the aggregation / quick measure are ignored */
+  dax: z.string().max(400).nullable().default(null),
   filters: z.array(BiFilterSchema).max(3).default([]),
   sort: z.enum(SORTS).default("dimension_asc"),
   limit: z.number().int().min(1).max(20).nullable().default(null),
@@ -57,6 +60,29 @@ function matches(v: Cell, op: (typeof BI_OPERATORS)[number], target: number | st
   }
 }
 
+
+/** Each axis value is a filter context (its own rows, plus the visual's filters); the DAX measure is worked out once per axis value and blanks are left off the chart. */
+function daxSeries(ds: Dataset, spec: BiSpec, dim: number, visual: ContextFilter[]): SeriesPoint[] {
+  const labelOf = (row: readonly Cell[]) => (row[dim] === null ? null : spec.dimension_grain === "month" ? String(row[dim]).slice(0, 7) : String(row[dim]));
+  const labels = [...new Set(ds.rows.filter((r) => visual.every((f) => f.test(r))).map(labelOf).filter((l): l is string => l !== null))].sort((a, b) => a.localeCompare(b));
+  const dimName = ds.columns[dim].name.toLowerCase();
+  const series: SeriesPoint[] = [];
+  for (const label of labels) {
+    const axis: ContextFilter = { columns: new Set([dimName]), test: (row) => labelOf(row) === label };
+    const v = evaluateMeasure(ds, spec.dax!, [axis, ...visual]);
+    if (v !== null) series.push({ label, value: Math.round(v * 100) / 100 });
+  }
+  return sortAndLimit(series, spec);
+}
+
+function sortAndLimit(series: SeriesPoint[], spec: BiSpec): SeriesPoint[] {
+  const sorted =
+    spec.sort === "measure_desc" ? [...series].sort((a, b) => b.value - a.value || a.label.localeCompare(b.label))
+    : spec.sort === "measure_asc" ? [...series].sort((a, b) => a.value - b.value || a.label.localeCompare(b.label))
+    : [...series].sort((a, b) => a.label.localeCompare(b.label));
+  return spec.limit ? sorted.slice(0, spec.limit) : sorted;
+}
+
 /** Pure. Evaluates a spec to the series the chart plots; throws on invalid columns/types. */
 export function evaluateSpec(ds: Dataset, spec: BiSpec): SeriesPoint[] {
   const idx = (name: string) => {
@@ -67,14 +93,18 @@ export function evaluateSpec(ds: Dataset, spec: BiSpec): SeriesPoint[] {
   const dim = idx(spec.dimension);
   if (spec.dimension_grain === "month" && ds.columns[dim].type !== "date") throw new Error("Monthly grouping needs a date column");
   const meas = spec.measure === null ? -1 : idx(spec.measure);
-  if (spec.aggregation !== "count" && (meas === -1 || ds.columns[meas].type !== "number")) throw new Error("This aggregation needs a numeric measure");
+  if (spec.dax === null && spec.aggregation !== "count" && (meas === -1 || ds.columns[meas].type !== "number")) throw new Error("This aggregation needs a numeric measure");
   const den = spec.measure2 === null ? -1 : idx(spec.measure2);
-  if (spec.quick === "ratio") {
+  if (spec.dax !== null) {
+    // the measure is written in DAX, so the pickers do not apply
+  } else if (spec.quick === "ratio") {
     if (spec.aggregation !== "sum" || den === -1 || ds.columns[den].type !== "number") throw new Error("A ratio needs the total of one numeric field divided by the total of another");
   } else if ((spec.quick === "percent_of_total" || spec.quick === "running_total") && spec.aggregation !== "sum" && spec.aggregation !== "count") {
     throw new Error("Percent of total and running total only make sense for a total or a count");
   }
   const filters = spec.filters.map((f) => ({ i: idx(f.column), f }));
+
+  if (spec.dax !== null) return daxSeries(ds, spec, dim, filters.map(({ i, f }) => ({ columns: new Set([ds.columns[i].name.toLowerCase()]), test: (row: readonly Cell[]) => matches(row[i], f.operator, f.value) })));
 
   const groups = new Map<string, { vals: number[]; den: number }>();
   for (const row of ds.rows) {
@@ -113,11 +143,7 @@ export function evaluateSpec(ds: Dataset, spec: BiSpec): SeriesPoint[] {
   }
   series = series.map((p) => ({ label: p.label, value: Math.round(p.value * 100) / 100 }));
 
-  series =
-    spec.sort === "measure_desc" ? series.sort((a, b) => b.value - a.value || a.label.localeCompare(b.label))
-    : spec.sort === "measure_asc" ? series.sort((a, b) => a.value - b.value || a.label.localeCompare(b.label))
-    : series.sort((a, b) => a.label.localeCompare(b.label));
-  return spec.limit ? series.slice(0, spec.limit) : series;
+  return sortAndLimit(series, spec);
 }
 
 /** Pure. Which chart types honestly fit a series: time → line/bar, few categories → bar/pie, many → bar/table. */
@@ -157,7 +183,9 @@ export function gradeDashboard(ds: Dataset, expected: BiSpec, candidate: BiSpec)
     });
   const chartOk = suitableChartTypes(ds, expected, want.length).includes(candidate.chart_type);
 
+  const needsDax = expected.dax !== null;
   const checks = [
+    ...(needsDax ? [{ label: "The value comes from a DAX measure you wrote", passed: candidate.dax !== null && candidate.dax.trim() !== "" }] : []),
     { label: `Categories${orderMatters ? " and order" : ""} match the request`, passed: sameLabels },
     { label: "Values match (measure, aggregation and filters)", passed: sameValues },
     { label: "Chart type suits this data", passed: chartOk },
@@ -170,6 +198,15 @@ const AGG_LABEL: Record<(typeof AGGREGATIONS)[number], string> = { sum: "total",
 
 /** Pure. Requirement bullets rendered from the expected spec (chart type deliberately omitted — choosing it is part of the task). */
 export function describeSpec(spec: BiSpec): string[] {
+  if (spec.dax !== null) {
+    const lines = [`Write a DAX measure that gives the value described in the request, and chart it per \`${spec.dimension}\`${spec.dimension_grain === "month" ? " (by month)" : ""}.`];
+    for (const f of spec.filters) lines.push(`Only include rows where \`${f.column}\` ${f.operator} ${typeof f.value === "number" ? f.value : `"${f.value}"`}.`);
+    if (spec.limit) lines.push(`Show only the top ${spec.limit} by value.`);
+    else if (spec.sort === "measure_desc") lines.push("Order from highest to lowest value.");
+    else if (spec.sort === "measure_asc") lines.push("Order from lowest to highest value.");
+    lines.push("Pick the chart type that best fits this data.");
+    return lines;
+  }
   const lines = [
     spec.aggregation === "count" ? `Show the number of records per \`${spec.dimension}\`${spec.dimension_grain === "month" ? " (by month)" : ""}.` : `Show the ${AGG_LABEL[spec.aggregation]} of \`${spec.measure}\` per \`${spec.dimension}\`${spec.dimension_grain === "month" ? " (by month)" : ""}.`,
   ];
