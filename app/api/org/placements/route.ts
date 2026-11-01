@@ -1,6 +1,7 @@
 import { orgRoute } from "@/lib/api/org-route";
 import { PlacementSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
+import { normalizeEligibleBranches } from "@/lib/org/branch-scope";
 import { notify } from "@/lib/notifications/notify";
 import { activeStudents } from "@/lib/notifications/audiences";
 
@@ -10,6 +11,7 @@ import { activeStudents } from "@/lib/notifications/audiences";
  */
 export async function POST(request: Request) {
   return orgRoute(request, PlacementSchema, "postPlacement", async ({ ctx, service }, body) => {
+    const eligibleBranches = normalizeEligibleBranches(body.eligibleBranches);
     const { data, error } = await untyped(service)
       .from("opportunities")
       .insert({
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
         drive_date: body.driveDate ?? null,
         drive_status: body.status,
         ctc_offered: body.ctcOffered ?? null,
-        eligible_branches: body.eligibleBranches?.length ? body.eligibleBranches : null,
+        eligible_branches: eligibleBranches,
       })
       .select("id")
       .single();
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
     // students hear about a visit once it is open for registration, not while it is only planned
     if (body.status === "registration_open") {
       await notify(service, {
-        userIds: await activeStudents(service, ctx.institutionId, body.eligibleBranches),
+        userIds: await activeStudents(service, ctx.institutionId, eligibleBranches),
         type: "drive_open",
         title: `${body.company} is visiting your college`,
         body: `${body.role}${body.deadline ? ` · register by ${body.deadline}` : ""}`,

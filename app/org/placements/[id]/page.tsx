@@ -52,10 +52,10 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
   const ids = rows.map((r) => r.user_id);
   const [profiles, memberships] = await Promise.all([
     ids.length ? service.from("profiles").select("id, full_name, email").in("id", ids) : Promise.resolve({ data: [] }),
-    ids.length ? service.from("institution_memberships").select("user_id, branch, end_year").eq("institution_id", ctx.institutionId).in("user_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? untyped(service).from("institution_memberships").select("user_id, branch, end_year, roll_number").eq("institution_id", ctx.institutionId).in("user_id", ids) : Promise.resolve({ data: [] }),
   ]);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
-  const meta = new Map((memberships.data ?? []).map((m) => [m.user_id, m]));
+  const meta = new Map(((memberships.data ?? []) as { user_id: string; branch: string | null; end_year: number | null; roll_number: string | null }[]).map((m) => [m.user_id, m]));
   const placed = new Map(((placements.data ?? []) as { id: string; student_user_id: string; offer_letter_path: string | null; student_response: string }[]).map((p) => [p.student_user_id, p]));
   const st = VISIT_STATUS[visit.drive_status] ?? VISIT_STATUS.registration_open;
 
@@ -105,6 +105,11 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
         {rows.length === 0 ? (
           <EmptyState title="No one has registered yet" body="Final-year students of eligible branches see this visit in Launchpad and can register there." />
         ) : (
+          <>
+          <p className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[12.5px] text-app-muted">
+            Name, roll number, branch, class and email for each registered student.
+            <a href={`/api/org/placements/registrations?visit=${visit.id}`} className="o-btn-ghost !py-1.5">Download list (CSV)</a>
+          </p>
           <ul className="divide-y divide-app-border">
             {rows.map((a) => {
               const m = meta.get(a.user_id);
@@ -115,7 +120,7 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
                     <div>
                       <p className="text-[13.5px] font-bold text-app-charcoal">{names.get(a.user_id) ?? "Student"}</p>
                       <p className="text-[11.5px] text-app-muted">
-                        {m?.branch ?? "Branch not set"} · class of {m?.end_year ?? "—"}
+                        {m?.roll_number ? `${m.roll_number} · ` : "Roll no. not added · "}{m?.branch ?? "Branch not set"} · class of {m?.end_year ?? "—"}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -157,6 +162,7 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
               );
             })}
           </ul>
+          </>
         )}
       </Panel>
     </div>
