@@ -26,12 +26,14 @@ export const DATA_ANALYST: RoleBlueprint = {
     { id: "da.anomaly", label: "Data quality and anomaly detection" },
     { id: "da.communication", label: "Communicating evidence-based findings" },
     { id: "da.python", label: "Data analysis in Python (pandas)" },
+    { id: "da.dax", label: "DAX measures: CALCULATE, filter context, ratios" },
+    { id: "da.pivot", label: "PivotTables and multi-criteria summaries" },
   ],
   areas: [
     { areaKey: "sql", toolType: "sql_workspace", generationVersion: "sql.gen.v1", gradingVersion: "sql.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.sql", "da.metrics"] },
     { areaKey: "debugging", toolType: "sql_workspace", generationVersion: "sql.gen.v1", gradingVersion: "sql.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.sql"] },
-    { areaKey: "spreadsheet", toolType: "spreadsheet_workspace", generationVersion: "spreadsheet.gen.v1", gradingVersion: "spreadsheet.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.spreadsheet", "da.metrics"] },
-    { areaKey: "dashboard", toolType: "dashboard_workspace", generationVersion: "dashboard.gen.v1", gradingVersion: "dashboard.grade.v1", executionMode: "evaluated-spec", status: "enabled", competencies: ["da.bi", "da.metrics"] },
+    { areaKey: "spreadsheet", toolType: "spreadsheet_workspace", generationVersion: "spreadsheet.gen.v1", gradingVersion: "spreadsheet.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.spreadsheet", "da.metrics", "da.pivot"] },
+    { areaKey: "dashboard", toolType: "dashboard_workspace", generationVersion: "dashboard.gen.v1", gradingVersion: "dashboard.grade.v1", executionMode: "evaluated-spec", status: "enabled", competencies: ["da.bi", "da.metrics", "da.dax"] },
     { areaKey: "statistics", toolType: "statistics_workspace", generationVersion: "statistics.gen.v1", gradingVersion: "statistics.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.statistics"] },
     { areaKey: "data_cleaning", toolType: "cleaning_workspace", generationVersion: "cleaning.gen.v1", gradingVersion: "cleaning.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.cleaning", "da.anomaly"] },
     { areaKey: "investigation", toolType: "investigation_workspace", generationVersion: "investigation.gen.v1", gradingVersion: "investigation.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.root_cause", "da.anomaly", "da.communication"] },
@@ -41,7 +43,8 @@ export const DATA_ANALYST: RoleBlueprint = {
   // Honest limits: these are graded through findings, not free-text quality.
   limitations: [
     "da.communication is verified only through the correctness of the submitted findings and the explain-your-work interview, not through prose quality.",
+    "Excel is assessed on formulas (SUMIFS, COUNTIFS, INDEX/MATCH, XLOOKUP, MEDIAN, STDEV) and PivotTables built from a field list; there is no chart or macro grading.",
     "Python runs in the student's own browser (Pyodide), never on our servers. Only the numbers they report are graded, not their code, so code style is not assessed.",
-    "Dashboard grading compares the structured spec's series, not visual design. The builder offers Power BI-style quick measures (percent of total, running total, ratio of two fields) but no DAX and no data model, so the skill proven is building measures and charts from a brief, not writing DAX.",
+    "Dashboard grading compares the series a chart plots, not visual design. The builder covers quick measures and DAX basics (CALCULATE, ALL, DIVIDE, SUMX and filter context) but no data model or relationships, so the skill proven is writing measures and charts from a brief, not designing a model.",
   ],
 };
