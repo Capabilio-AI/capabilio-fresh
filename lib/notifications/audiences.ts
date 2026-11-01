@@ -22,18 +22,19 @@ export async function activeStudents(service: SupabaseClient<Database>, institut
   return rows.filter((m) => open || branchMatchesAny(branches, m.branch)).map((m) => m.user_id);
 }
 
-/**
- * Students who can register for a company visit right now: active, of an eligible branch, in the year Launchpad opens for them (the same
- * rule the apply route enforces), and not in `exclude` (usually those who already registered). Checked a few at a time so a large college
- * does not open hundreds of connections at once.
- */
-export async function studentsWhoCanRegister(service: SupabaseClient<Database>, institutionId: string, branches: readonly string[] | null | undefined, exclude: ReadonlySet<string> = new Set()): Promise<string[]> {
-  const candidates = (await activeStudents(service, institutionId, branches)).filter((id) => !exclude.has(id));
-  const open: string[] = [];
+/** Which of these students have Launchpad open (the same rule the apply route enforces). Checked a few at a time so a large college does not open hundreds of connections at once. */
+export async function launchpadOpenAmong(service: SupabaseClient<Database>, ids: readonly string[]): Promise<Set<string>> {
+  const open = new Set<string>();
   const BATCH = 10;
-  for (let i = 0; i < candidates.length; i += BATCH) {
-    const checked = await Promise.all(candidates.slice(i, i + BATCH).map(async (id) => ((await getStudentDirection(service, id))?.launchpadOpen ? id : null)));
-    open.push(...checked.filter((id): id is string => id !== null));
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const checked = await Promise.all(ids.slice(i, i + BATCH).map(async (id) => ((await getStudentDirection(service, id))?.launchpadOpen ? id : null)));
+    for (const id of checked) if (id) open.add(id);
   }
   return open;
+}
+
+/** Students who can register for a company visit right now: active, of an eligible branch, Launchpad open for them, and not in `exclude` (usually those who already registered). */
+export async function studentsWhoCanRegister(service: SupabaseClient<Database>, institutionId: string, branches: readonly string[] | null | undefined, exclude: ReadonlySet<string> = new Set()): Promise<string[]> {
+  const candidates = (await activeStudents(service, institutionId, branches)).filter((id) => !exclude.has(id));
+  return [...(await launchpadOpenAmong(service, candidates))];
 }

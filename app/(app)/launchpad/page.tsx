@@ -14,7 +14,7 @@ import { matchJob } from "@/lib/launchpad/match";
 import { JobMatch } from "@/components/launchpad/JobMatch";
 import { StudentPlacementOffers } from "@/components/org/StudentPlacementOffers";
 import { ActionButton } from "@/components/org/ActionButton";
-import { REGISTRATION_LABEL } from "@/lib/org/visits";
+import { REGISTRATION_LABEL, canWithdraw, hasRollNumber } from "@/lib/org/visits";
 
 export const metadata: Metadata = { title: "Launchpad — Capabilio AI" };
 
@@ -61,10 +61,11 @@ export default async function LaunchpadPage() {
   // independent reads, one round trip
   // own rows only (RLS); status is written by the college, never by the student
   // measured capability per catalog skill, read once; each listing is compared with it
-  const [opportunities, { data: myApps }, skillContext] = await Promise.all([
+  const [opportunities, { data: myApps }, skillContext, { data: myMembership }] = await Promise.all([
     listOpenOpportunities(supabase),
     supabase.from("applications").select("opportunity_id, status").eq("user_id", user.id),
     loadSkillContext(createGateClient(), user.id),
+    supabase.from("institution_memberships").select("roll_number").eq("user_id", user.id).eq("role", "student").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const appliedStatus = new Map((myApps ?? []).map((a) => [a.opportunity_id, a.status]));
   const APPLIED_LABEL = REGISTRATION_LABEL;
@@ -73,6 +74,11 @@ export default async function LaunchpadPage() {
     <div>
       <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Launchpad</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Jobs, internships, competitions, and referrals.</p>
+      {myMembership && !hasRollNumber(myMembership.roll_number) && (
+        <p role="status" className="mt-4 rounded-xl border border-app-border bg-white px-4 py-3 font-lp-body text-[13px] text-app-charcoal">
+          Add your roll number to register for company visits: the placement office needs it to list you. <Link href="/dashboard" className="font-bold underline">Add it on your dashboard</Link>.
+        </p>
+      )}
       <StudentPlacementOffers userId={user.id} />
 
       {direction && direction.track !== "job" && (
@@ -161,7 +167,12 @@ export default async function LaunchpadPage() {
                 {opp.campus && (
                   <div>
                     {appliedStatus.has(opp.id) ? (
-                      <span className="rounded-full border border-app-border px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">{APPLIED_LABEL[appliedStatus.get(opp.id)!] ?? "Registered"}</span>
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-app-border px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">{APPLIED_LABEL[appliedStatus.get(opp.id)!] ?? "Registered"}</span>
+                        {canWithdraw(appliedStatus.get(opp.id)!, opp.driveStatus) && (
+                          <ActionButton action="/api/launchpad/withdraw" body={{ opportunityId: opp.id }} label="Withdraw" variant="ghost" confirm={`Withdraw your registration for ${opp.company}? The placement office will be told.`} />
+                        )}
+                      </span>
                     ) : opp.driveStatus === "planned" ? (
                       <span className="font-lp-body text-[12px] text-app-muted">Registration opens soon</span>
                     ) : (

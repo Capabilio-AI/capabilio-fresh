@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FileText, Globe } from "lucide-react";
+import { ArrowLeft, FileText, Globe } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { REGISTRATION_LABEL, VISIT_STATUS } from "@/lib/org/visits";
+import { JsonForm } from "@/components/org/JsonForm";
+import { loadRegistrantProof } from "@/lib/org/registrations";
 import { ActionButton } from "@/components/org/ActionButton";
 import { LetterUpload } from "@/components/org/LetterUpload";
 import { OfferForm } from "@/components/org/OfferForm";
-import { EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Company visit — Capabilio AI" };
 
@@ -55,6 +57,7 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
     ids.length ? service.from("profiles").select("id, full_name, email").in("id", ids) : Promise.resolve({ data: [] }),
     ids.length ? untyped(service).from("institution_memberships").select("user_id, branch, end_year, roll_number").eq("institution_id", ctx.institutionId).in("user_id", ids) : Promise.resolve({ data: [] }),
   ]);
+  const proof = await loadRegistrantProof(service, ids);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
   const meta = new Map(((memberships.data ?? []) as { user_id: string; branch: string | null; end_year: number | null; roll_number: string | null }[]).map((m) => [m.user_id, m]));
   const placed = new Map(((placements.data ?? []) as { id: string; student_user_id: string; offer_letter_path: string | null; student_response: string }[]).map((p) => [p.student_user_id, p]));
@@ -62,6 +65,11 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="flex flex-col gap-6">
+      <div>
+        <Link href="/org/placements" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-app-charcoal">
+          <ArrowLeft size={13} aria-hidden="true" /> Back to company visits
+        </Link>
+      </div>
       <PageHeader
         title={visit.company}
         subtitle={`${visit.role}${visit.drive_date ? ` · ${new Date(visit.drive_date).toLocaleDateString("en-IN", { dateStyle: "medium" })}` : ""}${visit.location ? ` · ${visit.location}` : ""}${visit.ctc_offered ? ` · ${visit.ctc_offered}` : ""}`}
@@ -74,12 +82,31 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
               <ActionButton action="/api/org/placements/status" body={{ opportunityId: visit.id, status: "cancelled" }} label="Cancel visit" variant="danger" confirm="Cancel this company visit? Students can no longer register." />
             )}
             <ActionButton action="/api/org/placements/delete" body={{ opportunityId: visit.id }} label="Delete visit" variant="danger" redirectTo="/org/placements" confirm="Delete this company visit? Registrations are removed and registered students are told. This can't be undone." />
-            <Link href="/org/placements" className="text-[13px] font-semibold text-app-muted hover:text-app-charcoal">
-              All visits
-            </Link>
           </div>
         }
       />
+
+      {visit.drive_status !== "completed" && visit.drive_status !== "cancelled" && (
+        <Collapsible title="Edit visit details">
+          <JsonForm
+            action="/api/org/placements/update"
+            extra={{ opportunityId: visit.id }}
+            submitLabel="Save changes"
+            successMessage={rows.length > 0 ? "Saved. The students who registered have been notified of what changed." : "Saved."}
+            resetOnSuccess={false}
+            fields={[
+              { name: "role", label: "Role(s) they are hiring for", defaultValue: visit.role },
+              { name: "companyWebsite", label: "Company website", defaultValue: visit.company_website ?? "", placeholder: "infosys.com" },
+              { name: "driveDate", label: "Visit date", type: "date", defaultValue: visit.drive_date ?? "" },
+              { name: "deadline", label: "Registration closes", type: "date", defaultValue: visit.deadline ?? "" },
+              { name: "ctcOffered", label: "Package", defaultValue: visit.ctc_offered ?? "" },
+              { name: "location", label: "Where (campus or online)", defaultValue: visit.location ?? "" },
+              { name: "eligibleBranches", label: "Open to branches (comma-separated; type all for every branch)", type: "list", defaultValue: visit.eligible_branches?.join(", ") ?? "all" },
+              { name: "eligibility", label: "Eligibility and selection process", type: "textarea", defaultValue: visit.eligibility ?? "" },
+            ]}
+          />
+        </Collapsible>
+      )}
 
       {visit.company_website && (
         <p className="-mt-3 text-[13px]">
@@ -131,6 +158,18 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
                       <p className="text-[11.5px] text-app-muted">
                         {m?.roll_number ? `${m.roll_number} · ` : "Roll no. not added · "}{m?.branch ?? "Branch not set"} · class of {m?.end_year ?? "—"}
                       </p>
+                      {proof.get(a.user_id)?.targetRole && (
+                        <p className="text-[11.5px] text-app-muted">
+                          Working toward {proof.get(a.user_id)?.targetRole}
+                          {proof.get(a.user_id)?.elo != null ? ` · ELO ${proof.get(a.user_id)?.elo} (${proof.get(a.user_id)?.tier})` : ""}
+                          {proof.get(a.user_id)?.passportUrl && (
+                            <>
+                              {" · "}
+                              <a href={proof.get(a.user_id)?.passportUrl ?? "#"} target="_blank" rel="noopener noreferrer" className="font-bold underline">Skill Passport</a>
+                            </>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Pill tone={a.status === "accepted" ? "ok" : a.status === "rejected" ? "neutral" : "warn"}>{placement ? "Offer released" : (REGISTRATION_LABEL[a.status] ?? a.status)}</Pill>
