@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FileText } from "lucide-react";
+import { FileText, Globe } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { REGISTRATION_LABEL, VISIT_STATUS } from "@/lib/org/visits";
@@ -23,6 +23,7 @@ interface Visit {
   drive_date: string | null;
   drive_status: string;
   ctc_offered: string | null;
+  company_website: string | null;
   deadline: string | null;
   eligible_branches: string[] | null;
   eligibility: string | null;
@@ -79,6 +80,14 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
           </div>
         }
       />
+
+      {visit.company_website && (
+        <p className="-mt-3 text-[13px]">
+          <a href={visit.company_website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-app-charcoal underline underline-offset-2">
+            <Globe size={13} aria-hidden="true" /> Company website
+          </a>
+        </p>
+      )}
 
       {(visit.eligibility || visit.eligible_branches?.length || visit.deadline) && (
         <Panel title="Eligibility">

@@ -21,6 +21,8 @@ export interface Opportunity {
   driveStatus: "planned" | "registration_open";
   ctcOffered: string | null;
   eligibleBranches: string[];
+  /** the company's website, as the college recorded it (always http or https); null when none */
+  companyWebsite: string | null;
 }
 
 const TYPES: OpportunityType[] = ["job", "internship", "competition", "referral"];
@@ -39,7 +41,7 @@ export async function listOpenOpportunities(supabase: SupabaseClient<Database>, 
   // untyped: the company-visit columns postdate the generated types
   let query = untyped(supabase)
     .from("opportunities")
-    .select("id, role, company, location, opportunity_type, skills, eligibility, deadline, institution_id, drive_date, drive_status, ctc_offered, eligible_branches")
+    .select("id, role, company, location, opportunity_type, skills, eligibility, deadline, institution_id, drive_date, drive_status, ctc_offered, eligible_branches, company_website")
     // filtered in SQL: still open, a type we render, and a company visit that is not completed or cancelled
     .or(`deadline.is.null,deadline.gte.${today}`)
     .in("opportunity_type", TYPES)
@@ -62,6 +64,7 @@ export async function listOpenOpportunities(supabase: SupabaseClient<Database>, 
     drive_status: "planned" | "registration_open";
     ctc_offered: string | null;
     eligible_branches: string[] | null;
+    company_website: string | null;
   };
   return ((data ?? []) as Row[])
     .map((r) => ({
@@ -78,5 +81,6 @@ export async function listOpenOpportunities(supabase: SupabaseClient<Database>, 
       driveStatus: r.drive_status,
       ctcOffered: r.ctc_offered,
       eligibleBranches: r.eligible_branches ?? [],
+      companyWebsite: r.company_website,
     }));
 }

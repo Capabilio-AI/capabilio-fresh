@@ -2,6 +2,7 @@ import { orgRoute } from "@/lib/api/org-route";
 import { PlacementSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
 import { normalizeEligibleBranches } from "@/lib/org/branch-scope";
+import { normalizeWebsite } from "@/lib/org/website";
 import { notify } from "@/lib/notifications/notify";
 import { activeStudents } from "@/lib/notifications/audiences";
 
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
         drive_status: body.status,
         ctc_offered: body.ctcOffered ?? null,
         eligible_branches: eligibleBranches,
+        ...(body.companyWebsite ? { company_website: normalizeWebsite(body.companyWebsite) } : {}),
       })
       .select("id")
       .single();
