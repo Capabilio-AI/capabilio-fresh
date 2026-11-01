@@ -23,7 +23,7 @@ function GoalTrack({ readiness }: { readiness: number }) {
   const pct = Math.min(100, (readiness / JOB_READY_AT) * 100);
   return (
     <div className="mt-6">
-      <div className="relative h-3 rounded-full bg-white/15" role="img" aria-label={`Readiness ${readiness} percent; job-ready at ${JOB_READY_AT} percent`}>
+      <div className="relative h-3 rounded-full bg-white/15" role="img" aria-label={`Proven readiness ${readiness} percent; job-ready at ${JOB_READY_AT} percent`}>
         <div className="h-full rounded-full bg-[var(--m-accent)] transition-[width] duration-700 motion-reduce:transition-none" style={{ width: `${pct}%` }} />
         {MILESTONES.map((m) => (
           <span key={m.at} aria-hidden className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] ${readiness >= m.at ? "border-[var(--m-accent)] bg-white" : "border-white/40 bg-[var(--m-ink)]"}`} style={{ left: `${(m.at / JOB_READY_AT) * 100}%` }} />
@@ -74,7 +74,7 @@ export function OverviewHub({ o, vaultCount, yearLabel }: { o: Overview; vaultCo
       <section aria-labelledby="where" className="overflow-hidden rounded-2xl bg-[var(--m-ink)] p-6 text-white sm:p-7">
         <div className="grid items-center gap-6 md:grid-cols-[auto_1fr_auto]">
           <Ring value={o.readiness} size={112} stroke={11}>
-            <div className="text-center"><p className="font-lp-display text-[30px] font-bold leading-none">{o.readiness}%</p><p className="mt-0.5 text-[10.5px] uppercase tracking-wide text-white/60">ready</p></div>
+            <div className="text-center"><p className="font-lp-display text-[30px] font-bold leading-none">{o.readiness}%</p><p className="mt-0.5 text-[10.5px] uppercase tracking-wide text-white/60">proven</p></div>
           </Ring>
           <div className="min-w-0">
             <p id="where" className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-white/60"><Flag size={13} aria-hidden />Your goal: {o.roleName}</p>
@@ -82,7 +82,7 @@ export function OverviewHub({ o, vaultCount, yearLabel }: { o: Overview; vaultCo
               {o.jobReady ? "You've reached job-ready. Keep proving it." : o.pointsToGoal === 0 ? `Prove ${o.missingCritical.slice(0, 2).join(" and ")} to be job-ready` : `${o.proven} of ${o.total} skills proven`}
             </h2>
             <p className="mt-1 text-[13.5px] text-white/70">
-              {o.jobReady ? "Every station on the road is behind you." : `Assessment answers only screen you (they count up to 40% of a skill). Passing Arena missions is what proves it.${o.nextMilestone ? ` Next station: ${o.nextMilestone.label} at ${o.nextMilestone.at}%.` : ""}`}
+              {o.jobReady ? "Every station on the road is behind you." : `Your assessment screens you at ${o.screened}%, but only passed Arena missions count as proof.${o.nextMilestone ? ` Next station: ${o.nextMilestone.label} at ${o.nextMilestone.at}%.` : ""}`}
             </p>
           </div>
           <div className="rounded-xl bg-white/10 px-5 py-4 text-center md:text-right">
