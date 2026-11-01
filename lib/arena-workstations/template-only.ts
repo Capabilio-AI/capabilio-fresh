@@ -1,4 +1,5 @@
 import { ML_ENGINEER_AREAS } from "@/lib/workplace/ml-engineer/tickets";
+import { ANALYST_PYTHON_AREAS } from "@/lib/workplace/analyst-python/templates";
 import { DATA_SCIENCE_ML_AREAS } from "@/lib/workplace/data-science/ml-templates";
 
 /**
@@ -8,6 +9,7 @@ import { DATA_SCIENCE_ML_AREAS } from "@/lib/workplace/data-science/ml-templates
 const TEMPLATE_ONLY_AREAS: ReadonlySet<string> = new Set([
   ...ML_ENGINEER_AREAS,
   ...DATA_SCIENCE_ML_AREAS,
+  ...ANALYST_PYTHON_AREAS,
   "functions-and-logic",
   "api-handlers",
   "ui-state",

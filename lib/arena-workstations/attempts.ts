@@ -6,6 +6,7 @@ import { currentWeekStart } from "@/lib/arena-challenges/week";
 import { COOLDOWN_MS, resolveDailyState, type AssignmentRow } from "./daily";
 import { isRegisteredTool, toolFor } from "./registry";
 import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
+import { skillGapPriorities } from "./skill-gap";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, type SkillAreaRow } from "./taxonomy";
 import { resolveDomainRole } from "./role-resolution";
@@ -192,12 +193,13 @@ export async function startNextAttempt(service: Service, userId: string, statedR
     }
   }
 
-  // weakest skill first: the lowest current Arena rating among the role's areas is served next (read fresh, so it follows every completed task)
+  // weakest skill first: the area that closes the biggest gap to the role is served next (read fresh, so it follows every completed task); a role with no skill graph yet falls back to the lowest Arena rating
   const level = await loadExperienceLevel(service, userId);
   const { data: allRatings } = await service.from("arena_skill_ratings").select("area_key, rating").eq("user_id", userId).eq("role_key", roleKey);
   const ratingByArea = Object.fromEntries((allRatings ?? []).map((r) => [r.area_key, r.rating]));
   // areas that need experience are held back until the user has it
-  const reservation = await reserveNextArea(service, userId, roleKey, areasForLevel(enabled.map((a) => a.area_key), level), undefined, ratingByArea, focusAreaKey);
+  const gapPriority = await skillGapPriorities(service, userId, roleKey);
+  const reservation = await reserveNextArea(service, userId, roleKey, areasForLevel(enabled.map((a) => a.area_key), level), undefined, gapPriority ?? ratingByArea, focusAreaKey);
   const area = enabled.find((a) => a.area_key === reservation.areaKey)!;
   const tool = toolFor(area.tool_type);
 
@@ -394,8 +396,13 @@ export async function finishVerified(service: Service, userId: string, attemptId
     const result = completion as { rating_delta: number; points: number; next_available_at: string; evidence_id?: string; already_completed: boolean };
     logArenaEvent("completion.verified", { userId, attemptId, ratingDelta: result.rating_delta, points: result.points, evidenceId: result.evidence_id ?? null, duplicate: result.already_completed });
     // The same pass also moves the student's role ELO (one ledger shared with the career assessment) and their skill graph.
-    const arenaSkillId = (await service.from("arena_skill_areas").select("skill_id").eq("role_key", attempt.role_key).eq("area_key", attempt.skill_area_key ?? "").maybeSingle()).data?.skill_id ?? null;
-    await recordArenaPass(userId, { attemptId, roleKey: attempt.role_key, skillId: arenaSkillId, difficulty }, service as unknown as Db);
+    const db = service as unknown as Db;
+    const areaKey = attempt.skill_area_key ?? "";
+    const [{ data: primary }, { data: extra }] = await Promise.all([
+      db.from("arena_skill_areas").select("skill_id").eq("role_key", attempt.role_key).eq("area_key", areaKey).maybeSingle(),
+      db.from("arena_area_extra_skills").select("skill_id").eq("role_key", attempt.role_key).eq("area_key", areaKey),
+    ]);
+    await recordArenaPass(userId, { attemptId, roleKey: attempt.role_key, skillId: primary?.skill_id ?? null, extraSkillIds: ((extra ?? []) as { skill_id: string }[]).map((e) => e.skill_id), difficulty }, db);
     return { points: result.points, nextAvailableAt: result.next_available_at, evidenceId: result.evidence_id ?? null };
   } catch (e) {
     logArenaEvent("completion.failed", { userId, attemptId, reason: (e as Error).message.slice(0, 200) });

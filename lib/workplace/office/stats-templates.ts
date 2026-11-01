@@ -10,6 +10,7 @@ type Spec = Pick<StatsTemplate, "id" | "difficulty" | "minLevel">;
 const D: Record<string, Spec> = {
   basket: { id: "stat-basket-summary", difficulty: "easy", minLevel: "fresher" },
   spread: { id: "stat-spread", difficulty: "easy", minLevel: "fresher" },
+  tenure: { id: "stat-tenure-and-basket", difficulty: "medium", minLevel: "fresher" },
   interval: { id: "stat-order-interval", difficulty: "medium", minLevel: "junior" },
   correlation: { id: "stat-correlation", difficulty: "medium", minLevel: "junior" },
   regression: { id: "stat-regression", difficulty: "hard", minLevel: "mid" },
@@ -39,6 +40,17 @@ export const STATS_TEMPLATES: StatsTemplate[] = [
         scenario: "Hello, I want to know how spread out our order values are, because it decides how reliable a monthly forecast can be. Give me the sample standard deviation of the order value, and how long customers typically wait before their first order after signing up (the median).",
         dataset: orderStatsTable(tables, rng, 70, DELIVERED),
         questions: [{ id: "q1", statistic: "sample_std", column: "order_value" }, { id: "q2", statistic: "median", column: "days_since_signup" }],
+      });
+    },
+  },
+  {
+    ...D.tenure, areas: AREAS,
+    build(rng, tables) {
+      return make(D.tenure, {
+        title: "Do longer-standing customers spend more?", requester: cast.marketing, skillTags: ["Statistics", "Correlation", "Mean"],
+        scenario: "Hi, I'd like a first look before we plan a loyalty offer. Tell me how strongly the days since a customer signed up move together with the value of their order (the correlation), and the average number of lines per order.",
+        dataset: orderStatsTable(tables, rng, 60, DELIVERED),
+        questions: [{ id: "q1", statistic: "pearson_r", x_column: "days_since_signup", y_column: "order_value" }, { id: "q2", statistic: "mean", column: "items" }],
       });
     },
   },

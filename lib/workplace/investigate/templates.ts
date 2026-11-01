@@ -20,7 +20,30 @@ const INCIDENT_FIELDS = (impact: string): AnswerField[] => [
   impactField(impact),
 ];
 
+/** Entry-level detective ticket: the requester already says which way to split the business, so the fresher only has to find the group and size it. */
+const guidedSegment = (id: string, dim: "channel" | "city", status: "cancelled" | "returned", title: (w: Window) => string, scenario: (w: Window) => string): InvestigationTemplate => ({
+  id, difficulty: "easy", minLevel: "fresher", areas: INVESTIGATE,
+  build(rng, tables) {
+    const w = quarter(rng.int(1, 3));
+    const planted = plantSegmentFault(tables, rng, { window: w, status, dimensions: [dim] });
+    if (!planted) return null;
+    const found = detectSegmentFault(planted.tables, w, status)!;
+    const [part] = found.parts;
+    return {
+      templateId: id, mode: "detective", skillTags: ["Root-cause analysis", "SQL", "Segmentation"], difficulty: "easy", minLevel: "fresher",
+      title: title(w), requester: status === "returned" ? cast.finance : cast.sales, scenario: scenario(w), tables: planted.tables,
+      fields: [
+        { key: "value", label: `Which ${DIMENSION_LABEL[dim]} is it?`, type: "text", placeholder: `the name of the ${DIMENSION_LABEL[dim]}` },
+        impactField(`How much revenue is in that ${DIMENSION_LABEL[dim]}'s ${status} orders in ${w.label}?`),
+      ],
+      answers: { value: part.value, impact: found.impact }, tolerance: { impact: 1 },
+    } satisfies InvestigationDraft;
+  },
+});
+
 export const INVESTIGATION_TEMPLATES: InvestigationTemplate[] = [
+  guidedSegment("guided-channel-cancellations", "channel", "cancelled", (w) => `Which sales channel is losing orders in ${w.label}?`, (w) => `Hi, welcome to the team. Cancelled orders look high in ${w.label} and I think it's one sales channel. Could you group the orders by channel, find the one that stands out, and tell me how much revenue is in its cancelled orders?`),
+  guidedSegment("guided-city-returns", "city", "returned", (w) => `Which city is sending back the most orders in ${w.label}?`, (w) => `Hello, returns are up in ${w.label} and I suspect one city. Please split the orders by city, find the one that stands out, and tell me how much revenue is in its returned orders.`),
   {
     id: "detect-cancellation-spike", difficulty: "medium", minLevel: "junior", areas: INVESTIGATE,
     build(rng, tables) {
@@ -85,6 +108,39 @@ export const INVESTIGATION_TEMPLATES: InvestigationTemplate[] = [
           impactField(`How much revenue is in the returned orders of that channel and segment in ${w.label}?`),
         ],
         answers: { channel, segment, impact: found.impact }, tolerance: { impact: 1 },
+      } satisfies InvestigationDraft;
+    },
+  },
+  {
+    id: "guided-duplicate-load", difficulty: "easy", minLevel: "fresher", areas: INCIDENT,
+    build(rng, tables) {
+      const planted = plantDuplicateLoad(tables, rng);
+      if (!planted) return null;
+      return {
+        templateId: "guided-duplicate-load", mode: "incident", skillTags: ["Data quality", "Incident analysis", "SQL"], difficulty: "easy", minLevel: "fresher",
+        title: "One day's orders look doubled on the dashboard", requester: cast.finance,
+        scenario: "Hi, one day on the revenue dashboard is almost double its neighbours. I think the same orders were loaded twice. Please check the orders table for repeated order ids, tell me which day it was, and how much delivered revenue is overstated.",
+        tables: planted.tables, fields: INCIDENT_FIELDS("By how much (₹, delivered orders) is the dashboard overstated?"),
+        answers: { fault: FAULT_OPTIONS[0], where: planted.date, impact: planted.overstated }, tolerance: { impact: 1 },
+      } satisfies InvestigationDraft;
+    },
+  },
+  {
+    id: "guided-stale-status", difficulty: "medium", minLevel: "fresher", areas: INCIDENT,
+    build(rng, tables) {
+      const planted = plantStaleStatus(tables, rng);
+      if (!planted) return null;
+      return {
+        templateId: "guided-stale-status", mode: "incident", skillTags: ["Data quality", "Incident analysis", "SQL"], difficulty: "medium", minLevel: "fresher",
+        title: "Orders stopped turning 'delivered'", requester: cast.success,
+        scenario: "Hi, our delivered-revenue line has gone flat although orders keep coming in. Please look at the order statuses by date, find the last day any order was delivered, and add up the value of the orders still at 'shipped' after that day.",
+        tables: planted.tables,
+        fields: [
+          { key: "fault", label: "What is wrong with the data?", type: "choice", options: FAULT_OPTIONS },
+          { key: "where", label: "On which date was the last order delivered?", help: "As YYYY-MM-DD.", type: "text", placeholder: "YYYY-MM-DD" },
+          impactField("What is the total value of orders with status 'shipped' dated after that day?"),
+        ],
+        answers: { fault: FAULT_OPTIONS[2], where: planted.lastDelivered, impact: planted.stuckRevenue }, tolerance: { impact: 1 },
       } satisfies InvestigationDraft;
     },
   },
