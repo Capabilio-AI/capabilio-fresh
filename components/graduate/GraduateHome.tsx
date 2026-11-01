@@ -23,7 +23,7 @@ export function GraduateHome({ data, interviewUnlocked }: { data: GraduateHomeDa
         </h1>
         <p className="mt-3 max-w-[64ch] font-lp-body text-[15px] leading-relaxed text-[var(--m-muted)]">
           {overview && roleName
-            ? `${proof.earned} of ${proof.total} skills for ${roleName} are proven by real work. Your assessment put your starting point at ${overview.readiness}%: that shows where you begin, while badges are what a recruiter can verify.`
+            ? `${proof.earned} of ${proof.total} skills for ${roleName} are proven by real work. Your assessment put your starting point at ${overview.screened}%: that shows where you begin, while badges are what a recruiter can verify.`
             : "Take the career assessment and your starting point, skill gaps and best-fit roles appear here. Badges then come from the work you do."}
         </p>
       </header>

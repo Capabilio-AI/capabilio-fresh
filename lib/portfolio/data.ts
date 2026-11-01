@@ -6,6 +6,8 @@ import { getStatedCareerInterest } from "@/lib/career/interest-statement";
 import { buildCapabilityGroups, type CapabilityGroup, type PortfolioEvidence } from "@/lib/portfolio/view";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
+import { getCareerProfile } from "@/lib/assess/career-profile";
+import type { Db } from "@/lib/assess/db";
 import { getEducationEntries, type EducationEntry } from "@/lib/dashboard/education";
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
 import { summariseArenaWork, type ArenaWorkRole } from "@/lib/portfolio/arena-work";
@@ -223,10 +225,11 @@ async function loadGraph(userId: string): Promise<PortfolioData["graph"]> {
   const careerId = (intent as { primary_career_id: string | null } | null)?.primary_career_id;
   if (!careerId) return null;
   const [{ data: snap }, { data: career }] = await Promise.all([
-    db.from("career_skill_graph_snapshots").select("readiness, skills").eq("student_id", userId).eq("career_id", careerId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("career_skill_graph_snapshots").select("skills").eq("student_id", userId).eq("career_id", careerId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("careers").select("name").eq("id", careerId).maybeSingle(),
   ]);
   if (!snap) return null;
   const skills = ((snap as { skills: { name: string; score: number; evidenceCount: number; targetLevel?: number | null }[] }).skills ?? []).map((k) => ({ name: k.name, score: Math.round(k.score), evidenceCount: k.evidenceCount, targetLevel: typeof k.targetLevel === "number" ? Math.round(k.targetLevel) : null }));
-  return { careerName: (career as { name: string } | null)?.name ?? null, readiness: Math.round((snap as { readiness: number }).readiness), skills };
+  const profile = await getCareerProfile(db as unknown as Db, userId); // proven readiness: what recruiters see must not count sign-up answers as proof
+  return { careerName: (career as { name: string } | null)?.name ?? null, readiness: Math.round(profile.proven ?? 0), skills };
 }

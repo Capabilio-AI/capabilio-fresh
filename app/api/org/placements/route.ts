@@ -3,6 +3,7 @@ import { PlacementSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
 import { normalizeEligibleBranches } from "@/lib/org/branch-scope";
 import { notifyVisitOpened } from "@/lib/notifications/visit-open";
+import { normalizeWebsite } from "@/lib/org/website";
 
 /**
  * Record a company visit the college has confirmed. It is an `opportunities` row pinned to the caller's institution,
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
         drive_status: body.status,
         ctc_offered: body.ctcOffered ?? null,
         eligible_branches: eligibleBranches,
+        ...(body.companyWebsite ? { company_website: normalizeWebsite(body.companyWebsite) } : {}),
       })
       .select("id")
       .single();

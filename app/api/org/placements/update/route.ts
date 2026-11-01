@@ -4,6 +4,7 @@ import { orgRoute } from "@/lib/api/org-route";
 import { UpdateVisitSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
 import { normalizeEligibleBranches } from "@/lib/org/branch-scope";
+import { normalizeWebsite } from "@/lib/org/website";
 import { describeVisitChanges, type VisitDetails } from "@/lib/org/visits";
 import { notify } from "@/lib/notifications/notify";
 import { activeStudents, studentsWhoCanRegister } from "@/lib/notifications/audiences";
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
       eligible_branches: body.eligibleBranches === undefined ? before.eligible_branches : normalizeEligibleBranches(body.eligibleBranches),
       eligibility: body.eligibility ?? before.eligibility,
     };
-    const { error } = await db.from("opportunities").update(after).eq("id", before.id).eq("institution_id", ctx.institutionId);
+    const { error } = await db.from("opportunities").update({ ...after, ...(body.companyWebsite ? { company_website: normalizeWebsite(body.companyWebsite) } : {}) }).eq("id", before.id).eq("institution_id", ctx.institutionId);
     if (error) throw error;
 
     const changes = describeVisitChanges(before, after);

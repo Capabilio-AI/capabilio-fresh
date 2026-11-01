@@ -48,26 +48,27 @@ export function buildSkillResults(skills: readonly RoleSkill[], evidence: Readon
 }
 
 /**
- * Readiness 0-100 = sum(weight x attainment) / sum(weight) over EVERY skill the role needs, attainment being score / target capped
- * at 1. A skill nobody has measured counts as zero, not as "ignored", so a handful of answers can never look like a ready candidate;
- * critical skills carry more weight (via `weight`). Because scores are capped by proof (see skillCap), screening alone cannot pass
- * about half of what a role asks, and the rest has to be earned in Arena or verified work. `coverage` is the weighted share of the
- * role's skills that anything has measured, so the UI can say "based on N of M skills".
+ * Two readiness figures over EVERY skill the role needs (a skill nobody measured counts as zero, never as "ignored"), attainment being score / target capped at 1:
+ *   readiness  screened: counts every measured skill, including ones only sign-up answers support (each held at SCREEN_CAP). Where a student starts; used to match careers.
+ *   proven     counts only skills with at least one passed practical task (Arena / verified proof). This is the headline: a student who has only answered
+ *              questions is at 0, however well they answered. It moves only with real work.
+ * `coverage` is the weighted share of the role's skills that anything has measured, so the UI can say "based on N of M skills".
  */
-export function computeReadiness(results: readonly SkillResult[]): { readiness: number; coverage: number } {
-  let num = 0;
+export function computeReadiness(results: readonly SkillResult[]): { readiness: number; proven: number; coverage: number } {
+  let screened = 0;
+  let proven = 0;
   let measured = 0;
   let totalWeight = 0;
   for (const r of results) {
     totalWeight += r.weight;
     if (r.score === null) continue;
     measured += r.weight;
-    num += r.weight * Math.min(1, r.score / Math.max(1, r.targetLevel));
+    const attained = r.weight * Math.min(1, r.score / Math.max(1, r.targetLevel));
+    screened += attained;
+    if (r.proof > 0) proven += attained;
   }
-  return {
-    readiness: totalWeight === 0 ? 0 : Math.round((num / totalWeight) * 100),
-    coverage: totalWeight === 0 ? 0 : Math.round((measured / totalWeight) * 100),
-  };
+  const pct = (n: number) => (totalWeight === 0 ? 0 : Math.round((n / totalWeight) * 100));
+  return { readiness: pct(screened), proven: pct(proven), coverage: pct(measured) };
 }
 
 export interface Highlights {

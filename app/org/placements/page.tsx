@@ -65,6 +65,7 @@ export default async function PlacementsPage() {
           fields={[
             { name: "company", label: "Company", required: true, placeholder: "Infosys" },
             { name: "role", label: "Role(s) they are hiring for", required: true, placeholder: "Systems Engineer, Analyst" },
+            { name: "companyWebsite", label: "Company website (students read about the company before registering)", placeholder: "infosys.com" },
             { name: "opportunityType", label: "Type", type: "select", required: true, defaultValue: "job", options: [{ value: "job", label: "Full-time job" }, { value: "internship", label: "Internship" }] },
             { name: "driveDate", label: "Visit date", type: "date" },
             { name: "deadline", label: "Registration closes", type: "date" },

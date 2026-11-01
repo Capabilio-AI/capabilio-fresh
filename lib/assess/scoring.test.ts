@@ -38,3 +38,21 @@ describe("proof-capped readiness", () => {
     expect(hard.proof).toBeGreaterThan(easy.proof);
   });
 });
+
+describe("proven readiness", () => {
+  it("is zero for a student who has only answered questions, however well", () => {
+    const out = computeReadiness(buildSkillResults(role(10), Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`s${i}`, mcq(6)]))));
+    expect(out.coverage).toBe(100);
+    expect(out.readiness).toBeGreaterThan(40); // screened: where they start
+    expect(out.proven).toBe(0);
+  });
+
+  it("counts only the skills a passed task backs, and grows with each", () => {
+    const ev = (n: number) => Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`s${i}`, i < n ? [...mcq(4), ...arena(3)] : mcq(4)]));
+    const one = computeReadiness(buildSkillResults(role(10), ev(1))).proven;
+    const five = computeReadiness(buildSkillResults(role(10), ev(5))).proven;
+    expect(one).toBeGreaterThan(0);
+    expect(five).toBeGreaterThan(one);
+    expect(computeReadiness(buildSkillResults(role(10), ev(10))).proven).toBeGreaterThan(90);
+  });
+});

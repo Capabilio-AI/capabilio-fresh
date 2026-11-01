@@ -19,7 +19,10 @@ export interface CareerProfile {
   unlocked: boolean;
   role: { id: string; key: string; name: string } | null;
   elo: { rating: number; fromAssessment: number; fromArena: number; events: number; history: EloPoint[] } | null;
+  /** screened: every measured skill, sign-up answers included (where the student starts; used to match careers) */
   readiness: number | null;
+  /** proven: only skills backed by a passed practical task; the headline, 0 until real work exists */
+  proven: number | null;
   coverage: number | null;
   skills: SkillResult[];
   common: SectionBar[] | null;
@@ -30,7 +33,7 @@ export interface CareerProfile {
 /** The rating any surface shows: the shared profile once loaded, else the figure the server returned with the same snapshot. */
 export const displayRating = (profile: CareerProfile | null, fallback: number) => profile?.elo?.rating ?? fallback;
 
-const EMPTY = (status: OnboardingStatus, unlocked = false): CareerProfile => ({ status, unlocked, role: null, elo: null, readiness: null, coverage: null, skills: [], common: null, snapshotId: null, updatedAt: null });
+const EMPTY = (status: OnboardingStatus, unlocked = false): CareerProfile => ({ status, unlocked, role: null, elo: null, readiness: null, proven: null, coverage: null, skills: [], common: null, snapshotId: null, updatedAt: null });
 
 export async function getCareerProfile(db: Db, userId: string): Promise<CareerProfile> {
   const status = await getOnboardingStatus(db, userId);
@@ -65,6 +68,7 @@ export async function getCareerProfile(db: Db, userId: string): Promise<CareerPr
       history: history.slice(-60),
     },
     readiness: snap.readiness,
+    proven: computeReadiness(skills).proven,
     coverage: computeReadiness(skills).coverage,
     skills,
     common: ((common?.result as AssessmentResult | undefined)?.general) ?? null,
