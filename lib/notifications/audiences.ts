@@ -1,4 +1,5 @@
 import { onlyCurrentStudents } from "@/lib/org/current-students";
+import { getStudentDirection } from "@/lib/career/direction";
 import { branchMatchesAny } from "@/lib/org/branch-scope";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
@@ -19,4 +20,20 @@ export async function activeStudents(service: SupabaseClient<Database>, institut
   const rows = (data ?? []) as { user_id: string; branch: string | null }[];
   const open = !branches || branches.length === 0;
   return rows.filter((m) => open || branchMatchesAny(branches, m.branch)).map((m) => m.user_id);
+}
+
+/**
+ * Students who can register for a company visit right now: active, of an eligible branch, in the year Launchpad opens for them (the same
+ * rule the apply route enforces), and not in `exclude` (usually those who already registered). Checked a few at a time so a large college
+ * does not open hundreds of connections at once.
+ */
+export async function studentsWhoCanRegister(service: SupabaseClient<Database>, institutionId: string, branches: readonly string[] | null | undefined, exclude: ReadonlySet<string> = new Set()): Promise<string[]> {
+  const candidates = (await activeStudents(service, institutionId, branches)).filter((id) => !exclude.has(id));
+  const open: string[] = [];
+  const BATCH = 10;
+  for (let i = 0; i < candidates.length; i += BATCH) {
+    const checked = await Promise.all(candidates.slice(i, i + BATCH).map(async (id) => ((await getStudentDirection(service, id))?.launchpadOpen ? id : null)));
+    open.push(...checked.filter((id): id is string => id !== null));
+  }
+  return open;
 }
