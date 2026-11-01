@@ -10,6 +10,8 @@ export const CHART_TYPES = ["bar", "line", "pie", "table"] as const;
 export const AGGREGATIONS = ["sum", "avg", "count", "min", "max"] as const;
 export const BI_OPERATORS = ["=", "!=", ">", ">=", "<", "<="] as const;
 export const SORTS = ["dimension_asc", "measure_desc", "measure_asc"] as const;
+/** Quick measures, as in Power BI's own menu: show each group as a percent of the total, as a running total along the axis, or as one field divided by another. */
+export const QUICK_MEASURES = ["none", "percent_of_total", "running_total", "ratio"] as const;
 
 export const BiFilterSchema = z.object({ column: z.string(), operator: z.enum(BI_OPERATORS), value: z.union([z.number(), z.string().max(80)]) });
 export const BiSpecSchema = z.object({
@@ -18,6 +20,9 @@ export const BiSpecSchema = z.object({
   dimension_grain: z.enum(["value", "month"]).default("value"),
   measure: z.string().nullable(),
   aggregation: z.enum(AGGREGATIONS),
+  quick: z.enum(QUICK_MEASURES).default("none"),
+  /** the denominator field of a ratio (the measure is the numerator) */
+  measure2: z.string().nullable().default(null),
   filters: z.array(BiFilterSchema).max(3).default([]),
   sort: z.enum(SORTS).default("dimension_asc"),
   limit: z.number().int().min(1).max(20).nullable().default(null),
@@ -63,31 +68,50 @@ export function evaluateSpec(ds: Dataset, spec: BiSpec): SeriesPoint[] {
   if (spec.dimension_grain === "month" && ds.columns[dim].type !== "date") throw new Error("Monthly grouping needs a date column");
   const meas = spec.measure === null ? -1 : idx(spec.measure);
   if (spec.aggregation !== "count" && (meas === -1 || ds.columns[meas].type !== "number")) throw new Error("This aggregation needs a numeric measure");
+  const den = spec.measure2 === null ? -1 : idx(spec.measure2);
+  if (spec.quick === "ratio") {
+    if (spec.aggregation !== "sum" || den === -1 || ds.columns[den].type !== "number") throw new Error("A ratio needs the total of one numeric field divided by the total of another");
+  } else if ((spec.quick === "percent_of_total" || spec.quick === "running_total") && spec.aggregation !== "sum" && spec.aggregation !== "count") {
+    throw new Error("Percent of total and running total only make sense for a total or a count");
+  }
   const filters = spec.filters.map((f) => ({ i: idx(f.column), f }));
 
-  const groups = new Map<string, number[]>();
+  const groups = new Map<string, { vals: number[]; den: number }>();
   for (const row of ds.rows) {
     if (!filters.every(({ i, f }) => matches(row[i], f.operator, f.value))) continue;
     const raw = row[dim];
     if (raw === null) continue;
     const label = spec.dimension_grain === "month" ? String(raw).slice(0, 7) : String(raw);
-    const bucket = groups.get(label) ?? [];
-    if (spec.aggregation === "count") bucket.push(1);
-    else if (typeof row[meas] === "number") bucket.push(row[meas] as number);
+    const bucket = groups.get(label) ?? { vals: [], den: 0 };
+    if (spec.aggregation === "count") bucket.vals.push(1);
+    else if (typeof row[meas] === "number") bucket.vals.push(row[meas] as number);
+    if (den !== -1 && typeof row[den] === "number") bucket.den += row[den] as number;
     groups.set(label, bucket);
   }
 
   let series: SeriesPoint[] = [...groups.entries()]
-    .filter(([, vals]) => vals.length > 0)
-    .map(([label, vals]) => {
+    .filter(([, g]) => g.vals.length > 0)
+    .map(([label, g]) => {
+      const vals = g.vals;
       const value =
         spec.aggregation === "count" ? vals.length
         : spec.aggregation === "sum" ? vals.reduce((s, x) => s + x, 0)
         : spec.aggregation === "avg" ? vals.reduce((s, x) => s + x, 0) / vals.length
         : spec.aggregation === "min" ? Math.min(...vals)
         : Math.max(...vals);
-      return { label, value: Math.round(value * 100) / 100 };
-    });
+      return { label, value: spec.quick === "ratio" ? (g.den === 0 ? NaN : value / g.den) : value };
+    })
+    .filter((p) => Number.isFinite(p.value))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  if (spec.quick === "percent_of_total") {
+    const total = series.reduce((s, p) => s + p.value, 0);
+    series = total === 0 ? [] : series.map((p) => ({ label: p.label, value: (p.value / total) * 100 }));
+  } else if (spec.quick === "running_total") {
+    let running = 0;
+    series = series.map((p) => ({ label: p.label, value: (running += p.value) }));
+  }
+  series = series.map((p) => ({ label: p.label, value: Math.round(p.value * 100) / 100 }));
 
   series =
     spec.sort === "measure_desc" ? series.sort((a, b) => b.value - a.value || a.label.localeCompare(b.label))
@@ -100,7 +124,8 @@ export function evaluateSpec(ds: Dataset, spec: BiSpec): SeriesPoint[] {
 export function suitableChartTypes(ds: Dataset, spec: BiSpec, points: number): (typeof CHART_TYPES)[number][] {
   const dimType = ds.columns.find((c) => c.name === spec.dimension)?.type;
   if (spec.dimension_grain === "month" || dimType === "date") return ["line", "bar"];
-  if (points <= 6 && spec.aggregation !== "avg") return ["bar", "pie"];
+  // a pie is parts of one whole: it fits sums and shares, not averages or ratios
+  if (points <= 6 && spec.aggregation !== "avg" && spec.quick !== "ratio" && spec.quick !== "running_total") return ["bar", "pie"];
   return ["bar", "table"];
 }
 
@@ -148,6 +173,9 @@ export function describeSpec(spec: BiSpec): string[] {
   const lines = [
     spec.aggregation === "count" ? `Show the number of records per \`${spec.dimension}\`${spec.dimension_grain === "month" ? " (by month)" : ""}.` : `Show the ${AGG_LABEL[spec.aggregation]} of \`${spec.measure}\` per \`${spec.dimension}\`${spec.dimension_grain === "month" ? " (by month)" : ""}.`,
   ];
+  if (spec.quick === "percent_of_total") lines.push("Show each one as its percent of the overall total (the values add up to 100), not as an amount.");
+  else if (spec.quick === "running_total") lines.push("Show the running total: each point adds to everything before it.");
+  else if (spec.quick === "ratio" && spec.measure2) lines.push(`Show \`${spec.measure}\` divided by \`${spec.measure2}\` for each one (the total of one over the total of the other), not an average of the rows.`);
   for (const f of spec.filters) lines.push(`Only include rows where \`${f.column}\` ${f.operator} ${typeof f.value === "number" ? f.value : `"${f.value}"`}.`);
   if (spec.limit) lines.push(`Show only the top ${spec.limit} by value.`);
   else if (spec.sort === "measure_desc") lines.push("Order from highest to lowest value.");

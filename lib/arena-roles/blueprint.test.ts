@@ -42,10 +42,12 @@ describe("IT-01 Data Analyst blueprint", () => {
     }
   });
 
-  it("keeps Python blocked and unregistered", () => {
+  it("serves Python through the in-browser notebook, so student code never runs on the server", () => {
     const python = DATA_ANALYST.areas.find((a) => a.areaKey === "python")!;
-    expect(python.status).toBe("blocked");
-    expect(isRegisteredTool(python.toolType)).toBe(false);
+    expect(python.status).toBe("enabled");
+    expect(python.toolType).toBe("ml_workspace");
+    expect(python.executionMode).toBe("client-run");
+    expect(DATA_ANALYST.limitations.join(" ")).toMatch(/own browser/);
   });
 });
 

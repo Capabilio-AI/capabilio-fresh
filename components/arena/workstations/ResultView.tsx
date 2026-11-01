@@ -58,10 +58,11 @@ export function ResultView({ result }: { result: SqlResult }) {
       {active === "table" ? (
         <div className="max-h-[340px] overflow-auto rounded-md border border-app-border">
           <table className="w-full border-collapse font-lp-mono text-[12.5px]">
-            <thead className="sticky top-0 bg-app-background">
+            <thead className="sticky top-0 z-10 bg-app-background">
               <tr>
+                <th className="w-10 border-b border-r border-app-border bg-app-background px-2 py-1.5 text-right font-normal text-app-muted" aria-label="Row number" />
                 {result.columns.map((c) => (
-                  <th key={c} className="border-b border-app-border px-3 py-2 text-left font-semibold text-app-charcoal">
+                  <th key={c} className="whitespace-nowrap border-b border-r border-app-border px-3 py-1.5 text-left font-semibold text-app-charcoal last:border-r-0">
                     {c}
                   </th>
                 ))}
@@ -69,9 +70,10 @@ export function ResultView({ result }: { result: SqlResult }) {
             </thead>
             <tbody>
               {result.rows.map((row, i) => (
-                <tr key={i} className="border-b border-app-border last:border-0 even:bg-app-background/60">
+                <tr key={i} className="border-b border-app-border last:border-0 hover:bg-app-blue-container/50">
+                  <td className="border-r border-app-border bg-app-background px-2 py-1 text-right tabular-nums text-app-muted">{i + 1}</td>
                   {row.map((cell, ci) => (
-                    <td key={ci} className={`whitespace-nowrap px-3 py-1.5 ${typeof cell === "number" ? "text-right tabular-nums" : ""} ${cell === null ? "text-app-rose" : "text-app-charcoal"}`}>
+                    <td key={ci} className={`whitespace-nowrap border-r border-app-border px-3 py-1 last:border-r-0 ${typeof cell === "number" ? "text-right tabular-nums" : ""} ${cell === null ? "italic text-app-muted" : "text-app-charcoal"}`}>
                       {formatCell(cell)}
                     </td>
                   ))}

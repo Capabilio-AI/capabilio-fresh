@@ -8,8 +8,8 @@ const SEEDS = Array.from({ length: 10 }, (_, i) => hashSeed("investigate-test", 
 
 describe("investigation tickets on the company data", () => {
   it("has detective tickets for the investigation area and incidents for the incident area, in more than one difficulty", () => {
-    expect(INVESTIGATION_TEMPLATES.filter((t) => t.areas.includes("investigation")).length).toBe(3);
-    expect(INVESTIGATION_TEMPLATES.filter((t) => t.areas.includes("incident")).length).toBe(4);
+    expect(INVESTIGATION_TEMPLATES.filter((t) => t.areas.includes("investigation")).length).toBe(5);
+    expect(INVESTIGATION_TEMPLATES.filter((t) => t.areas.includes("incident")).length).toBe(6);
     expect(new Set(INVESTIGATION_TEMPLATES.map((t) => t.difficulty)).size).toBeGreaterThan(1);
   });
 

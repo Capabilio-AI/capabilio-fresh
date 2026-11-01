@@ -8,6 +8,7 @@ import { ML_TEMPLATES, type MlContent, type MlDraft, type MlKey } from "@/lib/wo
 import { generateAiMl } from "@/lib/workplace/ml/ai";
 import { ML_ENGINEER_TEMPLATES } from "@/lib/workplace/ml-engineer/tickets";
 import { DATA_SCIENCE_ML_TEMPLATES } from "@/lib/workplace/data-science/ml-templates";
+import { ANALYST_PYTHON_TEMPLATES } from "@/lib/workplace/analyst-python/templates";
 import { isTemplateOnlyArea } from "../template-only";
 import { logArenaEvent } from "../log";
 
@@ -37,7 +38,7 @@ const challenge = (ctx: GenerationContext, draft: MlDraft, model: string, provid
 
 function fromTemplates(ctx: GenerationContext): GeneratedChallenge {
   const areaKey = ctx.areaKey ?? "model-training";
-  for (const tier of templateTiers([...ML_TEMPLATES, ...ML_ENGINEER_TEMPLATES, ...DATA_SCIENCE_ML_TEMPLATES], { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
+  for (const tier of templateTiers([...ML_TEMPLATES, ...ML_ENGINEER_TEMPLATES, ...DATA_SCIENCE_ML_TEMPLATES, ...ANALYST_PYTHON_TEMPLATES], { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
     const fresh = tier.filter((t) => !ctx.avoidTitles.includes(t.title));
     const pool = fresh.length ? fresh : tier;
     const rng = makeRng(ctx.ticketSeed ?? hashSeed("ml"));

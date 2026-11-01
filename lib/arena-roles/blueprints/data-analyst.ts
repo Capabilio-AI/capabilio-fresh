@@ -8,6 +8,7 @@ import type { RoleBlueprint } from "../blueprint";
  * - "executed": the student's own query/work is run and its output compared with the server's.
  * - "computed-key": the server derives the expected answer from the task parameters and checks the submission against it. Student work is
  *   not executed as code.
+ * - "client-run": the student's code runs in their browser; the server grades the numbers they send against a key it never shipped.
  * - "evaluated-spec": a structured spec is evaluated on the dataset and compared with the expected series.
  */
 export const DATA_ANALYST: RoleBlueprint = {
@@ -24,6 +25,7 @@ export const DATA_ANALYST: RoleBlueprint = {
     { id: "da.root_cause", label: "Root-cause investigation" },
     { id: "da.anomaly", label: "Data quality and anomaly detection" },
     { id: "da.communication", label: "Communicating evidence-based findings" },
+    { id: "da.python", label: "Data analysis in Python (pandas)" },
   ],
   areas: [
     { areaKey: "sql", toolType: "sql_workspace", generationVersion: "sql.gen.v1", gradingVersion: "sql.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.sql", "da.metrics"] },
@@ -34,21 +36,12 @@ export const DATA_ANALYST: RoleBlueprint = {
     { areaKey: "data_cleaning", toolType: "cleaning_workspace", generationVersion: "cleaning.gen.v1", gradingVersion: "cleaning.grade.v1", executionMode: "computed-key", status: "enabled", competencies: ["da.cleaning", "da.anomaly"] },
     { areaKey: "investigation", toolType: "investigation_workspace", generationVersion: "investigation.gen.v1", gradingVersion: "investigation.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.root_cause", "da.anomaly", "da.communication"] },
     { areaKey: "incident", toolType: "investigation_workspace", generationVersion: "investigation.gen.v1", gradingVersion: "investigation.grade.v1", executionMode: "executed", status: "enabled", competencies: ["da.root_cause", "da.communication"] },
-    {
-      areaKey: "python",
-      toolType: "python_workspace",
-      generationVersion: "python.gen.v0",
-      gradingVersion: "python.grade.v0",
-      executionMode: "none",
-      status: "blocked",
-      blockedReason: "No isolated Python executor with network egress denied exists. Student code is never run in the application process.",
-      competencies: [],
-    },
+    { areaKey: "python", toolType: "ml_workspace", generationVersion: "ml.gen.v1", gradingVersion: "ml.grade.v1", executionMode: "client-run", status: "enabled", competencies: ["da.python", "da.cleaning", "da.metrics"] },
   ],
   // Honest limits: these are graded through findings, not free-text quality.
   limitations: [
     "da.communication is verified only through the correctness of the submitted findings and the explain-your-work interview, not through prose quality.",
-    "Python analysis is not assessed until an isolated executor exists.",
-    "Dashboard grading compares the structured spec's series, not visual design.",
+    "Python runs in the student's own browser (Pyodide), never on our servers. Only the numbers they report are graded, not their code, so code style is not assessed.",
+    "Dashboard grading compares the structured spec's series, not visual design. The builder offers Power BI-style quick measures (percent of total, running total, ratio of two fields) but no DAX and no data model, so the skill proven is building measures and charts from a brief, not writing DAX.",
   ],
 };
