@@ -29,6 +29,8 @@ export async function POST(request: Request) {
 
     const { error } = await service.from("applications").upsert({ opportunity_id: opp.id, user_id: ctx.userId }, { onConflict: "opportunity_id,user_id", ignoreDuplicates: true });
     if (error) throw error;
+    // keyed by the registration itself: a student who withdrew and registered again is a new registration the college should hear about
+    const { data: registration } = await service.from("applications").select("id").eq("opportunity_id", opp.id).eq("user_id", ctx.userId).maybeSingle();
     const { data: me } = await service.from("profiles").select("full_name").eq("id", ctx.userId).maybeSingle();
     await notify(service, {
       userIds: await staffWithPermission(service, ctx.institutionId, "placements"),
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
       href: `/org/placements/${opp.id}`,
       actorId: ctx.userId,
       institutionId: ctx.institutionId,
-      dedupeKey: `apply:${opp.id}:${ctx.userId}`,
+      dedupeKey: `apply:${registration?.id ?? `${opp.id}:${ctx.userId}`}`,
     });
     return {};
   });

@@ -14,7 +14,7 @@ import { matchJob } from "@/lib/launchpad/match";
 import { JobMatch } from "@/components/launchpad/JobMatch";
 import { StudentPlacementOffers } from "@/components/org/StudentPlacementOffers";
 import { ActionButton } from "@/components/org/ActionButton";
-import { REGISTRATION_LABEL } from "@/lib/org/visits";
+import { REGISTRATION_LABEL, canWithdraw } from "@/lib/org/visits";
 
 export const metadata: Metadata = { title: "Launchpad — Capabilio AI" };
 
@@ -154,7 +154,12 @@ export default async function LaunchpadPage() {
                 {opp.campus && (
                   <div>
                     {appliedStatus.has(opp.id) ? (
-                      <span className="rounded-full border border-app-border px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">{APPLIED_LABEL[appliedStatus.get(opp.id)!] ?? "Registered"}</span>
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-app-border px-2.5 py-1 font-lp-mono text-[11px] font-semibold text-app-charcoal">{APPLIED_LABEL[appliedStatus.get(opp.id)!] ?? "Registered"}</span>
+                        {canWithdraw(appliedStatus.get(opp.id)!, opp.driveStatus) && (
+                          <ActionButton action="/api/launchpad/withdraw" body={{ opportunityId: opp.id }} label="Withdraw" variant="ghost" confirm={`Withdraw your registration for ${opp.company}? The placement office will be told.`} />
+                        )}
+                      </span>
                     ) : opp.driveStatus === "planned" ? (
                       <span className="font-lp-body text-[12px] text-app-muted">Registration opens soon</span>
                     ) : (
