@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const { data: app } = await service.from("applications").select("id, status").eq("opportunity_id", visit.id).eq("user_id", ctx.userId).maybeSingle();
     if (!app) return NextResponse.json({ error: "You haven't registered for this visit." }, { status: 404 });
     if (!canWithdraw(app.status, visit.drive_status)) return NextResponse.json({ error: "This registration can no longer be withdrawn. Contact your placement office." }, { status: 409 });
-    const { data: offer } = await untyped(service).from("org_placements").select("id").eq("opportunity_id", visit.id).eq("student_user_id", ctx.userId).limit(1);
+    const { data: offer } = await untyped(service).from("org_placements").select("id").eq("opportunity_id", visit.id).eq("student_user_id", ctx.userId).order("id").limit(1);
     if (offer && offer.length > 0) return NextResponse.json({ error: "An offer has already been released to you, so you can't withdraw." }, { status: 409 });
 
     const { error } = await service.from("applications").delete().eq("id", app.id).eq("user_id", ctx.userId);
