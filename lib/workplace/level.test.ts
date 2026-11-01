@@ -4,9 +4,10 @@ import { experienceLevel, levelAtLeast, yearsSince } from "./level";
 const NOW = new Date("2026-10-15");
 
 describe("experience level", () => {
-  it("treats students and recent graduates as freshers whatever the dates say", () => {
+  it("treats students as freshers whatever the dates say, and recent graduates as juniors", () => {
     expect(experienceLevel({ stage: "student", startDates: ["2015-01-01"], now: NOW })).toBe("fresher");
-    expect(experienceLevel({ stage: "graduate", startDates: [], now: NOW })).toBe("fresher");
+    expect(experienceLevel({ stage: "graduate", startDates: [], now: NOW })).toBe("junior");
+    expect(experienceLevel({ stage: "graduate", startDates: ["2015-01-01"], now: NOW })).toBe("junior");
   });
 
   it("grades professionals by years since their earliest job", () => {

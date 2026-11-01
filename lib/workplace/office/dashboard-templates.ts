@@ -17,13 +17,17 @@ const D: Record<string, Spec> = {
   running: { id: "dash-running-revenue", difficulty: "medium", minLevel: "fresher" },
   price: { id: "dash-price-per-unit", difficulty: "medium", minLevel: "junior" },
   qshare: { id: "dash-quarter-channel-share", difficulty: "medium", minLevel: "junior" },
+  daxReturn: { id: "dash-dax-return-rate", difficulty: "medium", minLevel: "junior" },
+  daxShare: { id: "dash-dax-city-share", difficulty: "medium", minLevel: "junior" },
+  daxPrice: { id: "dash-dax-delivered-price", difficulty: "medium", minLevel: "junior" },
+  daxLoss: { id: "dash-dax-return-loss", difficulty: "hard", minLevel: "mid" },
   cities: { id: "dash-top-cities", difficulty: "medium", minLevel: "junior" },
   returns: { id: "dash-return-hotspots", difficulty: "medium", minLevel: "junior" },
   segment: { id: "dash-segment-average", difficulty: "hard", minLevel: "mid" },
   quarter: { id: "dash-quarter-leaders", difficulty: "hard", minLevel: "mid" },
 };
 
-const spec = (s: Partial<BiSpec> & Pick<BiSpec, "chart_type" | "dimension" | "aggregation" | "measure">): BiSpec => ({ dimension_grain: "value", filters: [], sort: "dimension_asc", limit: null, quick: "none", measure2: null, ...s });
+const spec = (s: Partial<BiSpec> & Pick<BiSpec, "chart_type" | "dimension" | "aggregation" | "measure">): BiSpec => ({ dimension_grain: "value", filters: [], sort: "dimension_asc", limit: null, quick: "none", measure2: null, dax: null, ...s });
 const delivered = { column: "status", operator: "=" as const, value: "delivered" };
 
 const make = (s: Spec, draft: Omit<DashboardDraft, "templateId" | "difficulty" | "minLevel">): DashboardDraft => ({ templateId: s.id, difficulty: s.difficulty, minLevel: s.minLevel, ...draft });
@@ -97,6 +101,47 @@ export const DASHBOARD_TEMPLATES: DashboardTemplate[] = [
         title: `${q.label}: how the sales channels shared the revenue`, requester: cast.marketing, skillTags: ["Dashboards", "Quick measures", "Percent of total", "Date filters"],
         scenario: `Hello, for the ${q.label} marketing review show me each channel's percent of delivered revenue in that quarter only, largest first. Orders outside the quarter must not count toward the total either.`,
         dataset: reportingTable(tables, rng, 160), spec: spec({ chart_type: "pie", dimension: "channel", measure: "revenue", aggregation: "sum", quick: "percent_of_total", filters: [delivered, { column: "order_date", operator: ">=", value: q.start }, { column: "order_date", operator: "<", value: q.end }], sort: "measure_desc" }),
+      });
+    },
+  },
+  {
+    ...D.daxReturn, areas: AREAS,
+    build(rng, tables) {
+      return make(D.daxReturn, {
+        title: "Which channel has the worst return rate?", requester: cast.success, skillTags: ["Dashboards", "DAX", "CALCULATE", "Rates"],
+        scenario: "Hi, I want a return rate for each sales channel on the report: of all the order lines the channel sold, what percent came back? That is a measure, not a column, so please write it as a DAX measure and chart it, worst channel first.",
+        dataset: reportingTable(tables, rng, 160), spec: spec({ chart_type: "bar", dimension: "channel", measure: null, aggregation: "sum", dax: 'DIVIDE(CALCULATE(COUNTROWS(), [status] = "returned"), COUNTROWS()) * 100', sort: "measure_desc" }),
+      });
+    },
+  },
+  {
+    ...D.daxShare, areas: AREAS,
+    build(rng, tables) {
+      return make(D.daxShare, {
+        title: "Each city's share of delivered revenue", requester: cast.sales, skillTags: ["Dashboards", "DAX", "CALCULATE", "ALL", "Share of total"],
+        scenario: "Hello, for the regional review I need each city's share of the company's delivered revenue, as a percent. The denominator has to be the company-wide delivered revenue, which does not change from bar to bar. Please write the measure in DAX (hint: CALCULATE with ALL) and chart it, largest first.",
+        dataset: reportingTable(tables, rng, 170), spec: spec({ chart_type: "bar", dimension: "city", measure: null, aggregation: "sum", dax: 'DIVIDE(CALCULATE(SUM([revenue]), [status] = "delivered"), CALCULATE(SUM([revenue]), [status] = "delivered", ALL([city]))) * 100', sort: "measure_desc" }),
+      });
+    },
+  },
+  {
+    ...D.daxPrice, areas: AREAS,
+    build(rng, tables) {
+      return make(D.daxPrice, {
+        title: "What price per unit do delivered orders realise?", requester: cast.category, skillTags: ["Dashboards", "DAX", "CALCULATE", "DIVIDE"],
+        scenario: "Hi, for each category I need the price we actually realise per unit on delivered orders: delivered revenue divided by delivered units. Write it as a DAX measure so it stays right when the report is sliced, and chart it, highest first.",
+        dataset: reportingTable(tables, rng, 150), spec: spec({ chart_type: "bar", dimension: "category", measure: null, aggregation: "sum", dax: 'DIVIDE(CALCULATE(SUM([revenue]), [status] = "delivered"), CALCULATE(SUM([quantity]), [status] = "delivered"))', sort: "measure_desc" }),
+      });
+    },
+  },
+  {
+    ...D.daxLoss, areas: AREAS,
+    build(rng, tables) {
+      const q = quarter(rng.int(1, 3));
+      return make(D.daxLoss, {
+        title: `${q.label}: how much of the revenue came back as returns?`, requester: cast.finance, skillTags: ["Dashboards", "DAX", "CALCULATE", "Date filters", "Ratios"],
+        scenario: `Hello, for ${q.label} finance wants, for each city, the revenue of returned orders as a percent of delivered plus returned revenue. Only orders inside the quarter count. Please write the measure in DAX, filter the visual to the quarter, and chart it, worst city first.`,
+        dataset: reportingTable(tables, rng, 180), spec: spec({ chart_type: "bar", dimension: "city", measure: null, aggregation: "sum", dax: 'DIVIDE(CALCULATE(SUM([revenue]), [status] = "returned"), CALCULATE(SUM([revenue]), [status] = "delivered") + CALCULATE(SUM([revenue]), [status] = "returned")) * 100', filters: [{ column: "order_date", operator: ">=", value: q.start }, { column: "order_date", operator: "<", value: q.end }], sort: "measure_desc" }),
       });
     },
   },

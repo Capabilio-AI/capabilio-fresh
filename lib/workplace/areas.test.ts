@@ -4,11 +4,14 @@ import { areasForLevel } from "./areas";
 const ALL = ["sql", "spreadsheet", "debugging", "investigation", "incident"];
 
 describe("areasForLevel", () => {
-  it("keeps the everyday skill areas for everyone and holds back the demanding ones until the user has the experience", () => {
-    expect(areasForLevel(ALL, "fresher")).toEqual(["sql", "spreadsheet", "debugging"]);
-    expect(areasForLevel(ALL, "junior")).toEqual(["sql", "spreadsheet", "debugging", "investigation"]);
-    expect(areasForLevel(ALL, "mid")).toEqual(ALL);
-    expect(areasForLevel(ALL, "senior")).toEqual(ALL);
+  it("serves every Data Analyst area to everyone, since investigation and incidents have guided entry-level tickets", () => {
+    expect(areasForLevel(ALL, "fresher")).toEqual(ALL);
+    expect(areasForLevel(ALL, "junior")).toEqual(ALL);
+  });
+
+  it("still holds back an area that has no entry-level tickets until the user has the experience", () => {
+    expect(areasForLevel(["sql", "pipeline-debugging"], "fresher")).toEqual(["sql"]);
+    expect(areasForLevel(["sql", "pipeline-debugging"], "junior")).toEqual(["sql", "pipeline-debugging"]);
   });
 
   it("never leaves a role with nothing to serve", () => {

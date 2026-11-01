@@ -8,7 +8,7 @@ import { BRANCHES, KAVERI } from "./kaveri";
 const { cast } = KAVERI;
 const AREAS = ["reporting"];
 const branchOf = new Map(BRANCHES.map(([id, , city, region]) => [id, { city, region }]));
-const spec = (s: Partial<BiSpec> & Pick<BiSpec, "chart_type" | "dimension" | "aggregation" | "measure">): BiSpec => ({ dimension_grain: "value", filters: [], sort: "dimension_asc", limit: null, quick: "none", measure2: null, ...s });
+const spec = (s: Partial<BiSpec> & Pick<BiSpec, "chart_type" | "dimension" | "aggregation" | "measure">): BiSpec => ({ dimension_grain: "value", filters: [], sort: "dimension_asc", limit: null, quick: "none", measure2: null, dax: null, ...s });
 const closed = { column: "status", operator: "=" as const, value: "closed" };
 
 /** A flat service-request report (one row per request, branch city and region joined in), sampled per user. */

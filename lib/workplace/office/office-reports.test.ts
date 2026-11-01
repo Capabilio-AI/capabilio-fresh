@@ -24,7 +24,8 @@ describe("dashboard tickets on the company data", () => {
         // the same chart over a different slice of the data must not pass
         const other = draft.spec.dimension === "city" ? "category" : "city";
         expect(gradeDashboard(draft.dataset, draft.spec, { ...draft.spec, dimension: other }).passed).toBe(false);
-        expect(gradeDashboard(draft.dataset, draft.spec, { ...draft.spec, filters: [] }).passed).toBe(false);
+        // a ticket whose filtering lives inside its DAX formula has no visual filter to drop
+        if (draft.spec.filters.length > 0) expect(gradeDashboard(draft.dataset, draft.spec, { ...draft.spec, filters: [] }).passed).toBe(false);
       }
       expect(ok, `rejections: ${reasons.join(" | ")}`).toBeGreaterThanOrEqual(Math.ceil(SEEDS.length * 0.9));
     });
