@@ -63,3 +63,10 @@ export function describeVisitChanges(before: VisitDetails, after: VisitDetails):
   if (branchList(before.eligible_branches) !== branchList(after.eligible_branches)) out.push(`Open to: ${branchList(before.eligible_branches)} \u2192 ${branchList(after.eligible_branches)}`);
   return out;
 }
+
+/**
+ * Pure. A student may take back their registration while it is still just a registration (or a shortlisting) and the visit has not finished.
+ * Once the college marked them selected or not selected, or the visit is over, the record is the college's and stays.
+ */
+export const canWithdraw = (applicationStatus: string, visitStatus: string): boolean =>
+  (applicationStatus === "submitted" || applicationStatus === "shortlisted") && (visitStatus === "registration_open" || visitStatus === "planned");

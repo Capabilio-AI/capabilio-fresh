@@ -52,3 +52,18 @@ describe("describeVisitChanges", () => {
     expect(describeVisitChanges({ ...base, eligible_branches: ["CSE"] }, base)).toEqual(["Open to: CSE → all branches"]);
   });
 });
+
+import { canWithdraw } from "./visits";
+
+describe("canWithdraw", () => {
+  it("lets a student withdraw while registered or shortlisted and the visit is still going", () => {
+    expect(canWithdraw("submitted", "registration_open")).toBe(true);
+    expect(canWithdraw("shortlisted", "registration_open")).toBe(true);
+  });
+  it("does not once the college has decided or the visit has finished", () => {
+    expect(canWithdraw("accepted", "registration_open")).toBe(false);
+    expect(canWithdraw("rejected", "registration_open")).toBe(false);
+    expect(canWithdraw("submitted", "completed")).toBe(false);
+    expect(canWithdraw("submitted", "cancelled")).toBe(false);
+  });
+});
