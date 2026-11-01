@@ -27,3 +27,28 @@ describe("registrationsToCsv", () => {
     expect(line.startsWith("1,'=HYPERLINK(1),,")).toBe(true);
   });
 });
+
+import { describeVisitChanges, type VisitDetails } from "./visits";
+
+describe("describeVisitChanges", () => {
+  const base: VisitDetails = { role: "Data Analyst", location: "Seminar Hall A", ctc_offered: "10 LPA", drive_date: "2026-11-12", deadline: "2026-11-10", eligible_branches: null, eligibility: "60%+" };
+
+  it("says nothing when nothing a student cares about changed", () => {
+    expect(describeVisitChanges(base, { ...base })).toEqual([]);
+    expect(describeVisitChanges(base, { ...base, eligibility: "60%+, no backlogs" })).toEqual([]);
+  });
+
+  it("reports each change as was to now, in plain words", () => {
+    const out = describeVisitChanges(base, { ...base, drive_date: "2026-11-15", ctc_offered: "12 LPA", location: null });
+    expect(out).toEqual(["Visit date: 12 Nov → 15 Nov", "Where: Seminar Hall A → not set", "Package: 10 LPA → 12 LPA"]);
+  });
+
+  it("reports a deadline that was added or moved", () => {
+    expect(describeVisitChanges({ ...base, deadline: null }, base)).toEqual(["Registration closes: not set → 10 Nov"]);
+  });
+
+  it("reports branches changing between 'all' and a list", () => {
+    expect(describeVisitChanges(base, { ...base, eligible_branches: ["CSE", "ECE"] })).toEqual(["Open to: all branches → CSE, ECE"]);
+    expect(describeVisitChanges({ ...base, eligible_branches: ["CSE"] }, base)).toEqual(["Open to: CSE → all branches"]);
+  });
+});

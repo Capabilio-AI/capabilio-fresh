@@ -75,6 +75,20 @@ export const PlacementSchema = z
   })
   .strict();
 
+/** Editing a company visit: only what changes. The company and who created it are fixed; a blank field leaves the value as it is. */
+export const UpdateVisitSchema = z
+  .object({
+    opportunityId: z.string().uuid(),
+    role: z.string().trim().min(1).max(200).optional(),
+    location: optionalText(200),
+    ctcOffered: optionalText(100),
+    driveDate: dateOnly,
+    deadline: dateOnly,
+    eligibleBranches: z.array(z.string().trim().min(1).max(200)).max(30).optional(),
+    eligibility: optionalText(1000),
+  })
+  .strict();
+
 export const MAX_POST_IMAGES = 10;
 
 export const PostSchema = z

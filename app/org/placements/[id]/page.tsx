@@ -5,10 +5,11 @@ import { FileText } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { REGISTRATION_LABEL, VISIT_STATUS } from "@/lib/org/visits";
+import { JsonForm } from "@/components/org/JsonForm";
 import { ActionButton } from "@/components/org/ActionButton";
 import { LetterUpload } from "@/components/org/LetterUpload";
 import { OfferForm } from "@/components/org/OfferForm";
-import { EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
+import { Collapsible, EmptyState, PageHeader, Panel, Pill } from "@/components/org/ui";
 
 export const metadata: Metadata = { title: "Company visit — Capabilio AI" };
 
@@ -79,6 +80,27 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
           </div>
         }
       />
+
+      {visit.drive_status !== "completed" && visit.drive_status !== "cancelled" && (
+        <Collapsible title="Edit visit details">
+          <JsonForm
+            action="/api/org/placements/update"
+            extra={{ opportunityId: visit.id }}
+            submitLabel="Save changes"
+            successMessage={rows.length > 0 ? "Saved. The students who registered have been notified of what changed." : "Saved."}
+            resetOnSuccess={false}
+            fields={[
+              { name: "role", label: "Role(s) they are hiring for", defaultValue: visit.role },
+              { name: "driveDate", label: "Visit date", type: "date", defaultValue: visit.drive_date ?? "" },
+              { name: "deadline", label: "Registration closes", type: "date", defaultValue: visit.deadline ?? "" },
+              { name: "ctcOffered", label: "Package", defaultValue: visit.ctc_offered ?? "" },
+              { name: "location", label: "Where (campus or online)", defaultValue: visit.location ?? "" },
+              { name: "eligibleBranches", label: "Open to branches (comma-separated; type all for every branch)", type: "list", defaultValue: visit.eligible_branches?.join(", ") ?? "all" },
+              { name: "eligibility", label: "Eligibility and selection process", type: "textarea", defaultValue: visit.eligibility ?? "" },
+            ]}
+          />
+        </Collapsible>
+      )}
 
       {(visit.eligibility || visit.eligible_branches?.length || visit.deadline) && (
         <Panel title="Eligibility">
