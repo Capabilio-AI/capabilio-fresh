@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Briefcase, Calendar, Lock, MapPin, Rocket } from "lucide-react";
+import { Briefcase, Calendar, Lock, MapPin, Rocket, Globe } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { requireStage } from "@/lib/stage/guard";
 import { OnboardingGate } from "@/components/assess/OnboardingGate";
@@ -117,6 +117,13 @@ export default async function LaunchpadPage() {
                     <MapPin size={12} />
                     {opp.location}
                   </p>
+                )}
+
+                {opp.companyWebsite && (
+                  <a href={opp.companyWebsite} target="_blank" rel="noopener noreferrer" className="flex w-fit items-center gap-1.5 font-lp-mono text-[11px] font-semibold text-app-charcoal underline underline-offset-2">
+                    <Globe size={12} aria-hidden="true" />
+                    Learn about {opp.company}
+                  </a>
                 )}
 
                 <JobMatch match={match} practise={skillContext.practisable} />

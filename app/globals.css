@@ -327,3 +327,17 @@ body {
 @keyframes pulse-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .pulse-skeleton { background: linear-gradient(90deg, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.05) 75%); background-size: 200% 100%; animation: pulse-shimmer 1.6s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .pulse-rise, .pulse-skeleton { animation: none; } .pulse-card { transition: none; } }
+
+/* Anything you can press shows the hand. Tailwind 4 no longer sets this on buttons, and zero specificity (:where) lets any component still choose its own. */
+:where(button, [role="button"], summary, select, label[for], input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"], input[type="file"], input[type="date"], input[type="range"]) { cursor: pointer; }
+:where(button:disabled, [role="button"][aria-disabled="true"], input:disabled, select:disabled, [aria-disabled="true"]) { cursor: not-allowed; }
+
+/* The shared one-click buttons (ActionButton) are styled by the organisation theme; in the student app they had no styling at all, so "Register" and "Withdraw" looked like plain text. Zero specificity: the organisation theme still wins inside the workspace. */
+:where(.o-btn, .o-btn-ghost, .o-btn-danger) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; padding: 8px 18px; font-size: 12.5px; font-weight: 700; line-height: 1.2; transition: background-color 0.15s, color 0.15s, opacity 0.15s; }
+:where(.o-btn) { background: var(--m-ink, #141414); color: #fff; border: 1px solid var(--m-ink, #141414); }
+:where(.o-btn:hover:not(:disabled)) { opacity: 0.88; }
+:where(.o-btn-ghost) { background: transparent; color: var(--m-ink, #141414); border: 1px solid var(--m-ink, #141414); }
+:where(.o-btn-ghost:hover:not(:disabled)) { background: rgba(0, 0, 0, 0.06); }
+:where(.o-btn-danger) { background: transparent; color: #b4141f; border: 1px solid #b4141f; }
+:where(.o-btn-danger:hover:not(:disabled)) { background: rgba(180, 20, 31, 0.08); }
+:where(.o-btn:disabled, .o-btn-ghost:disabled, .o-btn-danger:disabled) { opacity: 0.55; }

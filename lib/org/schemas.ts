@@ -3,6 +3,8 @@ import { z } from "zod";
 // Every body is strict(): institution, role, status, org type, user ids and team size are never accepted from a client.
 const httpUrl = z.string().trim().max(2000).regex(/^https?:\/\/\S+$/, "Enter a full http(s) link.");
 const optionalUrl = httpUrl.optional().or(z.literal("").transform(() => undefined));
+import { normalizeWebsite } from "./website";
+const websiteField = z.string().trim().max(300).optional().or(z.literal("").transform(() => undefined)).refine((v) => v === undefined || normalizeWebsite(v) !== null, "Enter a valid website, like infosys.com");
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal("").transform(() => undefined));
 const uuid = z.string().uuid();
 
@@ -66,6 +68,7 @@ export const PlacementSchema = z
     location: optionalText(200),
     opportunityType: z.enum(["job", "internship"]),
     ctcOffered: optionalText(100),
+    companyWebsite: websiteField,
     driveDate: dateOnly,
     deadline: dateOnly, // registration closes
     eligibleBranches: z.array(z.string().trim().min(1).max(200)).max(30).optional(),
