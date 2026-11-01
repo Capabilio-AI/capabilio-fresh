@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { REGISTRATION_LABEL, VISIT_STATUS } from "@/lib/org/visits";
@@ -64,6 +64,11 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="flex flex-col gap-6">
+      <div>
+        <Link href="/org/placements" className="inline-flex items-center gap-1.5 font-lp-body text-[12.5px] text-app-muted hover:text-app-charcoal">
+          <ArrowLeft size={13} aria-hidden="true" /> Back to company visits
+        </Link>
+      </div>
       <PageHeader
         title={visit.company}
         subtitle={`${visit.role}${visit.drive_date ? ` · ${new Date(visit.drive_date).toLocaleDateString("en-IN", { dateStyle: "medium" })}` : ""}${visit.location ? ` · ${visit.location}` : ""}${visit.ctc_offered ? ` · ${visit.ctc_offered}` : ""}`}
@@ -76,9 +81,6 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
               <ActionButton action="/api/org/placements/status" body={{ opportunityId: visit.id, status: "cancelled" }} label="Cancel visit" variant="danger" confirm="Cancel this company visit? Students can no longer register." />
             )}
             <ActionButton action="/api/org/placements/delete" body={{ opportunityId: visit.id }} label="Delete visit" variant="danger" redirectTo="/org/placements" confirm="Delete this company visit? Registrations are removed and registered students are told. This can't be undone." />
-            <Link href="/org/placements" className="text-[13px] font-semibold text-app-muted hover:text-app-charcoal">
-              All visits
-            </Link>
           </div>
         }
       />
