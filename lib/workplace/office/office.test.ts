@@ -6,7 +6,7 @@ import { hashSeed, makeRng } from "../rng";
 import { CLEAN_TEMPLATES } from "./clean-templates";
 import { SHEET_TEMPLATES } from "./sheet-templates";
 import { checkClean, checkSheet } from "./pick";
-import { solveSheet } from "./solver";
+import { solvePivots, solveSheet } from "./solver";
 
 const SEEDS = Array.from({ length: 10 }, (_, i) => hashSeed("office-test", i));
 
@@ -23,10 +23,17 @@ describe("spreadsheet tickets on the company data", () => {
         ok++;
         const { layout, expected } = verdict.value;
         const cells = solveSheet(draft.content, layout);
-        expect(gradeSpreadsheet(draft.content, expected, cells).passed).toBe(true);
+        const pivots = solvePivots(draft.content);
+        expect(gradeSpreadsheet(draft.content, expected, cells, pivots).passed).toBe(true);
+        // a PivotTable task is failed by a missing or wrong pivot, even when every cell is right
+        if (Object.keys(pivots).length > 0) {
+          expect(gradeSpreadsheet(draft.content, expected, cells, {}).passed).toBe(false);
+          const [k, p] = Object.entries(pivots)[0];
+          expect(gradeSpreadsheet(draft.content, expected, cells, { ...pivots, [k]: { ...p, fn: p.fn === "SUM" ? "COUNT" : "SUM" } }).passed).toBe(false);
+        }
         // typed-in numbers must not pass, even when right
         const first = layout.targets[0].cells[0];
-        expect(gradeSpreadsheet(draft.content, expected, { ...cells, [first]: String(expected[first]) }).passed).toBe(false);
+        expect(gradeSpreadsheet(draft.content, expected, { ...cells, [first]: String(expected[first]) }, pivots).passed).toBe(false);
         // doing nothing must not pass
         expect(gradeSpreadsheet(draft.content, expected, {}).passed).toBe(false);
       }

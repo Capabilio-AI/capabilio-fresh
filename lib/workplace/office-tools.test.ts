@@ -8,6 +8,7 @@ import { spreadsheetTool, type SpreadsheetPublicContent } from "@/lib/arena-work
 import type { CleaningStep } from "@/lib/arena-workstations/engines/cleaning";
 import { hashSeed } from "./rng";
 import { solveSheet } from "./office/solver";
+import { referencePivots } from "@/lib/arena-workstations/reference-submission";
 
 const ctx = (areaKey: string, userId: string, n: number, difficulty: "easy" | "medium" | "hard", avoid: string[] = []) => ({
   roleName: "Data Analyst", parentSkill: "Data Analysis", areaName: areaKey, difficulty, avoidTitles: avoid, level: "senior" as const, recentKinds: [],
@@ -23,8 +24,8 @@ describe("spreadsheet tool on the company data (no AI call)", () => {
       expect(content.company).toBe("BrightCart");
       expect(g.requester).toMatch(/·/);
       const cells = solveSheet(content, content.layout);
-      expect((await spreadsheetTool.grade(g.content, g.answer_key, { cells })).passed).toBe(true);
-      expect((await spreadsheetTool.grade(g.content, g.answer_key, { cells: {} })).passed).toBe(false);
+      expect((await spreadsheetTool.grade(g.content, g.answer_key, { cells, pivots: referencePivots(content) })).passed).toBe(true);
+      expect((await spreadsheetTool.grade(g.content, g.answer_key, { cells: {}, pivots: {} })).passed).toBe(false);
     });
   }
 

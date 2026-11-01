@@ -82,3 +82,42 @@ describe("formula engine", () => {
     expect(formulaReferencesCells("1200")).toBe(false);
   });
 });
+
+describe("analyst functions: statistics, multi-criteria and lookups", () => {
+  const sheet = {
+    A1: "North", A2: "South", A3: "North", A4: "East", A5: "North",
+    B1: "app", B2: "web", B3: "web", B4: "app", B5: "app",
+    C1: "10", C2: "20", C3: "30", C4: "40", C5: "50",
+  };
+  const e = (f: string) => ev({ ...sheet, Z1: f }, "Z1");
+
+  it("MEDIAN and STDEV match the textbook values", () => {
+    expect(e("=MEDIAN(C1:C5)")).toBe(30);
+    expect(e("=MEDIAN(C1:C4)")).toBe(25);
+    expect(e("=STDEV(C1:C5)")).toBeCloseTo(15.8114, 3);
+    expect(e("=STDEV(C1)")).toEqual({ error: "#DIV/0!" });
+  });
+
+  it("SUMIFS, COUNTIFS and AVERAGEIFS need every criterion to hold", () => {
+    expect(e('=SUMIFS(C1:C5,A1:A5,"North",B1:B5,"app")')).toBe(60);
+    expect(e('=COUNTIFS(A1:A5,"North",B1:B5,"web")')).toBe(1);
+    expect(e('=COUNTIFS(A1:A5,"North",C1:C5,">15")')).toBe(2);
+    expect(e('=AVERAGEIFS(C1:C5,A1:A5,"North",B1:B5,"app")')).toBe(30);
+    expect(e('=AVERAGEIFS(C1:C5,A1:A5,"West")')).toEqual({ error: "#DIV/0!" });
+    expect(e('=SUMIFS(C1:C5,A1:A5)')).toEqual({ error: "#VALUE!" });
+  });
+
+  it("INDEX with MATCH finds a value by key, and XLOOKUP does it in one step", () => {
+    expect(e('=INDEX(C1:C5,MATCH("East",A1:A5,0))')).toBe(40);
+    expect(e('=XLOOKUP("South",A1:A5,C1:C5)')).toBe(20);
+    expect(e('=XLOOKUP("West",A1:A5,C1:C5,"none")')).toBe("none");
+    expect(e('=XLOOKUP("West",A1:A5,C1:C5)')).toEqual({ error: "#N/A" });
+    expect(e('=MATCH("West",A1:A5,0)')).toEqual({ error: "#N/A" });
+    expect(e("=INDEX(A1:C5,2,3)")).toBe(20);
+    expect(e("=INDEX(C1:C5,9)")).toEqual({ error: "#REF!" });
+  });
+
+  it("MATCH accepts only the exact-match form and says so instead of guessing", () => {
+    expect(e('=MATCH("North",A1:A5,1)')).toEqual({ error: "#VALUE!" });
+  });
+});

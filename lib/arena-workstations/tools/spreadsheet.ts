@@ -27,7 +27,13 @@ function problemsIn(raw: z.infer<typeof GenerationSchema>): string[] {
   if (problems.length) return problems;
   const columns = new Set(raw.data.columns.map((c) => c.name));
   raw.tasks.forEach((t, i) => {
-    const used = t.type === "row_formula" ? [t.left, t.right] : t.type === "lookup" ? [t.key_column] : t.type === "summary" ? [t.column] : [t.criteria_column, t.column];
+    const used =
+      t.type === "row_formula" ? [t.left, t.right]
+      : t.type === "lookup" ? [t.key_column]
+      : t.type === "summary" ? [t.column]
+      : t.type === "multi_conditional_summary" ? [...t.criteria.map((c) => c.column), t.column]
+      : t.type === "pivot" ? [t.row_column, ...(t.value_column ? [t.value_column] : [])]
+      : [t.criteria_column, t.column];
     for (const c of used) if (!columns.has(c)) problems.push(`task ${i + 1}: "${c}" must be one of the original data columns (${[...columns].join(", ")})`);
   });
   if (raw.tasks.some((t) => t.type === "lookup") && (!raw.lookup || raw.lookup.columns.length !== 2)) problems.push("a lookup task needs a two-column lookup table");
@@ -110,7 +116,12 @@ async function generate(ctx: GenerationContext): Promise<GeneratedChallenge> {
   return world?.office && ctx.worldSeed !== undefined ? generateFromWorld(ctx, world) : generateWithAi(ctx);
 }
 
-const SubmissionSchema = z.object({ cells: z.record(z.string().max(8), z.string().max(500)) });
+const PivotSchema = z.object({ rows: z.string().max(60), values: z.string().max(60).nullable(), fn: z.enum(["SUM", "AVERAGE", "COUNT"]) });
+const SubmissionSchema = z.object({
+  cells: z.record(z.string().max(8), z.string().max(500)),
+  /** one PivotTable setup per pivot task, keyed by the task's index */
+  pivots: z.record(z.string().max(3), PivotSchema).default({}),
+});
 export type SpreadsheetSubmission = z.infer<typeof SubmissionSchema>;
 
 export const spreadsheetTool: ToolDefinition<SpreadsheetSubmission> = {
@@ -122,6 +133,6 @@ export const spreadsheetTool: ToolDefinition<SpreadsheetSubmission> = {
   async grade(content, answerKey, submission) {
     const c = content as unknown as SpreadsheetPublicContent;
     const key = answerKey as unknown as { expected: Record<string, number> };
-    return gradeSpreadsheet({ data: c.data, lookup: c.lookup, tasks: c.tasks }, key.expected, submission.cells);
+    return gradeSpreadsheet({ data: c.data, lookup: c.lookup, tasks: c.tasks }, key.expected, submission.cells, submission.pivots);
   },
 };

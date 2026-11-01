@@ -23,11 +23,25 @@ export function solveSheet(content: SpreadsheetContent, layout: SheetLayout): Re
       cells.forEach((cell, r) => (out[cell] = `=VLOOKUP(${letter(t.key_column)}${r + 2},${table},2,FALSE)`));
     } else if (t.type === "summary") {
       out[cells[0]] = t.fn === "COUNT" ? `=COUNT(${rangeOf(t.column)})` : `=ROUND(${t.fn}(${rangeOf(t.column)}),${t.decimals})`;
+    } else if (t.type === "pivot") {
+      // no cells: the PivotTable setup is supplied separately (referencePivots)
+    } else if (t.type === "multi_conditional_summary") {
+      const crit = t.criteria.map((c) => `${rangeOf(c.column)},"${c.value}"`).join(",");
+      out[cells[0]] = t.fn === "COUNTIFS" ? `=COUNTIFS(${crit})` : `=ROUND(${t.fn}(${rangeOf(t.column)},${crit}),${t.decimals})`;
     } else {
       const crit = rangeOf(t.criteria_column);
       const val = rangeOf(t.column);
       out[cells[0]] = t.fn === "COUNTIF" ? `=COUNTIF(${crit},"${t.criteria_value}")` : `=ROUND(${t.fn}(${crit},"${t.criteria_value}",${val}),${t.decimals})`;
     }
+  });
+  return out;
+}
+
+/** A perfect candidate's PivotTable setup for every pivot task, keyed by the task's index. */
+export function solvePivots(content: SpreadsheetContent): Record<string, { rows: string; values: string | null; fn: "SUM" | "AVERAGE" | "COUNT" }> {
+  const out: Record<string, { rows: string; values: string | null; fn: "SUM" | "AVERAGE" | "COUNT" }> = {};
+  content.tasks.forEach((t, i) => {
+    if (t.type === "pivot") out[String(i)] = { rows: t.row_column, values: t.value_column, fn: t.fn };
   });
   return out;
 }
