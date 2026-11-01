@@ -5,6 +5,7 @@ import { ApplySchema } from "@/lib/org/schemas";
 import { getStudentDirection } from "@/lib/career/direction";
 import { untyped } from "@/lib/org/db";
 import { notify } from "@/lib/notifications/notify";
+import { hasRollNumber, ROLL_NUMBER_REQUIRED_MESSAGE } from "@/lib/org/visits";
 import { staffWithPermission } from "@/lib/notifications/audiences";
 
 /**
@@ -26,6 +27,9 @@ export async function POST(request: Request) {
     if (branches.length > 0 && !branchMatchesAny(branches, ctx.branch)) {
       return NextResponse.json({ error: "This visit isn't open to your branch." }, { status: 403 });
     }
+
+    const { data: mine } = await service.from("institution_memberships").select("roll_number").eq("id", ctx.membershipId).maybeSingle();
+    if (!hasRollNumber(mine?.roll_number)) return NextResponse.json({ error: ROLL_NUMBER_REQUIRED_MESSAGE }, { status: 409 });
 
     const { error } = await service.from("applications").upsert({ opportunity_id: opp.id, user_id: ctx.userId }, { onConflict: "opportunity_id,user_id", ignoreDuplicates: true });
     if (error) throw error;

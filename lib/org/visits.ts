@@ -70,3 +70,8 @@ export function describeVisitChanges(before: VisitDetails, after: VisitDetails):
  */
 export const canWithdraw = (applicationStatus: string, visitStatus: string): boolean =>
   (applicationStatus === "submitted" || applicationStatus === "shortlisted") && (visitStatus === "registration_open" || visitStatus === "planned");
+
+/** Pure. Whether a roll number is on record: a company's list is useless without the college's student ID. */
+export const hasRollNumber = (rollNumber: string | null | undefined): boolean => Boolean(rollNumber && rollNumber.trim());
+
+export const ROLL_NUMBER_REQUIRED_MESSAGE = "Add your roll number before registering: the placement office needs it to list you. You can add it from your dashboard.";

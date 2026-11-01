@@ -67,3 +67,14 @@ describe("canWithdraw", () => {
     expect(canWithdraw("submitted", "cancelled")).toBe(false);
   });
 });
+
+import { hasRollNumber } from "./visits";
+
+describe("hasRollNumber", () => {
+  it("needs a real value", () => {
+    expect(hasRollNumber("23AJ5A0405")).toBe(true);
+    expect(hasRollNumber(null)).toBe(false);
+    expect(hasRollNumber(undefined)).toBe(false);
+    expect(hasRollNumber("   ")).toBe(false);
+  });
+});
