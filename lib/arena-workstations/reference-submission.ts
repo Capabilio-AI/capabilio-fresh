@@ -1,5 +1,6 @@
 import { columnLetters } from "./engines/formula";
 import type { SpreadsheetPublicContent } from "./tools/spreadsheet";
+import { referenceNote, type NoteKey } from "@/lib/workplace/findings-note";
 
 // TEST SUPPORT ONLY (*.live.test.ts): builds the correct submission for a
 // generated instance from its server-side answer key, to drive end-to-end
@@ -18,7 +19,9 @@ export function referenceSubmission(toolType: string, content: unknown, answerKe
     case "cleaning_workspace":
       return { steps: key.steps };
     case "dashboard_workspace":
-      return { spec: key.spec };
+      return { spec: key.spec, note: key.note ? referenceNote(key.note as NoteKey) : undefined };
+    case "investigation_workspace":
+      return { answers: key.answers, note: key.note ? referenceNote(key.note as NoteKey) : undefined };
     case "spreadsheet_workspace":
       return { cells: referenceFormulas(content as SpreadsheetPublicContent), pivots: referencePivots(content as SpreadsheetPublicContent) };
     default:

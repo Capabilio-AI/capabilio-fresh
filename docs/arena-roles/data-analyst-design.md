@@ -52,3 +52,19 @@ UI pass (steps shown in the browser): all five tools now look like the programs 
 ## 6. Step 4 result: dashboard quick measures (2026-11-01)
 
 The Power BI wording is earned for what it covers, and limited for what it does not. The spec gained `quick` (percent of total, running total, ratio) and `measure2` (the ratio's denominator), the same quick-measure menu Power BI offers, evaluated by the same pure `evaluateSpec` for both the answer key and the student's chart. Old specs parse unchanged (defaults `none`/`null`). Meaningless combinations are refused (a percent of an average; a ratio without a second numeric field). A pie is no longer an acceptable chart for ratios or running totals. Four tickets: share of revenue by category (fresher easy), running revenue by month (fresher medium), realised price per unit (junior medium), a quarter's channel shares (junior medium); all 30/30 seeds build, shares sum to 100, running totals never fall. Still not covered, and stated in the blueprint: DAX and data modelling.
+
+## 7. Graduates get professional work (2026-11-01)
+
+**Rule:** a student is a fresher; a recent graduate (`stage = graduate`) is served as a junior; professionals are graded by years in work. So graduates meet the tools at working depth instead of first-year exercises.
+
+| Skill area | Fresher (student) | Graduate (junior) and above |
+|---|---|---|
+| Excel | row formulas, SUM, SUMIF, COUNTIF, VLOOKUP | + SUMIFS / COUNTIFS / AVERAGEIFS, MEDIAN, STDEV, INDEX/MATCH, XLOOKUP, PivotTables |
+| Dashboard | chart + filters; quick measures (percent of total, running total, ratio) | + DAX measures: CALCULATE, ALL, DIVIDE, filter context, with a required takeaway for the reader |
+| SQL | joins, grouping, debugging | + window functions (running total, month-on-month with LAG), CTEs, anti-joins |
+| Python | read CSVs, count, merge, groupby, clean | + pivot_table, repeat-customer retention, month-on-month growth; city ranking at mid |
+| Investigation / incident | guided: the way to split the data is named | full: find the cause unaided, and write the note to the requester |
+
+**Communication, storytelling, business analysis.** From junior up, investigation and dashboard tickets require a short note, graded against the real answer (`lib/workplace/findings-note.ts`): it must state the key figure (rupee, lakh, crore and k forms accepted), name where the finding is (dates in ISO, "14 May" or "May 14" form), say what to do next, and be 20 to 150 words. These are number and keyword checks, not a judgement of prose, and the blueprint says so.
+
+**DAX** is a closed interpreter (`engines/dax.ts`), not `eval`: SUM, AVERAGE, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT, DIVIDE, CALCULATE, ALL, IF, ROUND, ABS, SUMX, AVERAGEX, with DAX's filter-context rule. No data model or relationships.

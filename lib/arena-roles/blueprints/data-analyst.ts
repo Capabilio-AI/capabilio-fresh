@@ -42,7 +42,7 @@ export const DATA_ANALYST: RoleBlueprint = {
   ],
   // Honest limits: these are graded through findings, not free-text quality.
   limitations: [
-    "da.communication is verified only through the correctness of the submitted findings and the explain-your-work interview, not through prose quality.",
+    "da.communication: from junior level up, the note to the requester is graded against the real answer (states the key figure, names where it is, says what to do next, 20 to 150 words). These are number and keyword checks, not a judgement of writing quality; the explain-your-work interview is the other signal.",
     "Excel is assessed on formulas (SUMIFS, COUNTIFS, INDEX/MATCH, XLOOKUP, MEDIAN, STDEV) and PivotTables built from a field list; there is no chart or macro grading.",
     "Python runs in the student's own browser (Pyodide), never on our servers. Only the numbers they report are graded, not their code, so code style is not assessed.",
     "Dashboard grading compares the series a chart plots, not visual design. The builder covers quick measures and DAX basics (CALCULATE, ALL, DIVIDE, SUMX and filter context) but no data model or relationships, so the skill proven is writing measures and charts from a brief, not designing a model.",

@@ -9,6 +9,7 @@ import type { CleaningStep } from "@/lib/arena-workstations/engines/cleaning";
 import { hashSeed } from "./rng";
 import { solveSheet } from "./office/solver";
 import { referencePivots } from "@/lib/arena-workstations/reference-submission";
+import { referenceNote } from "./findings-note";
 
 const ctx = (areaKey: string, userId: string, n: number, difficulty: "easy" | "medium" | "hard", avoid: string[] = []) => ({
   roleName: "Data Analyst", parentSkill: "Data Analysis", areaName: areaKey, difficulty, avoidTitles: avoid, level: "senior" as const, recentKinds: [],
@@ -60,9 +61,10 @@ describe("dashboard tool on the company data (no AI call)", () => {
     it(`${difficulty}: the intended chart passes and a different one fails`, async () => {
       const g = await dashboardTool.generate(ctx("dashboard", "u-dash", 0, difficulty));
       expect(g.origin?.provider).toBe("template");
-      const spec = (g.answer_key as unknown as { spec: BiSpec }).spec;
-      expect((await dashboardTool.grade(g.content, g.answer_key, { spec })).passed).toBe(true);
-      expect((await dashboardTool.grade(g.content, g.answer_key, { spec: { ...spec, filters: [] } })).passed).toBe(false);
+      const { spec, note: noteKey } = g.answer_key as unknown as { spec: BiSpec; note?: Parameters<typeof referenceNote>[0] };
+      const note = noteKey ? referenceNote(noteKey) : undefined; // senior level: the takeaway is part of the work
+      expect((await dashboardTool.grade(g.content, g.answer_key, { spec, note })).passed).toBe(true);
+      if (spec.filters.length > 0) expect((await dashboardTool.grade(g.content, g.answer_key, { spec: { ...spec, filters: [] }, note })).passed).toBe(false);
       expect(JSON.stringify(g.content)).not.toContain("answer_key");
     });
   }

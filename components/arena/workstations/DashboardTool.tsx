@@ -44,6 +44,7 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
   const initial: BiSpec = { chart_type: "bar", dimension: dataset.columns[0].name, dimension_grain: "value", measure: numeric[0] ?? null, aggregation: numeric.length ? "sum" : "count", quick: "none", measure2: null, dax: null, filters: [], sort: "dimension_asc", limit: null };
   const [spec, setSpec] = useDraft<BiSpec>(attemptId, "spec", initial);
   const [view, setView] = useState<View>("report");
+  const [note, setNote] = useDraft(attemptId, "note", "");
   const update = (patch: Partial<BiSpec>) => setSpec({ ...spec, ...patch });
   const dimIsDate = dataset.columns.find((c) => c.name === spec.dimension)?.type === "date";
 
@@ -87,7 +88,7 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
         <span className="min-w-0 truncate text-[13px] font-semibold">{dataset.name} report</span>
         <span className="hidden text-[11.5px] text-[var(--pbi-muted)] sm:inline">Power BI-style builder · one visual per page</span>
         {!closed && (
-          <button type="button" onClick={() => onSubmit({ spec })} disabled={submitting || Boolean(series.error)} className="ml-auto flex items-center gap-1.5 rounded-sm bg-[var(--pbi-yellow)] px-3.5 py-1 text-[12.5px] font-semibold hover:brightness-95 disabled:opacity-50">
+          <button type="button" onClick={() => onSubmit({ spec, note: note.trim() || undefined })} disabled={submitting || Boolean(series.error) || (content.noteRequired === true && note.trim() === "")} className="ml-auto flex items-center gap-1.5 rounded-sm bg-[var(--pbi-yellow)] px-3.5 py-1 text-[12.5px] font-semibold hover:brightness-95 disabled:opacity-50">
             {submitting && <Loader2 size={13} className="animate-spin" />}
             Publish
           </button>
@@ -150,6 +151,12 @@ export function DashboardTool({ attemptId, content, closed, submitting, onSubmit
                     </ResponsiveContainer>
                   )}
                 </div>
+                {content.noteRequired && (
+                  <label className="mt-3 block border-t border-[var(--pbi-line)] pt-3 text-[12.5px] font-semibold">
+                    Takeaway for the reader <span className="font-normal text-[var(--pbi-muted)]">(required: which one stands out, its value, and what you would do)</span>
+                    <textarea value={note} disabled={closed} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={2000} aria-required className={`${field} mt-1.5 w-full resize-y text-[13px] font-normal`} />
+                  </label>
+                )}
               </div>
             </div>
           ) : (
