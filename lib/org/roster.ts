@@ -24,7 +24,7 @@ export interface RosterRow {
 }
 
 /** The one ELO per student: the ledger row for their primary career. No target career or no row yet = not rated (never a made-up 400). */
-async function loadElos(service: SupabaseClient<Database>, ids: string[]): Promise<Map<string, NonNullable<RosterRow["elo"]>>> {
+export async function loadElos(service: SupabaseClient<Database>, ids: string[]): Promise<Map<string, NonNullable<RosterRow["elo"]>>> {
   const db = untyped(service);
   const { data: intents } = await db.from("student_career_intent").select("student_id, primary_career_id").in("student_id", ids).not("primary_career_id", "is", null);
   const picks = (intents ?? []) as { student_id: string; primary_career_id: string }[];

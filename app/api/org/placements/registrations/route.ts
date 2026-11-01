@@ -6,6 +6,7 @@ import { getOrgContext } from "@/lib/org/context";
 import { can } from "@/lib/org/roles";
 import { untyped } from "@/lib/org/db";
 import { registrationsToCsv, type RegistrationRow } from "@/lib/org/visits";
+import { loadRegistrantProof } from "@/lib/org/registrations";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
     ids.length ? service.from("profiles").select("id, full_name, email").in("id", ids) : Promise.resolve({ data: [] }),
     ids.length ? untyped(service).from("institution_memberships").select("user_id, branch, end_year, roll_number").eq("institution_id", ctx.institutionId).in("user_id", ids) : Promise.resolve({ data: [] }),
   ]);
+  const proof = await loadRegistrantProof(service, ids);
   const profile = new Map((profiles.data ?? []).map((p) => [p.id, p]));
   const member = new Map(((members.data ?? []) as { user_id: string; branch: string | null; end_year: number | null; roll_number: string | null }[]).map((m) => [m.user_id, m]));
   const rows: RegistrationRow[] = (apps ?? []).map((a) => ({
@@ -40,6 +42,9 @@ export async function GET(request: Request) {
     email: profile.get(a.user_id)?.email ?? null,
     status: a.status,
     registeredOn: a.applied_at,
+    targetRole: proof.get(a.user_id)?.targetRole ?? null,
+    elo: proof.get(a.user_id)?.elo ?? null,
+    passportUrl: proof.get(a.user_id)?.passportUrl ?? null,
   }));
   const slug = String((visit as { company: string }).company).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "visit";
   return new NextResponse(registrationsToCsv(rows), {

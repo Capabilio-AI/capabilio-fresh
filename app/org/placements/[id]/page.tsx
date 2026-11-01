@@ -6,6 +6,7 @@ import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { REGISTRATION_LABEL, VISIT_STATUS } from "@/lib/org/visits";
 import { JsonForm } from "@/components/org/JsonForm";
+import { loadRegistrantProof } from "@/lib/org/registrations";
 import { ActionButton } from "@/components/org/ActionButton";
 import { LetterUpload } from "@/components/org/LetterUpload";
 import { OfferForm } from "@/components/org/OfferForm";
@@ -55,6 +56,7 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
     ids.length ? service.from("profiles").select("id, full_name, email").in("id", ids) : Promise.resolve({ data: [] }),
     ids.length ? untyped(service).from("institution_memberships").select("user_id, branch, end_year, roll_number").eq("institution_id", ctx.institutionId).in("user_id", ids) : Promise.resolve({ data: [] }),
   ]);
+  const proof = await loadRegistrantProof(service, ids);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
   const meta = new Map(((memberships.data ?? []) as { user_id: string; branch: string | null; end_year: number | null; roll_number: string | null }[]).map((m) => [m.user_id, m]));
   const placed = new Map(((placements.data ?? []) as { id: string; student_user_id: string; offer_letter_path: string | null; student_response: string }[]).map((p) => [p.student_user_id, p]));
@@ -144,6 +146,18 @@ export default async function VisitPage({ params }: { params: Promise<{ id: stri
                       <p className="text-[11.5px] text-app-muted">
                         {m?.roll_number ? `${m.roll_number} · ` : "Roll no. not added · "}{m?.branch ?? "Branch not set"} · class of {m?.end_year ?? "—"}
                       </p>
+                      {proof.get(a.user_id)?.targetRole && (
+                        <p className="text-[11.5px] text-app-muted">
+                          Working toward {proof.get(a.user_id)?.targetRole}
+                          {proof.get(a.user_id)?.elo != null ? ` · ELO ${proof.get(a.user_id)?.elo} (${proof.get(a.user_id)?.tier})` : ""}
+                          {proof.get(a.user_id)?.passportUrl && (
+                            <>
+                              {" · "}
+                              <a href={proof.get(a.user_id)?.passportUrl ?? "#"} target="_blank" rel="noopener noreferrer" className="font-bold underline">Skill Passport</a>
+                            </>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Pill tone={a.status === "accepted" ? "ok" : a.status === "rejected" ? "neutral" : "warn"}>{placement ? "Offer released" : (REGISTRATION_LABEL[a.status] ?? a.status)}</Pill>
