@@ -4,6 +4,16 @@ import type { OrgContext } from "./context";
 export const branchKey = (b: string | null | undefined) => (b ?? "").trim().toLowerCase();
 export const sameBranch = (a: string | null | undefined, b: string | null | undefined) => branchKey(a) !== "" && branchKey(a) === branchKey(b);
 
+/** What a college types to mean "every branch". It must never be stored or matched as a branch called "all" (that reached nobody: no notification, no registration). */
+const ALL_BRANCHES = new Set(["all", "all branches", "all branch", "any", "any branch", "every branch", "everyone", "all departments"]);
+export const isAllBranches = (b: string | null | undefined) => ALL_BRANCHES.has(branchKey(b));
+
+/** Pure. The branch list to store on a visit: null (open to everyone) when empty or when any entry means "all". */
+export const normalizeEligibleBranches = (branches: readonly string[] | null | undefined): string[] | null => {
+  const list = (branches ?? []).map((b) => b.trim()).filter(Boolean);
+  return list.length === 0 || list.some(isAllBranches) ? null : list;
+};
+
 const words = (b: string) => b.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 
 /**
@@ -12,6 +22,7 @@ const words = (b: string) => b.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
  * Matches on the whole name or on the code in brackets; "CS" never matches "ECE" because the comparison is on whole words.
  */
 export function branchMatches(eligible: string, studentBranch: string | null | undefined): boolean {
+  if (isAllBranches(eligible)) return true;
   const e = branchKey(eligible);
   const s = branchKey(studentBranch);
   if (!e || !s) return false;

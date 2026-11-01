@@ -171,7 +171,7 @@ export async function searchStudentOptions(service: SupabaseClient<Database>, in
     .slice(0, STUDENT_PICKER_LIMIT);
 }
 
-const csvCell = (v: string | number | null): string => {
+export const csvCell = (v: string | number | null): string => {
   const s = v === null ? "" : String(v);
   // neutralise spreadsheet formula injection as well as quoting
   const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;

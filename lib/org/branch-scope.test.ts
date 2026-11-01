@@ -41,7 +41,7 @@ describe("resolveProjectScope", () => {
   });
 });
 
-import { calendarScope, resolveCalendarBranch } from "./branch-scope";
+import { calendarScope, resolveCalendarBranch, branchMatchesAny, normalizeEligibleBranches } from "./branch-scope";
 
 describe("calendar branch scope", () => {
   it("lets an admin set any branch, and a branch-scoped member only their own", () => {
@@ -57,5 +57,25 @@ describe("calendar branch scope", () => {
   it("gives staff with no department no scope at all, since a date moves unlocks for a whole cohort", () => {
     expect(calendarScope({ kind: "staff", branch: null })).toMatchObject({ ok: false });
     expect(calendarScope({ kind: "staff", branch: "  " })).toMatchObject({ ok: false });
+  });
+});
+
+describe("visits open to all branches", () => {
+  const aiml = "Artificial Intelligence and Machine Learning (AI/ML)";
+  it("a visit typed as 'all' reaches every student, including one with no branch on record", () => {
+    for (const typed of ["all", "All", "All branches", "everyone"]) {
+      expect(branchMatchesAny([typed], aiml)).toBe(true);
+      expect(branchMatchesAny([typed], null)).toBe(true);
+    }
+  });
+  it("still limits a visit that names real branches", () => {
+    expect(branchMatchesAny(["CSE", "ECE"], aiml)).toBe(false);
+    expect(branchMatchesAny(["CSE", "AI/ML"], aiml)).toBe(true);
+  });
+  it("stores 'all' as no restriction", () => {
+    expect(normalizeEligibleBranches(["all"])).toBeNull();
+    expect(normalizeEligibleBranches(["CSE", "All branches"])).toBeNull();
+    expect(normalizeEligibleBranches([])).toBeNull();
+    expect(normalizeEligibleBranches([" CSE ", "ECE"])).toEqual(["CSE", "ECE"]);
   });
 });
