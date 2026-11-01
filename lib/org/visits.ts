@@ -26,12 +26,16 @@ export interface RegistrationRow {
   email: string | null;
   status: string;
   registeredOn: string;
+  targetRole: string | null;
+  elo: number | null;
+  /** only present when the student chose to share their Skill Passport */
+  passportUrl: string | null;
 }
 
 /** Pure. One company visit's registered students as CSV: what a college hands to the company (name, student ID, branch, class, contact, status). */
 export function registrationsToCsv(rows: readonly RegistrationRow[]): string {
-  const header = ["S.No", "Student", "Roll number", "Branch", "Class of", "Email", "Status", "Registered on"];
-  const lines = rows.map((r, i) => [i + 1, r.studentName, r.rollNumber ?? "", r.branch ?? "", r.endYear ?? "", r.email ?? "", REGISTRATION_LABEL[r.status] ?? r.status, r.registeredOn.slice(0, 10)].map(csvCell).join(","));
+  const header = ["S.No", "Student", "Roll number", "Branch", "Class of", "Email", "Target role", "ELO", "Skill Passport", "Status", "Registered on"];
+  const lines = rows.map((r, i) => [i + 1, r.studentName, r.rollNumber ?? "", r.branch ?? "", r.endYear ?? "", r.email ?? "", r.targetRole ?? "", r.elo ?? "", r.passportUrl ?? "", REGISTRATION_LABEL[r.status] ?? r.status, r.registeredOn.slice(0, 10)].map(csvCell).join(","));
   return [header.join(","), ...lines].join("\n");
 }
 

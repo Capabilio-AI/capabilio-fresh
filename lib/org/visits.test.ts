@@ -16,11 +16,15 @@ describe("canMoveVisit", () => {
 import { registrationsToCsv } from "./visits";
 
 describe("registrationsToCsv", () => {
-  const row = { studentName: "Lakshmi Durga", rollNumber: "22MIC1A4501", branch: "Artificial Intelligence and Machine Learning (AI/ML)", endYear: 2027, email: "l@x.in", status: "submitted", registeredOn: "2026-11-01T05:00:00Z" };
+  const row = { studentName: "Lakshmi Durga", rollNumber: "22MIC1A4501", branch: "Artificial Intelligence and Machine Learning (AI/ML)", endYear: 2027, email: "l@x.in", status: "submitted", registeredOn: "2026-11-01T05:00:00Z", targetRole: "Data Analyst", elo: 410, passportUrl: "https://capabilio.online/passport/AB12" };
   it("lists name, roll number, branch, class, email, status and date", () => {
     const [head, line] = registrationsToCsv([row]).split("\n");
-    expect(head).toBe("S.No,Student,Roll number,Branch,Class of,Email,Status,Registered on");
-    expect(line).toBe("1,Lakshmi Durga,22MIC1A4501,Artificial Intelligence and Machine Learning (AI/ML),2027,l@x.in,Registered,2026-11-01");
+    expect(head).toBe("S.No,Student,Roll number,Branch,Class of,Email,Target role,ELO,Skill Passport,Status,Registered on");
+    expect(line).toBe("1,Lakshmi Durga,22MIC1A4501,Artificial Intelligence and Machine Learning (AI/ML),2027,l@x.in,Data Analyst,410,https://capabilio.online/passport/AB12,Registered,2026-11-01");
+  });
+  it("leaves the passport, role and ELO blank for a student who has not shared or has not been rated", () => {
+    const [, line] = registrationsToCsv([{ ...row, targetRole: null, elo: null, passportUrl: null }]).split("\n");
+    expect(line).toBe("1,Lakshmi Durga,22MIC1A4501,Artificial Intelligence and Machine Learning (AI/ML),2027,l@x.in,,,,Registered,2026-11-01");
   });
   it("leaves a missing roll number blank and neutralises spreadsheet formulas in names", () => {
     const [, line] = registrationsToCsv([{ ...row, rollNumber: null, studentName: "=HYPERLINK(1)" }]).split("\n");
