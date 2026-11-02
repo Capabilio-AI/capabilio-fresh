@@ -8,6 +8,7 @@ import { syncSkillGraph } from "./graph-sync";
 import { refreshRoadmap } from "./roadmap";
 import { track, type Db } from "./db";
 import { ARENA_DIFFICULTY_SCALE, crossedMilestone, scaleForElo } from "./arena-rules";
+import { missEventId } from "./arena-penalty";
 
 export interface ArenaPass {
   attemptId: string;
@@ -21,8 +22,8 @@ export interface ArenaPass {
 }
 
 /**
- * Called once a challenge is verified as passed. Only passes move the rating (a failed submission can be retried freely, so
- * punishing it would discourage exploration); the ledger is idempotent per attempt, so a replay changes nothing. Never throws:
+ * Called once a challenge is verified as passed: the rating goes up by what the ticket advertised. A wrong answer is recorded separately by
+ * recordArenaMiss and costs rating. The ledger is idempotent per attempt, so a replay changes nothing. Never throws:
  * a problem here must not undo an Arena result that was already recorded.
  */
 export async function recordArenaPass(userId: string, pass: ArenaPass, db: Db = createServiceClient() as unknown as Db): Promise<{ elo: number; change: number } | null> {
@@ -57,6 +58,37 @@ export async function recordArenaPass(userId: string, pass: ArenaPass, db: Db = 
     return { elo: ev.newRating, change: ev.change };
   } catch (e) {
     console.error("[assess] recording Arena progress failed:", e);
+    return null;
+  }
+}
+
+export interface ArenaMiss {
+  attemptId: string;
+  roleKey: string;
+  /** which wrong answer on this ticket this is, from 1; 0 for a skipped ticket */
+  submissionNumber: number;
+  /** the ELO the ticket advertised: a miss costs half of it, through the same scale as a pass */
+  elo: number;
+  reason: string;
+}
+
+/**
+ * A wrong answer (or a skipped ticket) lowers the same ELO a pass raises, by half of what the ticket was worth, never below the rating floor. One ledger
+ * event per wrong answer, keyed so that a retried request cannot charge the same answer twice. Never throws: a problem here must not break grading.
+ */
+export async function recordArenaMiss(userId: string, miss: ArenaMiss, db: Db = createServiceClient() as unknown as Db): Promise<{ elo: number; change: number } | null> {
+  try {
+    const { data: career } = await db.from("careers").select("id").eq("key", miss.roleKey).eq("is_active", true).maybeSingle();
+    if (!career) return null;
+    const { data, error } = await db.rpc("apply_elo_event", {
+      p_student: userId, p_career: career.id, p_source: "ARENA", p_source_id: missEventId(miss.attemptId, miss.submissionNumber), p_correct: false, p_reason: miss.reason, p_scale: scaleForElo(miss.elo),
+    });
+    if (error) throw error;
+    const ev = data as { change: number; newRating: number };
+    await track(db, userId, "elo_updated", { source: "ARENA", change: ev.change, newRating: ev.newRating, attemptId: miss.attemptId, miss: true });
+    return { elo: ev.newRating, change: ev.change };
+  } catch (e) {
+    console.error("[assess] recording an Arena miss failed:", e);
     return null;
   }
 }

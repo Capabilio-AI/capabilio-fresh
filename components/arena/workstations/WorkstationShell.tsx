@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, CircleX, Database } from "lucide-react";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
+import { MAX_CHARGED_MISSES, missCost } from "@/lib/assess/arena-rules";
 import { Countdown } from "./Countdown";
 import { WORKSTATIONS } from "./registry";
 
@@ -40,6 +41,10 @@ interface Feedback {
   explain?: boolean;
   /** a stage of a Proof Session: passing moves on to the next stage, with no rating yet */
   session?: boolean;
+  /** what a wrong answer did to the rating (negative), when it was charged */
+  eloChange?: number;
+  /** how many wrong answers on this ticket have been counted so far (the first few cost rating) */
+  chargedMisses?: number;
 }
 
 const noop = () => {};
@@ -86,6 +91,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
   }
 
   const Tool = station?.component;
+  const elo = ELO_BY_DIFFICULTY[challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-app-background" role="dialog" aria-modal="true" aria-label={challenge.title}>
@@ -103,7 +109,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
           <span className="text-white/60">{attempt.area.name}</span>
           <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? (feedback?.session ? "Stage passed" : feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
           {!closed && <Countdown target={expiresAt} onDone={() => onClose(false)} />}
-          <span className="font-semibold text-app-orange" title="Awarded after you explain your work">+{ELO_BY_DIFFICULTY[challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO after the interview</span>
+          <span className="font-semibold text-app-orange" title={`Solving earns this after you explain your work. Each of the first ${MAX_CHARGED_MISSES} wrong answers costs ${missCost(elo)} ELO.`}>+{elo} ELO after the interview · −{missCost(elo)} per wrong answer</span>
         </span>
       </header>
 
@@ -154,6 +160,15 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
                 {feedback.session ? (feedback.passed ? "Stage passed" : "Not quite — the stage is still open") : feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : "Not quite — the task is still open"}
               </p>
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
+              {!feedback.passed && typeof feedback.eloChange === "number" && (
+                <p className="mt-1.5 font-lp-body text-[13px] font-semibold text-app-rose" role="status">
+                  {feedback.eloChange < 0
+                    ? `${feedback.eloChange} ELO for this wrong answer.${(feedback.chargedMisses ?? 0) >= MAX_CHARGED_MISSES ? " That is the most this ticket can cost; solving it still earns the full amount." : ` The first ${MAX_CHARGED_MISSES} wrong answers on a ticket each cost rating.`}`
+                    : (feedback.chargedMisses ?? 0) >= MAX_CHARGED_MISSES
+                      ? "No more rating is lost on this ticket. Solving it still earns the full amount."
+                      : "Your rating is at its floor, so this wrong answer cost nothing."}
+                </p>
+              )}
               {feedback.checks.length > 0 && (
                 <ul className="mt-2 flex flex-col gap-1">
                   {feedback.checks.map((c) => (
