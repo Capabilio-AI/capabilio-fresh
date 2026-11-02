@@ -21,7 +21,8 @@ import { loadExperienceLevel } from "@/lib/workplace/level-server";
 import { areasForLevel } from "@/lib/workplace/areas";
 import { ensureSprint, loadSprintView, stampTicket } from "@/lib/workplace/sprint-server";
 import { untyped } from "@/lib/org/db";
-import { recordArenaPass } from "@/lib/assess/arena";
+import { recordArenaMiss, recordArenaPass } from "@/lib/assess/arena";
+import { MAX_CHARGED_MISSES, missIsCharged } from "@/lib/assess/arena-rules";
 import type { Db } from "@/lib/assess/db";
 import { GenerationRejected, difficultyForRating, ELO_BY_DIFFICULTY, type GeneratedChallenge, type GradeResult } from "./types";
 
@@ -245,6 +246,8 @@ export async function startNextAttempt(service: Service, userId: string, statedR
   return after;
 }
 
+const difficultyOf = (d: string): keyof typeof ELO_BY_DIFFICULTY => (d === "hard" ? "hard" : d === "medium" ? "medium" : "easy");
+
 async function loadOwnedOpenAttempt(service: Service, userId: string, attemptId: string) {
   const { data: attempt } = await service.from("arena_domain_assignments").select(`${ASSIGNMENT_COLUMNS}, user_id, role_key`).eq("id", attemptId).eq("user_id", userId).maybeSingle();
   if (!attempt) throw new AttemptError("Task not found.", 404);
@@ -303,7 +306,8 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   if (!grade.passed) {
     // a tool may cap the tries (machine learning tasks, where unlimited tries would let someone recover the hidden labels)
     const cap = (challenge.content as { maxSubmissions?: number } | null)?.maxSubmissions;
-    const outOfTries = !!cap && attempt.submission_count + 1 >= cap;
+    const submissionNumber = attempt.submission_count + 1; // read before the write below, never from the row after it
+    const outOfTries = !!cap && submissionNumber >= cap;
     await service
       .from("arena_domain_assignments")
       .update({
@@ -312,7 +316,13 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
       })
       .eq("id", attemptId);
     const message = outOfTries ? `${grade.message} You have used all ${cap} tries, so this task is closed without a rating. Your next task is on its way.` : grade.message;
-    return { passed: false, message, checks: grade.checks, detail: grade.detail ?? null };
+    // a wrong answer costs rating: half of what the ticket is worth, for the first few wrong answers on one ticket
+    const charged = missIsCharged(submissionNumber);
+    const miss = charged
+      ? await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, submissionNumber, elo: ELO_BY_DIFFICULTY[difficultyOf(challenge.difficulty)], reason: `Arena ${challenge.difficulty} challenge: wrong answer ${submissionNumber}` })
+      : null;
+    logArenaEvent("grading.miss", { ...logFields, submissionNumber: String(submissionNumber), charged: String(charged), change: String(miss?.change ?? 0) });
+    return { passed: false, message, checks: grade.checks, detail: grade.detail ?? null, eloChange: miss?.change ?? 0, chargedMisses: Math.min(submissionNumber, MAX_CHARGED_MISSES) };
   }
 
   // Solved. The rating is held back until the user explains their own work (lib/arena-workstations/explain-attempts.ts): the task stays open in "explaining".
@@ -425,4 +435,33 @@ export async function closeWithoutRating(service: Service, attemptId: string, co
     .is("completed_at", null);
   if (error) throw new AttemptError("Could not close the task. Try again.", 502);
   return nextAvailableAt;
+}
+
+/**
+ * A student may leave a ticket they cannot or will not solve, instead of being held on it. It costs what a wrong answer costs (it counts as one, within the
+ * same limit per ticket), the ticket closes, and the next one comes after the usual wait. A ticket that is already solved and waiting to be explained, being
+ * graded, or part of a Proof Session cannot be skipped.
+ */
+export async function skipAttempt(service: Service, userId: string, attemptId: string): Promise<{ nextAvailableAt: string; eloChange: number }> {
+  const { attempt, challenge } = await loadOwnedOpenAttempt(service, userId, attemptId);
+  if (attempt.status !== "presented") throw new AttemptError(attempt.status === "explaining" ? "This task is already solved. Explain your work to earn your rating." : "This task is being graded. Try again in a moment.", 409);
+  if (await sessionOfAttempt(service, attemptId)) throw new AttemptError("A Proof Session stage cannot be skipped.", 409);
+
+  const now = new Date();
+  const nextAvailableAt = new Date(now.getTime() + COOLDOWN_MS).toISOString();
+  const { data: closed, error } = await service
+    .from("arena_domain_assignments")
+    .update({ status: "cancelled", completed_at: now.toISOString(), next_available_at: nextAvailableAt })
+    .eq("id", attemptId)
+    .eq("status", "presented")
+    .is("completed_at", null)
+    .select("id");
+  if (error || !closed?.length) throw new AttemptError("Could not skip this task. Try again.", 409);
+
+  const submissionNumber = attempt.submission_count + 1;
+  const miss = missIsCharged(submissionNumber)
+    ? await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, submissionNumber: 0, elo: ELO_BY_DIFFICULTY[difficultyOf(challenge.difficulty)], reason: `Arena ${challenge.difficulty} challenge skipped` })
+    : null;
+  logArenaEvent("task.skipped", { userId, attemptId, area: attempt.skill_area_key ?? "", change: String(miss?.change ?? 0) });
+  return { nextAvailableAt, eloChange: miss?.change ?? 0 };
 }
