@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getPortfolioData } from "@/lib/portfolio/data";
 import { PageHead } from "@/components/dashboard/PageHead";
 import { PortfolioBody } from "@/components/portfolio/PortfolioBody";
 import { ShareLinkCard } from "@/components/portfolio/ShareLinkCard";
+import { RecruiterShareCard } from "@/components/portfolio/RecruiterShareCard";
+import { createServiceClient } from "@/lib/supabase/service";
+import { listShares } from "@/lib/recruiter/shares";
 import { getPortfolioShareUrl } from "./actions";
 
 export const metadata: Metadata = { title: "Portfolio — Capabilio AI" };
@@ -23,6 +27,11 @@ export default async function PortfolioPage() {
     supabase.from("profiles").select("portfolio_slug, portfolio_public").eq("id", user.id).single(),
   ]);
   const shareUrl = shareRow?.portfolio_slug ? await getPortfolioShareUrl(shareRow.portfolio_slug) : null;
+  const shares = await listShares(createServiceClient(), user.id);
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const origin = `${h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https")}://${host}`;
+  const shareable = data.arenaTasks.filter((t) => t.sealed).map((t) => ({ attemptId: t.attemptId, title: t.title, area: t.area, sharedOnPortfolio: t.sealed!.shared }));
 
   return (
     <div>
@@ -32,6 +41,7 @@ export default async function PortfolioPage() {
         <div className="print:hidden">
           <ShareLinkCard initialUrl={shareUrl} initialIsPublic={shareRow?.portfolio_public ?? false} />
         </div>
+        <RecruiterShareCard records={shareable} shares={shares} contactAvailable={data.profile.contactShared} origin={origin} />
         <PortfolioBody
           viewer={data.viewer}
           profile={data.profile}

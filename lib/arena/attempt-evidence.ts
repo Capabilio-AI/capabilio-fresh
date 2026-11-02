@@ -41,7 +41,7 @@ export function sqlOutputDetail(detail: unknown): SqlOutputDetail | null {
   return null;
 }
 
-const TOOL_LABEL: Record<string, string> = {
+export const TOOL_LABEL: Record<string, string> = {
   sql_workspace: "SQL workspace",
   statistics_workspace: "Statistics workspace",
   cleaning_workspace: "Data prep workspace",
