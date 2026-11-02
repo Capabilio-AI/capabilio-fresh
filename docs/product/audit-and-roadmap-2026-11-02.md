@@ -95,3 +95,13 @@ Not yet done from item 1: storing the artifact itself (query, formulas, note) as
 ## 11. Built: sealed evidence records (roadmap item 1, second slice)
 
 Every task that is passed and explained is now sealed into `evidence_records` (migration 153): the brief, the student's submission, the graded checks, the grading and generation versions, tries, the explain-your-work result, and a SHA-256 fingerprint over all of it. Sealed columns cannot be changed (a trigger refuses it; tested in a scratch Postgres). The one column the student controls is `shared`: a hidden record is not listed on the public portfolio and its evidence route answers 404, identical to a record that does not exist. The popup shows the fingerprint and an integrity check. Sealing is best effort and never undoes a pass; tasks passed before this get a record from `scripts/backfill-evidence.mts`. Honest limit: the fingerprint detects silent change inside the database; it does not stop someone with full database access from altering a record and recomputing it.
+
+## 13. Changed: wrong answers now cost rating (2026-11-02, from user feedback)
+
+Until now only a pass moved the rating, on the reasoning that retries should be free. The founder's decision is the opposite: with no cost to being wrong, a rating proves nothing and nobody takes a ticket seriously. So:
+
+- A **wrong answer** on a daily ticket lowers the same career ELO a pass raises, by half of what the ticket is worth (the ARENA rule's `-2` against `+4`, through the ticket's own scale): +8 ticket, -4; +12, -6; +15, -8. Floor 0, as the ledger already enforced. One ledger event per wrong answer, keyed by attempt and answer number so a retried request cannot charge twice.
+- Only the **first three** wrong answers on one ticket cost anything, so one hard ticket cannot bury a student; solving it still earns the full amount. Net: two wrong answers then a pass on an easy ticket is break-even, so guessing is only worth it if you expect to be right more than a third of the time.
+- A student may **skip** a ticket instead of being held on it. It costs one wrong answer, closes the ticket (status `cancelled`) and the next one follows after the usual wait. A solved-but-unexplained ticket, a ticket being graded and a Proof Session stage cannot be skipped.
+- The ticket card and the workspace header show the stakes up front; a wrong answer says what it cost.
+- Not changed: Proof Session stages (their own assessed project), the skill graph (misses do not write skill evidence), the skill-area rating, proficiency levels (they already count tries). A skipped ticket still counts as a finished sprint slot on the weekly board.
