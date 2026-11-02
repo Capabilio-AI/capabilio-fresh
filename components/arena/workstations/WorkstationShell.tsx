@@ -202,7 +202,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
               {!feedback.passed && feedback.final && (
                 <p className="mt-1.5 font-lp-body text-[13px] font-semibold text-app-rose" role="status">
-                  {typeof feedback.eloChange === "number" && feedback.eloChange < 0 ? `${typeof feedback.careerEloChange === "number" ? `Your ELO ${feedback.careerEloChange}, ${attempt.area.name ?? "Skill area"} ${feedback.eloChange}` : `${feedback.eloChange} ELO`}, ${feedback.timedOut ? "the full value of the ticket, because nothing was submitted" : "based on how much of the answer was wrong"}. ` : ""}
+                  {typeof (feedback.careerEloChange ?? feedback.eloChange) === "number" && (feedback.careerEloChange ?? feedback.eloChange)! < 0 ? `Your ELO ${feedback.careerEloChange ?? feedback.eloChange}, ${feedback.timedOut ? "the full value of the ticket, because nothing was submitted" : "based on how much of the answer was wrong"}. ` : ""}
                   A submitted answer is final, so this ticket is closed.
                   {feedback.nextAvailableAt && (
                     <>

@@ -4,11 +4,22 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { untyped } from "@/lib/org/db";
 
-/** Domain-only history — verified workstation attempts (richer than Stream's: rating before/after) and tickets that closed unsolved, which carry `outcome` and a negative ratingDelta. Stream's own history: /api/arena/challenges/history. */
+/** Domain-only history, with each ticket's change on the career ELO — verified workstation attempts (richer than Stream's: rating before/after) and tickets that closed unsolved, which carry `outcome` and a negative ratingDelta. Stream's own history: /api/arena/challenges/history. */
 export async function GET() {
   const supabase = await createClient();
   const auth = await requireUser(supabase);
   if ("error" in auth) return auth.error;
+
+  // One row per closed ticket carries the change on the student's career ELO (the rating on the dashboard and leaderboard), read from the ledger.
+  const withCareerElo = async <T extends { id: string; ratingDelta: number; ratingAfter: number | null; outcome?: string }>(items: T[]) => {
+    const { data: events } = items.length ? await untyped(createServiceClient()).from("elo_events").select("source_id, change, new_rating").eq("student_id", auth.userId).eq("source", "ARENA").in("source_id", items.map((i) => i.id)) : { data: [] };
+    const byTicket = new Map(((events ?? []) as { source_id: string; change: number; new_rating: number }[]).map((e) => [e.source_id, e]));
+    return items.map((i) => {
+      const e = byTicket.get(i.id);
+      if (e) return { ...i, ratingDelta: e.change, ratingAfter: e.new_rating };
+      return i.outcome ? { ...i, ratingDelta: 0, ratingAfter: null } : i; // a miss at the rating floor moved nothing
+    });
+  };
 
   const { data: completions } = await supabase
     .from("arena_attempt_completions")
@@ -55,7 +66,7 @@ export async function GET() {
   const extra = [...fromAttempts, ...missed];
 
   if ((!completions || completions.length === 0) && extra.length === 0) return NextResponse.json({ completions: [] });
-  if (!completions || completions.length === 0) return NextResponse.json({ completions: extra.sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1)).slice(0, 50) });
+  if (!completions || completions.length === 0) return NextResponse.json({ completions: await withCareerElo(extra.sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1)).slice(0, 50)) });
 
   const [{ data: challenges }, { data: areas }] = await Promise.all([
     supabase.from("arena_challenges").select("id, title, content").in("id", completions.map((c) => c.challenge_id)),
@@ -75,5 +86,5 @@ export async function GET() {
         : null,
     }));
   const all = [...legacy, ...extra].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1)).slice(0, 50);
-  return NextResponse.json({ completions: all });
+  return NextResponse.json({ completions: await withCareerElo(all) });
 }

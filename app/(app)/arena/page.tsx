@@ -11,6 +11,7 @@ import { SkillMatrix } from "@/components/arena/SkillMatrix";
 import { RoleBuildingBanner } from "@/components/arena/RoleBuildingBanner";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { AreaHero, HeroStat } from "@/components/metro/AreaHero";
+import { LiveRefresh } from "@/components/live/LiveRefresh";
 
 export const metadata: Metadata = { title: "Arena | Capabilio AI", description: "Execute, compete, and prove your skills." };
 
@@ -33,6 +34,7 @@ export default async function ArenaHubPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <LiveRefresh />
       <AreaHero
         tone="dark"
         title="Arena"
