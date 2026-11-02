@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CornerDownLeft, Search } from "lucide-react";
 
 const ITEMS = [
-  { label: "Why proof", kind: "Section", href: "#world" },
-  { label: "The ecosystem", kind: "Section", href: "#ecosystem" },
-  { label: "Capabilio OS apps", kind: "Section", href: "#platform" },
-  { label: "Four paths", kind: "Section", href: "#paths" },
-  { label: "Principles and the ledger", kind: "Section", href: "#principles" },
-  { label: "Colleges, universities and companies", kind: "Section", href: "#institutions" },
+  { label: "Why proof", kind: "Section", href: "/#world" },
+  { label: "The ecosystem", kind: "Section", href: "/#ecosystem" },
+  { label: "Capabilio OS apps", kind: "Section", href: "/#platform" },
+  { label: "Four paths", kind: "Section", href: "/#paths" },
+  { label: "Principles and the ledger", kind: "Section", href: "/#principles" },
+  { label: "Colleges, universities and companies", kind: "Section", href: "/#institutions" },
+  { label: "Careers", kind: "Go", href: "/careers" },
   { label: "Get started", kind: "Go", href: "/get-started" },
   { label: "Student sign up", kind: "Go", href: "/signup" },
   { label: "Log in", kind: "Go", href: "/login" },
@@ -20,6 +21,7 @@ export const PALETTE_EVENT = "cap:palette";
 
 export default function CommandPalette() {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
@@ -53,7 +55,8 @@ export default function CommandPalette() {
 
   const run = (href: string) => {
     setOpen(false);
-    if (href.startsWith("#")) document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+    // A landing-page section scrolls when already on the landing page; from any other page it navigates there.
+    if (href.startsWith("/#") && pathname === "/") document.querySelector(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
     else router.push(href);
   };
 
