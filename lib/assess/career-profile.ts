@@ -52,6 +52,10 @@ export async function getCareerProfile(db: Db, userId: string): Promise<CareerPr
   ]);
   if (!career || !snap) return { ...EMPTY(status, true), role: career ?? null };
 
+  // The rating is read live from the ledger, not from the snapshot: a wrong answer or a timed-out ticket moves the ledger but writes no snapshot, so the snapshot's elo goes stale.
+  const { data: liveElo } = await db.from("student_career_elo").select("rating").eq("student_id", userId).eq("career_id", careerId).maybeSingle();
+  const liveRating: number = (liveElo as { rating: number } | null)?.rating ?? snap.elo;
+
   const meta = new Map(taxonomy.map((t) => [t.skillId, t]));
   type Stored = { skillId: string; score: number | null; confidence: SkillResult["confidence"]; evidenceCount: number; proof?: number };
   const skills: SkillResult[] = (snap.skills as Stored[]).flatMap((s) => {
@@ -62,7 +66,7 @@ export async function getCareerProfile(db: Db, userId: string): Promise<CareerPr
   return {
     status, unlocked: true, role: career,
     elo: {
-      rating: snap.elo, events: history.length,
+      rating: liveRating, events: history.length,
       fromAssessment: history.filter((h) => h.source === "ASSESSMENT").reduce((a, h) => a + h.change, 0),
       fromArena: history.filter((h) => h.source === "ARENA").reduce((a, h) => a + h.change, 0),
       history: history.slice(-60),
