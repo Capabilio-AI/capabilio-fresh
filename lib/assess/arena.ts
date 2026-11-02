@@ -68,6 +68,8 @@ export interface ArenaMiss {
   careerChange: number;
   areaChange: number;
   reason: string;
+  /** the Domain streak after this ticket closed, in the shape complete_workstation_attempt takes; the miss moves the streak like a pass does */
+  streak?: { current_streak: number; longest_streak: number; last_completed_week: string | null };
 }
 
 /**
@@ -78,7 +80,7 @@ export async function recordArenaMiss(userId: string, miss: ArenaMiss, db: Db = 
   try {
     const { data: career } = await db.from("careers").select("id").eq("key", miss.roleKey).eq("is_active", true).maybeSingle();
     if (!career) return null;
-    const { data, error } = await db.rpc("apply_arena_miss", { p_attempt: miss.attemptId, p_career: career.id, p_career_change: miss.careerChange, p_area_change: miss.areaChange, p_reason: miss.reason });
+    const { data, error } = await db.rpc("apply_arena_miss", { p_attempt: miss.attemptId, p_career: career.id, p_career_change: miss.careerChange, p_area_change: miss.areaChange, p_streak: miss.streak ?? null, p_reason: miss.reason });
     if (error) throw error;
     const r = data as { careerChange: number; areaChange: number; careerRating?: number; replayed: boolean };
     if (!r.replayed) await track(db, userId, "elo_updated", { source: "ARENA", change: r.careerChange, newRating: r.careerRating ?? null, attemptId: miss.attemptId, miss: true });

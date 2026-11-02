@@ -142,6 +142,14 @@ describe("running out of time with nothing submitted", () => {
     expect(row.completed_at).toBeTruthy();
     expect(row.grade).toMatchObject({ passed: false, timed_out: true, checks: [] });
     expect(recordMiss).toHaveBeenCalledWith("u1", expect.objectContaining({ attemptId: "a1", roleKey: "data-analyst", areaChange: -12, careerChange: -8 }));
+    expect(r).toMatchObject({ eloChange: -12, careerEloChange: -8 });
+  });
+
+  it("moves the Domain streak, like a pass does, when the ticket closes unanswered", async () => {
+    await expireIfTimedOut(service(spent(480)), "u1", "a1");
+    const sent = recordMiss.mock.calls[0][1] as { streak?: { current_streak: number; longest_streak: number; last_completed_week: string | null } };
+    expect(sent.streak).toMatchObject({ current_streak: 1, longest_streak: 1 });
+    expect(sent.streak?.last_completed_week).toBeTruthy();
   });
 
   it("accepts the browser's report a few seconds before the account's clock catches up, but not long before", async () => {

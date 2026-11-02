@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ARENA_CHANGED } from "@/lib/arena-workstations/refresh";
 import { Flame, Target, Trophy } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 
@@ -19,10 +20,14 @@ export function ChallengeStreak({ track }: { track: "stream" | "domain" }) {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    fetch(`/api/arena/stats?track=${track}`)
-      .then((res) => res.json())
-      .then(setStats)
-      .catch(() => setStats({ points: 0, tasksCompleted: 0, currentStreak: 0, longestStreak: 0 }));
+    const load = () =>
+      fetch(`/api/arena/stats?track=${track}`, { cache: "no-store" })
+        .then((res) => res.json())
+        .then(setStats)
+        .catch(() => setStats((prev) => prev ?? { points: 0, tasksCompleted: 0, currentStreak: 0, longestStreak: 0 }));
+    load();
+    window.addEventListener(ARENA_CHANGED, load);
+    return () => window.removeEventListener(ARENA_CHANGED, load);
   }, [track]);
 
   if (!stats) {
