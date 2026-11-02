@@ -11,6 +11,8 @@ import type { Db } from "@/lib/assess/db";
 import { getEducationEntries, type EducationEntry } from "@/lib/dashboard/education";
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
 import { summariseArenaWork, type ArenaWorkRole } from "@/lib/portfolio/arena-work";
+import { getSkillProficiency } from "@/lib/proficiency/load";
+import type { SkillProficiency } from "@/lib/proficiency/by-skill";
 
 export interface ArenaTask {
   attemptId: string;
@@ -67,6 +69,8 @@ export interface PortfolioData {
   arenaTasks: ArenaTask[];
   /** Graded Arena work per role and skill area: exact verified counts and the last pass date. */
   arenaWork: ArenaWorkRole[];
+  /** A level per skill, from graded work only, with the reason; empty until the student has passed a task. */
+  proficiency: SkillProficiency[];
   github: GithubEvidence | null;
   keyEvidence: string[];
   mostRecent: string | null;
@@ -134,6 +138,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     supabase.from("arena_domain_roles").select("role_key, display_name"),
   ]);
   const arenaWork = summariseArenaWork(ratings ?? [], roleNames ?? [], areas ?? []);
+  const proficiency = await getSkillProficiency(userId);
   let arenaTasks: ArenaTask[] = (completions ?? []).map((c) => {
     const ch = challenges?.find((x) => x.id === c.challenge_id);
     return {
@@ -201,6 +206,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     groups,
     arenaTasks,
     arenaWork,
+    proficiency,
     graph,
     github: github
       ? {
