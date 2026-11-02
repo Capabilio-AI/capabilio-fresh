@@ -13,15 +13,20 @@ export const ARENA_BASE_DELTA = 4;
 export const scaleForElo = (elo: number) => elo / ARENA_BASE_DELTA;
 
 /**
- * A wrong answer costs rating. The ARENA rule's incorrect delta is half its correct delta, so a miss on a ticket costs half of what solving it earns: a task
- * worth +8 costs -4 per wrong answer. That is the ELO shape: a guess is only worth making if you expect to be right more than a third of the time.
+ * What a ticket's answer is worth, by the answer. A right answer earns what the ticket advertised. A wrong one loses rating in proportion to how wrong it is:
+ * the share of the task's checks it failed, taken out of what the ticket was worth. An answer that gets 2 of 3 checks right loses a third of the ticket's
+ * worth; one that gets none right loses all of it. Nothing else enters: no flat penalty, no limit on how many, no multiplier. (The assessment's fixed
+ * +4 / -2 rule is for assessment answers only.)
  */
-export const MISS_COST_FRACTION = 0.5;
-/** Only the first few wrong answers on one ticket cost anything, so one hard ticket cannot bury a student, and a skip counts as one of them. */
-export const MAX_CHARGED_MISSES = 3;
+export function failedShare(checks: readonly { passed: boolean }[]): number {
+  if (checks.length === 0) return 1; // an answer that could not be checked at all counts as wholly wrong
+  return checks.filter((c) => !c.passed).length / checks.length;
+}
 
-/** The rating a wrong answer costs on a ticket worth `elo`, as a positive number to show a student (the ledger applies it as a negative). */
-export const missCost = (elo: number): number => Math.round(elo * MISS_COST_FRACTION);
+/** The (negative) rating change for a wrong answer on a ticket worth `worth`; always at least -1, since a wrong answer is never free. */
+export function missChange(worth: number, checks: readonly { passed: boolean }[]): number {
+  return -Math.max(1, Math.round(worth * failedShare(checks)));
+}
 
-/** Whether the nth submission (1 for the first) on a ticket is one that costs rating when wrong. */
-export const missIsCharged = (submissionNumber: number): boolean => submissionNumber >= 1 && submissionNumber <= MAX_CHARGED_MISSES;
+/** What a pass raises the career ELO by: the ticket's own worth on the shared ladder (easy 4, medium 8, hard 12). */
+export const careerPassGain = (difficulty: keyof typeof ARENA_DIFFICULTY_SCALE): number => ARENA_BASE_DELTA * ARENA_DIFFICULTY_SCALE[difficulty];

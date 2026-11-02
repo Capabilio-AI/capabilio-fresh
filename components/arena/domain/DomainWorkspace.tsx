@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight, BookOpen, CheckCircle2, Clock, Code2, Loader2, Lock, Trophy } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
-import { MAX_CHARGED_MISSES, missCost } from "@/lib/assess/arena-rules";
 import { Countdown } from "../workstations/Countdown";
 import { WorkstationShell, type PublicAttempt } from "../workstations/WorkstationShell";
 import type { SprintView } from "@/lib/workplace/sprint-server";
@@ -39,9 +38,6 @@ export function DomainWorkspace() {
   const [error, setError] = useState<{ message: string; retryable: boolean } | null>(null);
   const [starting, setStarting] = useState(false);
   const [open, setOpen] = useState(false);
-  const [confirmSkip, setConfirmSkip] = useState(false);
-  const [skipping, setSkipping] = useState(false);
-  const [skipError, setSkipError] = useState<string | null>(null);
 
   const apply = useCallback(
     (res: Response) =>
@@ -186,9 +182,9 @@ export function DomainWorkspace() {
               <Code2 size={20} strokeWidth={1.5} />
               Today&apos;s Mission
             </span>
-            <span className="flex items-center gap-1.5 rounded-full bg-[#F1F3F4] px-3.5 py-1.5 font-lp-body text-[15px] font-semibold text-[#202124]" title={`Solving earns this. Each of the first ${MAX_CHARGED_MISSES} wrong answers, or skipping, costs ${missCost(ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy)} ELO.`}>
+            <span className="flex items-center gap-1.5 rounded-full bg-[#F1F3F4] px-3.5 py-1.5 font-lp-body text-[15px] font-semibold text-[#202124]" title="Solving earns this after your interview. One final submission: a wrong answer lowers your ELO by how wrong it is.">
               <Trophy size={16} strokeWidth={2.5} className="text-app-orange" />+{ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO
-              <span className="text-[13px] font-medium text-app-rose">−{missCost(ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy)} per wrong answer</span>
+              <span className="text-[13px] font-medium text-app-rose">up to −{ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} if wrong</span>
             </span>
           </div>
           <div>
@@ -213,38 +209,7 @@ export function DomainWorkspace() {
               <BookOpen size={18} strokeWidth={1.5} />
               Learn First
             </Link>
-            {data.attempt.status === "presented" && !confirmSkip && (
-              <button type="button" onClick={() => setConfirmSkip(true)} className="font-lp-body text-[14px] font-medium text-[#5F6368] underline-offset-2 hover:underline">Skip this ticket</button>
-            )}
           </div>
-          {confirmSkip && (
-            <div className="rounded-2xl border border-[#E0E0E0] bg-[#FAFAFA] p-4" role="alertdialog" aria-label="Skip this ticket">
-              <p className="font-lp-body text-[14px] text-[#202124]">
-                Skip this ticket? It costs {missCost(ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy)} ELO, the same as a wrong answer, and your next ticket comes after the usual wait.
-              </p>
-              <div className="mt-3 flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled={skipping}
-                  onClick={async () => {
-                    setSkipping(true);
-                    setSkipError(null);
-                    const res = await fetch(`/api/arena/domain/attempts/${data.attempt.attemptId}/skip`, { method: "POST" }).catch(() => null);
-                    setSkipping(false);
-                    if (res?.ok) {
-                      setConfirmSkip(false);
-                      load();
-                    } else setSkipError((await res?.json().catch(() => null))?.error ?? "Could not skip. Try again.");
-                  }}
-                  className="rounded-full bg-[#202124] px-5 py-2 font-lp-body text-[14px] font-semibold text-white disabled:opacity-60"
-                >
-                  {skipping ? "Skipping…" : "Yes, skip it"}
-                </button>
-                <button type="button" onClick={() => setConfirmSkip(false)} className="font-lp-body text-[14px] font-medium text-[#5F6368]">Keep working on it</button>
-              </div>
-              {skipError && <p role="alert" className="mt-2 font-lp-body text-[13px] text-app-rose">{skipError}</p>}
-            </div>
-          )}
         </article>
       )}
 

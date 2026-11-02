@@ -8,7 +8,6 @@ import { syncSkillGraph } from "./graph-sync";
 import { refreshRoadmap } from "./roadmap";
 import { track, type Db } from "./db";
 import { ARENA_DIFFICULTY_SCALE, crossedMilestone, scaleForElo } from "./arena-rules";
-import { missEventId } from "./arena-penalty";
 
 export interface ArenaPass {
   attemptId: string;
@@ -65,28 +64,25 @@ export async function recordArenaPass(userId: string, pass: ArenaPass, db: Db = 
 export interface ArenaMiss {
   attemptId: string;
   roleKey: string;
-  /** which wrong answer on this ticket this is, from 1; 0 for a skipped ticket */
-  submissionNumber: number;
-  /** the ELO the ticket advertised: a miss costs half of it, through the same scale as a pass */
-  elo: number;
+  /** both negative: what the wrong answer takes from the career ELO and from the skill area's rating */
+  careerChange: number;
+  areaChange: number;
   reason: string;
 }
 
 /**
- * A wrong answer (or a skipped ticket) lowers the same ELO a pass raises, by half of what the ticket was worth, never below the rating floor. One ledger
- * event per wrong answer, keyed so that a retried request cannot charge the same answer twice. Never throws: a problem here must not break grading.
+ * A final wrong answer lowers the two ratings a pass raises, by amounts worked out from the answer (see missChange). The database applies it atomically and at
+ * most once per ticket, and never below the floor. This does not use the assessment's fixed +4 / -2 rule. Never throws: a problem here must not break grading.
  */
-export async function recordArenaMiss(userId: string, miss: ArenaMiss, db: Db = createServiceClient() as unknown as Db): Promise<{ elo: number; change: number } | null> {
+export async function recordArenaMiss(userId: string, miss: ArenaMiss, db: Db = createServiceClient() as unknown as Db): Promise<{ careerChange: number; areaChange: number } | null> {
   try {
     const { data: career } = await db.from("careers").select("id").eq("key", miss.roleKey).eq("is_active", true).maybeSingle();
     if (!career) return null;
-    const { data, error } = await db.rpc("apply_elo_event", {
-      p_student: userId, p_career: career.id, p_source: "ARENA", p_source_id: missEventId(miss.attemptId, miss.submissionNumber), p_correct: false, p_reason: miss.reason, p_scale: scaleForElo(miss.elo),
-    });
+    const { data, error } = await db.rpc("apply_arena_miss", { p_attempt: miss.attemptId, p_career: career.id, p_career_change: miss.careerChange, p_area_change: miss.areaChange, p_reason: miss.reason });
     if (error) throw error;
-    const ev = data as { change: number; newRating: number };
-    await track(db, userId, "elo_updated", { source: "ARENA", change: ev.change, newRating: ev.newRating, attemptId: miss.attemptId, miss: true });
-    return { elo: ev.newRating, change: ev.change };
+    const r = data as { careerChange: number; areaChange: number; careerRating?: number; replayed: boolean };
+    if (!r.replayed) await track(db, userId, "elo_updated", { source: "ARENA", change: r.careerChange, newRating: r.careerRating ?? null, attemptId: miss.attemptId, miss: true });
+    return { careerChange: r.careerChange, areaChange: r.areaChange };
   } catch (e) {
     console.error("[assess] recording an Arena miss failed:", e);
     return null;

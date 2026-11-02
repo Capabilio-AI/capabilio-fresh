@@ -22,7 +22,7 @@ import { areasForLevel } from "@/lib/workplace/areas";
 import { ensureSprint, loadSprintView, stampTicket } from "@/lib/workplace/sprint-server";
 import { untyped } from "@/lib/org/db";
 import { recordArenaMiss, recordArenaPass } from "@/lib/assess/arena";
-import { MAX_CHARGED_MISSES, missIsCharged } from "@/lib/assess/arena-rules";
+import { careerPassGain, missChange } from "@/lib/assess/arena-rules";
 import type { Db } from "@/lib/assess/db";
 import { GenerationRejected, difficultyForRating, ELO_BY_DIFFICULTY, type GeneratedChallenge, type GradeResult } from "./types";
 
@@ -92,6 +92,8 @@ async function publicAttempt(service: Service, attempt: AssignmentRow & { status
     challenge,
     // a solved task waits for the user to explain it: show what they handed in and how many tries they have used
     explain: attempt.status === "explaining" ? await explainInfo(service, attempt, challenge.tool_type ?? "") : null,
+    // the ticket's clock runs only while the workspace is open, and is kept on the ticket, so it resumes where the student stopped
+    timeSpentSeconds: await timeSpentOn(service, attempt.id),
   };
 }
 
@@ -304,25 +306,24 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   if (sessionId) return settleStage(service, { userId, attemptId, sessionId, grade, gradeJson, submissionJson, nowIso, submissionCount: attempt.submission_count, logFields });
 
   if (!grade.passed) {
-    // a tool may cap the tries (machine learning tasks, where unlimited tries would let someone recover the hidden labels)
-    const cap = (challenge.content as { maxSubmissions?: number } | null)?.maxSubmissions;
-    const submissionNumber = attempt.submission_count + 1; // read before the write below, never from the row after it
-    const outOfTries = !!cap && submissionNumber >= cap;
-    await service
+    // A submission is final: a wrong one closes the ticket and costs rating in proportion to how wrong the answer was. The student can run, test and preview
+    // as much as they like before submitting; nothing here lets them take the answer back.
+    const difficulty = difficultyOf(challenge.difficulty);
+    const closedAt = new Date();
+    const nextAvailableAt = new Date(closedAt.getTime() + COOLDOWN_MS).toISOString();
+    const { data: closed } = await service
       .from("arena_domain_assignments")
-      .update({
-        status: outOfTries ? "unexplained" : "presented", grade: gradeJson, submission: submissionJson, submitted_at: nowIso, submission_count: attempt.submission_count + 1,
-        ...(outOfTries ? { completed_at: nowIso, next_available_at: new Date(Date.now() + COOLDOWN_MS).toISOString() } : {}),
-      })
-      .eq("id", attemptId);
-    const message = outOfTries ? `${grade.message} You have used all ${cap} tries, so this task is closed without a rating. Your next task is on its way.` : grade.message;
-    // a wrong answer costs rating: half of what the ticket is worth, for the first few wrong answers on one ticket
-    const charged = missIsCharged(submissionNumber);
-    const miss = charged
-      ? await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, submissionNumber, elo: ELO_BY_DIFFICULTY[difficultyOf(challenge.difficulty)], reason: `Arena ${challenge.difficulty} challenge: wrong answer ${submissionNumber}` })
-      : null;
-    logArenaEvent("grading.miss", { ...logFields, submissionNumber: String(submissionNumber), charged: String(charged), change: String(miss?.change ?? 0) });
-    return { passed: false, message, checks: grade.checks, detail: grade.detail ?? null, eloChange: miss?.change ?? 0, chargedMisses: Math.min(submissionNumber, MAX_CHARGED_MISSES) };
+      .update({ status: "unexplained", grade: gradeJson, submission: submissionJson, submitted_at: nowIso, submission_count: attempt.submission_count + 1, completed_at: closedAt.toISOString(), next_available_at: nextAvailableAt })
+      .eq("id", attemptId)
+      .eq("status", "grading")
+      .is("completed_at", null)
+      .select("id");
+    if (!closed?.length) throw new AttemptError("This task was already submitted.", 409);
+    const areaChange = missChange(ELO_BY_DIFFICULTY[difficulty], grade.checks);
+    const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), grade.checks), reason: `Arena ${difficulty} challenge: final answer was wrong` });
+    logArenaEvent("grading.final_miss", { ...logFields, areaChange: String(miss?.areaChange ?? 0), careerChange: String(miss?.careerChange ?? 0) });
+    // the work stays on record: a closed ticket is evidence of what the student did, right or wrong
+    return { passed: false, final: true as const, message: grade.message, checks: grade.checks, detail: grade.detail ?? null, eloChange: miss?.areaChange ?? areaChange, nextAvailableAt };
   }
 
   // Solved. The rating is held back until the user explains their own work (lib/arena-workstations/explain-attempts.ts): the task stays open in "explaining".
@@ -438,30 +439,23 @@ export async function closeWithoutRating(service: Service, attemptId: string, co
 }
 
 /**
- * A student may leave a ticket they cannot or will not solve, instead of being held on it. It costs what a wrong answer costs (it counts as one, within the
- * same limit per ticket), the ticket closes, and the next one comes after the usual wait. A ticket that is already solved and waiting to be explained, being
- * graded, or part of a Proof Session cannot be skipped.
+ * Adds the time the student has the workspace open to the ticket's clock. The browser calls this every few seconds while the workspace is open and visible; the
+ * database adds the gap since the last call (never more than 45 seconds), so a closed tab or a closed ticket adds nothing. Returns the total, or null if it could
+ * not be recorded: the clock is a convenience and must never get in the way of the work.
  */
-export async function skipAttempt(service: Service, userId: string, attemptId: string): Promise<{ nextAvailableAt: string; eloChange: number }> {
-  const { attempt, challenge } = await loadOwnedOpenAttempt(service, userId, attemptId);
-  if (attempt.status !== "presented") throw new AttemptError(attempt.status === "explaining" ? "This task is already solved. Explain your work to earn your rating." : "This task is being graded. Try again in a moment.", 409);
-  if (await sessionOfAttempt(service, attemptId)) throw new AttemptError("A Proof Session stage cannot be skipped.", 409);
+export async function recordWorkTime(service: Service, userId: string, attemptId: string): Promise<number | null> {
+  try {
+    const { data, error } = await untyped(service).rpc("beat_attempt_time", { p_attempt: attemptId, p_user: userId });
+    if (error) throw error;
+    return typeof data === "number" ? data : null;
+  } catch (e) {
+    logArenaEvent("time.beat_failed", { userId, attemptId, reason: (e as Error).message.slice(0, 120) });
+    return null;
+  }
+}
 
-  const now = new Date();
-  const nextAvailableAt = new Date(now.getTime() + COOLDOWN_MS).toISOString();
-  const { data: closed, error } = await service
-    .from("arena_domain_assignments")
-    .update({ status: "cancelled", completed_at: now.toISOString(), next_available_at: nextAvailableAt })
-    .eq("id", attemptId)
-    .eq("status", "presented")
-    .is("completed_at", null)
-    .select("id");
-  if (error || !closed?.length) throw new AttemptError("Could not skip this task. Try again.", 409);
-
-  const submissionNumber = attempt.submission_count + 1;
-  const miss = missIsCharged(submissionNumber)
-    ? await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, submissionNumber: 0, elo: ELO_BY_DIFFICULTY[difficultyOf(challenge.difficulty)], reason: `Arena ${challenge.difficulty} challenge skipped` })
-    : null;
-  logArenaEvent("task.skipped", { userId, attemptId, area: attempt.skill_area_key ?? "", change: String(miss?.change ?? 0) });
-  return { nextAvailableAt, eloChange: miss?.change ?? 0 };
+/** Seconds already spent on a ticket; 0 when the column is not there yet. */
+async function timeSpentOn(service: Service, attemptId: string): Promise<number> {
+  const { data } = await untyped(service).from("arena_domain_assignments").select("time_spent_seconds").eq("id", attemptId).maybeSingle();
+  return (data as { time_spent_seconds?: number } | null)?.time_spent_seconds ?? 0;
 }
