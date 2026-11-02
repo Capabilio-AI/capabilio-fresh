@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
+import { getEvidenceRecord, type EvidenceRecord } from "@/lib/evidence/records";
 
 export interface AttemptEvidence {
   title: string;
@@ -16,6 +17,8 @@ export interface AttemptEvidence {
   assignedAt: string;
   cycleNumber: number | null;
   submissionCount: number;
+  /** Set when a sealed record backs this evidence: what a reader sees is exactly what was stored when the task was passed. */
+  seal?: { fingerprint: string; intact: boolean; explanationScore: number | null; explained: boolean };
   difficulty: string;
   generationProvider: string | null;
   generationModel: string | null;
@@ -61,7 +64,36 @@ const TOOL_LABEL: Record<string, string> = {
  * `userId` — the portfolio owner, whether that's the session user or a
  * public-share target resolved from a slug. Answer keys are never selected.
  */
+/** The evidence a sealed record holds, in the shape the readers already use. */
+export function evidenceFromRecord(r: EvidenceRecord): AttemptEvidence {
+  const c = r.content;
+  const sub = c.submission as { query?: string } | null;
+  return {
+    title: c.title,
+    company: c.company,
+    areaName: c.areaName,
+    toolLabel: c.toolType ? (TOOL_LABEL[c.toolType] ?? null) : null,
+    requester: c.requester,
+    scenario: c.scenario ?? "",
+    objectiveLines: (c.objective ?? "").split("\n").map((l) => l.replace(/`/g, "")),
+    grade: c.grade,
+    submissionText: sub ? (typeof sub.query === "string" ? sub.query : JSON.stringify(sub, null, 2)) : null,
+    completedAt: c.completedAt,
+    assignedAt: c.assignedAt,
+    cycleNumber: null,
+    submissionCount: c.submissions,
+    difficulty: c.difficulty,
+    generationProvider: null,
+    generationModel: null,
+    generationVersion: c.generationVersion,
+    gradingVersion: c.gradingVersion,
+    seal: { fingerprint: r.fingerprint, intact: r.intact, explanationScore: c.explanationScore, explained: c.explained },
+  };
+}
+
 export async function getAttemptEvidence(service: SupabaseClient<Database>, attemptId: string, userId: string): Promise<AttemptEvidence | null> {
+  const sealed = await getEvidenceRecord(service, attemptId, userId);
+  if (sealed) return evidenceFromRecord(sealed);
   const { data: attempt } = await service
     .from("arena_domain_assignments")
     .select("id, role_key, skill_area_key, cycle_number, assigned_at, completed_at, submission, grade, submission_count, challenge_id")

@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { generatePortfolioSlug } from "@/lib/portfolio/share";
+import { createServiceClient } from "@/lib/supabase/service";
+import { setRecordShared } from "@/lib/evidence/records";
 
 export async function getPortfolioShareUrl(slug: string): Promise<string> {
   const h = await headers();
@@ -41,4 +43,14 @@ export async function disablePortfolioSharing(): Promise<void> {
   const { supabase, user } = await requireAuthedUser();
   await supabase.from("profiles").update({ portfolio_public: false }).eq("id", user.id);
   revalidatePath("/dashboard/portfolio");
+}
+
+/** The student chooses whether recruiters can open the evidence for one passed task. Only the owner of the record can change it. */
+export async function setEvidenceShared(attemptId: string, shared: boolean): Promise<{ ok: true } | { error: string }> {
+  const { user } = await requireAuthedUser();
+  if (!/^[0-9a-f-]{36}$/i.test(attemptId)) return { error: "Not found." };
+  const ok = await setRecordShared(createServiceClient(), attemptId, user.id, shared);
+  if (!ok) return { error: "This task has no sealed record to share yet." };
+  revalidatePath("/dashboard/portfolio");
+  return { ok: true };
 }
