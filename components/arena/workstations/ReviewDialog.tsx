@@ -25,7 +25,7 @@ export function ReviewDialog({ sections, gain, loss, busy, onBack, onConfirm }: 
         <div className="border-b border-app-border px-6 py-4">
           <h2 id="review-h" className="font-lp-display text-[20px] font-bold text-app-charcoal">Review your answer</h2>
           <p className="mt-1 font-lp-body text-[13px] text-app-muted">
-            This is exactly what will be graded. <span className="font-semibold text-app-charcoal">Once you submit it, it is final</span>: you cannot change it or try again. A correct answer earns up to +{gain} ELO after your interview. A wrong one lowers your ELO by how wrong it is, up to −{loss}.
+            This is exactly what will be graded. <span className="font-semibold text-app-charcoal">Once you submit it, it is final</span>: you cannot change it or try again. A correct answer earns up to +{gain} ELO after your interview. A wrong one lowers your ELO by how wrong it is, up to −{loss}. If the time runs out before you submit, the ticket closes unanswered and costs the full −{loss}.
           </p>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-4">

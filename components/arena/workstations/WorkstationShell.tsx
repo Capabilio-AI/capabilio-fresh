@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, CircleX, Database } from "lucide-react";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { Countdown } from "./Countdown";
@@ -49,6 +49,8 @@ interface Feedback {
   eloChange?: number;
   /** a wrong submission is final: the ticket is closed and cannot be tried again */
   final?: boolean;
+  /** the ticket closed because the time ran out with nothing submitted */
+  timedOut?: boolean;
 }
 
 const noop = () => {};
@@ -70,6 +72,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
   const closed = Boolean(feedback?.passed || feedback?.final);
   // the answer waiting in the review step: nothing is sent until the student confirms it there
   const [review, setReview] = useState<unknown>(null);
+  const expiryOff = useRef(false);
   const [requesterName, requesterTitle] = (challenge.requester ?? "").split("·").map((s) => s.trim());
 
   useEffect(() => {
@@ -79,6 +82,24 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
       document.body.style.overflow = previous;
     };
   }, []);
+
+  /**
+   * The clock reached zero with nothing submitted. The server checks its own record of the time and, if it is up, closes the ticket as unanswered, which costs
+   * what an answer with nothing right costs. A ticket that cannot expire this way (a Proof Session stage) answers "not_applicable" and is left alone.
+   */
+  async function timeUp() {
+    if (submitting || closed || expiryOff.current) return;
+    const res = await fetch(`/api/arena/domain/attempts/${attempt.attemptId}/expire`, { method: "POST" }).catch(() => null);
+    if (!res?.ok) {
+      // a ticket that cannot expire this way will never be able to: stop asking
+      const refusal = (await res?.json().catch(() => null)) as { code?: string } | null;
+      if (refusal?.code === "not_applicable") expiryOff.current = true;
+      return;
+    }
+    const body = (await res.json()) as { eloChange: number; nextAvailableAt: string };
+    setReview(null);
+    setFeedback({ passed: false, final: true, timedOut: true, message: "Time ran out before an answer was submitted, so this ticket closed unanswered.", checks: [], eloChange: body.eloChange, nextAvailableAt: body.nextAvailableAt });
+  }
 
   async function submit(submission: unknown) {
     setSubmitting(true);
@@ -112,9 +133,9 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
         </span>
         <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px]">
           <span className="text-white/60">{attempt.area.name}</span>
-          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? (feedback?.session ? "Stage passed" : feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
-          {!closed && <WorkTimer attemptId={attempt.attemptId} limitSeconds={challenge.time_limit_minutes * 60} spentAtOpen={attempt.timeSpentSeconds ?? 0} running />}
-          <span className="font-semibold text-app-orange" title={`Solving earns this after you explain your work. A wrong answer lowers your ELO by how wrong it is, up to ${elo}.`}>+{elo} ELO if solved · up to −{elo} if wrong</span>
+          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? (feedback?.final ? "bg-app-rose" : "bg-app-success") : "bg-white/10"}`}>{closed ? (feedback?.final ? "Closed" : feedback?.session ? "Stage passed" : feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
+          {!closed && <WorkTimer attemptId={attempt.attemptId} limitSeconds={challenge.time_limit_minutes * 60} spentAtOpen={attempt.timeSpentSeconds ?? 0} running onTimeUp={timeUp} />}
+          <span className="font-semibold text-app-orange" title={`Solving earns this after you explain your work. A wrong answer lowers your ELO by how wrong it is, up to ${elo}. If the time runs out with nothing submitted, the ticket closes unanswered and costs the full ${elo}.`}>+{elo} ELO if solved · up to −{elo} if wrong or unanswered</span>
         </span>
       </header>
 
@@ -162,12 +183,12 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
             <div className={`rounded-xl border px-5 py-4 ${feedback.passed ? "border-app-success/30 bg-app-success-container" : "border-app-warning/30 bg-app-warning-container"}`} role="status">
               <p className={`flex items-center gap-2 font-lp-body text-[14px] font-semibold ${feedback.passed ? "text-app-success" : "text-app-warning"}`}>
                 {feedback.passed ? <CheckCircle2 size={17} /> : <CircleX size={17} />}
-                {feedback.session ? (feedback.passed ? "Stage passed" : "Not quite — the stage is still open") : feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : feedback.final ? "Submitted. This answer was not correct" : "Not quite — the task is still open"}
+                {feedback.session ? (feedback.passed ? "Stage passed" : "Not quite — the stage is still open") : feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : feedback.final ? (feedback.timedOut ? "Time is up" : "Submitted. This answer was not correct") : "Not quite — the task is still open"}
               </p>
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
               {!feedback.passed && feedback.final && (
                 <p className="mt-1.5 font-lp-body text-[13px] font-semibold text-app-rose" role="status">
-                  {typeof feedback.eloChange === "number" && feedback.eloChange < 0 ? `${feedback.eloChange} ELO, based on how much of the answer was wrong. ` : ""}
+                  {typeof feedback.eloChange === "number" && feedback.eloChange < 0 ? `${feedback.eloChange} ELO, ${feedback.timedOut ? "the full value of the ticket, because nothing was submitted" : "based on how much of the answer was wrong"}. ` : ""}
                   A submitted answer is final, so this ticket is closed.
                   {feedback.nextAvailableAt && (
                     <>

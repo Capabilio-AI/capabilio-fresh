@@ -148,7 +148,14 @@ export async function getWorkstationState(service: Service, userId: string, stat
 
   const rows = (attempts ?? []) as (AssignmentRow & { status: string; skill_area_key: string | null; submission_count: number; grade: Json | null; submission: Json | null })[];
   const daily = resolveDailyState(rows, new Date());
-  if (daily.kind === "active") return { ...base, state: "active" as const, attempt: await publicAttempt(service, daily.assignment as (typeof rows)[number], areas) };
+  if (daily.kind === "active") {
+    // time can run out while nobody is looking (the workspace was closed in the last seconds): settle it now, then show what is left
+    if ((daily.assignment as (typeof rows)[number]).status === "presented") {
+      const expired = await expireIfTimedOut(service, userId, daily.assignment.id).catch(() => null);
+      if (expired) return { ...base, state: "cooldown" as const, nextAvailableAt: expired.nextAvailableAt };
+    }
+    return { ...base, state: "active" as const, attempt: await publicAttempt(service, daily.assignment as (typeof rows)[number], areas) };
+  }
   if (daily.kind === "cooldown") return { ...base, state: "cooldown" as const, nextAvailableAt: daily.nextAvailableAt };
   if (!engaged && !matched && rows.length === 0) return { ...base, state: "not_started" as const };
   if (!progress.some((p) => p.enabled)) return { ...base, state: "unavailable" as const };
@@ -254,7 +261,7 @@ async function loadOwnedOpenAttempt(service: Service, userId: string, attemptId:
   const { data: attempt } = await service.from("arena_domain_assignments").select(`${ASSIGNMENT_COLUMNS}, user_id, role_key`).eq("id", attemptId).eq("user_id", userId).maybeSingle();
   if (!attempt) throw new AttemptError("Task not found.", 404);
   if (attempt.completed_at) throw new AttemptError("This task is already closed.", 409);
-  const { data: challenge } = await service.from("arena_challenges").select("id, difficulty, tool_type, content, answer_key, grading_version, user_id").eq("id", attempt.challenge_id).single();
+  const { data: challenge } = await service.from("arena_challenges").select("id, difficulty, tool_type, content, answer_key, grading_version, user_id, time_limit_minutes").eq("id", attempt.challenge_id).single();
   if (!challenge || challenge.user_id !== userId || !challenge.tool_type) throw new AttemptError("Task not found.", 404);
   return { attempt, challenge };
 }
@@ -436,6 +443,44 @@ export async function closeWithoutRating(service: Service, attemptId: string, co
     .is("completed_at", null);
   if (error) throw new AttemptError("Could not close the task. Try again.", 502);
   return nextAvailableAt;
+}
+
+/** The clock in the browser can run a few seconds ahead of the account's, which is only updated every few seconds, so a time-up reported by the browser is accepted this early. */
+export const TIME_UP_TOLERANCE_SECONDS = 20;
+
+/** Pure. Whether a ticket's time is used up, allowing the account's clock to lag by `toleranceSeconds`. */
+export const timeIsUp = (spentSeconds: number, limitMinutes: number, toleranceSeconds = 0): boolean => spentSeconds + toleranceSeconds >= limitMinutes * 60;
+
+/**
+ * If the ticket's time has run out with nothing submitted, closes it as unanswered. An unanswered ticket is an answer that got no check right, so it loses what
+ * a wholly wrong answer loses: all of what the ticket is worth, from the career ELO (the rating on the student's profile) and the skill area's rating. Returns
+ * null when the time is not up. Throws for a ticket that is not theirs, is closed, is being graded, or is part of a Proof Session (which has no such deadline).
+ * Safe to call repeatedly: only one call can close the ticket, and the database charges once per ticket.
+ */
+export async function expireIfTimedOut(service: Service, userId: string, attemptId: string, toleranceSeconds = 0): Promise<{ eloChange: number; nextAvailableAt: string } | null> {
+  const { attempt, challenge } = await loadOwnedOpenAttempt(service, userId, attemptId);
+  if (attempt.status !== "presented") throw new AttemptError("This task is not waiting for an answer.", 409, { code: "not_applicable" });
+  if (await sessionOfAttempt(service, attemptId)) throw new AttemptError("A Proof Session stage has no time limit of this kind.", 409, { code: "not_applicable" });
+  const limitMinutes = (challenge as { time_limit_minutes?: number }).time_limit_minutes ?? 0;
+  if (limitMinutes <= 0 || !timeIsUp(await timeSpentOn(service, attemptId), limitMinutes, toleranceSeconds)) return null;
+
+  const difficulty = difficultyOf(challenge.difficulty);
+  const now = new Date();
+  const nextAvailableAt = new Date(now.getTime() + COOLDOWN_MS).toISOString();
+  const grade = { passed: false, message: "Time ran out before an answer was submitted, so the ticket closed unanswered.", checks: [], detail: null, timed_out: true, grading_version: challenge.grading_version } as unknown as Json;
+  const { data: closed } = await service
+    .from("arena_domain_assignments")
+    .update({ status: "unexplained", grade, completed_at: now.toISOString(), next_available_at: nextAvailableAt })
+    .eq("id", attemptId)
+    .eq("status", "presented")
+    .is("completed_at", null)
+    .select("id");
+  if (!closed?.length) throw new AttemptError("This task was just closed.", 409, { code: "not_applicable" });
+
+  const areaChange = missChange(ELO_BY_DIFFICULTY[difficulty], []);
+  const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), []), reason: `Arena ${difficulty} challenge: time ran out with no answer` });
+  logArenaEvent("task.timed_out", { userId, attemptId, area: attempt.skill_area_key ?? "", areaChange: String(miss?.areaChange ?? 0), careerChange: String(miss?.careerChange ?? 0) });
+  return { eloChange: miss?.areaChange ?? areaChange, nextAvailableAt };
 }
 
 /**

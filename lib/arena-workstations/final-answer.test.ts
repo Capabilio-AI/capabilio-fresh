@@ -15,7 +15,7 @@ vi.mock("./registry", () => ({
   toolFor: () => ({ toolType: "sql_workspace", gradingVersion: "g1", submissionSchema: z.object({ query: z.string() }), grade: (...a: unknown[]) => grade(...a) }),
 }));
 
-import { recordWorkTime, submitAttempt } from "./attempts";
+import { expireIfTimedOut, recordWorkTime, submitAttempt, timeIsUp } from "./attempts";
 
 type Row = Record<string, unknown>;
 function service(tables: Record<string, Row[]>, rpc?: (fn: string, args: Row) => unknown) {
@@ -42,8 +42,8 @@ function service(tables: Record<string, Row[]>, rpc?: (fn: string, args: Row) =>
 }
 
 const ticket = (over: Row = {}) => ({
-  arena_domain_assignments: [{ id: "a1", user_id: "u1", role_key: "data-analyst", challenge_id: "c1", status: "presented", completed_at: null, submission_count: 0, skill_area_key: "sql", grade: null, submission: null, proof_session_id: null, ...over }],
-  arena_challenges: [{ id: "c1", user_id: "u1", difficulty: "medium", tool_type: "sql_workspace", grading_version: "g1", content: {}, answer_key: {} }],
+  arena_domain_assignments: [{ id: "a1", user_id: "u1", role_key: "data-analyst", challenge_id: "c1", status: "presented", completed_at: null, submission_count: 0, skill_area_key: "sql", grade: null, submission: null, proof_session_id: null, time_spent_seconds: 0, ...over }],
+  arena_challenges: [{ id: "c1", user_id: "u1", difficulty: "medium", tool_type: "sql_workspace", grading_version: "g1", content: {}, answer_key: {}, time_limit_minutes: 8 }],
 });
 const checks = (...passed: boolean[]) => passed.map((p, i) => ({ label: `c${i}`, passed: p }));
 
@@ -112,5 +112,65 @@ describe("the ticket's clock", () => {
 
   it("never gets in the way of the work: a failed report is just null", async () => {
     expect(await recordWorkTime(service(ticket(), () => ({ data: null, error: new Error("down") })), "u1", "a1")).toBeNull();
+  });
+});
+
+describe("running out of time with nothing submitted", () => {
+  const spent = (seconds: number, over: Row = {}) => ticket({ time_spent_seconds: seconds, ...over });
+
+  it("is up when the time spent reaches the limit, allowing the account's clock to lag by a little", () => {
+    expect(timeIsUp(479, 8)).toBe(false);
+    expect(timeIsUp(480, 8)).toBe(true);
+    expect(timeIsUp(465, 8, 20)).toBe(true);
+    expect(timeIsUp(400, 8, 20)).toBe(false);
+  });
+
+  it("does nothing while there is time left", async () => {
+    const t = spent(100);
+    expect(await expireIfTimedOut(service(t), "u1", "a1")).toBeNull();
+    expect(t.arena_domain_assignments[0]).toMatchObject({ status: "presented", completed_at: null });
+    expect(recordMiss).not.toHaveBeenCalled();
+  });
+
+  it("closes the ticket as unanswered and takes the full worth of the ticket from both ratings, like an answer with nothing right", async () => {
+    const t = spent(480);
+    const r = await expireIfTimedOut(service(t), "u1", "a1");
+    expect(r).toMatchObject({ eloChange: -12 });
+    expect(Date.parse(r!.nextAvailableAt)).toBeGreaterThan(Date.now() + 23 * 3_600_000);
+    const row = t.arena_domain_assignments[0] as Record<string, unknown>;
+    expect(row).toMatchObject({ status: "unexplained" });
+    expect(row.completed_at).toBeTruthy();
+    expect(row.grade).toMatchObject({ passed: false, timed_out: true, checks: [] });
+    expect(recordMiss).toHaveBeenCalledWith("u1", expect.objectContaining({ attemptId: "a1", roleKey: "data-analyst", areaChange: -12, careerChange: -8 }));
+  });
+
+  it("accepts the browser's report a few seconds before the account's clock catches up, but not long before", async () => {
+    expect(await expireIfTimedOut(service(spent(465)), "u1", "a1", 20)).not.toBeNull();
+    expect(await expireIfTimedOut(service(spent(465)), "u1", "a1", 0)).toBeNull();
+    expect(await expireIfTimedOut(service(spent(300)), "u1", "a1", 20)).toBeNull();
+  });
+
+  it("closes a ticket whose time ran out while nobody was looking, the next time it is asked about", async () => {
+    // the workspace was closed in the last seconds: the account's clock reads exactly the limit
+    const t = spent(480);
+    const db = service(t);
+    expect(await expireIfTimedOut(db, "u1", "a1")).not.toBeNull();
+    await expect(expireIfTimedOut(db, "u1", "a1")).rejects.toMatchObject({ status: 409 }); // already closed: it is charged once
+    expect(recordMiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("cannot be used on a ticket that is not the student's, is already solved, is being graded, or is a Proof Session stage", async () => {
+    await expect(expireIfTimedOut(service(spent(480)), "someone-else", "a1")).rejects.toMatchObject({ status: 404 });
+    await expect(expireIfTimedOut(service(spent(480, { status: "explaining" })), "u1", "a1")).rejects.toMatchObject({ status: 409, extra: { code: "not_applicable" } });
+    await expect(expireIfTimedOut(service(spent(480, { status: "grading" })), "u1", "a1")).rejects.toMatchObject({ status: 409 });
+    await expect(expireIfTimedOut(service(spent(480, { proof_session_id: "s1" })), "u1", "a1")).rejects.toMatchObject({ status: 409, extra: { code: "not_applicable" } });
+    expect(recordMiss).not.toHaveBeenCalled();
+  });
+
+  it("leaves no way to submit after the ticket has timed out", async () => {
+    const db = service(spent(480));
+    await expireIfTimedOut(db, "u1", "a1");
+    grade.mockResolvedValue({ passed: true, message: "ok", checks: [{ label: "c", passed: true }] });
+    await expect(submitAttempt(db, "u1", "a1", { query: "SELECT 1" })).rejects.toMatchObject({ status: 409 });
   });
 });

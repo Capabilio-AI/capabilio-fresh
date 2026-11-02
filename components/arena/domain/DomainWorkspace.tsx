@@ -182,9 +182,9 @@ export function DomainWorkspace() {
               <Code2 size={20} strokeWidth={1.5} />
               Today&apos;s Mission
             </span>
-            <span className="flex items-center gap-1.5 rounded-full bg-[#F1F3F4] px-3.5 py-1.5 font-lp-body text-[15px] font-semibold text-[#202124]" title="Solving earns this after your interview. One final submission: a wrong answer lowers your ELO by how wrong it is.">
+            <span className="flex items-center gap-1.5 rounded-full bg-[#F1F3F4] px-3.5 py-1.5 font-lp-body text-[15px] font-semibold text-[#202124]" title="Solving earns this after your interview. One final submission: a wrong answer lowers your ELO by how wrong it is, and so does letting the time run out with nothing submitted.">
               <Trophy size={16} strokeWidth={2.5} className="text-app-orange" />+{ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} ELO
-              <span className="text-[13px] font-medium text-app-rose">up to −{ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} if wrong</span>
+              <span className="text-[13px] font-medium text-app-rose">up to −{ELO_BY_DIFFICULTY[data.attempt.challenge.difficulty as "easy" | "medium" | "hard"] ?? ELO_BY_DIFFICULTY.easy} if wrong or unanswered</span>
             </span>
           </div>
           <div>

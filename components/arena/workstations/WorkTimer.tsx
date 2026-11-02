@@ -14,12 +14,17 @@ export function formatClock(totalSeconds: number): string {
 
 /**
  * A ticket's clock. It runs only while this workspace is open and the page is visible, and it is kept on the ticket in the student's account: close the
- * workspace, come back tomorrow, open it on another device, and it resumes where it stopped instead of starting again. Running out of time does not close
- * the workspace or change anything; the clock just shows how far over the estimate the student is.
+ * workspace, come back tomorrow, open it on another device, and it resumes where it stopped instead of starting again. When it reaches zero it tells the
+ * workspace, which asks the server to close the ticket as unanswered (the server checks its own record of the time first).
  */
-export function WorkTimer({ attemptId, limitSeconds, spentAtOpen, running }: { attemptId: string; limitSeconds: number; spentAtOpen: number; running: boolean }) {
+export function WorkTimer({ attemptId, limitSeconds, spentAtOpen, running, onTimeUp }: { attemptId: string; limitSeconds: number; spentAtOpen: number; running: boolean; onTimeUp?: () => void }) {
   const [spent, setSpent] = useState(spentAtOpen);
   const spentRef = useRef(spentAtOpen);
+  const onTimeUpRef = useRef(onTimeUp);
+  const lastTimeUpCall = useRef(0);
+  useEffect(() => {
+    onTimeUpRef.current = onTimeUp;
+  });
 
   useEffect(() => {
     if (!running) return;
@@ -28,6 +33,11 @@ export function WorkTimer({ attemptId, limitSeconds, spentAtOpen, running }: { a
       if (!visible()) return;
       spentRef.current += 1;
       setSpent(spentRef.current);
+      // at zero, ask for the ticket to be settled; if the server says it is not quite time (its clock lags a little), ask again every few seconds
+      if (limitSeconds - spentRef.current <= 0 && Date.now() - lastTimeUpCall.current > 8000) {
+        lastTimeUpCall.current = Date.now();
+        onTimeUpRef.current?.();
+      }
     }, 1000);
     const beat = () => {
       if (!visible()) return;
@@ -49,12 +59,13 @@ export function WorkTimer({ attemptId, limitSeconds, spentAtOpen, running }: { a
       clearInterval(beats);
       beat(); // one last report when the workspace closes
     };
-  }, [attemptId, running]);
+  }, [attemptId, running, limitSeconds]);
 
   const left = limitSeconds - spent;
+  const low = left <= 120;
   return (
-    <span className={`font-lp-mono tabular-nums ${left < 0 ? "text-app-rose" : ""}`} title="This clock runs only while the workspace is open, and picks up where you left off.">
-      {left >= 0 ? `${formatClock(left)} left` : `${formatClock(-left)} over the estimate`}
+    <span className={`font-lp-mono tabular-nums ${left <= 0 ? "text-app-rose" : low ? "text-app-warning" : ""}`} title="This clock runs only while the workspace is open, and picks up where you left off. If it reaches zero before you submit, the ticket closes unanswered.">
+      {left > 0 ? `${formatClock(left)} left${low ? " · submit before it ends" : ""}` : "Time is up"}
     </span>
   );
 }
