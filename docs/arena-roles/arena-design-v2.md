@@ -42,9 +42,11 @@ Data seen on 2026-10-31: 10 curriculum imports from 2 colleges (CSE/IT/AI 6, ECE
 
 Honest limits are stated per role in its blueprint (no CAD, no HDL toolchain, no GPU): never claim a skill a tool cannot assess.
 
-## 5. Role-complete gate (`npm run arena:gate`)
+## 5. Tooling gate (`npm run arena:gate`)
 
-A role is READY only when: >= 12 skills; sign-up bank >= 30 per skill; >= 6 enabled areas; every area linked to a skill; every critical/high skill provable by at least one area. Template depth (3 per critical/high skill: easy, medium, hard) is checked by the role's blueprint test. A role that is not READY shows students "assessment only, Arena coming" and is excluded from job-ready claims.
+This gate says Capabilio can measure and prove a role. It says nothing about any student. Whether a student is ready is `lib/proficiency/readiness.ts` (Not started, Learning, Developing, Demonstrated, Ready for role assessment).
+
+A role is TOOLING COMPLETE only when: >= 12 skills; sign-up bank >= 30 per skill; >= 6 enabled areas; every area linked to a skill; every critical/high skill provable by at least one area. Template depth (3 per critical/high skill: easy, medium, hard) is checked by the role's blueprint test. A role that is not tooling-complete shows students "assessment only, Arena coming" and is excluded from job-ready claims.
 
 Baseline 2026-10-31: **0 / 27 ready.** Common gaps: 14 IT/branch roles have no skill list at all; 12 roles have areas that are linked to no skill; 9 have no workstation; Data Analyst still has 3 unlinked areas and 4 of 9 critical/high skills unprovable.
 
