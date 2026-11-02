@@ -12,6 +12,7 @@ vi.mock("./roadmap", () => ({ refreshRoadmap: vi.fn() }));
 
 import { careerPassGain, failedShare, missChange } from "./arena-rules";
 import { recordArenaMiss } from "./arena";
+import { syncSkillGraph } from "./graph-sync";
 
 const checks = (...passed: boolean[]) => passed.map((p, i) => ({ label: `c${i}`, passed: p }));
 
@@ -79,3 +80,37 @@ describe("recordArenaMiss", () => {
     spy.mockRestore();
   });
 });
+
+describe("a miss is evidence too", () => {
+  function evidenceDb(replayed: boolean) {
+    const upserts: Record<string, unknown>[] = [];
+    const careers = { select: () => careers, eq: () => careers, maybeSingle: async () => ({ data: { id: "career-1" } }) };
+    const skills = { select: () => skills, in: async () => ({ data: [{ id: "s1", name: "SQL" }, { id: "s2", name: "Joins" }] }) };
+    const evidence = { upsert: async (row: Record<string, unknown>) => { upserts.push(row); return { error: null }; } };
+    const db = {
+      from: (t: string) => (t === "careers" ? careers : t === "skills" ? skills : t === "student_skill_evidence" ? evidence : { insert: async () => ({ error: null }) }),
+      rpc: async () => ({ data: { replayed, careerChange: -2, areaChange: -4, careerRating: 412 }, error: null }),
+    } as never;
+    return { db, upserts };
+  }
+  const withSkills = { ...miss, skillId: "s1", extraSkillIds: ["s2"], difficulty: "easy" as const };
+
+  it("records a wrong answer for every skill the ticket exercises and refreshes the skill graph", async () => {
+    vi.mocked(syncSkillGraph).mockClear();
+    const { db, upserts } = evidenceDb(false);
+    await recordArenaMiss("u1", withSkills, db);
+    expect(upserts).toHaveLength(2);
+    expect(upserts.every((r) => r.correct === false && r.source === "ARENA" && r.difficulty === "EASY")).toBe(true);
+    expect(upserts.map((r) => r.source_id)).toEqual(["a1", "a1:s2"]);
+    expect(syncSkillGraph).toHaveBeenCalledTimes(1);
+  });
+
+  it("does nothing twice when the miss is replayed", async () => {
+    vi.mocked(syncSkillGraph).mockClear();
+    const { db, upserts } = evidenceDb(true);
+    await recordArenaMiss("u1", withSkills, db);
+    expect(upserts).toHaveLength(0);
+    expect(syncSkillGraph).not.toHaveBeenCalled();
+  });
+});
+

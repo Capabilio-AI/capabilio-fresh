@@ -20,6 +20,19 @@ export interface ArenaPass {
   elo?: number;
 }
 
+/** One evidence row per skill the ticket exercises (the first reuses the attempt id as its key); a miss writes the same rows with correct = false, so the skill scores move both ways. */
+async function writeArenaEvidence(db: Db, userId: string, careerId: string, t: { attemptId: string; skillId: string | null; extraSkillIds?: string[]; difficulty: keyof typeof ARENA_DIFFICULTY_SCALE }, correct: boolean): Promise<void> {
+  const skillIds = [...new Set([t.skillId, ...(t.extraSkillIds ?? [])].filter((id): id is string => Boolean(id)))];
+  const { data: skillRows } = skillIds.length ? await db.from("skills").select("id, name").in("id", skillIds) : { data: [] };
+  const skillName = new Map((skillRows ?? []).map((r) => [r.id, r.name]));
+  for (const [i, skillId] of skillIds.entries()) {
+    await db.from("student_skill_evidence").upsert(
+      { student_id: userId, career_id: careerId, skill_id: skillId, skill_label: skillName.get(skillId) ?? "Arena skill", source: "ARENA", source_id: i === 0 ? t.attemptId : `${t.attemptId}:${skillId}`, correct, difficulty: t.difficulty.toUpperCase() },
+      { onConflict: "source,source_id", ignoreDuplicates: true }
+    );
+  }
+}
+
 /**
  * Called once a challenge is verified as passed: the rating goes up by what the ticket advertised. A wrong answer is recorded separately by
  * recordArenaMiss and costs rating. The ledger is idempotent per attempt, so a replay changes nothing. Never throws:
@@ -38,15 +51,7 @@ export async function recordArenaPass(userId: string, pass: ArenaPass, db: Db = 
     const ev = data as { previous: number; change: number; newRating: number; replayed: boolean };
     if (ev.replayed) return { elo: ev.newRating, change: ev.change };
 
-    const skillIds = [...new Set([pass.skillId, ...(pass.extraSkillIds ?? [])].filter((id): id is string => Boolean(id)))];
-    const { data: skillRows } = skillIds.length ? await db.from("skills").select("id, name").in("id", skillIds) : { data: [] };
-    const skillName = new Map((skillRows ?? []).map((r) => [r.id, r.name]));
-    for (const [i, skillId] of skillIds.entries()) {
-      await db.from("student_skill_evidence").upsert(
-        { student_id: userId, career_id: career.id, skill_id: skillId, skill_label: skillName.get(skillId) ?? "Arena skill", source: "ARENA", source_id: i === 0 ? pass.attemptId : `${pass.attemptId}:${skillId}`, correct: true, difficulty: pass.difficulty.toUpperCase() },
-        { onConflict: "source,source_id", ignoreDuplicates: true }
-      );
-    }
+    await writeArenaEvidence(db, userId, career.id, pass, true);
 
     await syncSkillGraph(db, userId, career.id, "ARENA");
     await track(db, userId, "elo_updated", { source: "ARENA", change: ev.change, newRating: ev.newRating, attemptId: pass.attemptId });
@@ -68,6 +73,10 @@ export interface ArenaMiss {
   careerChange: number;
   areaChange: number;
   reason: string;
+  /** the skills the ticket exercised: a miss is evidence too, so the skill graph and dashboard move on it */
+  skillId?: string | null;
+  extraSkillIds?: string[];
+  difficulty?: keyof typeof ARENA_DIFFICULTY_SCALE;
   /** the Domain streak after this ticket closed, in the shape complete_workstation_attempt takes; the miss moves the streak like a pass does */
   streak?: { current_streak: number; longest_streak: number; last_completed_week: string | null };
 }
@@ -83,7 +92,11 @@ export async function recordArenaMiss(userId: string, miss: ArenaMiss, db: Db = 
     const { data, error } = await db.rpc("apply_arena_miss", { p_attempt: miss.attemptId, p_career: career.id, p_career_change: miss.careerChange, p_area_change: miss.areaChange, p_streak: miss.streak ?? null, p_reason: miss.reason });
     if (error) throw error;
     const r = data as { careerChange: number; areaChange: number; careerRating?: number; replayed: boolean };
-    if (!r.replayed) await track(db, userId, "elo_updated", { source: "ARENA", change: r.careerChange, newRating: r.careerRating ?? null, attemptId: miss.attemptId, miss: true });
+    if (!r.replayed) {
+      await track(db, userId, "elo_updated", { source: "ARENA", change: r.careerChange, newRating: r.careerRating ?? null, attemptId: miss.attemptId, miss: true });
+      await writeArenaEvidence(db, userId, career.id, { attemptId: miss.attemptId, skillId: miss.skillId ?? null, extraSkillIds: miss.extraSkillIds, difficulty: miss.difficulty ?? "easy" }, false);
+      await syncSkillGraph(db, userId, career.id, "ARENA");
+    }
     return { careerChange: r.careerChange, areaChange: r.areaChange };
   } catch (e) {
     console.error("[assess] recording an Arena miss failed:", e);
