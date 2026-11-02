@@ -24,7 +24,7 @@ export function PendingApprovalCard({ organisationName, orgType, onBack }: Pendi
         <p className="mt-2 font-lp-body text-lp-body-sm leading-relaxed text-lp-text-muted">
           {organisationName ? <strong className="text-lp-text-ink">{organisationName}</strong> : "Your organisation"} is waiting for review.
           Nothing is wrong &mdash; you can sign in once we have approved it. Staff who register with their college email are approved automatically.
-          {orgType === "company" && " Company accounts aren\u2019t open yet; we\u2019ll be in touch."}
+          {orgType === "company" && " Company accounts are approved by our team, usually within a day."}
         </p>
       </div>
       <ol className="mt-6 flex flex-col gap-3 rounded-lg border border-lp-border-hairline bg-lp-surface-subtle p-space-md">

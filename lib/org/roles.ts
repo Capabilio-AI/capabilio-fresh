@@ -1,5 +1,5 @@
 // Spec roles -> app_role. One role per person per institution (UNIQUE(user_id, institution_id)).
-export type OrgKind = "student" | "staff" | "admin" | "tpo";
+export type OrgKind = "student" | "staff" | "admin" | "tpo" | "company";
 
 const KIND_BY_ROLE: Record<string, OrgKind> = {
   student: "student",
@@ -8,6 +8,7 @@ const KIND_BY_ROLE: Record<string, OrgKind> = {
   principal: "admin",
   vice_principal: "admin",
   tpo: "tpo",
+  company_admin: "company",
 };
 
 export function kindOf(role: string): OrgKind | null {
@@ -39,6 +40,7 @@ export const ROLE_DEFAULTS: Record<OrgKind, readonly OrgPermissionKey[]> = {
   staff: ["students", "classroom", "posts", "chat"],
   tpo: ["placements", "outcomes", "insights", "chat"],
   student: [],
+  company: [], // companies have their own workspace (/company); no college permission applies
 };
 
 const isPermissionKey = (v: string): v is OrgPermissionKey => (ALL_PERMISSION_KEYS as readonly string[]).includes(v);
@@ -110,5 +112,6 @@ export function can(subject: PermissionSubject | null, action: Permission): bool
 export function landingFor(role: string): string | null {
   const kind = kindOf(role);
   if (kind === "student") return "/assessment";
+  if (kind === "company") return "/company";
   return kind ? "/org" : null;
 }

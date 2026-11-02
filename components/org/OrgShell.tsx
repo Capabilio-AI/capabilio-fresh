@@ -13,6 +13,10 @@ import { NotificationBadge } from "@/components/notifications/NotificationBadge"
 
 const ICONS: Record<string, LucideIcon> = {
   "/org": LayoutDashboard,
+  "/company": LayoutDashboard,
+  "/company/roles": Briefcase,
+  "/company/visits": CalendarDays,
+  "/company/team": UserCheck,
   "/org/college": School,
   "/org/posts": Megaphone,
   "/org/students": Users,
@@ -30,7 +34,7 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 function isActive(pathname: string, href: string): boolean {
-  return href === "/org" ? pathname === "/org" : pathname === href || pathname.startsWith(`${href}/`);
+  return href === "/org" || href === "/company" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export const initialsOf = (name: string) =>
@@ -64,13 +68,17 @@ export function OrgShell({
   groups,
   publicHref,
   approved,
+  variant = "org",
   children,
 }: {
   institutionName: string;
   roleLabel: string;
   groups: OrgNavGroup[];
-  publicHref: string;
+  /** the public page to preview; a company has none yet */
+  publicHref?: string;
   approved: boolean;
+  /** "company" is the employer workspace: its own home, and no college-only shortcuts */
+  variant?: "org" | "company";
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -80,7 +88,7 @@ export function OrgShell({
     <div className="min-h-screen">
       <header className="ws-topbar sticky top-0 z-30">
         <div className="mx-auto flex h-[64px] max-w-[1400px] items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <Link href="/org" aria-label="Capabilio AI, workspace home" className="flex shrink-0 items-center">
+          <Link href={variant === "company" ? "/company" : "/org"} aria-label="Capabilio AI, workspace home" className="flex shrink-0 items-center">
             <Image src="/brand/capabilio-logo.png" alt="Capabilio AI" width={1130} height={234} priority className="h-[36px] w-auto sm:h-[42px]" />
           </Link>
 
@@ -97,21 +105,27 @@ export function OrgShell({
           <div className="min-w-0 flex-1" />
 
           <div className="ws-pill flex shrink-0 items-center gap-0.5 rounded-full p-1">
-            <Dock href={publicHref} label="Public page" external>
-              <Eye size={18} strokeWidth={2.2} />
-            </Dock>
+            {publicHref && (
+              <Dock href={publicHref} label="Public page" external>
+                <Eye size={18} strokeWidth={2.2} />
+              </Dock>
+            )}
             {hasCollege && (
               <Dock href="/org/college" label="College page">
                 <School size={18} strokeWidth={2.2} />
               </Dock>
             )}
-            <Dock href="/org/notifications" label="Notifications" badge={<NotificationBadge className="absolute -right-2.5 -top-2 h-[18px]" />}>
-              <Bell size={18} strokeWidth={2.2} />
-            </Dock>
-            <Dock href="/org/settings" label="Settings">
-              <Settings size={18} strokeWidth={2.2} />
-            </Dock>
-            <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
+            {variant === "org" && (
+              <>
+                <Dock href="/org/notifications" label="Notifications" badge={<NotificationBadge className="absolute -right-2.5 -top-2 h-[18px]" />}>
+                  <Bell size={18} strokeWidth={2.2} />
+                </Dock>
+                <Dock href="/org/settings" label="Settings">
+                  <Settings size={18} strokeWidth={2.2} />
+                </Dock>
+                <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
+              </>
+            )}
             <OrgAccountMenu approved={approved} institutionName={institutionName} roleLabel={roleLabel} publicHref={publicHref} initials={initialsOf(institutionName)} />
           </div>
         </div>

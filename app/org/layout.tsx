@@ -14,6 +14,7 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
   const ctx = await getOrgContext(supabase, user.id);
   if (!ctx) redirect("/login?path=organisation");
   if (ctx.kind === "student") redirect("/dashboard");
+  if (ctx.kind === "company") redirect("/company");
   const approved = await isInstitutionApproved(createServiceClient(), ctx.institutionId);
   return (
     <OrgTheme workspace>

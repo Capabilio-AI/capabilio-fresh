@@ -74,4 +74,5 @@ export const ROLE_LABEL: Record<string, string> = {
   principal: "Principal",
   vice_principal: "Vice Principal",
   tpo: "Training & Placement Officer",
+  company_admin: "Company admin",
 };

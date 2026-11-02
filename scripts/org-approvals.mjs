@@ -28,7 +28,6 @@ if (cmd === "list") {
   const { data: m } = await s.from("institution_memberships").select("id, role, status, user_id, institutions(org_type)").eq("id", membershipId).maybeSingle();
   if (!m || !ORG_ROLES.includes(m.role)) { console.error("Not a pending organisation membership."); process.exit(1); }
   if (m.status === "active") { console.log("Already active."); process.exit(0); }
-  if (m.institutions?.org_type === "company") { console.error("Company accounts have no product surface yet; not approving."); process.exit(1); }
   const { data: u } = await s.auth.admin.getUserById(m.user_id);
   if (!u?.user?.email_confirmed_at) { console.error("Email not confirmed yet; refusing to approve."); process.exit(1); }
   const { error } = await s.from("institution_memberships").update({ status: "active" }).eq("id", m.id);

@@ -22,7 +22,12 @@ describe("role mapping and permission sets", () => {
     expect(kindOf("vice_principal")).toBe("admin");
     expect(kindOf("tpo")).toBe("tpo");
     expect(kindOf("student")).toBe("student");
-    for (const r of ["ceo", "mentor", "professional", "company_admin", "nonsense"]) expect(kindOf(r)).toBeNull();
+    expect(kindOf("company_admin")).toBe("company");
+    for (const r of ["ceo", "mentor", "professional", "nonsense"]) expect(kindOf(r)).toBeNull();
+  });
+  it("a company admin holds no college permission", () => {
+    expect(can(subject("company_admin"), "viewRoster")).toBe(false);
+    expect(can(subject("company_admin"), "postPlacement")).toBe(false);
   });
   it("role defaults match spec §6", () => {
     expect(can(subject("student"), "joinGroup")).toBe(true);
@@ -73,7 +78,7 @@ describe("role mapping and permission sets", () => {
     expect(landingFor("tpo")).toBe("/org");
     expect(landingFor("faculty")).toBe("/org");
     expect(landingFor("student")).toBe("/assessment");
-    expect(landingFor("company_admin")).toBeNull();
+    expect(landingFor("company_admin")).toBe("/company");
   });
   it("nav only offers pages the member's permissions allow", () => {
     const labels = (role: string, custom: string[] | null = null) => orgNavFor(effectivePermissions(role, custom)).map((n) => n.label);
