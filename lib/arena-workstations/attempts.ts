@@ -327,7 +327,7 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
       .select("id");
     if (!closed?.length) throw new AttemptError("This task was already submitted.", 409);
     const areaChange = missChange(ELO_BY_DIFFICULTY[difficulty], grade.checks);
-    const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), grade.checks), reason: `Arena ${difficulty} challenge: final answer was wrong`, streak: await streakAfterClosing(service, userId) });
+    const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), grade.checks), reason: `Arena ${difficulty} challenge: final answer was wrong`, difficulty, ...(await skillsOfArea(service, attempt.role_key, attempt.skill_area_key ?? "")), streak: await streakAfterClosing(service, userId) });
     logArenaEvent("grading.final_miss", { ...logFields, areaChange: String(miss?.areaChange ?? 0), careerChange: String(miss?.careerChange ?? 0) });
     // the work stays on record: a closed ticket is evidence of what the student did, right or wrong
     return { passed: false, final: true as const, message: grade.message, checks: grade.checks, detail: grade.detail ?? null, eloChange: miss?.areaChange ?? areaChange, careerEloChange: miss?.careerChange ?? 0, nextAvailableAt };
@@ -444,6 +444,16 @@ export async function closeWithoutRating(service: Service, attemptId: string, co
   return nextAvailableAt;
 }
 
+/** The skills a ticket's area exercises, for the evidence a pass or a miss leaves. */
+async function skillsOfArea(service: Service, roleKey: string, areaKey: string) {
+  const db = service as unknown as Db;
+  const [{ data: primary }, { data: extra }] = await Promise.all([
+    db.from("arena_skill_areas").select("skill_id").eq("role_key", roleKey).eq("area_key", areaKey).maybeSingle(),
+    db.from("arena_area_extra_skills").select("skill_id").eq("role_key", roleKey).eq("area_key", areaKey),
+  ]);
+  return { skillId: primary?.skill_id ?? null, extraSkillIds: ((extra ?? []) as { skill_id: string }[]).map((e) => e.skill_id) };
+}
+
 /** The Domain streak once a ticket closes now: one step per week, whether the ticket was solved or not (a closed ticket is showing up). */
 async function streakAfterClosing(service: Service, userId: string) {
   const { data: stats } = await service.from("arena_domain_stats").select("current_streak, longest_streak, last_completed_week").eq("user_id", userId).maybeSingle();
@@ -484,7 +494,7 @@ export async function expireIfTimedOut(service: Service, userId: string, attempt
   if (!closed?.length) throw new AttemptError("This task was just closed.", 409, { code: "not_applicable" });
 
   const areaChange = missChange(ELO_BY_DIFFICULTY[difficulty], []);
-  const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), []), reason: `Arena ${difficulty} challenge: time ran out with no answer`, streak: await streakAfterClosing(service, userId) });
+  const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), []), reason: `Arena ${difficulty} challenge: time ran out with no answer`, difficulty, ...(await skillsOfArea(service, attempt.role_key, attempt.skill_area_key ?? "")), streak: await streakAfterClosing(service, userId) });
   logArenaEvent("task.timed_out", { userId, attemptId, area: attempt.skill_area_key ?? "", areaChange: String(miss?.areaChange ?? 0), careerChange: String(miss?.careerChange ?? 0) });
   return { eloChange: miss?.areaChange ?? areaChange, careerEloChange: miss?.careerChange ?? 0, nextAvailableAt };
 }
