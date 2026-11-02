@@ -52,5 +52,13 @@ export interface ApplicationRow {
   profileUrl: string | null;
   status: ApplicationStatus;
   internalNote: string | null;
+  /** set when a signed-in student applied; their Skill Passport can then be opened */
+  userId: string | null;
+  passportCode: string | null;
   createdAt: string;
+}
+
+/** A company role as a student sees it: the role plus who is hiring. */
+export interface CompanyOpening extends Opening {
+  companyName: string;
 }

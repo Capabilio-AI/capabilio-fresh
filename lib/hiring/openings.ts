@@ -2,7 +2,7 @@ import { untyped } from "@/lib/org/db";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { isAccepting } from "./format";
 import type { OpeningInput } from "./schema";
-import type { ApplicationRow, ApplicationStatus, Opening } from "./types";
+import type { ApplicationRow, ApplicationStatus, CompanyOpening, Opening } from "./types";
 
 type Service = ReturnType<typeof createServiceClient>;
 
@@ -42,8 +42,9 @@ interface ApplicationDb {
   profile_url: string | null;
   status: ApplicationStatus;
   internal_note: string | null;
+  user_id: string | null;
   created_at: string;
-  job_openings: { title: string } | null;
+  job_openings: { title: string; institution_id: string | null } | null;
 }
 
 /** Pure. */
@@ -107,7 +108,7 @@ const OPENING_COLS =
  * A failed read (for example before the careers migration is applied) shows "nothing open", never an error page.
  */
 export async function listPublicOpenings(service: Service): Promise<Opening[]> {
-  const { data, error } = await untyped(service).from("job_openings").select(OPENING_COLS).in("status", ["open", "soon"]).order("published_at", { ascending: false, nullsFirst: false });
+  const { data, error } = await untyped(service).from("job_openings").select(OPENING_COLS).is("institution_id", null).in("status", ["open", "soon"]).order("published_at", { ascending: false, nullsFirst: false });
   if (error) {
     console.error("[careers] could not list openings:", error.message);
     return [];
@@ -119,7 +120,7 @@ export async function listPublicOpenings(service: Service): Promise<Opening[]> {
 
 /** A role by link name. Drafts are never public; a closed role still resolves so a shared link says it closed instead of 404ing. */
 export async function getPublicOpening(service: Service, slug: string): Promise<Opening | null> {
-  const { data, error } = await untyped(service).from("job_openings").select(OPENING_COLS).eq("slug", slug).in("status", ["open", "soon", "closed"]).maybeSingle();
+  const { data, error } = await untyped(service).from("job_openings").select(OPENING_COLS).eq("slug", slug).is("institution_id", null).in("status", ["open", "soon", "closed"]).maybeSingle();
   if (error) {
     console.error("[careers] could not read opening:", error.message);
     return null;
@@ -127,18 +128,48 @@ export async function getPublicOpening(service: Service, slug: string): Promise<
   return data ? toOpening(data as OpeningDb) : null;
 }
 
-export async function listAllOpenings(service: Service): Promise<Opening[]> {
-  const { data } = await untyped(service).from("job_openings").select(OPENING_COLS).order("created_at", { ascending: false });
+/** Every role in one scope: a company's own (its institution id) or Capabilio's (null). */
+export async function listAllOpenings(service: Service, institutionId: string | null = null): Promise<Opening[]> {
+  const q = untyped(service).from("job_openings").select(OPENING_COLS);
+  const { data } = await (institutionId ? q.eq("institution_id", institutionId) : q.is("institution_id", null)).order("created_at", { ascending: false });
   return ((data ?? []) as OpeningDb[]).map(toOpening);
 }
 
-export async function listApplications(service: Service): Promise<ApplicationRow[]> {
-  const { data } = await untyped(service)
-    .from("job_applications")
-    .select("id, opening_id, full_name, email, work_url, proof_note, resume_url, profile_url, status, internal_note, created_at, job_openings(title)")
+/** Roles companies have opened, for signed-in students. A failed read shows "nothing open". */
+export async function listCompanyOpenings(service: Service): Promise<CompanyOpening[]> {
+  const { data, error } = await untyped(service)
+    .from("job_openings")
+    .select(`${OPENING_COLS}, institutions(name)`)
+    .not("institution_id", "is", null)
+    .eq("status", "open")
+    .order("published_at", { ascending: false, nullsFirst: false });
+  if (error) {
+    console.error("[jobs] could not list company roles:", error.message);
+    return [];
+  }
+  return ((data ?? []) as unknown as (OpeningDb & { institutions: { name: string } | null })[])
+    .map((r) => ({ ...toOpening(r), companyName: r.institutions?.name ?? "A company" }))
+    .filter((o) => isAccepting(o));
+}
+
+/** Applications in one scope (a company's roles, or Capabilio's), each with the applicant's passport code when a student applied. */
+export async function listApplications(service: Service, institutionId: string | null = null): Promise<ApplicationRow[]> {
+  const cols = "id, opening_id, full_name, email, work_url, proof_note, resume_url, profile_url, status, internal_note, user_id, created_at";
+  const q = untyped(service).from("job_applications");
+  const { data } = await (institutionId
+    ? q.select(`${cols}, job_openings!inner(title, institution_id)`).eq("job_openings.institution_id", institutionId)
+    : q.select(`${cols}, job_openings(title, institution_id)`)
+  )
     .order("created_at", { ascending: false })
     .limit(500);
-  return ((data ?? []) as unknown as ApplicationDb[]).map((a) => ({
+  const rows = ((data ?? []) as unknown as ApplicationDb[]).filter((a) => institutionId !== null || !a.job_openings?.institution_id);
+  const userIds = [...new Set(rows.map((a) => a.user_id).filter((u): u is string => Boolean(u)))];
+  const codes = new Map<string, string>();
+  if (userIds.length) {
+    const { data: profiles } = await untyped(service).from("profiles").select("id, passport_code").in("id", userIds);
+    for (const p of (profiles ?? []) as { id: string; passport_code: string }[]) codes.set(p.id, p.passport_code);
+  }
+  return rows.map((a) => ({
     id: a.id,
     openingId: a.opening_id,
     openingTitle: a.job_openings?.title ?? null,
@@ -150,6 +181,8 @@ export async function listApplications(service: Service): Promise<ApplicationRow
     profileUrl: a.profile_url,
     status: a.status,
     internalNote: a.internal_note,
+    userId: a.user_id,
+    passportCode: a.user_id ? (codes.get(a.user_id) ?? null) : null,
     createdAt: a.created_at,
   }));
 }

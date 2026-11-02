@@ -10,11 +10,13 @@ const LABEL = "mb-1 block font-lp-body text-[12px] font-semibold text-[var(--m-i
 const HINT = "mt-1 font-lp-body text-[11.5px] text-app-muted";
 const TEAMS = ["Engineering", "Design", "Product", "Growth", "Operations", "Content", "Partnerships"];
 
+const COMPANY_STATUS_HINT = { draft: "Draft: only you can see it.", open: "Open: students can see and apply now.", soon: "", closed: "Closed: off the student board." } as const;
 const STATUS_HINT = { draft: "Draft: only you can see it.", open: "Open: live on /careers now.", soon: "Opening soon: listed on /careers, no applications yet.", closed: "Closed: off the list; its link says it closed." } as const;
 
 /** Create a role, or edit one. Lists are typed one per line. */
-export function OpeningForm({ opening, onDone }: { opening?: Opening; onDone: () => void }) {
+export function OpeningForm({ opening, onDone, company = false }: { opening?: Opening; onDone: () => void; company?: boolean }) {
   const router = useRouter();
+  const base = company ? "/api/company" : "/api/careers-admin";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +46,7 @@ export function OpeningForm({ opening, onDone }: { opening?: Opening; onDone: ()
     };
     setBusy(true);
     setError(null);
-    const res = await fetch(opening ? `/api/careers-admin/openings/${opening.id}` : "/api/careers-admin/openings", {
+    const res = await fetch(opening ? `${base}/openings/${opening.id}` : `${base}/openings`, {
       method: opening ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -144,7 +146,7 @@ export function OpeningForm({ opening, onDone }: { opening?: Opening; onDone: ()
       <div>
         <label className={LABEL} htmlFor="status">Status</label>
         <select id="status" name="status" defaultValue={opening?.status ?? "draft"} className={`${INPUT} sm:max-w-xs`}>
-          {OPENING_STATUSES.map((s) => <option key={s} value={s}>{STATUS_HINT[s]}</option>)}
+          {OPENING_STATUSES.filter((s) => !company || s !== "soon").map((s) => <option key={s} value={s}>{(company ? COMPANY_STATUS_HINT : STATUS_HINT)[s]}</option>)}
         </select>
       </div>
       {error && <p role="alert" className="font-lp-body text-[12.5px] text-app-rose">{error}</p>}
