@@ -1,5 +1,6 @@
-// Read-only readiness report for the launch roles (lib/arena-roles/launch.ts). Usage: npm run arena:gate
-// A role is "ready" only when students can be MEASURED (skills + sign-up question bank) and PROVEN (Arena areas linked to those skills).
+// Read-only TOOLING report for the launch roles (lib/arena-roles/launch.ts). Usage: npm run arena:gate
+// "Tooling complete" means Capabilio can measure and prove the role (skills, sign-up bank, linked areas). It says nothing about any student: student readiness is lib/proficiency/readiness.ts.
+// A role is "tooling complete" only when students can be MEASURED (skills + sign-up question bank) and PROVEN (Arena areas linked to those skills).
 // Arena itself has no multiple choice: the question bank is the one-off sign-up screen. Scenario-template depth per skill lives in code and is not counted here.
 import { createServiceClient } from "@/lib/supabase/service";
 import { LAUNCH_ROLES } from "@/lib/arena-roles/launch";
@@ -35,7 +36,7 @@ for (const role of LAUNCH_ROLES) {
     roleAreas.some((a: any) => !a.skill_id) ? `${roleAreas.filter((a: any) => !a.skill_id).length} areas unlinked` : null,
     key2.some((s) => !proves.has(s.skill_id)) ? `${key2.filter((s) => !proves.has(s.skill_id)).length}/${key2.length} critical+high skills unprovable in Arena` : null,
   ].filter(Boolean);
-  rows.push({ id: role.id, role: role.name.slice(0, 34), ready: gaps.length === 0 ? "READY" : "-", gaps: gaps.join("; ") });
+  rows.push({ id: role.id, role: role.name.slice(0, 34), tooling: gaps.length === 0 ? "COMPLETE" : "-", gaps: gaps.join("; ") });
 }
 console.table(rows);
-console.log(`${rows.filter((r) => r.ready === "READY").length}/${rows.length} launch roles ready`);
+console.log(`${rows.filter((r) => r.tooling === "COMPLETE").length}/${rows.length} launch roles tooling-complete`);

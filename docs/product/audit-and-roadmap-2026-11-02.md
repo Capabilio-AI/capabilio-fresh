@@ -86,3 +86,9 @@ Avoid for now: all eight new Data Analyst areas at once; any server-side executi
 `lib/proficiency`: levels 0 to 5 (Not demonstrated, Familiarity, Guided practice, Independent execution, Workplace application, Advanced problem solving), each a list of measurable criteria over verified Arena passes (count, difficulty, tries before passing, explained in the interview, areas covered). One easy task never moves a skill past Familiarity; easy-only work caps at Guided practice; a task counts once. Shown on the portfolio with the reason; the next-step advice shows only to the student. Checked on production data: the one verified pass in the database yields Level 1 for SQL and Data Analysis.
 
 Not yet done from item 1: storing the artifact itself (query, formulas, note) as a shareable, versioned evidence record, and persisting levels so they can be queried for cohorts. The portfolio's existing "View evidence" modal already opens the graded attempt.
+
+## 10. Built: the two meanings of "ready" are separate (roadmap item 2)
+
+- `npm run arena:gate` now reports **tooling complete** (Capabilio can measure and prove the role). Data Analyst: complete; 1 of 15 roles.
+- `lib/proficiency/readiness.ts`: a **student's** readiness for their target role: Not started, Learning, Developing, Demonstrated, Ready for role assessment. Each required skill has a target level (critical and high: Level 3, medium: Level 2, low: Level 1); the top state needs every critical and high skill met and 80% of the weighted requirement; strength in minor skills never stands in for a missing core skill. It always says why and lists the gaps with the concrete next steps, and states that it is not a hiring prediction.
+- Shown on the portfolio above the skill levels. Checked on production data: the one student with a verified pass reads "Learning, 7%, 0 of 14 met".

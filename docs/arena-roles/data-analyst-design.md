@@ -24,7 +24,7 @@ Fresher rule: one requester, one clear question, <= 3 tables of <= 60 rows, no a
 
 | # | Step | Done when |
 |---|---|---|
-| 1 | **Link areas to skills** (migration 151) | Gate shows no unlinked area and no unprovable critical/high skill. **Built, unapplied.** |
+| 1 | **Link areas to skills** (migration 151) | Gate (tooling) shows no unlinked area and no unprovable critical/high skill. **Built, unapplied.** |
 | 2 | **Template depth audit**: count templates per area x difficulty x level; fill any critical/high skill without easy/medium/hard fresher variants | Every critical/high skill has >= 3 fresher variants with server-computed keys |
 | 3 | **Python area**: browser notebook (Pyodide, same client-run model as `ml_workspace`), pandas tickets graded on numbers; unblocks `python` | `python` enabled, Python skill provable |
 | 4 | **Dashboard measures tickets**: define a measure (ratio, YoY, running total) and a chart from a brief | Power BI wording either earned or removed |
