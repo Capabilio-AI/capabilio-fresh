@@ -1,5 +1,6 @@
 "use client";
 
+import type { SkillProficiency } from "@/lib/proficiency/by-skill";
 import { useEffect, useRef, useState } from "react";
 import { Award, Download, ExternalLink, FileText, GitBranch, GraduationCap, Link2, Mail, MapPin, Phone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
@@ -48,6 +49,7 @@ export interface PortfolioBodyProps {
   groups: CapabilityGroup[];
   arenaTasks: ArenaTask[];
   arenaWork: ArenaWorkRole[];
+  proficiency: SkillProficiency[];
   /** Kept so the public share page and the dashboard pass the same data; interview sessions are practice and stay out of the recruiter view. */
   interviews?: InterviewSummary[];
   github: GithubEvidence | null;
@@ -67,7 +69,7 @@ export interface PortfolioBodyProps {
  * The portfolio a student hands a recruiter, laid out like a professional profile: who they are, a factual summary, the work they have
  * completed (each piece opens its full evidence), their measured skills, GitHub, and projects. Everything comes from verified records.
  */
-export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, arenaWork, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, arenaWork, proficiency, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   // Work that arrives while the page is open (live updates) is marked "New" for a few seconds so a watching recruiter sees what just landed.
   const seen = useRef(new Set(arenaTasks.map((t) => t.attemptId)));
@@ -174,6 +176,33 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
                       <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.area, t.score !== undefined ? `Score ${t.score}%` : null, t.explanationScore !== undefined ? `Explained ${t.explanationScore}/100` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
                     </div>
                     <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {proficiency.length > 0 && (
+            <Section title="Verified skill levels">
+              <p className="mb-3 font-lp-body text-[13px] text-[var(--m-muted)]">Levels come only from graded tasks, never from answers or self-ratings. The tools are simulations of professional software, not field experience.</p>
+              <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
+                {proficiency.map((s) => (
+                  <li key={`${s.roleKey}:${s.skillId}`} className="py-3.5 first:pt-0">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{s.skillName}</p>
+                      <p className="shrink-0 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)]">Level {s.proficiency.level} of 5 · {s.proficiency.name}</p>
+                    </div>
+                    <div className="mt-2 flex gap-1" role="img" aria-label={`Level ${s.proficiency.level} of 5`}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <span key={n} className={`h-1.5 flex-1 rounded-full ${n <= s.proficiency.level ? "bg-[var(--m-accent)]" : "bg-[var(--m-rule)]"}`} />
+                      ))}
+                    </div>
+                    <p className="mt-1.5 font-lp-body text-[12.5px] text-[var(--m-muted)]">
+                      {s.proficiency.passes} graded task{s.proficiency.passes === 1 ? "" : "s"} passed{s.proficiency.reached.length > 0 ? `. Basis for this level: ${s.proficiency.reached.map((c) => c.label).join("; ")}.` : "."}
+                    </p>
+                    {isOwner && s.proficiency.next && s.proficiency.next.needs.length > 0 && (
+                      <p className="mt-1 font-lp-body text-[12.5px] text-[var(--m-ink)] print:hidden">To reach Level {s.proficiency.next.level} ({s.proficiency.next.name}): {s.proficiency.next.needs.join("; ")}.</p>
+                    )}
                   </li>
                 ))}
               </ul>
