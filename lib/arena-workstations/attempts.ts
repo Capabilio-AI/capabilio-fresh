@@ -7,6 +7,7 @@ import { COOLDOWN_MS, resolveDailyState, type AssignmentRow } from "./daily";
 import { isRegisteredTool, toolFor } from "./registry";
 import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
 import { skillGapPriorities } from "./skill-gap";
+import { sealAttemptEvidence } from "@/lib/evidence/records";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getEngagedRoleKey, listEnabledRoles, loadRoleTaxonomy, matchRoleForStatedCareer, type SkillAreaRow } from "./taxonomy";
 import { resolveDomainRole } from "./role-resolution";
@@ -403,6 +404,8 @@ export async function finishVerified(service: Service, userId: string, attemptId
       db.from("arena_area_extra_skills").select("skill_id").eq("role_key", attempt.role_key).eq("area_key", areaKey),
     ]);
     await recordArenaPass(userId, { attemptId, roleKey: attempt.role_key, skillId: primary?.skill_id ?? null, extraSkillIds: ((extra ?? []) as { skill_id: string }[]).map((e) => e.skill_id), difficulty }, db);
+    // freeze what a recruiter will read; best effort, so a failure here never undoes the pass
+    await sealAttemptEvidence(service, attemptId);
     return { points: result.points, nextAvailableAt: result.next_available_at, evidenceId: result.evidence_id ?? null };
   } catch (e) {
     logArenaEvent("completion.failed", { userId, attemptId, reason: (e as Error).message.slice(0, 200) });

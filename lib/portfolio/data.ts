@@ -12,6 +12,7 @@ import { getEducationEntries, type EducationEntry } from "@/lib/dashboard/educat
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
 import { summariseArenaWork, type ArenaWorkRole } from "@/lib/portfolio/arena-work";
 import { getSkillProficiency } from "@/lib/proficiency/load";
+import { getRecordFlags } from "@/lib/evidence/records";
 import type { SkillProficiency } from "@/lib/proficiency/by-skill";
 
 export interface ArenaTask {
@@ -25,6 +26,8 @@ export interface ArenaTask {
   eloDelta?: number;
   /** how well the user explained this task in the Arena interview (0-100), when they did; a rating is only awarded after one */
   explanationScore?: number;
+  /** A sealed record backs this task. `shared` is the student's choice about showing it to others; absent when there is no record. */
+  sealed?: { shared: boolean; fingerprint: string };
 }
 
 export interface GithubEvidence {
@@ -170,6 +173,10 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     arenaTasks = arenaTasks.map((t) => (typeof scores.get(t.attemptId) === "number" ? { ...t, explanationScore: scores.get(t.attemptId)! } : t));
   }
   arenaTasks.sort((a, b) => ((a.completedAt ?? "") < (b.completedAt ?? "") ? 1 : -1));
+  const flags = await getRecordFlags(createServiceClient(), userId);
+  arenaTasks = arenaTasks.map((t) => (flags.has(t.attemptId) ? { ...t, sealed: flags.get(t.attemptId)! } : t));
+  // a record the student keeps private is not listed to anyone else
+  if (opts.publicView) arenaTasks = arenaTasks.filter((t) => t.sealed?.shared !== false);
 
   const graph = await loadGraph(userId);
 

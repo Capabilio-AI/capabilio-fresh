@@ -1,6 +1,7 @@
 "use client";
 
 import type { SkillProficiency } from "@/lib/proficiency/by-skill";
+import { EvidenceShareToggle } from "./EvidenceShareToggle";
 import { useEffect, useRef, useState } from "react";
 import { Award, Download, ExternalLink, FileText, GitBranch, GraduationCap, Link2, Mail, MapPin, Phone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
@@ -175,7 +176,10 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
                       <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{t.title}{fresh.has(t.attemptId) && <span className="ml-2 rounded-full bg-[var(--m-accent)] px-2 py-0.5 align-middle font-lp-mono text-[11px] font-bold text-white">New</span>}</p>
                       <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.area, t.score !== undefined ? `Score ${t.score}%` : null, t.explanationScore !== undefined ? `Explained ${t.explanationScore}/100` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
                     </div>
-                    <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="shrink-0 rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>
+                      {isOwner && t.sealed && <EvidenceShareToggle attemptId={t.attemptId} initialShared={t.sealed.shared} />}
+                    </div>
                   </li>
                 ))}
               </ul>
