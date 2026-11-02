@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, CircleX, Database } from "lucide-react";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
-import { MAX_CHARGED_MISSES, missCost } from "@/lib/assess/arena-rules";
 import { Countdown } from "./Countdown";
+import { WorkTimer } from "./WorkTimer";
+import { ReviewDialog } from "./ReviewDialog";
+import { reviewSubmission } from "@/lib/arena-workstations/review";
 import { WORKSTATIONS } from "./registry";
 
 export interface PublicAttempt {
@@ -12,6 +14,8 @@ export interface PublicAttempt {
   assignedAt: string;
   status: string;
   submissionCount: number;
+  /** seconds already worked on this ticket, kept on the account so the clock resumes where it stopped */
+  timeSpentSeconds?: number;
   lastGrade: { passed: boolean; message: string; checks: { label: string; passed: boolean }[] } | null;
   area: { key: string | null; name: string | null };
   /** a solved task waits for the user to explain it */
@@ -43,8 +47,10 @@ interface Feedback {
   session?: boolean;
   /** what a wrong answer did to the rating (negative), when it was charged */
   eloChange?: number;
-  /** how many wrong answers on this ticket have been counted so far (the first few cost rating) */
-  chargedMisses?: number;
+  /** a wrong submission is final: the ticket is closed and cannot be tried again */
+  final?: boolean;
+  /** the ticket closed because the time ran out with nothing submitted */
+  timedOut?: boolean;
 }
 
 const noop = () => {};
@@ -63,9 +69,11 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(attempt.lastGrade);
-  const closed = Boolean(feedback?.passed);
+  const closed = Boolean(feedback?.passed || feedback?.final);
+  // the answer waiting in the review step: nothing is sent until the student confirms it there
+  const [review, setReview] = useState<unknown>(null);
+  const expiryOff = useRef(false);
   const [requesterName, requesterTitle] = (challenge.requester ?? "").split("·").map((s) => s.trim());
-  const [expiresAt] = useState(() => new Date(Date.parse(attempt.assignedAt) + challenge.time_limit_minutes * 60_000).toISOString());
 
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -74,6 +82,24 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
       document.body.style.overflow = previous;
     };
   }, []);
+
+  /**
+   * The clock reached zero with nothing submitted. The server checks its own record of the time and, if it is up, closes the ticket as unanswered, which costs
+   * what an answer with nothing right costs. A ticket that cannot expire this way (a Proof Session stage) answers "not_applicable" and is left alone.
+   */
+  async function timeUp() {
+    if (submitting || closed || expiryOff.current) return;
+    const res = await fetch(`/api/arena/domain/attempts/${attempt.attemptId}/expire`, { method: "POST" }).catch(() => null);
+    if (!res?.ok) {
+      // a ticket that cannot expire this way will never be able to: stop asking
+      const refusal = (await res?.json().catch(() => null)) as { code?: string } | null;
+      if (refusal?.code === "not_applicable") expiryOff.current = true;
+      return;
+    }
+    const body = (await res.json()) as { eloChange: number; nextAvailableAt: string };
+    setReview(null);
+    setFeedback({ passed: false, final: true, timedOut: true, message: "Time ran out before an answer was submitted, so this ticket closed unanswered.", checks: [], eloChange: body.eloChange, nextAvailableAt: body.nextAvailableAt });
+  }
 
   async function submit(submission: unknown) {
     setSubmitting(true);
@@ -107,9 +133,9 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
         </span>
         <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px]">
           <span className="text-white/60">{attempt.area.name}</span>
-          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? "bg-app-success" : "bg-white/10"}`}>{closed ? (feedback?.session ? "Stage passed" : feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
-          {!closed && <Countdown target={expiresAt} onDone={() => onClose(false)} />}
-          <span className="font-semibold text-app-orange" title={`Solving earns this after you explain your work. Each of the first ${MAX_CHARGED_MISSES} wrong answers costs ${missCost(elo)} ELO.`}>+{elo} ELO after the interview · −{missCost(elo)} per wrong answer</span>
+          <span className={`rounded px-2 py-0.5 font-semibold ${closed ? (feedback?.final ? "bg-app-rose" : "bg-app-success") : "bg-white/10"}`}>{closed ? (feedback?.final ? "Closed" : feedback?.session ? "Stage passed" : feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
+          {!closed && <WorkTimer attemptId={attempt.attemptId} limitSeconds={challenge.time_limit_minutes * 60} spentAtOpen={attempt.timeSpentSeconds ?? 0} running onTimeUp={timeUp} />}
+          <span className="font-semibold text-app-orange" title={`Solving earns this after you explain your work. A wrong answer lowers your ELO by how wrong it is, up to ${elo}. If the time runs out with nothing submitted, the ticket closes unanswered and costs the full ${elo}.`}>+{elo} ELO if solved · up to −{elo} if wrong or unanswered</span>
         </span>
       </header>
 
@@ -157,16 +183,18 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
             <div className={`rounded-xl border px-5 py-4 ${feedback.passed ? "border-app-success/30 bg-app-success-container" : "border-app-warning/30 bg-app-warning-container"}`} role="status">
               <p className={`flex items-center gap-2 font-lp-body text-[14px] font-semibold ${feedback.passed ? "text-app-success" : "text-app-warning"}`}>
                 {feedback.passed ? <CheckCircle2 size={17} /> : <CircleX size={17} />}
-                {feedback.session ? (feedback.passed ? "Stage passed" : "Not quite — the stage is still open") : feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : "Not quite — the task is still open"}
+                {feedback.session ? (feedback.passed ? "Stage passed" : "Not quite — the stage is still open") : feedback.explain ? "Task solved. One step left" : feedback.passed ? `Verified${feedback.points ? ` · +${feedback.points} ELO` : ""}` : feedback.final ? (feedback.timedOut ? "Time is up" : "Submitted. This answer was not correct") : "Not quite — the task is still open"}
               </p>
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
-              {!feedback.passed && typeof feedback.eloChange === "number" && (
+              {!feedback.passed && feedback.final && (
                 <p className="mt-1.5 font-lp-body text-[13px] font-semibold text-app-rose" role="status">
-                  {feedback.eloChange < 0
-                    ? `${feedback.eloChange} ELO for this wrong answer.${(feedback.chargedMisses ?? 0) >= MAX_CHARGED_MISSES ? " That is the most this ticket can cost; solving it still earns the full amount." : ` The first ${MAX_CHARGED_MISSES} wrong answers on a ticket each cost rating.`}`
-                    : (feedback.chargedMisses ?? 0) >= MAX_CHARGED_MISSES
-                      ? "No more rating is lost on this ticket. Solving it still earns the full amount."
-                      : "Your rating is at its floor, so this wrong answer cost nothing."}
+                  {typeof feedback.eloChange === "number" && feedback.eloChange < 0 ? `${feedback.eloChange} ELO, ${feedback.timedOut ? "the full value of the ticket, because nothing was submitted" : "based on how much of the answer was wrong"}. ` : ""}
+                  A submitted answer is final, so this ticket is closed.
+                  {feedback.nextAvailableAt && (
+                    <>
+                      {" "}Your next ticket opens in <Countdown target={feedback.nextAvailableAt} onDone={noop} />.
+                    </>
+                  )}
                 </p>
               )}
               {feedback.checks.length > 0 && (
@@ -188,7 +216,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
                   Added to your portfolio as verified {attempt.area.name} evidence. Next task in <Countdown target={feedback.nextAvailableAt} onDone={noop} />.
                 </p>
               )}
-              {feedback.passed && (
+              {(feedback.passed || feedback.final) && (
                 <button type="button" onClick={() => onClose(true)} className="mt-3 rounded-lg bg-app-charcoal px-4 py-2 font-lp-body text-[13px] font-semibold text-white">
                   {feedback.session ? "Continue the session" : feedback.explain ? "Explain your work" : "Back to Arena"}
                 </button>
@@ -197,12 +225,25 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
           )}
           {error && <p className="rounded-lg bg-app-rose-container px-4 py-2.5 font-lp-body text-[13px] text-app-rose">{error}</p>}
           {Tool ? (
-            <Tool attemptId={attempt.attemptId} content={challenge.content as never} closed={closed} submitting={submitting} onSubmit={submit} lastChecks={feedback?.checks} />
+            <Tool attemptId={attempt.attemptId} content={challenge.content as never} closed={closed} submitting={submitting} onSubmit={(submission: unknown) => setReview(submission)} lastChecks={feedback?.checks} />
           ) : (
             <p className="font-lp-body text-[13px] text-app-muted">This workstation isn&apos;t available in this version of the app.</p>
           )}
         </main>
       </div>
+      {review !== null && (
+        <ReviewDialog
+          sections={reviewSubmission(challenge.tool_type ?? "", review, challenge.content)}
+          gain={elo}
+          loss={elo}
+          busy={submitting}
+          onBack={() => setReview(null)}
+          onConfirm={async () => {
+            await submit(review);
+            setReview(null);
+          }}
+        />
+      )}
     </div>
   );
 }
