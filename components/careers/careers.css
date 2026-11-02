@@ -1,0 +1,138 @@
+/* Careers: the crit wall. Foam board, pinned sheets, tape, grease pencil. Scoped to .crit so nothing here touches the landing page. */
+.crit {
+  --crit-board: #e3e4e0;
+  --crit-board-deep: #d6d8d3;
+  --crit-sheet: #fcfcfa;
+  --crit-ink: #111111;
+  --crit-soft: #4b4d4a;
+  --crit-pencil: #d93418;
+  --crit-tape: rgba(221, 214, 186, 0.82);
+  --crit-rule: rgba(17, 17, 17, 0.9);
+  --crit-hair: rgba(17, 17, 17, 0.18);
+  font-family: var(--font-archivo), "Geist", ui-sans-serif, system-ui, sans-serif;
+  background: var(--crit-board);
+  color: var(--crit-ink);
+  scrollbar-color: var(--crit-ink) var(--crit-board);
+  -webkit-font-smoothing: antialiased;
+}
+.crit ::selection { background: var(--crit-pencil); color: #fff; }
+.crit :focus-visible { outline: 3px solid var(--crit-pencil); outline-offset: 3px; border-radius: 2px; }
+.crit-ink :focus-visible { outline-color: #ffb09f; }
+.crit a { text-underline-offset: 4px; }
+
+/* Type: width axis carries the voice. */
+.crit-title { font-stretch: 118%; font-weight: 800; letter-spacing: -0.035em; line-height: 0.96; text-wrap: balance; }
+.crit-title-light { font-stretch: 118%; font-weight: 300; letter-spacing: -0.035em; line-height: 0.96; }
+.crit-head { font-stretch: 112%; font-weight: 760; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance; }
+.crit-body { font-stretch: 100%; font-weight: 420; }
+.crit-label { font-stretch: 100%; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* A sheet of paper held to the board by two tape strips. */
+.crit-sheet {
+  position: relative;
+  background: var(--crit-sheet);
+  border-radius: 2px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 2px 3px rgba(17, 17, 17, 0.12), 0 22px 40px -18px rgba(17, 17, 17, 0.35);
+}
+.crit-sheet::before, .crit-sheet::after {
+  content: "";
+  position: absolute;
+  top: -11px;
+  width: 74px;
+  height: 22px;
+  background: var(--crit-tape);
+  box-shadow: 0 1px 2px rgba(17, 17, 17, 0.15);
+  clip-path: polygon(0 8%, 6% 0, 12% 10%, 20% 0, 100% 0, 100% 100%, 94% 92%, 88% 100%, 80% 90%, 0 100%);
+}
+.crit-sheet::before { left: 14%; transform: rotate(-5deg); }
+.crit-sheet::after { right: 14%; transform: rotate(4deg); }
+.crit-sheet.single::after { display: none; }
+.crit-sheet.single::before { left: 50%; margin-left: -37px; }
+
+/* Tracing paper laid over the board: the reading of "your first proof". */
+.crit-vellum {
+  position: relative;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(17, 17, 17, 0.35);
+  border-radius: 2px;
+}
+
+/* Black label-maker strip. */
+.crit-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--crit-ink);
+  color: #fff;
+  padding: 0.55rem 0.9rem;
+  border-radius: 2px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Squared actions: ink, pencil-red, and a plain outline. */
+.crit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 2px;
+  padding: 1rem 1.6rem;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+  border: 2px solid var(--crit-ink);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s, color 0.2s;
+}
+.crit-btn:hover { transform: translateY(-2px); }
+.crit-btn:active { transform: translateY(0); }
+.crit-btn-ink { background: var(--crit-ink); color: #fff; }
+.crit-btn-ink:hover { background: var(--crit-pencil); border-color: var(--crit-pencil); }
+.crit-btn-red { background: var(--crit-pencil); border-color: var(--crit-pencil); color: #fff; }
+.crit-btn-red:hover { background: var(--crit-ink); border-color: var(--crit-ink); }
+.crit-btn-line { background: transparent; color: var(--crit-ink); }
+.crit-btn-line:hover { background: var(--crit-ink); color: #fff; }
+
+/* Paper-form fields: a printed label over a ruled line, not a rounded box. */
+.crit-field {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid var(--crit-ink);
+  border-radius: 0;
+  padding: 0.55rem 0.1rem;
+  font-size: 1.05rem;
+  color: var(--crit-ink);
+  transition: background-color 0.2s;
+}
+.crit-field::placeholder { color: rgba(17, 17, 17, 0.38); }
+.crit-field:hover { background: rgba(17, 17, 17, 0.035); }
+.crit-field:focus { outline: none; background: rgba(217, 52, 24, 0.07); border-bottom-color: var(--crit-pencil); }
+textarea.crit-field { border: 2px solid var(--crit-ink); padding: 0.7rem 0.8rem; background-image: repeating-linear-gradient(transparent 0 1.7rem, rgba(17, 17, 17, 0.12) 1.7rem calc(1.7rem + 1px)); line-height: 1.7rem; resize: vertical; }
+textarea.crit-field:focus { border-color: var(--crit-pencil); }
+
+/* Ruled schedules (principles, roles): heavy top rule, hairlines between. */
+.crit-schedule { border-top: 3px solid var(--crit-ink); }
+.crit-schedule > li { border-bottom: 1px solid var(--crit-hair); }
+.crit-row { transition: background-color 0.18s, color 0.18s; }
+.crit-row:hover, .crit-row:focus-visible { background: var(--crit-ink); color: #fff; }
+.crit-row:hover .crit-soft, .crit-row:focus-visible .crit-soft { color: rgba(255, 255, 255, 0.72); }
+.crit-soft { color: var(--crit-soft); }
+
+/* Static tilt for sheets that are not part of the entrance. */
+.crit-tilt { transform: rotate(var(--r, 0deg)); }
+.crit-rule3 { border-top: 3px solid var(--crit-ink); }
+
+/* Pencil marks drawn on by stroke. Visible without animation support. */
+.crit-mark { fill: none; stroke: var(--crit-pencil); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* One authored moment: sheets are pinned up in turn, then the pencil marks draw. */
+@keyframes crit-pin { from { opacity: 0; transform: translateY(-22px) rotate(var(--r0, -4deg)); } to { opacity: 1; transform: translateY(0) rotate(var(--r, 0deg)); } }
+@keyframes crit-draw { from { stroke-dashoffset: var(--len, 400); } to { stroke-dashoffset: 0; } }
+.crit-pinup { transform: rotate(var(--r, 0deg)); animation: crit-pin 0.9s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) backwards; }
+.crit-mark-draw { stroke-dasharray: var(--len, 400); animation: crit-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0.9s) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .crit-pinup, .crit-mark-draw { animation: none; }
+  .crit-btn { transition: none; }
+}

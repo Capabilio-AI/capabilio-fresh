@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, Search, X } from "lucide-react";
 import { PALETTE_EVENT } from "./CommandPalette";
 import { motion, useScroll, useSpring } from "framer-motion";
@@ -13,9 +14,13 @@ const LINKS = [
   { label: "Paths", href: "#paths" },
   { label: "Principles", href: "#principles" },
   { label: "Organisations", href: "#institutions" },
+  { label: "Careers", href: "/careers" },
 ];
 
 export default function Nav() {
+  const pathname = usePathname();
+  // Section links point at the landing page, so from any other page they go there first.
+  const href = (h: string) => (h.startsWith("#") && pathname !== "/" ? `/${h}` : h);
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
   const { scrollYProgress } = useScroll();
@@ -47,7 +52,7 @@ export default function Nav() {
 
         <div className="hidden items-center gap-8 xl:flex">
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="text-sm font-medium text-cap-ink/75 transition-colors hover:text-cap-ink">
+            <a key={l.href} href={href(l.href)} aria-current={pathname === l.href ? "page" : undefined} className="text-sm font-medium text-cap-ink/75 transition-colors hover:text-cap-ink">
               {l.label}
             </a>
           ))}
@@ -90,7 +95,7 @@ export default function Nav() {
             {LINKS.map((l) => (
               <a
                 key={l.href}
-                href={l.href}
+                href={href(l.href)}
                 onClick={() => setOpen(false)}
                 className="border-b border-cap-line! py-3.5 font-cap-display text-xl text-cap-ink"
               >
