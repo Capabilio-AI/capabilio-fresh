@@ -2,6 +2,7 @@
 
 import type { SkillProficiency } from "@/lib/proficiency/by-skill";
 import { EvidenceShareToggle } from "./EvidenceShareToggle";
+import type { StudentRoleReadiness } from "@/lib/proficiency/readiness-load";
 import { useEffect, useRef, useState } from "react";
 import { Award, Download, ExternalLink, FileText, GitBranch, GraduationCap, Link2, Mail, MapPin, Phone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
@@ -51,6 +52,7 @@ export interface PortfolioBodyProps {
   arenaTasks: ArenaTask[];
   arenaWork: ArenaWorkRole[];
   proficiency: SkillProficiency[];
+  roleReadiness: StudentRoleReadiness | null;
   /** Kept so the public share page and the dashboard pass the same data; interview sessions are practice and stay out of the recruiter view. */
   interviews?: InterviewSummary[];
   github: GithubEvidence | null;
@@ -70,7 +72,7 @@ export interface PortfolioBodyProps {
  * The portfolio a student hands a recruiter, laid out like a professional profile: who they are, a factual summary, the work they have
  * completed (each piece opens its full evidence), their measured skills, GitHub, and projects. Everything comes from verified records.
  */
-export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, arenaWork, proficiency, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, arenaWork, proficiency, roleReadiness, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   // Work that arrives while the page is open (live updates) is marked "New" for a few seconds so a watching recruiter sees what just landed.
   const seen = useRef(new Set(arenaTasks.map((t) => t.attemptId)));
@@ -183,6 +185,30 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
                   </li>
                 ))}
               </ul>
+            </Section>
+          )}
+
+          {roleReadiness && (
+            <Section title={`Readiness for ${roleReadiness.careerName}`}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">{roleReadiness.label}</p>
+                <p className="font-lp-body text-[13px] text-[var(--m-muted)]">{roleReadiness.met} of {roleReadiness.total} requirements met · {roleReadiness.progressPct}% progress</p>
+              </div>
+              <p className="mt-1.5 font-lp-body text-[14px] text-[var(--m-ink)]">{roleReadiness.why}</p>
+              {roleReadiness.gaps.length > 0 && (
+                <div className="mt-3">
+                  <p className="font-lp-body text-[12px] font-bold uppercase tracking-wide text-[var(--m-muted)]">Skill gaps</p>
+                  <ul className="mt-1.5 flex flex-col gap-1.5">
+                    {roleReadiness.gaps.slice(0, 5).map((g) => (
+                      <li key={g.skillName} className="font-lp-body text-[13px] text-[var(--m-ink)]">
+                        <span className="font-bold">{g.skillName}</span> ({g.importance.toLowerCase()}): Level {g.have} of the Level {g.need} a junior needs
+                        {isOwner && g.nextSteps.length > 0 && <span className="text-[var(--m-muted)]"> · next: {g.nextSteps.join("; ")}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <p className="mt-3 font-lp-body text-[12px] text-[var(--m-muted)]">Measured from graded tasks against the skills the role asks for. It describes demonstrated skill, not the likelihood of being hired.</p>
             </Section>
           )}
 

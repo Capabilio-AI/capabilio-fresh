@@ -87,6 +87,11 @@ Avoid for now: all eight new Data Analyst areas at once; any server-side executi
 
 Not yet done from item 1: storing the artifact itself (query, formulas, note) as a shareable, versioned evidence record, and persisting levels so they can be queried for cohorts. The portfolio's existing "View evidence" modal already opens the graded attempt.
 
+## 10. Built: the two meanings of "ready" are separate (roadmap item 2)
+
+- `npm run arena:gate` now reports **tooling complete** (Capabilio can measure and prove the role). Data Analyst: complete; 1 of 15 roles.
+- `lib/proficiency/readiness.ts`: a **student's** readiness for their target role: Not started, Learning, Developing, Demonstrated, Ready for role assessment. Each required skill has a target level (critical and high: Level 3, medium: Level 2, low: Level 1); the top state needs every critical and high skill met and 80% of the weighted requirement; strength in minor skills never stands in for a missing core skill. It always says why and lists the gaps with the concrete next steps, and states that it is not a hiring prediction.
+- Shown on the portfolio above the skill levels. Checked on production data: the one student with a verified pass reads "Learning, 7%, 0 of 14 met".
 ## 11. Built: sealed evidence records (roadmap item 1, second slice)
 
 Every task that is passed and explained is now sealed into `evidence_records` (migration 153): the brief, the student's submission, the graded checks, the grading and generation versions, tries, the explain-your-work result, and a SHA-256 fingerprint over all of it. Sealed columns cannot be changed (a trigger refuses it; tested in a scratch Postgres). The one column the student controls is `shared`: a hidden record is not listed on the public portfolio and its evidence route answers 404, identical to a record that does not exist. The popup shows the fingerprint and an integrity check. Sealing is best effort and never undoes a pass; tasks passed before this get a record from `scripts/backfill-evidence.mts`. Honest limit: the fingerprint detects silent change inside the database; it does not stop someone with full database access from altering a record and recomputing it.
