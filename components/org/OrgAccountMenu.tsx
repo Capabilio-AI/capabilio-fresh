@@ -7,7 +7,7 @@ import { BadgeCheck, ChevronDown, ExternalLink, LogOut } from "lucide-react";
 import { signOut } from "@/components/login/auth";
 
 /** The institution's account menu: gold-ringed avatar, an espresso card with the college name, and sign out. */
-export function OrgAccountMenu({ institutionName, roleLabel, publicHref, initials, approved }: { approved: boolean; institutionName: string; roleLabel: string; publicHref: string; initials: string }) {
+export function OrgAccountMenu({ institutionName, roleLabel, publicHref, initials, approved }: { approved: boolean; institutionName: string; roleLabel: string; publicHref?: string; initials: string }) {
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export function OrgAccountMenu({ institutionName, roleLabel, publicHref, initial
             )}
           </div>
           <div className="mt-2 flex flex-col gap-0.5">
-            <Link href={publicHref} target="_blank" rel="noopener noreferrer" role="menuitem" onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-[#fff]">
+            {publicHref && <Link href={publicHref} target="_blank" rel="noopener noreferrer" role="menuitem" onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-[#fff]">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--m-accent-soft)] text-[var(--m-ink)] transition-colors group-hover:bg-[#1e1707] group-hover:text-[#fff]">
                 <ExternalLink size={17} aria-hidden />
               </span>
@@ -71,7 +71,7 @@ export function OrgAccountMenu({ institutionName, roleLabel, publicHref, initial
                 <span className="block text-[14.5px] font-bold text-[var(--m-ink)]">Preview public page</span>
                 <span className="block text-[12.5px] text-[var(--m-muted)]">What students and visitors see</span>
               </span>
-            </Link>
+            </Link>}
             <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[var(--m-accent-soft)] disabled:opacity-60">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--m-accent-soft)] text-[var(--m-accent-ink)]">
                 <LogOut size={17} aria-hidden />
