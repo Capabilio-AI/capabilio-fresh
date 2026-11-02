@@ -1,3 +1,4 @@
+import { LiveRefresh } from "@/components/live/LiveRefresh";
 import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -31,6 +32,7 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
   const critical = match ? match.skillGaps.filter((g) => g.current !== null && g.gap > 10).length : 0;
   return (
     <div>
+      <LiveRefresh />
       <PageHead title="Skills" intro="Where you stand on every skill your role needs and what the market asks for. It updates as you complete Arena missions." />
       <div className="flex flex-col gap-5 pt-4">
         <SegmentedLinks

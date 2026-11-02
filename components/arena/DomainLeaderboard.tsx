@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ARENA_CHANGED } from "@/lib/arena-workstations/refresh";
-import { Flame, Target, Trophy } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Flame, Target } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
+import { faceFor } from "@/lib/arena/faces";
+import { getTier } from "@/lib/portfolio/elo";
+import { useLive } from "@/components/live/useLive";
 
 interface Entry {
   userId: string;
@@ -15,85 +17,118 @@ interface Entry {
   isViewer: boolean;
 }
 
-function initialsOf(name: string | null): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+const nameOf = (e: Entry) => (e.isViewer ? "You" : (e.name ?? "Student"));
+
+/** Where the viewer stands, in one sentence: how far behind the next student, or how far ahead of the one behind. */
+function standing(entries: Entry[], viewer: Entry): string {
+  const above = entries[viewer.rank - 2];
+  const below = entries[viewer.rank];
+  if (above) return `${above.rating - viewer.rating} ELO behind ${above.name ?? "the next student"}`;
+  if (below) return `${viewer.rating - below.rating} ELO clear of ${below.name ?? "second place"}`;
+  return "You are the only one ranked so far";
 }
 
-/** Domain's own ELO-rank leaderboard — global only, no branch scope (career choice isn't a branch). */
+/** Domain's own ELO-rank leaderboard: global, one row per student, ranked by the same career ELO the dashboard shows, and live. */
 export function DomainLeaderboard() {
   const [entries, setEntries] = useState<Entry[] | null>(null);
 
-  useEffect(() => {
-    const load = () =>
-      fetch("/api/arena/domain/leaderboard", { cache: "no-store" })
-        .then((res) => res.json())
-        .then((data) => setEntries(data.entries ?? []))
-        .catch(() => setEntries((prev) => prev ?? []));
-    load();
-    window.addEventListener(ARENA_CHANGED, load);
-    return () => window.removeEventListener(ARENA_CHANGED, load);
+  const load = useCallback(() => {
+    fetch("/api/arena/domain/leaderboard", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => setEntries(data.entries ?? []))
+      .catch(() => setEntries((prev) => prev ?? []));
   }, []);
+  useEffect(load, [load]);
+  useLive(load);
+
+  const viewer = entries?.find((e) => e.isViewer);
 
   return (
     <div>
       <div className="text-center">
-        <Trophy size={28} className="mx-auto text-app-orange" />
-        <h2 className="mt-2 font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Domain Leaderboard</h2>
-        <p className="mt-1 font-lp-body text-[13px] text-app-muted">Ranked by verified ELO rating across your career-role work tickets.</p>
+        <h2 className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Domain Leaderboard</h2>
+        <p className="mt-1 font-lp-body text-[13px] text-app-muted">Ranked by career ELO. Solve a ticket and you climb, miss one and you slip. It updates as it happens.</p>
       </div>
 
       {!entries ? (
-        <div className="mt-10 flex justify-center">
-          <ThinkingOrb state="searching" size={64} theme="light" />
-        </div>
+        <div className="mt-10 flex justify-center"><ThinkingOrb state="searching" size={64} theme="light" /></div>
       ) : entries.length === 0 ? (
-        <p className="mt-10 text-center font-lp-body text-[13px] text-app-muted">No rankings yet — be the first to complete a Domain ticket.</p>
+        <p className="mt-10 text-center font-lp-body text-[13px] text-app-muted">No rankings yet. Be the first to close a Domain ticket.</p>
       ) : (
-        <div className="mt-8">
-          <div className="flex items-end justify-center gap-6">
-            {[entries[1], entries[0], entries[2]].filter(Boolean).map((e) => (
-              <PodiumEntry key={e!.userId} entry={e!} />
-            ))}
-          </div>
-          <div className="mt-6 flex flex-col divide-y divide-app-border rounded-xl border border-[var(--m-rule)] bg-white">
-            {entries.slice(3).map((e) => (
-              <div key={e.userId} className={`flex items-center justify-between px-4 py-3 ${e.isViewer ? "bg-app-orange-container/40" : ""}`}>
-                <div className="flex items-center gap-3">
-                  <span className="w-8 font-lp-mono text-[12px] text-app-muted">#{e.rank}</span>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-app-background font-lp-mono text-[11px] font-semibold text-[var(--m-ink)]">{initialsOf(e.name)}</span>
-                  <div>
-                    <span className="font-lp-body text-[13px] font-medium text-[var(--m-ink)]">{e.isViewer ? "You" : (e.name ?? "Student")}</span>
-                    <p className="flex items-center gap-2 font-lp-mono text-[10.5px] text-app-muted">
-                      <span className="flex items-center gap-0.5"><Target size={10} />{e.tasksCompleted} Tickets</span>
-                      {e.streak > 0 && <span className="flex items-center gap-0.5"><Flame size={10} />{e.streak} Streak</span>}
-                    </p>
-                  </div>
-                </div>
-                <span className="font-lp-display text-[16px] font-bold text-app-orange">{e.rating} ELO</span>
+        <>
+          {viewer && (
+            <div className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border border-app-orange/30 bg-app-orange-container/60 px-4 py-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[26px]" aria-hidden>{faceFor(viewer.userId)}</span>
+              <div className="min-w-0 flex-1">
+                <p className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">You are #{viewer.rank}</p>
+                <p className="truncate font-lp-body text-[12.5px] text-app-muted">{standing(entries, viewer)}</p>
               </div>
-            ))}
-          </div>
-        </div>
+              <span className="font-lp-display text-[22px] font-bold text-app-orange">{viewer.rating}</span>
+            </div>
+          )}
+
+          <Podium entries={entries.slice(0, 3)} />
+
+          {entries.length > 3 && (
+            <ol className="mt-6 flex flex-col gap-2">
+              {entries.slice(3).map((e) => <Row key={e.userId} entry={e} />)}
+            </ol>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-function PodiumEntry({ entry }: { entry: Entry }) {
-  const isFirst = entry.rank === 1;
+const PODIUM = {
+  1: { block: "h-28 bg-app-orange-container border-app-orange/40", face: "h-20 w-20 text-[42px] border-2 border-app-orange", order: "order-2" },
+  2: { block: "h-20 bg-app-background border-[var(--m-rule)]", face: "h-16 w-16 text-[34px] border border-[var(--m-rule)]", order: "order-1" },
+  3: { block: "h-14 bg-app-background border-[var(--m-rule)]", face: "h-16 w-16 text-[34px] border border-[var(--m-rule)]", order: "order-3" },
+} as const;
+
+function Podium({ entries }: { entries: Entry[] }) {
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <span
-        className={`flex items-center justify-center rounded-full font-lp-mono font-semibold text-[var(--m-ink)] ${
-          isFirst ? "h-20 w-20 border-2 border-app-orange bg-app-orange-container text-[18px]" : "h-16 w-16 bg-app-background text-[15px]"
-        }`}
-      >
-        {initialsOf(entry.name)}
-      </span>
-      <p className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">{entry.isViewer ? "You" : (entry.name ?? "Student")}</p>
-      <span className="font-lp-display text-[18px] font-bold text-app-orange">{entry.rating} ELO</span>
+    <div className="mx-auto mt-8 flex max-w-lg items-end justify-center gap-3">
+      {entries.map((e) => {
+        const look = PODIUM[e.rank as 1 | 2 | 3];
+        return (
+          <div key={e.userId} className={`flex min-w-0 flex-1 flex-col items-center ${look.order}`}>
+            {e.rank === 1 && <span className="text-[22px] leading-none" aria-label="Leader">👑</span>}
+            <span className={`mt-1 flex items-center justify-center rounded-full bg-white ${look.face}`} aria-hidden>{faceFor(e.userId)}</span>
+            <p className={`mt-2 max-w-full truncate font-lp-body text-[13px] font-semibold ${e.isViewer ? "text-app-orange" : "text-[var(--m-ink)]"}`}>{nameOf(e)}</p>
+            <p className="font-lp-mono text-[10.5px] text-app-muted">{getTier(e.rating).label}</p>
+            <div className={`mt-2 flex w-full items-start justify-center rounded-t-2xl border border-b-0 pt-2 ${look.block}`}>
+              <div className="text-center">
+                <p className="font-lp-display text-[20px] font-bold leading-none text-[var(--m-ink)]">{e.rating}</p>
+                <p className="mt-0.5 font-lp-mono text-[10px] text-app-muted">#{e.rank} · ELO</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
+  );
+}
+
+function Row({ entry: e }: { entry: Entry }) {
+  const tier = getTier(e.rating);
+  return (
+    <li className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${e.isViewer ? "border-app-orange/40 bg-app-orange-container/50" : "border-[var(--m-rule)] bg-white"}`}>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="w-8 shrink-0 font-lp-mono text-[12px] text-app-muted">#{e.rank}</span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-app-background text-[22px]" aria-hidden>{faceFor(e.userId)}</span>
+        <div className="min-w-0">
+          <p className="truncate font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)]">
+            {nameOf(e)}
+            <span className="ml-2 rounded-full px-2 py-0.5 font-lp-mono text-[10px] font-semibold" style={{ color: tier.color, backgroundColor: `${tier.color}1a` }}>{tier.label}</span>
+          </p>
+          <p className="flex items-center gap-3 font-lp-mono text-[10.5px] text-app-muted">
+            <span className="flex items-center gap-1"><Target size={10} aria-hidden />{e.tasksCompleted} tickets</span>
+            {e.streak > 0 && <span className="flex items-center gap-1 text-app-orange"><Flame size={10} aria-hidden />{e.streak} week streak</span>}
+          </p>
+        </div>
+      </div>
+      <span className="shrink-0 font-lp-display text-[18px] font-bold text-app-orange">{e.rating}<span className="ml-1 font-lp-mono text-[10px] font-semibold text-app-muted">ELO</span></span>
+    </li>
   );
 }

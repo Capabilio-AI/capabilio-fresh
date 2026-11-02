@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { LiveRefresh } from "@/components/live/LiveRefresh";
 import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getDashboardData, getSkills, DashboardNotReadyError } from "@/lib/dashboard/data";
@@ -105,6 +106,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      <LiveRefresh />
       {showCareerDirectionIntro && topMatch && statedInterest && (
         <CareerDirectionExplainerModal
           statedInterest={statedInterest}
