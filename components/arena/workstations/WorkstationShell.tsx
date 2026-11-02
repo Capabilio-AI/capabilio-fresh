@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { announceArenaChange } from "@/lib/arena-workstations/refresh";
 import { ArrowLeft, CheckCircle2, CircleX, Database } from "lucide-react";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { Countdown } from "./Countdown";
@@ -47,6 +49,8 @@ interface Feedback {
   session?: boolean;
   /** what a wrong answer did to the rating (negative), when it was charged */
   eloChange?: number;
+  /** the change on the profile ELO (the rating on the dashboard, portfolio and leaderboard); eloChange is the skill area's */
+  careerEloChange?: number;
   /** a wrong submission is final: the ticket is closed and cannot be tried again */
   final?: boolean;
   /** the ticket closed because the time ran out with nothing submitted */
@@ -73,6 +77,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
   // the answer waiting in the review step: nothing is sent until the student confirms it there
   const [review, setReview] = useState<unknown>(null);
   const expiryOff = useRef(false);
+  const router = useRouter();
   const [requesterName, requesterTitle] = (challenge.requester ?? "").split("·").map((s) => s.trim());
 
   useEffect(() => {
@@ -96,9 +101,11 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
       if (refusal?.code === "not_applicable") expiryOff.current = true;
       return;
     }
-    const body = (await res.json()) as { eloChange: number; nextAvailableAt: string };
+    const body = (await res.json()) as { eloChange: number; careerEloChange: number; nextAvailableAt: string };
     setReview(null);
-    setFeedback({ passed: false, final: true, timedOut: true, message: "Time ran out before an answer was submitted, so this ticket closed unanswered.", checks: [], eloChange: body.eloChange, nextAvailableAt: body.nextAvailableAt });
+    setFeedback({ passed: false, final: true, timedOut: true, message: "Time ran out before an answer was submitted, so this ticket closed unanswered.", checks: [], eloChange: body.eloChange, careerEloChange: body.careerEloChange, nextAvailableAt: body.nextAvailableAt });
+    announceArenaChange();
+    router.refresh();
   }
 
   async function submit(submission: unknown) {
@@ -108,7 +115,14 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
       const res = await fetch(`/api/arena/domain/attempts/${attempt.attemptId}/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ submission }) });
       const data = await res.json();
       if (!res.ok) setError(data.error ?? "Could not submit — try again.");
-      else setFeedback(data);
+      else {
+        setFeedback(data);
+        // a closed ticket changes the ELO, the streak and the history: tell everything that shows them
+        if (data.final || data.passed) {
+          announceArenaChange();
+          router.refresh();
+        }
+      }
     } catch {
       setError("Could not reach the server — your task is still open.");
     } finally {
@@ -188,7 +202,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
               <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">{feedback.message}</p>
               {!feedback.passed && feedback.final && (
                 <p className="mt-1.5 font-lp-body text-[13px] font-semibold text-app-rose" role="status">
-                  {typeof feedback.eloChange === "number" && feedback.eloChange < 0 ? `${feedback.eloChange} ELO, ${feedback.timedOut ? "the full value of the ticket, because nothing was submitted" : "based on how much of the answer was wrong"}. ` : ""}
+                  {typeof feedback.eloChange === "number" && feedback.eloChange < 0 ? `${typeof feedback.careerEloChange === "number" ? `Your ELO ${feedback.careerEloChange}, ${attempt.area.name ?? "Skill area"} ${feedback.eloChange}` : `${feedback.eloChange} ELO`}, ${feedback.timedOut ? "the full value of the ticket, because nothing was submitted" : "based on how much of the answer was wrong"}. ` : ""}
                   A submitted answer is final, so this ticket is closed.
                   {feedback.nextAvailableAt && (
                     <>

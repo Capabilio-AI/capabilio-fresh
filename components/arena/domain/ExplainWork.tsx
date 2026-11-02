@@ -5,6 +5,7 @@ import { CheckCircle2, CircleX, Loader2, MessagesSquare } from "lucide-react";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { MAX_ANSWER_CHARS, PASS_SCORE } from "@/lib/arena-workstations/explain-rules";
 import type { ExplainOutcome, ExplainView } from "@/lib/arena-workstations/explain-attempts";
+import { announceArenaChange } from "@/lib/arena-workstations/refresh";
 import { Countdown } from "../workstations/Countdown";
 import type { PublicAttempt } from "../workstations/WorkstationShell";
 
@@ -16,6 +17,7 @@ async function call<T>(attemptId: string, body: unknown): Promise<{ ok: true; da
   try {
     const res = await fetch(`/api/arena/domain/attempts/${attemptId}/explain`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json();
+    if (res.ok) announceArenaChange();
     return res.ok ? { ok: true, data: data as T } : { ok: false, error: data.error ?? "Something went wrong. Try again." };
   } catch {
     return { ok: false, error: "Could not reach the server. Check your connection." };

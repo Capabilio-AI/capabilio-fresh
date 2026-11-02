@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ARENA_CHANGED } from "@/lib/arena-workstations/refresh";
 import { Flame, Target, Trophy } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 
@@ -25,10 +26,14 @@ export function DomainLeaderboard() {
   const [entries, setEntries] = useState<Entry[] | null>(null);
 
   useEffect(() => {
-    fetch("/api/arena/domain/leaderboard")
-      .then((res) => res.json())
-      .then((data) => setEntries(data.entries ?? []))
-      .catch(() => setEntries([]));
+    const load = () =>
+      fetch("/api/arena/domain/leaderboard", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => setEntries(data.entries ?? []))
+        .catch(() => setEntries((prev) => prev ?? []));
+    load();
+    window.addEventListener(ARENA_CHANGED, load);
+    return () => window.removeEventListener(ARENA_CHANGED, load);
   }, []);
 
   return (

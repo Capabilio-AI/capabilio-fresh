@@ -327,10 +327,10 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
       .select("id");
     if (!closed?.length) throw new AttemptError("This task was already submitted.", 409);
     const areaChange = missChange(ELO_BY_DIFFICULTY[difficulty], grade.checks);
-    const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), grade.checks), reason: `Arena ${difficulty} challenge: final answer was wrong` });
+    const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), grade.checks), reason: `Arena ${difficulty} challenge: final answer was wrong`, streak: await streakAfterClosing(service, userId) });
     logArenaEvent("grading.final_miss", { ...logFields, areaChange: String(miss?.areaChange ?? 0), careerChange: String(miss?.careerChange ?? 0) });
     // the work stays on record: a closed ticket is evidence of what the student did, right or wrong
-    return { passed: false, final: true as const, message: grade.message, checks: grade.checks, detail: grade.detail ?? null, eloChange: miss?.areaChange ?? areaChange, nextAvailableAt };
+    return { passed: false, final: true as const, message: grade.message, checks: grade.checks, detail: grade.detail ?? null, eloChange: miss?.areaChange ?? areaChange, careerEloChange: miss?.careerChange ?? 0, nextAvailableAt };
   }
 
   // Solved. The rating is held back until the user explains their own work (lib/arena-workstations/explain-attempts.ts): the task stays open in "explaining".
@@ -401,14 +401,13 @@ export async function finishVerified(service: Service, userId: string, attemptId
   const difficulty = ((challenge?.difficulty as "easy" | "medium" | "hard" | undefined) ?? "easy");
   const points = ELO_BY_DIFFICULTY[difficulty] ?? ELO_BY_DIFFICULTY.easy;
   try {
-    const { data: stats } = await service.from("arena_domain_stats").select("current_streak, longest_streak, last_completed_week").eq("user_id", userId).maybeSingle();
-    const streak = advanceStreak({ currentStreak: stats?.current_streak ?? 0, longestStreak: stats?.longest_streak ?? 0, lastCompletedWeek: stats?.last_completed_week ?? null }, currentWeekStart());
+    const streak = await streakAfterClosing(service, userId);
     const { data: completion, error } = await service.rpc("complete_workstation_attempt", {
       p_attempt_id: attemptId,
       p_grade: attempt.grade as Json,
       p_submission: attempt.submission as Json,
       p_points: points,
-      p_streak: { current_streak: streak.currentStreak, longest_streak: streak.longestStreak, last_completed_week: streak.lastCompletedWeek } as unknown as Json,
+      p_streak: streak as unknown as Json,
       p_cooldown_hours: cooldownHours,
     });
     if (error) throw error;
@@ -445,6 +444,13 @@ export async function closeWithoutRating(service: Service, attemptId: string, co
   return nextAvailableAt;
 }
 
+/** The Domain streak once a ticket closes now: one step per week, whether the ticket was solved or not (a closed ticket is showing up). */
+async function streakAfterClosing(service: Service, userId: string) {
+  const { data: stats } = await service.from("arena_domain_stats").select("current_streak, longest_streak, last_completed_week").eq("user_id", userId).maybeSingle();
+  const next = advanceStreak({ currentStreak: stats?.current_streak ?? 0, longestStreak: stats?.longest_streak ?? 0, lastCompletedWeek: stats?.last_completed_week ?? null }, currentWeekStart());
+  return { current_streak: next.currentStreak, longest_streak: next.longestStreak, last_completed_week: next.lastCompletedWeek };
+}
+
 /** The clock in the browser can run a few seconds ahead of the account's, which is only updated every few seconds, so a time-up reported by the browser is accepted this early. */
 export const TIME_UP_TOLERANCE_SECONDS = 20;
 
@@ -457,7 +463,7 @@ export const timeIsUp = (spentSeconds: number, limitMinutes: number, toleranceSe
  * null when the time is not up. Throws for a ticket that is not theirs, is closed, is being graded, or is part of a Proof Session (which has no such deadline).
  * Safe to call repeatedly: only one call can close the ticket, and the database charges once per ticket.
  */
-export async function expireIfTimedOut(service: Service, userId: string, attemptId: string, toleranceSeconds = 0): Promise<{ eloChange: number; nextAvailableAt: string } | null> {
+export async function expireIfTimedOut(service: Service, userId: string, attemptId: string, toleranceSeconds = 0): Promise<{ eloChange: number; careerEloChange: number; nextAvailableAt: string } | null> {
   const { attempt, challenge } = await loadOwnedOpenAttempt(service, userId, attemptId);
   if (attempt.status !== "presented") throw new AttemptError("This task is not waiting for an answer.", 409, { code: "not_applicable" });
   if (await sessionOfAttempt(service, attemptId)) throw new AttemptError("A Proof Session stage has no time limit of this kind.", 409, { code: "not_applicable" });
@@ -478,9 +484,9 @@ export async function expireIfTimedOut(service: Service, userId: string, attempt
   if (!closed?.length) throw new AttemptError("This task was just closed.", 409, { code: "not_applicable" });
 
   const areaChange = missChange(ELO_BY_DIFFICULTY[difficulty], []);
-  const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), []), reason: `Arena ${difficulty} challenge: time ran out with no answer` });
+  const miss = await recordArenaMiss(userId, { attemptId, roleKey: attempt.role_key, areaChange, careerChange: missChange(careerPassGain(difficulty), []), reason: `Arena ${difficulty} challenge: time ran out with no answer`, streak: await streakAfterClosing(service, userId) });
   logArenaEvent("task.timed_out", { userId, attemptId, area: attempt.skill_area_key ?? "", areaChange: String(miss?.areaChange ?? 0), careerChange: String(miss?.careerChange ?? 0) });
-  return { eloChange: miss?.areaChange ?? areaChange, nextAvailableAt };
+  return { eloChange: miss?.areaChange ?? areaChange, careerEloChange: miss?.careerChange ?? 0, nextAvailableAt };
 }
 
 /**
