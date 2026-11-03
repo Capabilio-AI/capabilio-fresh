@@ -16,6 +16,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/company": LayoutDashboard,
   "/company/roles": Briefcase,
   "/company/visits": CalendarDays,
+  "/company/profile": School,
   "/company/team": UserCheck,
   "/org/college": School,
   "/org/posts": Megaphone,
