@@ -97,7 +97,7 @@ export const MAX_POST_IMAGES = 10;
 
 export const PostSchema = z
   .object({
-    type: z.enum(["event", "announcement"]),
+    type: z.enum(["event", "announcement", "update", "hiring", "milestone"]),
     category: z.enum(["announcement", "event", "fest", "poster", "achievement", "admissions"]).optional(),
     // a LinkedIn-style post has no title: the server derives one from the text when none is given
     title: optionalText(200),

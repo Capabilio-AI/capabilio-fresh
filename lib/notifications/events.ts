@@ -4,11 +4,12 @@ import { untyped } from "@/lib/org/db";
 import type { OrgContext } from "@/lib/org/context";
 import { notify } from "./notify";
 import { activeStudents } from "./audiences";
+import { postNotice } from "./post-notice";
 
-/** A college post went live: tell its students, and everyone who follows the college (never the author). Once per person per post. */
+/** A post went live: tell the college's students and everyone who follows the page (never the author); a company has no students, only followers. Once per person per post. */
 export async function notifyPostPublished(
   service: SupabaseClient<Database>,
-  ctx: Pick<OrgContext, "userId" | "institutionId" | "institutionName" | "institutionSlug">,
+  ctx: Pick<OrgContext, "userId" | "institutionId" | "institutionName" | "institutionSlug" | "kind">,
   post: { id: string; type: string; title: string; is_public: boolean }
 ): Promise<void> {
   const [students, followersRes] = await Promise.all([
@@ -16,13 +17,13 @@ export async function notifyPostPublished(
     untyped(service).from("org_follows").select("user_id").eq("institution_id", ctx.institutionId).limit(5000),
   ]);
   const followers = ((followersRes.data ?? []) as { user_id: string }[]).map((f) => f.user_id);
-  const kind = post.type === "event" ? "event" : "announcement";
+  const notice = postNotice({ company: ctx.kind === "company", name: ctx.institutionName, slug: ctx.institutionSlug }, post);
   await notify(service, {
     userIds: [...students, ...(post.is_public ? followers : [])],
-    type: `post_${kind}`,
-    title: `${ctx.institutionName}: new ${kind}`,
+    type: notice.type,
+    title: notice.title,
     body: post.title,
-    href: `/o/${ctx.institutionSlug}/posts/${post.id}`,
+    href: notice.href,
     actorId: ctx.userId,
     institutionId: ctx.institutionId,
     dedupeKey: `post:${post.id}`,
