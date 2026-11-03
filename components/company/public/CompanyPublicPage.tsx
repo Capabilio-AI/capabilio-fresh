@@ -1,165 +1,201 @@
-import type { CSSProperties } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Check, Globe, MapPin } from "lucide-react";
-import { accentFor, factLine, inkOn, POST_TYPE_LABEL } from "@/lib/company/present";
+import { BadgeCheck, Check, ExternalLink, Globe, MapPin } from "lucide-react";
 import type { PublicCompany } from "@/lib/company/public";
-import { EMPLOYMENT_LABEL, paragraphs, WORK_MODE_LABEL } from "@/lib/hiring/format";
-import { FollowButton, LikeButton } from "./PublicButtons";
+import { factLine } from "@/lib/company/present";
+import { EMPLOYMENT_LABEL, WORK_MODE_LABEL, paragraphs } from "@/lib/hiring/format";
+import { initialsOf } from "@/lib/org/format";
+import { taglineOf } from "@/components/org/CollegeHeader";
+import { FollowButton, ShareButton } from "@/components/org/SocialButtons";
+import { FollowersButton } from "@/components/org/FollowersList";
+import { PostCard } from "@/components/org/PostCard";
+import { EmptyState } from "@/components/org/ui";
 
-const H2 = "font-cap-display text-[22px] font-semibold tracking-[-0.025em] text-[#0c1020]";
-const MUTED = "font-cap-body text-[14px] leading-[1.6] text-[#555a70]";
-const LINK_FOCUS = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--co)]";
+export const COMPANY_TABS = [
+  { id: "home", label: "Home" },
+  { id: "about", label: "About" },
+  { id: "jobs", label: "Jobs" },
+] as const;
+export type CompanyTabId = (typeof COMPANY_TABS)[number]["id"];
 
-const formatDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "");
-const host = (url: string) => {
-  try {
-    return new URL(url).host.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-};
+const plural = (n: number, word: string) => `${n.toLocaleString("en-IN")} ${word}${n === 1 ? "" : "s"}`;
 
-/** A company's public page: a calm product-company layout. The company's own accent colours its actions; everything else is the house ground and ink. */
-export function CompanyPublicPage({ data, signedIn }: { data: PublicCompany; signedIn: boolean }) {
+/** A company's public page, laid out exactly like the college page (banner, overlapping logo, Follow, Home / About / Jobs), on the same theme and components. */
+export function CompanyPublicPage({ data, tab, signedIn }: { data: PublicCompany; tab: CompanyTabId; signedIn: boolean }) {
   const { org, extras, roles, posts } = data;
-  const profile = org.profile;
-  const accent = accentFor(extras.accent);
-  const vars = { "--co": accent, "--co-ink": inkOn(accent) } as CSSProperties;
-  const facts = factLine({ industry: extras.industry, sizeBand: extras.sizeBand, city: org.city, foundedYear: profile?.founded_year ?? null });
-  const about = profile?.bio ? paragraphs(profile.bio) : [];
-  const website = profile?.website_url ?? null;
+  const bio = org.profile?.bio;
+  const tagline = taglineOf(org);
+  const cover = org.profile?.cover_image_url;
+  const logo = org.profile?.logo_url;
+  const base = `/c/${org.slug}`;
+  const facts = factLine({ industry: extras.industry, sizeBand: extras.sizeBand, city: org.city, foundedYear: null });
+  const card = (p: (typeof posts)[number]) => <PostCard key={p.id} post={p} slug={org.slug} orgName={org.name} logoUrl={logo ?? null} verified={org.verified} manage={false} />;
 
   return (
-    <div style={vars} className="min-h-screen bg-[#fafafb] font-cap-body text-[#0c1020]">
-      <header className="sticky top-0 z-30 border-b border-[#e3e5ee] bg-white/85 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between px-5">
-          <Link href="/" aria-label="Capabilio AI home" className={`rounded ${LINK_FOCUS}`}>
-            <Image src="/brand/capabilio-logo.png" alt="Capabilio AI" width={1130} height={234} priority className="h-8 w-auto" />
-          </Link>
-          <Link href={signedIn ? "/dashboard" : "/login"} className={`rounded-full border border-[#d9dbe5] bg-white px-4 py-1.5 text-[13px] font-semibold hover:bg-[#f3f4fa] ${LINK_FOCUS}`}>
-            {signedIn ? "Open Capabilio" : "Sign in"}
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1120px] px-5 pb-24 pt-6">
-        <div className={`relative overflow-hidden rounded-2xl border border-[#e3e5ee] ${profile?.cover_image_url ? "h-44 sm:h-60" : "h-24 sm:h-32"}`} style={{ backgroundColor: "color-mix(in srgb, var(--co) 12%, #ffffff)" }}>
-          {profile?.cover_image_url && <Image src={profile.cover_image_url} alt="" fill sizes="1120px" className="object-cover" unoptimized priority />}
-        </div>
-
-        <section aria-label={`${org.name} overview`} className="flex flex-col gap-5 px-1 sm:flex-row sm:items-end sm:justify-between sm:px-6">
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end">
-            <span className="relative z-10 -mt-10 flex h-20 w-20 shrink-0 self-start items-center justify-center overflow-hidden rounded-2xl border-4 border-[#fafafb] bg-white font-cap-display text-[30px] font-bold text-[var(--co)] ring-1 ring-[#e3e5ee] sm:-mt-12 sm:h-24 sm:w-24">
-              {profile?.logo_url ? <Image src={profile.logo_url} alt={`${org.name} logo`} width={96} height={96} className="h-full w-full object-cover" unoptimized /> : org.name.slice(0, 1).toUpperCase()}
+    <main className="mx-auto max-w-[1128px] px-3 py-4 sm:px-5 sm:py-6">
+      <section className="o-pub-card overflow-hidden" aria-label={`${org.name} page header`}>
+        <div className="relative h-[132px] sm:h-[200px]" style={{ background: "linear-gradient(120deg,#fbefc9 0%,#f0c24f 55%,#d9962a 100%)" }}>
+          {cover ? (
+            // eslint-disable-next-line @next/next/no-img-element -- picture uploaded to our own storage bucket
+            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <span aria-hidden="true" className="pointer-events-none absolute -right-2 -top-8 select-none text-[220px] font-black leading-none tracking-[-0.06em] text-[#1e1707]/[0.07]">
+              {initialsOf(org.name)}
             </span>
-            <div className="min-w-0 pb-1 sm:pt-4">
-              <h1 className="font-cap-display text-[clamp(1.9rem,4.2vw,2.9rem)] font-semibold leading-[1.05] tracking-[-0.03em] [text-wrap:balance]">{org.name}</h1>
-              {profile?.tagline && <p className="mt-1.5 max-w-[46ch] text-[16px] leading-[1.5] text-[#555a70]">{profile.tagline}</p>}
-              {facts.length > 0 && <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[#555a70]">{facts.map((f) => <li key={f}>{f}</li>)}</ul>}
+          )}
+        </div>
+
+        <div className="px-4 pb-0 sm:px-8">
+          <div className="relative -mt-12 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 sm:-mt-16">
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element -- picture uploaded to our own storage bucket
+              <img src={logo} alt={`${org.name} logo`} className="h-24 w-24 rounded-2xl bg-[#fff] object-cover shadow-[0_0_0_4px_#fff,0_2px_8px_rgb(60_40_0/0.18)] sm:h-32 sm:w-32" />
+            ) : (
+              <span className="o-logo-tile h-24 w-24 rounded-2xl text-[34px] shadow-[0_0_0_4px_#fff,0_2px_8px_rgb(60_40_0/0.18)] sm:h-32 sm:w-32 sm:text-[44px]" aria-hidden="true">
+                {initialsOf(org.name)}
+              </span>
+            )}
+            <div className="flex flex-wrap items-center gap-2 pb-1">
+              {signedIn ? <FollowButton slug={org.slug} following={org.isFollowing} followerCount={org.followerCount} /> : <Link href="/login" className="o-btn">Sign in to follow</Link>}
+              {org.profile?.website_url && (
+                <a href={org.profile.website_url} target="_blank" rel="noopener noreferrer" className="o-btn-ghost">
+                  <Globe size={14} aria-hidden="true" /> Website <ExternalLink size={12} aria-hidden="true" />
+                </a>
+              )}
+              <ShareButton path={base} />
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5 pb-1">
-            <FollowButton slug={org.slug} following={org.isFollowing} followerCount={org.followerCount} />
-            {website && (
-              <a href={website} target="_blank" rel="noopener noreferrer" className={`inline-flex h-10 items-center gap-2 rounded-full border border-[#d9dbe5] bg-white px-4 text-[14px] font-semibold hover:bg-[#f3f4fa] ${LINK_FOCUS}`}>
-                <Globe size={15} aria-hidden /> {host(website)} <ArrowUpRight size={14} aria-hidden className="opacity-60" />
-              </a>
-            )}
-          </div>
-        </section>
 
-        <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex min-w-0 flex-col gap-14">
-            {(extras.mission || about.length > 0) && (
-              <section aria-labelledby="about">
-                <h2 id="about" className={H2}>About</h2>
-                {extras.mission && <p className="mt-4 max-w-[34ch] font-cap-display text-[clamp(1.4rem,2.6vw,1.9rem)] font-medium leading-[1.25] tracking-[-0.02em] text-[#0c1020] [text-wrap:balance]">{extras.mission}</p>}
-                <div className={`mt-4 flex max-w-[68ch] flex-col gap-3 ${MUTED} !text-[15px]`}>{about.map((p, i) => <p key={i}>{p}</p>)}</div>
-              </section>
-            )}
-
-            <section aria-labelledby="roles">
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 id="roles" className={H2}>Open roles</h2>
-                <span className="text-[13px] tabular-nums text-[#555a70]">{roles.length}</span>
-              </div>
-              {roles.length === 0 ? (
-                <p className={`mt-3 max-w-[52ch] ${MUTED}`}>No roles are open right now. Follow {org.name} and you will see new ones in your feed first.</p>
-              ) : (
-                <ul className="mt-3 divide-y divide-[#e3e5ee] rounded-2xl border border-[#e3e5ee] bg-white">
-                  {roles.map((r) => (
-                    <li key={r.id}>
-                      <Link href={`/jobs#role-${r.id}`} className={`group flex items-start justify-between gap-4 rounded-2xl p-5 transition-colors hover:bg-[#f7f7fb] ${LINK_FOCUS}`}>
-                        <span className="min-w-0">
-                          <span className="block text-[16px] font-semibold tracking-[-0.01em]">{r.title}</span>
-                          <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#555a70]">
-                            <span>{r.team}</span>
-                            <span className="inline-flex items-center gap-1"><MapPin size={12} aria-hidden />{r.location} · {WORK_MODE_LABEL[r.workMode]}</span>
-                            <span>{EMPLOYMENT_LABEL[r.employmentType]}</span>
-                            {r.compensation && <span>{r.compensation}</span>}
-                          </span>
-                          <span className="mt-2 block max-w-[62ch] text-[14px] leading-[1.55] text-[#555a70]">{r.summary}</span>
-                        </span>
-                        <span className="mt-1 inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-[var(--co)] transition-transform group-hover:translate-x-0.5">Apply <ArrowUpRight size={14} aria-hidden /></span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+          <div className="mt-3 min-w-0">
+            <h1 className="flex flex-wrap items-center gap-x-2 text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-app-charcoal sm:text-[32px]">
+              {org.name}
+              {org.verified && (
+                <span title="Reviewed and approved by the Capabilio team" className="inline-flex items-center gap-1 rounded-full bg-app-success-container px-2 py-0.5 text-[11px] font-bold tracking-normal text-app-success">
+                  <BadgeCheck size={13} aria-hidden="true" /> Verified
+                </span>
               )}
-              <p className="mt-3 text-[12.5px] text-[#555a70]">Applying shares your Capabilio Skill Passport with {org.name}. Students apply from the Jobs tab.</p>
-            </section>
-
-            <section aria-labelledby="updates">
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 id="updates" className={H2}>Updates</h2>
-                <span className="text-[13px] tabular-nums text-[#555a70]">{posts.length}</span>
-              </div>
-              {posts.length === 0 ? (
-                <p className={`mt-3 ${MUTED}`}>{org.name} has not posted yet.</p>
-              ) : (
-                <ol className="mt-3 flex flex-col gap-4">
-                  {posts.slice(0, 20).map((p) => (
-                    <li key={p.id}>
-                      <article className="rounded-2xl border border-[#e3e5ee] bg-white p-5">
-                        <header className="flex items-center gap-2 text-[12.5px] text-[#555a70]">
-                          <span className="rounded-full bg-[color-mix(in_srgb,var(--co)_12%,#ffffff)] px-2.5 py-0.5 font-semibold text-[#0c1020]">{POST_TYPE_LABEL[p.type] ?? "Update"}</span>
-                          <time dateTime={p.published_at ?? undefined}>{formatDate(p.published_at)}</time>
-                        </header>
-                        <h3 className="mt-2 text-[17px] font-semibold tracking-[-0.01em]">{p.title}</h3>
-                        <div className={`mt-2 flex max-w-[68ch] flex-col gap-2 ${MUTED} !text-[14.5px]`}>{paragraphs(p.body).map((t, i) => <p key={i}>{t}</p>)}</div>
-                        {p.cover_image_url && <Image src={p.cover_image_url} alt="" width={900} height={450} className="mt-4 h-auto w-full rounded-xl border border-[#e3e5ee]" unoptimized />}
-                        <footer className="mt-4"><LikeButton postId={p.id} liked={p.likedByViewer} count={p.likeCount} /></footer>
-                      </article>
-                    </li>
-                  ))}
-                </ol>
+            </h1>
+            {tagline && <p className="mt-1 max-w-2xl text-[15px] leading-snug text-app-charcoal/80">{tagline}</p>}
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-app-muted">
+              {facts.length > 0 && (
+                <>
+                  <span className="inline-flex items-center gap-1"><MapPin size={13} aria-hidden="true" /> {facts.join(" · ")}</span>
+                  <span aria-hidden="true">·</span>
+                </>
               )}
-            </section>
+              <FollowersButton slug={org.slug} name={org.name} signedIn={signedIn} className="rounded-md font-semibold text-app-blue hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-orange/40">
+                {plural(org.followerCount, "follower")}
+              </FollowersButton>
+              <span aria-hidden="true">·</span>
+              <Link href={`${base}?tab=jobs`} className="rounded-md font-semibold text-app-blue hover:underline">{plural(roles.length, "open role")}</Link>
+            </p>
           </div>
 
-          <aside className="flex flex-col gap-8 lg:sticky lg:top-20 lg:self-start" aria-label="Company details">
-            {extras.culture.length > 0 && (
-              <section aria-labelledby="culture">
-                <h2 id="culture" className={`${H2} !text-[17px]`}>How we work</h2>
-                <ul className="mt-3 flex flex-col gap-2.5">{extras.culture.map((c) => <li key={c} className="text-[14px] leading-[1.5] text-[#2b3046]">{c}</li>)}</ul>
-              </section>
-            )}
-            {extras.perks.length > 0 && (
-              <section aria-labelledby="perks">
-                <h2 id="perks" className={`${H2} !text-[17px]`}>Perks</h2>
-                <ul className="mt-3 flex flex-col gap-2">{extras.perks.map((c) => <li key={c} className="flex items-start gap-2 text-[14px] text-[#2b3046]"><Check size={15} aria-hidden className="mt-[3px] shrink-0 text-[var(--co)]" />{c}</li>)}</ul>
-              </section>
-            )}
-            {extras.techStack.length > 0 && (
-              <section aria-labelledby="stack">
-                <h2 id="stack" className={`${H2} !text-[17px]`}>Tools and tech</h2>
-                <ul className="mt-3 flex flex-wrap gap-1.5">{extras.techStack.map((c) => <li key={c} className="rounded-full border border-[#e3e5ee] bg-white px-2.5 py-1 text-[12.5px] font-medium text-[#2b3046]">{c}</li>)}</ul>
-              </section>
-            )}
-          </aside>
+          <nav aria-label="Company page sections" className="-mx-1 mt-4 flex gap-1 overflow-x-auto">
+            {COMPANY_TABS.map((t) => {
+              const active = t.id === tab;
+              return (
+                <Link key={t.id} href={t.id === "home" ? base : `${base}?tab=${t.id}`} aria-current={active ? "page" : undefined} className={`relative shrink-0 px-4 py-3 text-[14px] font-bold transition-colors ${active ? "text-app-charcoal" : "text-app-muted hover:text-app-charcoal"}`}>
+                  {t.label}
+                  {active && <span className="absolute inset-x-2 bottom-0 h-[3px] rounded-t-full" style={{ background: "var(--o-gradient)" }} />}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          {tab === "home" && (posts.length === 0 ? <EmptyState title="No posts yet" body="Updates, hiring news and milestones from this company appear here." /> : posts.map(card))}
+
+          {tab === "about" && (
+            <section className="o-pub-card p-5 sm:p-6">
+              <h2 className="text-[18px] font-extrabold text-app-charcoal">About</h2>
+              {extras.mission && <p className="mt-3 text-[15.5px] font-semibold leading-snug text-app-charcoal">{extras.mission}</p>}
+              {bio ? <div className="mt-3 flex flex-col gap-3 text-[14.5px] leading-relaxed text-app-charcoal">{paragraphs(bio).map((p, i) => <p key={i}>{p}</p>)}</div> : <p className="mt-3 text-[13.5px] text-app-muted">This company hasn&apos;t written an About section yet.</p>}
+              <dl className="mt-6 grid grid-cols-1 gap-x-8 gap-y-4 text-[13.5px] sm:grid-cols-2">
+                {[
+                  ["Industry", extras.industry],
+                  ["Company size", extras.sizeBand ? `${extras.sizeBand} people` : null],
+                  ["Headquarters", org.city],
+                  ["Founded", org.profile?.founded_year ? String(org.profile.founded_year) : null],
+                ].map(([k, v]) => (
+                  <div key={k as string}>
+                    <dt className="font-bold text-app-charcoal">{k}</dt>
+                    <dd className="mt-0.5 text-app-muted">{v || "Not listed"}</dd>
+                  </div>
+                ))}
+                <div>
+                  <dt className="font-bold text-app-charcoal">Website</dt>
+                  <dd className="mt-0.5">{org.profile?.website_url ? <a href={org.profile.website_url} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">{org.profile.website_url.replace(/^https?:\/\//, "")}</a> : <span className="text-app-muted">Not listed</span>}</dd>
+                </div>
+              </dl>
+              {extras.culture.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-[15px] font-extrabold text-app-charcoal">How we work</h3>
+                  <ul className="mt-2 flex flex-col gap-1.5 text-[14px] text-app-charcoal">{extras.culture.map((c) => <li key={c}>{c}</li>)}</ul>
+                </div>
+              )}
+              {extras.perks.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-[15px] font-extrabold text-app-charcoal">Perks</h3>
+                  <ul className="mt-2 flex flex-col gap-1.5 text-[14px] text-app-charcoal">{extras.perks.map((c) => <li key={c} className="flex items-start gap-2"><Check size={15} aria-hidden="true" className="mt-[3px] shrink-0 text-app-success" />{c}</li>)}</ul>
+                </div>
+              )}
+              {extras.techStack.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-[15px] font-extrabold text-app-charcoal">Tools and tech</h3>
+                  <ul className="mt-2 flex flex-wrap gap-1.5">{extras.techStack.map((c) => <li key={c} className="rounded-full bg-app-orange-container px-3 py-1 text-[12.5px] font-semibold text-app-orange">{c}</li>)}</ul>
+                </div>
+              )}
+            </section>
+          )}
+
+          {tab === "jobs" && (
+            <>
+              <h2 className="text-[18px] font-extrabold text-app-charcoal">Open roles</h2>
+              {roles.length === 0 ? (
+                <EmptyState title="No open roles" body={`Follow ${org.name} to see new roles in your feed first.`} />
+              ) : (
+                roles.map((r) => (
+                  <Link key={r.id} href={`/jobs#role-${r.id}`} className="o-pub-card block p-5 transition-colors hover:bg-app-background">
+                    <h3 className="text-[16px] font-extrabold text-app-charcoal">{r.title}</h3>
+                    <p className="mt-0.5 text-[13px] text-app-muted">{r.team} · {r.location} · {WORK_MODE_LABEL[r.workMode]} · {EMPLOYMENT_LABEL[r.employmentType]}{r.compensation ? ` · ${r.compensation}` : ""}</p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-app-charcoal">{r.summary}</p>
+                    <span className="mt-3 inline-block text-[13px] font-bold text-app-blue">Apply with your Skill Passport</span>
+                  </Link>
+                ))
+              )}
+            </>
+          )}
+        </div>
+
+        <aside className="flex flex-col gap-4" aria-label="Highlights">
+          {tab !== "about" && bio && (
+            <section className="o-pub-card p-5">
+              <h2 className="text-[15px] font-extrabold text-app-charcoal">About</h2>
+              <p className="mt-2 line-clamp-5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-app-muted">{bio}</p>
+              <Link href={`${base}?tab=about`} className="mt-2 inline-block text-[13px] font-bold text-app-blue hover:underline">See more</Link>
+            </section>
+          )}
+          <section className="o-pub-card p-5">
+            <h2 className="text-[15px] font-extrabold text-app-charcoal">Open roles</h2>
+            {roles.length === 0 ? (
+              <p className="mt-2 text-[13px] text-app-muted">Nothing open right now.</p>
+            ) : (
+              <ul className="mt-3 flex flex-col gap-3">
+                {roles.slice(0, 3).map((r) => (
+                  <li key={r.id}>
+                    <Link href={`/jobs#role-${r.id}`} className="text-[13.5px] font-bold leading-snug text-app-charcoal hover:underline">{r.title}</Link>
+                    <p className="text-[12px] text-app-muted">{r.location} · {EMPLOYMENT_LABEL[r.employmentType]}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {roles.length > 3 && <Link href={`${base}?tab=jobs`} className="mt-3 inline-block text-[13px] font-bold text-app-blue hover:underline">Show all {roles.length}</Link>}
+          </section>
+        </aside>
+      </div>
+    </main>
   );
 }

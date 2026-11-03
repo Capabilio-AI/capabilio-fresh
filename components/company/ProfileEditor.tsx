@@ -23,7 +23,6 @@ export interface CompanyProfileValues {
   mission: string;
   industry: string;
   sizeBand: (typeof SIZE_BANDS)[number] | null;
-  accent: string;
   culture: string[];
   perks: string[];
   techStack: string[];
@@ -33,7 +32,6 @@ export interface CompanyProfileValues {
 export function ProfileEditor({ values, companyName, slug, logoUrl, coverUrl }: { values: CompanyProfileValues; companyName: string; slug: string; logoUrl: string | null; coverUrl: string | null }) {
   const router = useRouter();
   const [isPublic, setIsPublic] = useState(values.isPublic);
-  const [accent, setAccent] = useState(values.accent);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -53,7 +51,6 @@ export function ProfileEditor({ values, companyName, slug, logoUrl, coverUrl }: 
       mission: text("mission"),
       industry: text("industry"),
       sizeBand: text("sizeBand"),
-      accent,
       culture: linesToList(String(f.get("culture") ?? "")),
       perks: linesToList(String(f.get("perks") ?? "")),
       techStack: linesToList(String(f.get("techStack") ?? "")),
@@ -80,12 +77,7 @@ export function ProfileEditor({ values, companyName, slug, logoUrl, coverUrl }: 
           <ImageUploadButton kind="cover" label="Upload cover image" className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>{coverUrl ? "Replace cover" : "Upload cover"}</ImageUploadButton>
         </div>
         {coverUrl && <Image src={coverUrl} alt="" width={1200} height={300} className="mt-4 h-32 w-full rounded-xl object-cover" unoptimized />}
-        <div className="mt-4 flex items-center gap-3">
-          <label htmlFor="accent" className={`${LABEL} mb-0`}>Accent colour</label>
-          <input id="accent" type="color" value={accent} onChange={(e) => setAccent(e.target.value)} className="h-9 w-12 cursor-pointer rounded border border-[var(--m-rule)] bg-[#fff]" />
-          <span className="font-lp-mono text-[12px] text-app-muted">{accent}</span>
-        </div>
-        <p className={HINT}>Used for your public page&apos;s highlights. Logo and cover are saved as soon as you upload them.</p>
+        <p className={HINT}>Logo and cover are saved as soon as you upload them.</p>
       </section>
 
       <section aria-label="About" className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-5">
