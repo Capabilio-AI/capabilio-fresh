@@ -70,25 +70,25 @@ export function ProfileEditor({ values, companyName, slug, logoUrl, coverUrl }: 
 
   return (
     <form onSubmit={submit} className="grid gap-6">
-      <section aria-label="Brand" className="rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+      <section aria-label="Brand" className="rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-5">
         <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Brand</h2>
         <div className="mt-3 flex flex-wrap items-center gap-4">
           <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-[var(--m-rule)] bg-app-background font-lp-display text-[22px] font-bold text-[var(--m-ink)]">
             {logoUrl ? <Image src={logoUrl} alt={`${companyName} logo`} width={64} height={64} className="h-full w-full object-cover" unoptimized /> : companyName.slice(0, 1)}
           </span>
-          <ImageUploadButton kind="logo" label="Upload logo" className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>{logoUrl ? "Replace logo" : "Upload logo"}</ImageUploadButton>
-          <ImageUploadButton kind="cover" label="Upload cover image" className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>{coverUrl ? "Replace cover" : "Upload cover"}</ImageUploadButton>
+          <ImageUploadButton kind="logo" label="Upload logo" className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>{logoUrl ? "Replace logo" : "Upload logo"}</ImageUploadButton>
+          <ImageUploadButton kind="cover" label="Upload cover image" className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>{coverUrl ? "Replace cover" : "Upload cover"}</ImageUploadButton>
         </div>
         {coverUrl && <Image src={coverUrl} alt="" width={1200} height={300} className="mt-4 h-32 w-full rounded-xl object-cover" unoptimized />}
         <div className="mt-4 flex items-center gap-3">
           <label htmlFor="accent" className={`${LABEL} mb-0`}>Accent colour</label>
-          <input id="accent" type="color" value={accent} onChange={(e) => setAccent(e.target.value)} className="h-9 w-12 cursor-pointer rounded border border-[var(--m-rule)] bg-white" />
+          <input id="accent" type="color" value={accent} onChange={(e) => setAccent(e.target.value)} className="h-9 w-12 cursor-pointer rounded border border-[var(--m-rule)] bg-[#fff]" />
           <span className="font-lp-mono text-[12px] text-app-muted">{accent}</span>
         </div>
         <p className={HINT}>Used for your public page&apos;s highlights. Logo and cover are saved as soon as you upload them.</p>
       </section>
 
-      <section aria-label="About" className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+      <section aria-label="About" className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-5">
         <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">About</h2>
         <div><label className={LABEL} htmlFor="tagline">Tagline</label><input id="tagline" name="tagline" maxLength={160} defaultValue={values.tagline} className={INPUT} /><p className={HINT}>One line, up to 160 characters.</p></div>
         <div><label className={LABEL} htmlFor="mission">Mission</label><textarea id="mission" name="mission" rows={3} maxLength={600} defaultValue={values.mission} className={INPUT} /></div>
@@ -108,14 +108,14 @@ export function ProfileEditor({ values, companyName, slug, logoUrl, coverUrl }: 
         <div><label className={LABEL} htmlFor="websiteUrl">Website</label><input id="websiteUrl" name="websiteUrl" type="url" placeholder="https://" defaultValue={values.websiteUrl} className={INPUT} /></div>
       </section>
 
-      <section aria-label="Culture" className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+      <section aria-label="Culture" className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-5">
         <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Culture and stack</h2>
         <div><label className={LABEL} htmlFor="culture">How you work (one per line, up to 8)</label><textarea id="culture" name="culture" rows={4} defaultValue={values.culture.join("\n")} className={INPUT} /></div>
         <div><label className={LABEL} htmlFor="perks">Perks (one per line, up to 12)</label><textarea id="perks" name="perks" rows={4} defaultValue={values.perks.join("\n")} className={INPUT} /></div>
         <div><label className={LABEL} htmlFor="techStack">Tools and tech (one per line, up to 20)</label><textarea id="techStack" name="techStack" rows={4} defaultValue={values.techStack.join("\n")} className={INPUT} /></div>
       </section>
 
-      <section aria-label="Visibility" className="rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+      <section aria-label="Visibility" className="rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-5">
         <label className="flex items-start gap-3">
           <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="mt-1 h-4 w-4" />
           <span>
@@ -128,7 +128,7 @@ export function ProfileEditor({ values, companyName, slug, logoUrl, coverUrl }: 
 
       {error && <p role="alert" className="font-lp-body text-[12.5px] text-app-rose">{error}</p>}
       {saved && <p role="status" className="font-lp-body text-[12.5px] font-semibold text-[#17784a]">Saved.</p>}
-      <div><button type="submit" disabled={busy} className={`${BTN} bg-app-charcoal text-white`}>{busy ? "Saving…" : "Save profile"}</button></div>
+      <div><button type="submit" disabled={busy} className={`${BTN} bg-app-charcoal text-[#fff]`}>{busy ? "Saving…" : "Save profile"}</button></div>
     </form>
   );
 }

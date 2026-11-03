@@ -15,7 +15,7 @@ export default async function CompanyRolesPage() {
   const service = createServiceClient();
   const [openings, applications] = await Promise.all([listAllOpenings(service, ctx.institutionId), listApplications(service, ctx.institutionId)]);
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Roles</h1>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Post a role and signed-in Capabilio students can apply with their Skill Passport attached.</p>
       <div className="pt-6"><CareersAdmin company openings={openings} applications={applications} /></div>

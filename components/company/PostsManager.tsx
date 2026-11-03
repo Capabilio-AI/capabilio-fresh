@@ -87,7 +87,7 @@ export function PostsManager({ posts }: { posts: ManagedPost[] }) {
 
   return (
     <div className="flex flex-col gap-10">
-      <form ref={formRef} onSubmit={(e: FormEvent) => e.preventDefault()} className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-white p-5" aria-label="New post">
+      <form ref={formRef} onSubmit={(e: FormEvent) => e.preventDefault()} className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-5" aria-label="New post">
         <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">New post</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -107,8 +107,8 @@ export function PostsManager({ posts }: { posts: ManagedPost[] }) {
           </div>
         )}
         <div className="flex flex-wrap items-center gap-3">
-          <ImageUploadButton kind="post" label="Add a photo" onUploaded={setCover} className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>{cover ? "Replace photo" : "Add a photo"}</ImageUploadButton>
-          {cover && <><Image src={cover} alt="" width={64} height={64} className="h-12 w-12 rounded-lg object-cover" unoptimized /><button type="button" onClick={() => setCover(null)} className={`${BTN} border border-[var(--m-rule)] bg-white`}>Remove</button></>}
+          <ImageUploadButton kind="post" label="Add a photo" onUploaded={setCover} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>{cover ? "Replace photo" : "Add a photo"}</ImageUploadButton>
+          {cover && <><Image src={cover} alt="" width={64} height={64} className="h-12 w-12 rounded-lg object-cover" unoptimized /><button type="button" onClick={() => setCover(null)} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)]`}>Remove</button></>}
         </div>
         <label className="flex items-start gap-2 font-lp-body text-[13px] text-[var(--m-ink)]">
           <input type="checkbox" name="isPublic" defaultChecked className="mt-0.5 h-4 w-4" />
@@ -116,8 +116,8 @@ export function PostsManager({ posts }: { posts: ManagedPost[] }) {
         </label>
         {error && <p role="alert" className="font-lp-body text-[12.5px] text-app-rose">{error}</p>}
         <div className="flex gap-2">
-          <button type="button" disabled={busy !== null} onClick={() => create(true)} className={`${BTN} bg-app-charcoal text-white`}>{busy === "publish" ? "Publishing…" : "Publish"}</button>
-          <button type="button" disabled={busy !== null} onClick={() => create(false)} className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>{busy === "draft" ? "Saving…" : "Save draft"}</button>
+          <button type="button" disabled={busy !== null} onClick={() => create(true)} className={`${BTN} bg-app-charcoal text-[#fff]`}>{busy === "publish" ? "Publishing…" : "Publish"}</button>
+          <button type="button" disabled={busy !== null} onClick={() => create(false)} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>{busy === "draft" ? "Saving…" : "Save draft"}</button>
         </div>
       </form>
 
@@ -126,19 +126,19 @@ export function PostsManager({ posts }: { posts: ManagedPost[] }) {
         {posts.length === 0 ? <p className="mt-3 font-lp-body text-[13px] text-app-muted">Nothing yet. Your first post shows on your public page and goes to your followers.</p> : (
           <ul className="mt-3 flex flex-col gap-3">
             {posts.map((p) => (
-              <li key={p.id} className="rounded-2xl border border-[var(--m-rule)] bg-white p-4">
+              <li key={p.id} className="rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">{p.title}</p>
                     <p className="font-lp-body text-[12px] text-app-muted">{POST_TYPE_LABEL[p.type] ?? "Update"} · {p.status === "published" ? `Published ${new Date(p.publishedAt ?? p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : "Draft"}{p.status === "published" && !p.isPublic ? " · Private" : ""} · {p.likeCount} likes</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" disabled={busy !== null} onClick={() => setEditing(editing === p.id ? null : p.id)} className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>Edit</button>
-                    <button type="button" disabled={busy !== null} onClick={() => act(p.id, "/api/org/posts/action", { postId: p.id, action: p.status === "published" ? "unpublish" : "publish" })} className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>{p.status === "published" ? "Unpublish" : "Publish"}</button>
+                    <button type="button" disabled={busy !== null} onClick={() => setEditing(editing === p.id ? null : p.id)} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>Edit</button>
+                    <button type="button" disabled={busy !== null} onClick={() => act(p.id, "/api/org/posts/action", { postId: p.id, action: p.status === "published" ? "unpublish" : "publish" })} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>{p.status === "published" ? "Unpublish" : "Publish"}</button>
                     {confirmDelete === p.id ? (
-                      <button type="button" disabled={busy !== null} onClick={() => act(p.id, "/api/org/posts/action", { postId: p.id, action: "delete" })} className={`${BTN} bg-app-rose text-white`}>Confirm delete</button>
+                      <button type="button" disabled={busy !== null} onClick={() => act(p.id, "/api/org/posts/action", { postId: p.id, action: "delete" })} className={`${BTN} bg-app-rose text-[#fff]`}>Confirm delete</button>
                     ) : (
-                      <button type="button" disabled={busy !== null} onClick={() => setConfirmDelete(p.id)} className={`${BTN} border border-[var(--m-rule)] bg-white text-app-rose`}>Delete</button>
+                      <button type="button" disabled={busy !== null} onClick={() => setConfirmDelete(p.id)} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-app-rose`}>Delete</button>
                     )}
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export function PostsManager({ posts }: { posts: ManagedPost[] }) {
                   <form onSubmit={(e) => { e.preventDefault(); const body = String(new FormData(e.currentTarget).get("body") ?? "").trim(); if (body) act(`edit-${p.id}`, "/api/org/posts/edit", { postId: p.id, body }); }} className="mt-3 grid gap-2">
                     <label className="sr-only" htmlFor={`edit-${p.id}`}>Edit post text</label>
                     <textarea id={`edit-${p.id}`} name="body" defaultValue={p.body} rows={4} maxLength={5000} className={INPUT} />
-                    <div><button type="submit" disabled={busy !== null} className={`${BTN} bg-app-charcoal text-white`}>Save changes</button></div>
+                    <div><button type="submit" disabled={busy !== null} className={`${BTN} bg-app-charcoal text-[#fff]`}>Save changes</button></div>
                   </form>
                 ) : <p className="mt-2 line-clamp-3 whitespace-pre-wrap font-lp-body text-[13px] text-app-muted">{p.body}</p>}
               </li>
