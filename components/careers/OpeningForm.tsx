@@ -58,7 +58,7 @@ export function OpeningForm({ opening, onDone, company = false }: { opening?: Op
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+    <form onSubmit={submit} className="grid gap-4 rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-5">
       <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{opening ? `Edit: ${opening.title}` : "New opening"}</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -151,8 +151,8 @@ export function OpeningForm({ opening, onDone, company = false }: { opening?: Op
       </div>
       {error && <p role="alert" className="font-lp-body text-[12.5px] text-app-rose">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={busy} className="rounded-full bg-app-charcoal px-5 py-2 font-lp-body text-[12.5px] font-semibold text-white disabled:opacity-50">{busy ? "Saving…" : opening ? "Save changes" : "Save opening"}</button>
-        <button type="button" onClick={onDone} className="rounded-full border border-[var(--m-rule)] bg-white px-5 py-2 font-lp-body text-[12.5px] font-semibold text-[var(--m-ink)]">Cancel</button>
+        <button type="submit" disabled={busy} className="rounded-full bg-app-charcoal px-5 py-2 font-lp-body text-[12.5px] font-semibold text-[#fff] disabled:opacity-50">{busy ? "Saving…" : opening ? "Save changes" : "Save opening"}</button>
+        <button type="button" onClick={onDone} className="rounded-full border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] px-5 py-2 font-lp-body text-[12.5px] font-semibold text-[var(--m-ink)]">Cancel</button>
       </div>
     </form>
   );

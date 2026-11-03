@@ -1,6 +1,6 @@
-import { CalendarDays, GraduationCap, Megaphone, PartyPopper, Sparkles, Trophy, type LucideIcon } from "lucide-react";
+import { Briefcase, CalendarDays, GraduationCap, Megaphone, PartyPopper, Sparkles, Trophy, type LucideIcon } from "lucide-react";
 
-export type PostKindId = "announcement" | "event" | "fest" | "poster" | "achievement" | "admissions";
+export type PostKindId = "announcement" | "event" | "fest" | "poster" | "achievement" | "admissions" | "update" | "hiring" | "milestone";
 
 export interface PostKind {
   id: PostKindId;
@@ -28,11 +28,17 @@ export const POST_KINDS: PostKind[] = [
   { id: "admissions", label: "Admissions", icon: GraduationCap, chip: "bg-app-blue-container text-app-blue", heading: "Share an admissions notice", placeholder: "Programs, eligibility, last date…", dated: false, needsImage: false, headline: true, linkLabel: "Apply link" },
 ];
 
-const BY_ID = Object.fromEntries(POST_KINDS.map((k) => [k.id, k])) as Record<PostKindId, PostKind>;
+/** What a company's posts show as. Not in POST_KINDS: that list is the college composer's menu. */
+const COMPANY_KINDS: PostKind[] = [
+  { id: "update", label: "Update", icon: Megaphone, chip: "bg-app-orange-container text-app-orange", heading: "Share an update", placeholder: "", dated: false, needsImage: false, headline: false, linkLabel: "Link" },
+  { id: "hiring", label: "Hiring", icon: Briefcase, chip: "bg-app-blue-container text-app-blue", heading: "Share hiring news", placeholder: "", dated: false, needsImage: false, headline: false, linkLabel: "Link" },
+  { id: "milestone", label: "Milestone", icon: Trophy, chip: "bg-app-success-container text-app-success", heading: "Share a milestone", placeholder: "", dated: false, needsImage: false, headline: false, linkLabel: "Link" },
+];
 
-/** The kind a stored post shows as; posts made before categories existed are an event or an announcement. */
-/** A company post type (update, hiring, milestone) has no college kind of its own: it reads as an announcement wherever a college card is drawn. */
+const BY_ID = Object.fromEntries([...POST_KINDS, ...COMPANY_KINDS].map((k) => [k.id, k])) as Record<PostKindId, PostKind>;
+
+/** The kind a stored post shows as; posts made before categories existed are an event or an announcement, and a company's update, hiring or milestone post shows as itself. */
 export function kindOf(post: { category?: string | null; type: string }): PostKind {
-  const id = (post.category ?? (post.type === "event" ? "event" : "announcement")) as PostKindId;
+  const id = (post.category ?? (post.type === "event" || post.type in BY_ID ? post.type : "announcement")) as PostKindId;
   return BY_ID[id] ?? BY_ID.announcement;
 }

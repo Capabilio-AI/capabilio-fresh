@@ -37,7 +37,7 @@ export function FollowersTable({ slug, initial, total, nextCursor }: { slug: str
   return (
     <div>
       <p className="font-lp-body text-[13px] text-app-muted"><span className="tabular-nums font-semibold text-[var(--m-ink)]">{total.toLocaleString("en-IN")}</span> {total === 1 ? "follower" : "followers"}</p>
-      <ul className="mt-3 divide-y divide-[var(--m-rule)] rounded-2xl border border-[var(--m-rule)] bg-white">
+      <ul className="mt-3 divide-y divide-[var(--m-rule)] rounded-2xl border border-[var(--m-rule)] bg-[#fff]">
         {people.map((p) => (
           <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
@@ -52,7 +52,7 @@ export function FollowersTable({ slug, initial, total, nextCursor }: { slug: str
         ))}
       </ul>
       {error && <p role="alert" className="mt-3 font-lp-body text-[12.5px] text-app-rose">{error}</p>}
-      {cursor && <button type="button" onClick={more} disabled={busy} className="mt-4 rounded-full border border-[var(--m-rule)] bg-white px-4 py-1.5 font-lp-body text-[12.5px] font-semibold disabled:opacity-50">{busy ? "Loading…" : "Show more"}</button>}
+      {cursor && <button type="button" onClick={more} disabled={busy} className="mt-4 rounded-full border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] px-4 py-1.5 font-lp-body text-[12.5px] font-semibold disabled:opacity-50">{busy ? "Loading…" : "Show more"}</button>}
     </div>
   );
 }
