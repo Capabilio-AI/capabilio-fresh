@@ -29,7 +29,7 @@ export function JobBoard({ openings, appliedIds }: { openings: CompanyOpening[];
   return (
     <ul className="flex flex-col gap-3">
       {openings.map((o) => (
-        <li key={o.id} className="rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+        <li key={o.id} id={`role-${o.id}`} className="scroll-mt-24 rounded-2xl border border-[var(--m-rule)] bg-white p-5">
           <p className="font-lp-body text-[12px] font-semibold uppercase tracking-wide text-app-muted">{o.companyName}</p>
           <h2 className="font-lp-display text-[18px] font-bold text-[var(--m-ink)]">{o.title}</h2>
           <p className="font-lp-body text-[12.5px] text-app-muted">{o.team} · {o.location} · {WORK_MODE_LABEL[o.workMode]} · {EMPLOYMENT_LABEL[o.employmentType]}{o.compensation ? ` · ${o.compensation}` : ""}</p>

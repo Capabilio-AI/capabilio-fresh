@@ -88,7 +88,7 @@ export interface OrgPostRow {
   id: string;
   institution_id: string;
   author_membership_id: string;
-  type: "event" | "announcement";
+  type: "event" | "announcement" | "update" | "hiring" | "milestone";
   /** what the college is sharing; null on posts made before categories existed */
   category?: string | null;
   title: string;
