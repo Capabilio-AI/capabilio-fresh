@@ -12,7 +12,6 @@ interface CompanyRow {
   mission: string | null;
   industry: string | null;
   size_band: CompanyProfileValues["sizeBand"];
-  accent: string | null;
   culture: string[];
   perks: string[];
   tech_stack: string[];
@@ -41,7 +40,6 @@ export default async function CompanyProfilePage() {
     mission: c?.mission ?? "",
     industry: c?.industry ?? "",
     sizeBand: c?.size_band ?? null,
-    accent: c?.accent ?? "#3a45c4",
     culture: c?.culture ?? [],
     perks: c?.perks ?? [],
     techStack: c?.tech_stack ?? [],
