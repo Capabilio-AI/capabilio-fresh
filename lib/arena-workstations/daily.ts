@@ -1,4 +1,6 @@
-export const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+import { ARENA_TEST_MODE } from "./test-mode";
+
+export const COOLDOWN_MS = ARENA_TEST_MODE ? 0 : 24 * 60 * 60 * 1000;
 
 export interface AssignmentRow {
   id: string;
@@ -24,7 +26,7 @@ export function resolveDailyState(assignments: AssignmentRow[], now: Date): Dail
   const latest = assignments
     .filter((a) => a.next_available_at)
     .sort((a, b) => Date.parse(b.next_available_at!) - Date.parse(a.next_available_at!))[0];
-  if (latest && Date.parse(latest.next_available_at!) > now.getTime()) {
+  if (!ARENA_TEST_MODE && latest && Date.parse(latest.next_available_at!) > now.getTime()) {
     return { kind: "cooldown", nextAvailableAt: latest.next_available_at! };
   }
   return { kind: "assign_next" };

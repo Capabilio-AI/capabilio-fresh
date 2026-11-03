@@ -14,14 +14,11 @@ export function missingByDifficulty(pool: readonly { id: string; difficulty: str
 /** Pure. The difficulties to write, hardest first (so a stopped run still leaves the hard ones), capped at a week's largest batch. */
 export const planDifficulties = (missing: Readonly<Record<Difficulty, number>>, cap = 9): Difficulty[] => DIFFICULTIES.flatMap((d) => Array<Difficulty>(Math.max(0, missing[d])).fill(d)).slice(0, cap);
 
-/** Pure. About one in three is a concept/case question, the rest are calculations; the generator falls back to the other kind if one does not fit. */
-export const kindFor = (index: number): StreamKind => (index % 3 === 1 ? "mcq" : "numeric");
+/** Pure. Arena is real-world work only, so every written challenge is a calculation: multiple-choice belongs to the sign-up assessment, never here. */
+export const kindFor = (_index: number): StreamKind => "numeric";
 
-/**
- * Pure. For a branch with labs, two of every three slots are hands-on missions and the third is a calculation or a concept question
- * (alternating). Branches without labs keep the calculation / concept mix.
- */
-export const slotKind = (index: number, hasLabs: boolean): StreamKind | "mission" => (!hasLabs ? kindFor(index) : index % 3 === 2 ? (Math.floor(index / 3) % 2 === 0 ? "numeric" : "mcq") : "mission");
+/** Pure. For a branch with labs, two of every three slots are hands-on missions and the third is a calculation. Branches without labs are all calculations. */
+export const slotKind = (index: number, hasLabs: boolean): StreamKind | "mission" => (!hasLabs || index % 3 === 2 ? "numeric" : "mission");
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 

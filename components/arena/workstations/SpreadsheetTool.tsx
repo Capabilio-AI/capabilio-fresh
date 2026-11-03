@@ -47,6 +47,7 @@ export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubm
   const [active, setActive] = useState("A1");
   const [extent, setExtent] = useState("A1");
   const [editing, setEditing] = useState(false);
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Home");
   const barRef = useRef<HTMLInputElement>(null);
   const dragging = useRef(false);
@@ -101,6 +102,18 @@ export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubm
     setActive(extend ? active : addr);
     setExtent(addr);
     setEditing(false);
+  }
+
+  /** The name box: "B23" jumps to a cell, "G2:G21" selects a range. False when the text is not an address on this sheet. */
+  function goTo(text: string): boolean {
+    const [from, to, ...rest] = text.trim().toUpperCase().split(":");
+    const a = parseAddress(from);
+    const b = to === undefined ? a : parseAddress(to);
+    if (!a || !b || rest.length > 0 || Math.max(a.col, b.col) >= cols || Math.max(a.row, b.row) >= rows) return false;
+    setActive(address(a.col, a.row));
+    setExtent(address(b.col, b.row));
+    setEditing(false);
+    return true;
   }
 
   function move(dCol: number, dRow: number, extend: boolean) {
@@ -233,9 +246,24 @@ export function SpreadsheetTool({ attemptId, content, closed, submitting, onSubm
       </div>
 
       <div className="flex items-center gap-1 border-b border-[var(--xl-grid)] bg-white px-1.5 py-1">
-        <span className="w-[88px] shrink-0 rounded-sm border border-[var(--xl-grid)] px-2 py-0.5 text-center text-[12.5px] tabular-nums" aria-label="Name box">
-          {nameBox}
-        </span>
+        <input
+          aria-label="Name box"
+          value={nameDraft ?? nameBox}
+          spellCheck={false}
+          onChange={(e) => setNameDraft(e.target.value)}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={() => setNameDraft(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setNameDraft(null);
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            if (goTo(nameDraft ?? nameBox)) {
+              setNameDraft(null);
+              document.getElementById(`xl-grid-${attemptId}`)?.focus();
+            }
+          }}
+          className="w-[88px] shrink-0 rounded-sm border border-[var(--xl-grid)] bg-white px-2 py-0.5 text-center text-[12.5px] tabular-nums outline-none focus:border-[var(--xl-green)]"
+        />
         <span className="px-1.5 text-[13px] italic text-[var(--xl-muted)]" aria-hidden>
           fx
         </span>

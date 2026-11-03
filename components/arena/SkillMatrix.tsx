@@ -13,7 +13,7 @@ function Bar({ row }: { row: MatrixRow }) {
       aria-label={measured ? `${row.name}: level ${Math.round(row.level!)} of 100${row.target !== null ? `, target ${row.target}` : ""}` : `${row.name}: not assessed`}
       className={`relative mt-2 h-2 rounded-full ${measured ? "bg-[var(--m-rule)]" : "border border-dashed border-[var(--m-soft)]"}`}
     >
-      {measured && <div className="h-full rounded-full bg-[var(--m-accent)]" style={{ width: `${Math.max(2, Math.min(100, row.level!))}%` }} />}
+      {measured && <div className={`h-full rounded-full ${row.lastResult === "failed" ? "bg-app-rose" : row.lastResult === "passed" ? "bg-app-success" : "bg-[var(--m-muted)]"}`} style={{ width: `${Math.max(2, Math.min(100, row.level!))}%` }} />}
       {row.target !== null && <span aria-hidden className="absolute -top-1 h-4 w-0.5 rounded bg-[var(--m-ink)]" style={{ left: `${Math.min(100, row.target)}%` }} />}
     </div>
   );
@@ -21,6 +21,7 @@ function Bar({ row }: { row: MatrixRow }) {
 
 function Row({ row }: { row: MatrixRow }) {
   const note = [
+    row.lastResult === "failed" ? "last ticket not passed" : row.lastResult === "passed" ? "last ticket passed" : null,
     row.arenaPasses > 0 ? `${row.arenaPasses} Arena pass${row.arenaPasses === 1 ? "" : "es"}` : null,
     row.target !== null ? (row.gap === 0 ? `target ${row.target} met` : row.gap !== null ? `${row.gap} to reach the target of ${row.target}` : `target ${row.target}`) : null,
   ].filter(Boolean).join(" · ");
@@ -39,7 +40,7 @@ function Row({ row }: { row: MatrixRow }) {
       </div>
       <Bar row={row} />
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12px] text-[var(--m-muted)]">
-        <span>{note || (row.level === null ? "Nothing measured yet" : "")}</span>
+        <span className={row.lastResult === "failed" ? "text-app-rose" : row.lastResult === "passed" ? "text-app-success" : undefined}>{note || (row.level === null ? "Nothing measured yet" : "")}</span>
         {wantsPractice && (
           <Link href={`/arena/challenges/domain?focus=${row.practise!.areaKey}`} className="inline-flex items-center gap-1 font-bold text-[var(--m-accent-ink)] hover:underline">
             Practise {row.practise!.areaName} <ArrowRight size={12} aria-hidden />

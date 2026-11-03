@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, BookOpen, CheckCircle2, Clock, Code2, Loader2, Lock, Trophy } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, Clock, Code2, Loader2, Lock, Trophy, XCircle } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { Countdown } from "../workstations/Countdown";
@@ -19,6 +19,7 @@ interface AreaProgress {
   enabled: boolean;
   disabledReason: string | null;
   verifiedCount: number;
+  lastResult: "passed" | "failed" | null;
 }
 
 type DomainState = {
@@ -123,11 +124,11 @@ export function DomainWorkspace() {
                 <span
                   key={p.key}
                   title={p.enabled ? undefined : p.disabledReason ?? "Coming soon"}
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-lp-body text-[12px] ${p.enabled ? (p.verifiedCount > 0 ? "border-app-success/30 bg-app-success-container text-app-success" : servedThisCycle ? "border-[var(--m-rule)] bg-white text-[var(--m-ink)]" : "border-[var(--m-rule)] bg-white text-app-muted") : "border-dashed border-[var(--m-rule)] text-app-muted"}`}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-lp-body text-[12px] ${p.enabled ? (p.lastResult === "failed" ? "border-app-rose/30 bg-app-rose-container text-app-rose" : p.lastResult === "passed" || p.verifiedCount > 0 ? "border-app-success/30 bg-app-success-container text-app-success" : servedThisCycle ? "border-[var(--m-rule)] bg-white text-[var(--m-ink)]" : "border-[var(--m-rule)] bg-white text-app-muted") : "border-dashed border-[var(--m-rule)] text-app-muted"}`}
                 >
-                  {!p.enabled ? <Lock size={11} /> : p.verifiedCount > 0 ? <CheckCircle2 size={12} /> : null}
+                  {!p.enabled ? <Lock size={11} /> : p.lastResult === "failed" ? <XCircle size={12} /> : p.lastResult === "passed" || p.verifiedCount > 0 ? <CheckCircle2 size={12} /> : null}
                   {p.name}
-                  {p.enabled ? (p.verifiedCount > 0 ? ` · ${p.verifiedCount} verified` : "") : " · coming soon"}
+                  {p.enabled ? [p.lastResult === "failed" ? "not passed" : p.lastResult === "passed" ? "passed" : null, p.verifiedCount > 0 ? `${p.verifiedCount} verified` : null].filter(Boolean).map((t) => ` · ${t}`).join("") : " · coming soon"}
                 </span>
               );
             })}

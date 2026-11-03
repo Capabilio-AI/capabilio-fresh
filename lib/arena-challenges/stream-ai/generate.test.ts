@@ -98,19 +98,9 @@ describe("generateWithRetry", () => {
     expect(r.draft?.kind).toBe("numeric");
     expect(r.reasons).toHaveLength(1);
   });
-  it("falls back to a concept question when a calculation does not fit", async () => {
-    let call = 0;
-    const deps: Deps = {
-      llm: async <T,>(prompt: string, _s: string, schema: z.ZodType<T>) => {
-        call++;
-        if (call <= 4) return schema.parse(call % 2 ? numeric : { underspecified: true }); // two calculation tries, each with a solver that finds a gap
-        if (call === 5) return schema.parse(mcq);
-        return schema.parse({ choice: prompt.split("\n").find((l) => l.includes("Case hardening"))![0] });
-      },
-      run: realDeps.run,
-    };
+  it("never falls back to a concept question when a calculation does not fit", async () => {
+    const deps: Deps = { llm: async <T,>(_p: string, _s: string, schema: z.ZodType<T>) => schema.parse({ underspecified: true }), run: realDeps.run };
     const r = await generateWithRetry(ask, deps);
-    expect(r.draft?.kind).toBe("mcq");
-    expect(r.reasons).toHaveLength(2);
+    expect(r.draft).toBeNull();
   });
 });

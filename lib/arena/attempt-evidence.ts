@@ -48,7 +48,7 @@ export const TOOL_LABEL: Record<string, string> = {
   dashboard_workspace: "BI workspace",
   spreadsheet_workspace: "Excel workbook",
   investigation_workspace: "Investigation workspace",
-  ml_workspace: "ML notebook",
+  ml_workspace: "Python notebook",
   code_workspace: "Code editor",
   devops_workspace: "Config editor",
   frontend_workspace: "Frontend editor",

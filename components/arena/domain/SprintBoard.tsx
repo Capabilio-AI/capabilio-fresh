@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Clock, Lock } from "lucide-react";
+import { Check, Clock, Lock, X } from "lucide-react";
 import clsx from "clsx";
 import type { SprintView } from "@/lib/workplace/sprint-server";
 import type { BoardSlot, SlotState } from "@/lib/workplace/sprint";
@@ -13,9 +13,10 @@ function whenOpens(iso: string): string {
   return new Date(iso).toLocaleString("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit" });
 }
 
-function Marker({ state, index }: { state: SlotState; index: number }) {
+function Marker({ state, index, result }: { state: SlotState; index: number; result?: BoardSlot["result"] }) {
   const base = "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 font-lp-display text-[14px] font-bold";
-  if (state === "done") return <span className={clsx(base, "border-[var(--m-accent)] bg-[var(--m-accent)] text-white")}><Check size={16} strokeWidth={3} aria-hidden /></span>;
+  if (state === "done" && result === "failed") return <span className={clsx(base, "border-app-rose bg-app-rose text-white")}><X size={16} strokeWidth={3} aria-hidden /></span>;
+  if (state === "done") return <span className={clsx(base, "border-app-success bg-app-success text-white")}><Check size={16} strokeWidth={3} aria-hidden /></span>;
   if (state === "active") return <span className={clsx(base, "border-[var(--m-accent)] bg-[var(--m-sheet)] text-[var(--m-accent-ink)] shadow-[0_0_0_5px_var(--m-accent-soft)]")}>{index + 1}</span>;
   if (state === "next") return <span className={clsx(base, "border-[var(--m-ink)] bg-[var(--m-sheet)] text-[var(--m-ink)]")}>{index + 1}</span>;
   if (state === "cooling") return <span className={clsx(base, "border-[var(--m-soft)] bg-[var(--m-sheet)] text-[var(--m-muted)]")}><Clock size={15} aria-hidden /></span>;
@@ -27,10 +28,10 @@ function Slot({ slot }: { slot: BoardSlot }) {
   const known = slot.state === "done" || slot.state === "active";
   return (
     <li className="relative flex gap-3 md:flex-col md:gap-2.5">
-      <Marker state={slot.state} index={slot.index} />
+      <Marker state={slot.state} index={slot.index} result={slot.result} />
       <div className="min-w-0">
-        <p className={clsx("font-lp-body text-[11.5px] font-bold", slot.state === "active" ? "text-[var(--m-accent-ink)]" : "text-[var(--m-muted)]")}>
-          {STATE_TEXT[slot.state]}
+        <p className={clsx("font-lp-body text-[11.5px] font-bold", slot.state === "active" ? "text-[var(--m-accent-ink)]" : slot.state === "done" ? (slot.result === "failed" ? "text-app-rose" : "text-app-success") : "text-[var(--m-muted)]")}>
+          {slot.state === "done" ? (slot.result === "failed" ? "Not passed" : slot.result === "passed" ? "Passed" : "Done") : STATE_TEXT[slot.state]}
           {slot.state === "cooling" && slot.availableAt ? ` · ${whenOpens(slot.availableAt)}` : ""}
         </p>
         <p className={clsx("mt-0.5 font-lp-body text-[13.5px] leading-snug", known ? "font-semibold text-[var(--m-ink)]" : "text-[var(--m-muted)]")}>
@@ -59,7 +60,7 @@ export function SprintBoard({ sprint }: { sprint: SprintView }) {
           <p className="mt-1 max-w-xl font-lp-body text-[13.5px] leading-relaxed text-[var(--m-muted)]">{sprint.story.blurb}</p>
         </div>
         <p className="font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">
-          {board.completed} of {board.slots.length} tickets done{board.bonus > 0 ? ` · ${board.bonus} bonus` : ""}
+          {Math.min(board.completed, board.slots.length)} of {board.slots.length} tickets done{board.completed > board.slots.length ? ` · ${board.completed - board.slots.length} bonus done` : ""}
         </p>
       </div>
 

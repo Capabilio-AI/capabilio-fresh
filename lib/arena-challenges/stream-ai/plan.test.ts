@@ -18,8 +18,8 @@ describe("planDifficulties", () => {
 });
 
 describe("kindFor", () => {
-  it("is mostly calculations with a concept question in every third slot", () => {
-    expect([0, 1, 2, 3, 4, 5].map(kindFor)).toEqual(["numeric", "mcq", "numeric", "numeric", "mcq", "numeric"]);
+  it("is always a calculation: Arena has no multiple choice", () => {
+    expect([0, 1, 2, 3, 4, 5].map(kindFor)).toEqual(["numeric", "numeric", "numeric", "numeric", "numeric", "numeric"]);
   });
 });
 

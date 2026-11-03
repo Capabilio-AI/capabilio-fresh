@@ -24,8 +24,8 @@ describe("missionScore", () => {
 
 describe("slotKind", () => {
   it("makes two of every three slots missions for branches with labs, and keeps the old mix elsewhere", () => {
-    expect([0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => slotKind(i, true))).toEqual(["mission", "mission", "numeric", "mission", "mission", "mcq", "mission", "mission", "numeric"]);
-    expect([0, 1, 2].map((i) => slotKind(i, false))).toEqual(["numeric", "mcq", "numeric"]);
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => slotKind(i, true))).toEqual(["mission", "mission", "numeric", "mission", "mission", "numeric", "mission", "mission", "numeric"]);
+    expect([0, 1, 2].map((i) => slotKind(i, false))).toEqual(["numeric", "numeric", "numeric"]);
   });
 });
 

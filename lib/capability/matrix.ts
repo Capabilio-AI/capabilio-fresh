@@ -14,6 +14,8 @@ export interface MatrixRow {
   confidence: number | null;
   evidenceCount: number;
   arenaPasses: number;
+  /** how the newest Arena ticket for this skill ended: the bar turns green after a pass and red after a miss */
+  lastResult?: "passed" | "failed" | null;
   /** the level the user's target role asks for, when there is one */
   target: number | null;
   /** how many points short of the target a measured skill is (0 once met); null without a target or a measurement */
@@ -28,13 +30,15 @@ export interface MatrixInput {
   names: ReadonlyMap<string, string>;
   practisable: ReadonlyMap<string, { areaKey: string; areaName: string }>;
   targets: ReadonlyMap<string, number>;
+  /** newest closed ticket per Arena skill area (area key -> result) */
+  results?: ReadonlyMap<string, "passed" | "failed">;
   /** when given, the matrix shows exactly these skills (the target role's) and nothing else the user happens to have measured */
   only?: ReadonlySet<string>;
   limit?: number;
 }
 
 /** Measured skills first (strongest first), then the skills Arena can build or the target role needs but nobody has measured yet. */
-export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable, targets, only, limit = 10 }: MatrixInput): MatrixRow[] {
+export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable, targets, results, only, limit = 10 }: MatrixInput): MatrixRow[] {
   const ids = only ? new Set(only) : new Set([...capabilities.keys(), ...practisable.keys(), ...targets.keys()]);
   const rows = [...ids].flatMap((skillId): MatrixRow[] => {
     const name = names.get(skillId);
@@ -45,6 +49,7 @@ export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable
     return [{
       skillId, name, level, label: levelLabel(level), verified: c?.verified ?? false, confidence: c ? c.confidence : null, evidenceCount: c?.evidenceCount ?? 0,
       arenaPasses: arenaPasses.get(skillId) ?? 0, target, gap: target !== null && level !== null ? Math.max(0, Math.round(target - level)) : null, practise: practisable.get(skillId),
+      lastResult: results?.get(practisable.get(skillId)?.areaKey ?? "") ?? null,
     }];
   });
   rows.sort((a, b) => (b.level ?? -1) - (a.level ?? -1) || (b.target ?? 0) - (a.target ?? 0) || a.name.localeCompare(b.name));

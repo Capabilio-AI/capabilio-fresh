@@ -3,6 +3,7 @@ import { untyped } from "@/lib/org/db";
 import type { Difficulty } from "@/lib/arena-workstations/types";
 import { buildBoard, pickStory, sprintWeekStart, type Board, type BoardAssignment, type Story } from "./sprint";
 import { worldForRole } from "./worlds";
+import { resultOf } from "@/lib/arena-workstations/result";
 
 export interface SprintView {
   company: string;
@@ -45,6 +46,7 @@ interface AssignmentRow {
   skill_area_key: string | null;
   completed_at: string | null;
   next_available_at: string | null;
+  grade: unknown;
 }
 interface ChallengeRow {
   id: string;
@@ -64,13 +66,13 @@ export async function loadSprintView(service: SupabaseClient, userId: string, ro
 
   let assignments: BoardAssignment[] = [];
   if (sprint) {
-    const { data: rows } = await db.from("arena_domain_assignments").select("id, challenge_id, skill_area_key, completed_at, next_available_at").eq("sprint_id", (sprint as SprintRow).id).order("assigned_at", { ascending: true });
+    const { data: rows } = await db.from("arena_domain_assignments").select("id, challenge_id, skill_area_key, completed_at, next_available_at, grade").eq("sprint_id", (sprint as SprintRow).id).order("assigned_at", { ascending: true });
     const list = (rows ?? []) as AssignmentRow[];
     const { data: challenges } = list.length ? await db.from("arena_challenges").select("id, title, difficulty, kind:content->>taskKind").in("id", list.map((r) => r.challenge_id)) : { data: [] };
     const byId = new Map(((challenges ?? []) as ChallengeRow[]).map((c) => [c.id, c]));
     assignments = list.flatMap((r) => {
       const c = byId.get(r.challenge_id);
-      return c ? [{ id: r.id, title: c.title, areaName: areaNames[r.skill_area_key ?? ""] ?? r.skill_area_key ?? "Task", difficulty: c.difficulty, kind: c.kind, completedAt: r.completed_at, nextAvailableAt: r.next_available_at }] : [];
+      return c ? [{ id: r.id, title: c.title, areaName: areaNames[r.skill_area_key ?? ""] ?? r.skill_area_key ?? "Task", difficulty: c.difficulty, kind: c.kind, completedAt: r.completed_at, result: resultOf(r.grade), nextAvailableAt: r.next_available_at }] : [];
     });
   }
   return { company: world.name, story, weekStart, board: buildBoard({ assignments, now }) };

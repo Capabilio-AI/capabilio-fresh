@@ -73,7 +73,7 @@ export const WORKSTATIONS: Record<string, { label: string; component: ComponentT
   code_workspace: { label: "Code editor", component: lazyTool(() => import("./CodeTool").then((m) => m.CodeTool as ComponentType<ToolProps<never>>)) },
   devops_workspace: { label: "Config editor", component: lazyTool(() => import("./ConfigTool").then((m) => m.ConfigTool as ComponentType<ToolProps<never>>)) },
   frontend_workspace: { label: "Frontend editor", component: lazyTool(() => import("./ConfigTool").then((m) => m.ConfigTool as ComponentType<ToolProps<never>>)) },
-  ml_workspace: { label: "ML notebook", component: lazyTool(() => import("./MlTool").then((m) => m.MlTool as ComponentType<ToolProps<never>>)) },
+  ml_workspace: { label: "Python notebook", component: lazyTool(() => import("./MlTool").then((m) => m.MlTool as ComponentType<ToolProps<never>>)) },
   calc_workspace: { label: "Calculation worksheet", component: lazyTool(() => import("./CalcTool").then((m) => m.CalcTool as ComponentType<ToolProps<never>>)) },
   business_docs_workspace: { label: "Business Docs Studio", component: lazyTool(() => import("./BusinessDocsTool").then((m) => m.BusinessDocsTool as ComponentType<ToolProps<never>>)) },
   pipeline_workspace: { label: "Pipeline Lab", component: lazyTool(() => import("./PipelineTool").then((m) => m.PipelineTool as ComponentType<ToolProps<never>>)) },
