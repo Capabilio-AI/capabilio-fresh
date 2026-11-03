@@ -22,7 +22,7 @@ const account = { login: "u", name: null, avatarUrl: "", createdAt: "2022-01-01T
 const now = new Date("2026-01-01").getTime();
 
 const match = (level: "high" | "moderate") => ({
-  repoName: "r", matchedRepoFullName: "o/x", matchedRepoUrl: "", level, identicalFiles: 9, comparedFiles: 12, nearCopyProbes: 0,
+  repoName: "r", matchedRepoFullName: "o/x", matchedRepoUrl: "", level, identicalFiles: 9, nearFiles: 0, comparedFiles: 12, nearCopyProbes: 0,
   matchedRepoCreatedAt: "", matchedRepoStars: 0, explanations: [],
 });
 const report = (matches: OriginalityReport["matches"]): OriginalityReport => ({ status: "checked", eligibleRepos: 1, checkedRepos: 1, matches, copiedByOthers: [], ranAt: "" });

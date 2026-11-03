@@ -549,7 +549,7 @@ function FingerprintEvidence({ evidence }: { evidence: { matchedRepoCreatedAt?: 
     evidence.matchedRepoStars ? `${evidence.matchedRepoStars.toLocaleString("en-IN")} stars (a widely used project is more likely a template or library)` : null,
     evidence.nearCopyProbes ? `${evidence.nearCopyProbes} large file${evidence.nearCopyProbes === 1 ? "" : "s"} share almost every line` : null,
   ].filter(Boolean);
-  return parts.length ? <p className="mt-1 font-lp-body text-[11.5px] text-app-muted">Evidence: exact file-content comparison. {parts.join(" · ")}.</p> : null;
+  return parts.length ? <p className="mt-1 font-lp-body text-[11.5px] text-app-muted">Evidence: file-content comparison (exact, and structural so renamed variables still count). {parts.join(" · ")}.</p> : null;
 }
 
 function AboutThisAnalysis() {

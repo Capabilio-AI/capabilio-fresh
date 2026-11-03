@@ -8,9 +8,12 @@ import { fetchWithBackoff, hasGithubToken, type FullRepoAnalysis } from "./githu
 //      byte-identical files. Count how many of the candidate's source files
 //      appear unchanged in each match, and line-compare the probe files to
 //      catch light edits.
-// Ceiling (deliberate): a file with renamed variables or reformatting has a
-// different hash, and a code-search miss means no candidate is found. This
-// under-detects rather than over-claims. A match only counts when the other
+//   3. Fuzzy: files kept under the same name are re-compared on code
+//      structure with identifiers, strings, numbers and comments blanked, so
+//      renamed variables and reformatting still match.
+// Ceiling (deliberate): a rewrite with a different structure is not caught,
+// and a code-search miss means no candidate is found. This under-detects
+// rather than over-claims. A match only counts when the other
 // repository is OLDER than this one -- copies made later are the other
 // direction and are reported as a positive, not a flag.
 
@@ -24,6 +27,10 @@ const MIN_PROBE_BYTES = 600;
 const MAX_PROBE_BYTES = 60_000;
 const MIN_FINGERPRINT_BYTES = 400;
 const NEAR_COPY_OVERLAP = 0.85;
+const STRUCTURAL_NEAR_COPY = 0.8;
+const SHINGLE_SIZE = 6;
+const MAX_FUZZY_PAIRS = 8;
+const MIN_PHRASE_CHARS = 30;
 
 const SOURCE_EXT = /\.(ts|tsx|js|jsx|mjs|py|java|go|rs|rb|php|cs|cpp|c|h|kt|swift|dart|vue|svelte|sql|html|css|scss)$/i;
 const EXCLUDED_PATH = /(^|\/)(node_modules|vendor|dist|build|out|\.next|__pycache__|venv|\.venv|coverage|public|assets|migrations)\//i;
@@ -39,6 +46,8 @@ export type OriginalityMatch = {
   matchedRepoUrl: string;
   level: SimilarityLevel;
   identicalFiles: number;
+  /** Files with the same structure after renaming/reformatting, not counting identical ones. */
+  nearFiles: number;
   comparedFiles: number;
   nearCopyProbes: number;
   matchedRepoCreatedAt: string;
@@ -77,6 +86,52 @@ export function pickDistinctiveLine(content: string): string | null {
   return candidates.sort((a, b) => b.length - a.length)[0] ?? null;
 }
 
+const KEYWORDS = new Set(
+  "abstract and as assert async await break case catch class const continue def default defer del do elif else enum except export extends false final finally fn for from func function go if implements import in instanceof interface is lambda let match mod new nil none not null of or override package pass private protected pub public raise readonly return select self static struct super switch this throw trait true try type typeof use var void while with yield".split(" ")
+);
+const TOKEN = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\d[\w.]*|[A-Za-z_$][\w$]*|[^\sA-Za-z_$\d]/g;
+
+/** Pure. Code as a token stream where names, strings and numbers are blanked, so renaming and reformatting cannot hide a copy. */
+export function structuralTokens(content: string): string[] {
+  const out: string[] = [];
+  for (const t of content.match(TOKEN) ?? []) {
+    if (t.startsWith("//") || t.startsWith("/*") || t.startsWith("#")) continue;
+    if (t[0] === '"' || t[0] === "'" || t[0] === "`") out.push("S");
+    else if (/^\d/.test(t)) out.push("N");
+    else if (/^[A-Za-z_$]/.test(t)) out.push(KEYWORDS.has(t.toLowerCase()) ? t.toLowerCase() : "I");
+    else out.push(t);
+  }
+  return out;
+}
+
+const shingles = (tokens: string[]): Set<string> => {
+  const set = new Set<string>();
+  for (let i = 0; i + SHINGLE_SIZE <= tokens.length; i++) set.add(tokens.slice(i, i + SHINGLE_SIZE).join(" "));
+  return set;
+};
+
+/** Pure. Share of `a`'s structural shingles that also occur in `b` (0-1). A file that is mostly boilerplate tokens scores 0 when too short to compare. */
+export function structuralOverlap(a: string, b: string): number {
+  const first = shingles(structuralTokens(a));
+  if (first.size < 20) return 0;
+  const second = shingles(structuralTokens(b));
+  let shared = 0;
+  for (const sh of first) if (second.has(sh)) shared += 1;
+  return shared / first.size;
+}
+
+const STRING_OR_COMMENT = /"((?:\\.|[^"\\\n])+)"|'((?:\\.|[^'\\\n])+)'|\/\/\s*([^\n]+)|#\s*([^\n]+)/g;
+
+/** Pure. The longest string literal or comment sentence: unlike identifiers, these survive a variable-renaming copy. */
+export function pickDistinctivePhrase(content: string): string | null {
+  const candidates: string[] = [];
+  for (const m of content.matchAll(STRING_OR_COMMENT)) {
+    const text = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? "").trim().replace(/["\\]/g, "");
+    if (text.length >= MIN_PHRASE_CHARS && text.length <= 140 && /[a-z]{3,}\s+[a-z]{2,}\s+[a-z]{2,}/i.test(text)) candidates.push(text);
+  }
+  return candidates.sort((x, y) => y.length - x.length)[0] ?? null;
+}
+
 const normalizeLines = (content: string): Set<string> =>
   new Set(
     content
@@ -95,11 +150,28 @@ export function lineOverlap(a: string, b: string): number {
   return shared / lines.size;
 }
 
-export function classifyOverlap(args: { identicalFiles: number; comparedFiles: number; nearCopyProbes: number }): SimilarityLevel | null {
-  const share = args.comparedFiles > 0 ? args.identicalFiles / args.comparedFiles : 0;
-  if ((args.identicalFiles >= 5 && share >= 0.5) || args.nearCopyProbes >= 2) return "high";
-  if ((args.identicalFiles >= 3 && share >= 0.2) || args.nearCopyProbes >= 1) return "moderate";
+export function classifyOverlap(args: { identicalFiles: number; nearFiles?: number; comparedFiles: number; nearCopyProbes: number }): SimilarityLevel | null {
+  const matching = args.identicalFiles + (args.nearFiles ?? 0);
+  const share = args.comparedFiles > 0 ? matching / args.comparedFiles : 0;
+  if ((matching >= 5 && share >= 0.5) || args.nearCopyProbes >= 2) return "high";
+  if ((matching >= 3 && share >= 0.2) || args.nearCopyProbes >= 1) return "moderate";
   return null;
+}
+
+const baseName = (path: string) => path.slice(path.lastIndexOf("/") + 1).toLowerCase();
+
+/** Pure. Pairs files that kept their name in both repos (copies usually do), biggest first, skipping byte-identical ones. */
+export function pickSameNamePairs(mine: TreeFile[], theirs: TreeFile[], limit: number): { mine: TreeFile; theirs: TreeFile }[] {
+  const byName = new Map<string, TreeFile>();
+  for (const f of theirs.filter(isSourceFile).sort((a, b) => b.size - a.size)) if (!byName.has(baseName(f.path))) byName.set(baseName(f.path), f);
+  return mine
+    .filter((f) => f.size >= MIN_PROBE_BYTES && f.size <= MAX_PROBE_BYTES)
+    .sort((a, b) => b.size - a.size || a.path.localeCompare(b.path))
+    .flatMap((f) => {
+      const other = byName.get(baseName(f.path));
+      return other && other.sha !== f.sha ? [{ mine: f, theirs: other }] : [];
+    })
+    .slice(0, limit);
 }
 
 const EXPLANATIONS: Record<"high" | "moderate", string[]> = {
@@ -165,10 +237,12 @@ async function checkOneRepo(
   const probes = selectProbeFiles(sourceFiles, PROBES_PER_REPO);
   const hitsByRepo = new Map<string, { probeCount: number; blobShas: string[]; probes: { content: string; blobSha: string }[] }>();
 
-  for (const probe of probes) {
+  for (const [index, probe] of probes.entries()) {
     if (Date.now() > deadline) break;
     const content = await fetchBlobText(repo.fullName, probe.sha);
-    const line = content ? pickDistinctiveLine(content) : null;
+    // First probe searches an exact line (finds exact copies); the second a
+    // string/comment phrase, which survives variable renaming (finds renamed copies).
+    const line = content ? (index === 0 ? (pickDistinctiveLine(content) ?? pickDistinctivePhrase(content)) : (pickDistinctivePhrase(content) ?? pickDistinctiveLine(content))) : null;
     if (!content || !line) continue;
     await sleep(CODE_SEARCH_SPACING_MS);
     for (const hit of await searchCodeForLine(line, username)) {
@@ -200,11 +274,18 @@ async function checkOneRepo(
       if (other && lineOverlap(p.content, other) >= NEAR_COPY_OVERLAP) nearCopyProbes += 1;
     }
 
-    const level = classifyOverlap({ identicalFiles, comparedFiles: sourceFiles.length, nearCopyProbes });
+    let nearFiles = 0;
+    for (const pair of pickSameNamePairs(sourceFiles, otherTree, MAX_FUZZY_PAIRS)) {
+      if (Date.now() > deadline) break;
+      const [a, b] = await Promise.all([fetchBlobText(repo.fullName, pair.mine.sha), fetchBlobText(fullName, pair.theirs.sha)]);
+      if (a && b && structuralOverlap(a, b) >= STRUCTURAL_NEAR_COPY) nearFiles += 1;
+    }
+
+    const level = classifyOverlap({ identicalFiles, nearFiles, comparedFiles: sourceFiles.length, nearCopyProbes });
     if (!level || level === "low") continue;
 
     if (candidateSince && meta.created_at > candidateSince) {
-      copiedByOthers.push({ repoName: repo.name, matchedRepoFullName: fullName, identicalFiles });
+      copiedByOthers.push({ repoName: repo.name, matchedRepoFullName: fullName, identicalFiles: identicalFiles + nearFiles });
       continue;
     }
     matches.push({
@@ -213,6 +294,7 @@ async function checkOneRepo(
       matchedRepoUrl: meta.html_url,
       level,
       identicalFiles,
+      nearFiles,
       comparedFiles: sourceFiles.length,
       nearCopyProbes,
       matchedRepoCreatedAt: meta.created_at,

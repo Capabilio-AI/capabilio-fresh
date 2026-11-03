@@ -72,7 +72,7 @@ export async function loadGithubEvidence(supabase: SupabaseClient<Database>, use
   const reviewNotes = [
     ...reviewSignals.map((s) => s.signal),
     ...forensics.filter((f) => f.tone === "review").map((f) => `${f.signal} in ${f.repo}`),
-    ...(originality?.matches.map((m) => `${m.repoName} shares ${m.identicalFiles} of ${m.comparedFiles} source files with ${m.matchedRepoFullName}`) ?? []),
+    ...(originality?.matches.map((m) => `${m.repoName} shares ${m.identicalFiles + (m.nearFiles ?? 0)} of ${m.comparedFiles} source files with ${m.matchedRepoFullName}`) ?? []),
   ];
 
   return {

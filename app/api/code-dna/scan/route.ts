@@ -183,7 +183,7 @@ export async function POST() {
         matched_repo_full_name: match.matchedRepoFullName,
         matched_repo_url: match.matchedRepoUrl,
         similarity_level: match.level,
-        affected_area: `${match.identicalFiles} of ${match.comparedFiles} source files identical`,
+        affected_area: `${match.identicalFiles + match.nearFiles} of ${match.comparedFiles} source files identical or near-identical`,
         possible_explanations: match.explanations,
         method: "file_fingerprint",
         evidence: match,
