@@ -6,6 +6,8 @@ import { fetchBlobText, fetchTree, isSourceFile, selectProbeFiles } from "./orig
 export { MAX_ANSWER_CHARS, MAX_ATTEMPTS, QUESTION_COUNT };
 /** Score at which a project counts as explained. Higher than the Arena bar: the code is the student's own, so they should know it. */
 export const DEFENDED_SCORE = 60;
+/** Minutes a student has to answer once the questions are shown; looking answers up is slower than knowing them. */
+export const SESSION_MINUTES = 15;
 const FILES_SHOWN = 3;
 const FILE_CHARS = 1500;
 const README_CHARS = 800;
@@ -26,6 +28,12 @@ export function briefText(b: RepoBrief): string {
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+/** Pure. True once the answering window has closed. A stored row with no timestamp counts as expired. */
+export function isSessionExpired(startedAt: string | null, now: number = Date.now()): boolean {
+  if (!startedAt) return true;
+  return now - new Date(startedAt).getTime() > SESSION_MINUTES * 60_000;
 }
 
 /** Pure. Answers are trimmed and capped; returns null unless there is exactly one per question. */
