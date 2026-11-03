@@ -10,6 +10,9 @@ import { getCareerProfile } from "@/lib/assess/career-profile";
 import type { Db } from "@/lib/assess/db";
 import { getEducationEntries, type EducationEntry } from "@/lib/dashboard/education";
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
+import { GITHUB_CONNECTION_COLUMNS, loadGithubEvidence, type GithubEvidence } from "@/lib/portfolio/github-evidence";
+
+export type { GithubEvidence };
 import { summariseArenaWork, type ArenaWorkRole } from "@/lib/portfolio/arena-work";
 import { getSkillProficiency } from "@/lib/proficiency/load";
 import { getRecordFlags } from "@/lib/evidence/records";
@@ -29,14 +32,6 @@ export interface ArenaTask {
   explanationScore?: number;
   /** A sealed record backs this task. `shared` is the student's choice about showing it to others; absent when there is no record. */
   sealed?: { shared: boolean; fingerprint: string };
-}
-
-export interface GithubEvidence {
-  username: string;
-  profileUrl: string;
-  verified: boolean;
-  repositoriesAnalyzed: number | null;
-  lastScannedAt: string | null;
 }
 
 export interface InterviewSummary {
@@ -98,7 +93,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     getStatedCareerInterest(supabase, userId),
     getVaultItems(supabase, userId),
     supabase.from("evidence").select("skill, source_type, evidence_type, source_url, observed_at, confidence, created_at, metadata").eq("user_id", userId),
-    supabase.from("github_connections").select("username, profile_url, verification_state, repositories_analyzed, last_scanned_at").eq("user_id", userId).maybeSingle(),
+    supabase.from("github_connections").select(GITHUB_CONNECTION_COLUMNS).eq("user_id", userId).maybeSingle(),
     supabase.from("arena_attempt_completions").select("attempt_id, skill_area_key, role_key, completed_at, challenge_id").eq("user_id", userId).order("completed_at", { ascending: false }).limit(30),
     getPortfolioElo(supabase, userId),
     supabase
@@ -200,6 +195,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
       durationSeconds: Math.round((Date.parse(r.completed_at) - Date.parse(r.started_at)) / 1000),
     }));
 
+  const githubEvidence = await loadGithubEvidence(supabase, userId, github);
   const mostRecent = [...evidence.map((e) => e.observedAt ?? e.createdAt), ...interviews.map((i) => i.completedAt)].sort().at(-1) ?? null;
   const keyEvidence = [
     arenaTasks.length ? `${arenaTasks.length} verified Arena task${arenaTasks.length === 1 ? "" : "s"}` : null,
@@ -220,15 +216,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     proficiency,
     roleReadiness,
     graph,
-    github: github
-      ? {
-          username: github.username,
-          profileUrl: github.profile_url,
-          verified: github.verification_state === "verified",
-          repositoriesAnalyzed: github.repositories_analyzed,
-          lastScannedAt: github.last_scanned_at,
-        }
-      : null,
+    github: githubEvidence,
     keyEvidence,
     mostRecent,
     elo,

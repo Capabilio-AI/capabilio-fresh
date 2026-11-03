@@ -226,7 +226,7 @@ export function CodeDnaCard() {
               <div>
                 <p className="font-lp-body text-lp-body-sm font-medium text-lp-text-ink">@{state.username}</p>
                 <p className="font-lp-mono text-lp-label-sm text-lp-text-muted">
-                  GitHub Evidence Confidence · {state.repositoriesAnalyzed ?? 0} repos analyzed
+                  Code DNA score · {state.repositoriesAnalyzed ?? 0} repos analyzed
                 </p>
               </div>
             </div>

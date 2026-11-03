@@ -157,3 +157,21 @@ describe("scanGithubProfileFull — partial coverage", () => {
     expect(call).toBeGreaterThan(0);
   });
 });
+
+describe("githubGet", () => {
+  it("retries anonymously when the token is rejected with 401", async () => {
+    const { githubGet } = await import("./github-scan");
+    process.env.GITHUB_TOKEN = "bad";
+    const calls: (string | undefined)[] = [];
+    const spy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+      const auth = (init?.headers as Record<string, string>).Authorization;
+      calls.push(auth);
+      return new Response("{}", { status: auth ? 401 : 200 });
+    });
+    const res = await githubGet("https://api.github.com/users/x");
+    expect(res.status).toBe(200);
+    expect(calls).toEqual(["Bearer bad", undefined]);
+    spy.mockRestore();
+    delete process.env.GITHUB_TOKEN;
+  });
+});

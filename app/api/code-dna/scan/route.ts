@@ -6,14 +6,23 @@ import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { MAX_REPOS_TO_ANALYZE, scanGithubProfileFull, searchRepositoriesByName } from "@/lib/code-dna/github-scan";
 import { selectSignificantRepositories } from "@/lib/code-dna/github-repository-selection";
 import { deriveTechnologyObservations } from "@/lib/code-dna/technology-derivation";
-import { deriveAuthenticityAndReview } from "@/lib/code-dna/authenticity-and-review-signals";
 import { buildRecruiterSummary } from "@/lib/code-dna/recruiter-summary";
+import { fetchGithubActivity } from "@/lib/code-dna/github-profile";
+import { runCommitForensics, type ForensicSignal } from "@/lib/code-dna/commit-forensics";
+import { runOriginalityCheck, selectOriginalityTargets } from "@/lib/code-dna/originality";
+import { deriveScoreBreakdown } from "@/lib/code-dna/score-breakdown";
 import { classifyNameCollision, eligibleForSimilarityCheck } from "@/lib/code-dna/similarity";
 import { CODE_DNA_ANALYSIS_VERSION, deriveGithubEvidence } from "@/lib/evidence/from-github";
 import { recordEvidence } from "@/lib/evidence/record";
 
 const SCAN_COOLDOWN_MINUTES = 15;
 const MAX_SIMILARITY_LOOKUPS = 3;
+const FORENSICS_MAX_REPOS = 8;
+const ORIGINALITY_BUDGET_MS = 120_000;
+
+// The originality check paces GitHub code search (~10 requests/minute), so a
+// full scan can run for a couple of minutes.
+export const maxDuration = 300;
 
 /**
  * Runs a real, multi-repo scan and persists normalized per-repository
@@ -140,10 +149,57 @@ export async function POST() {
       }
     }
 
+    // Profile activity + commit forensics: independent add-ons to a scan
+    // that has already succeeded -- each swallows its own failure.
+    const forensicTargets = selectOriginalityTargets(scan.repositories).slice(0, FORENSICS_MAX_REPOS);
+    const [profile, forensicsByRepo] = await Promise.all([
+      fetchGithubActivity(connection.username),
+      Promise.all(
+        forensicTargets.map(async (repo) => ({
+          repo,
+          signals: await runCommitForensics({
+            owner: repo.owner,
+            repo: repo.name,
+            username: connection.username,
+            repoCreatedAt: repo.repoCreatedAt,
+            totalCommits: repo.candidateCommitCount,
+          }),
+        }))
+      ),
+    ]);
+    const allForensics: ForensicSignal[] = forensicsByRepo.flatMap((f) => f.signals);
+    for (const { repo, signals } of forensicsByRepo) {
+      const row = insertedRepos?.find((r) => r.name === repo.name);
+      if (row) await service.from("github_repositories").update({ commit_signals: signals }).eq("id", row.id);
+    }
+
+    // Content-fingerprint originality: needs a token, bounded by a deadline.
+    const originality = await runOriginalityCheck(connection.username, scan.repositories, Date.now() + ORIGINALITY_BUDGET_MS);
+    for (const match of originality.matches) {
+      const row = insertedRepos?.find((r) => r.name === match.repoName);
+      if (!row) continue;
+      await service.from("github_similarity_signals").insert({
+        repository_id: row.id,
+        matched_repo_full_name: match.matchedRepoFullName,
+        matched_repo_url: match.matchedRepoUrl,
+        similarity_level: match.level,
+        affected_area: `${match.identicalFiles} of ${match.comparedFiles} source files identical`,
+        possible_explanations: match.explanations,
+        method: "file_fingerprint",
+        evidence: match,
+      });
+    }
+
     const okRepos = scan.repositories.filter((r) => r.scanStatus !== "failed");
     const technologies = deriveTechnologyObservations(scan.repositories);
-    const { evidenceConfidence } = deriveAuthenticityAndReview(scan.repositories);
-    const recruiterSummary = buildRecruiterSummary(connection.username, scan.repositories, technologies);
+    const breakdown = deriveScoreBreakdown({
+      repos: scan.repositories,
+      account: profile?.account ?? null,
+      activity: profile?.activity ?? null,
+      forensics: allForensics,
+      originality,
+    });
+    const recruiterSummary = buildRecruiterSummary(connection.username, scan.repositories, technologies, profile?.activity ?? null);
 
     // Evidence-layer write: feeds Portfolio's Demonstrated Capabilities, not
     // Code DNA's own UI (which stays GitHub-only, no capability scores).
@@ -159,7 +215,11 @@ export async function POST() {
       .from("github_connections")
       .update({
         scan_status: "idle",
-        code_dna_score: evidenceConfidence,
+        code_dna_score: breakdown.overall,
+        score_breakdown: breakdown,
+        account_facts: profile?.account ?? null,
+        activity: profile?.activity ?? null,
+        originality,
         confidence_level: null,
         repositories_analyzed: okRepos.length,
         analysis: null,
@@ -171,7 +231,7 @@ export async function POST() {
       })
       .eq("user_id", auth.userId);
 
-    return NextResponse.json({ evidenceConfidence, repositoriesAnalyzed: okRepos.length });
+    return NextResponse.json({ score: breakdown.overall, evidenceConfidence: breakdown.overall, repositoriesAnalyzed: okRepos.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Scan failed";
     console.error("[code-dna/scan] failed:", message);

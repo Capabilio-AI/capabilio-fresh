@@ -1,5 +1,6 @@
 import type { FullRepoAnalysis } from "./github-scan";
 import type { TechnologyObservation } from "./technology-derivation";
+import type { ActivitySummary } from "./github-profile";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
@@ -14,7 +15,7 @@ function formatDate(iso: string): string {
  * worded — the trust-language rules are enforced by construction, not by
  * instruction.
  */
-export function buildRecruiterSummary(username: string, repos: FullRepoAnalysis[], technologies: TechnologyObservation[]): string {
+export function buildRecruiterSummary(username: string, repos: FullRepoAnalysis[], technologies: TechnologyObservation[], activity: ActivitySummary | null = null): string {
   const ok = repos.filter((r) => r.scanStatus !== "failed");
   if (ok.length === 0) {
     return `No public repository evidence available for @${username} in this scan.`;
@@ -39,5 +40,8 @@ export function buildRecruiterSummary(username: string, repos: FullRepoAnalysis[
     sentences.push(`Strongest observed contribution area: ${strongest.technology}.`);
   }
 
+  if (activity && activity.totalContributions > 0) {
+    sentences.push(`${activity.totalContributions.toLocaleString("en-IN")} contributions on ${activity.activeDays} days in the last year.`);
+  }
   return sentences.join(" ");
 }

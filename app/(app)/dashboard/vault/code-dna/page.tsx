@@ -20,6 +20,11 @@ import { deriveTechnologyObservations, type TechnologyObservation } from "@/lib/
 import { derivePracticeSignals, type PracticeSignal } from "@/lib/code-dna/practice-signals";
 import { deriveAuthenticityAndReview } from "@/lib/code-dna/authenticity-and-review-signals";
 import type { Database } from "@/lib/supabase/types";
+import type { AccountFacts, ActivitySummary } from "@/lib/code-dna/github-profile";
+import type { ForensicSignal } from "@/lib/code-dna/commit-forensics";
+import type { OriginalityReport } from "@/lib/code-dna/originality";
+import type { ScoreBreakdown } from "@/lib/code-dna/score-breakdown";
+import { CommitSignalList, OriginalityCoverage, ProfileActivityCard, ScoreBreakdownCard } from "@/components/vault/CodeDnaProfileSections";
 
 export const metadata: Metadata = { title: "Code DNA — Capabilio AI" };
 
@@ -41,7 +46,7 @@ export default async function CodeDnaDetailPage() {
   const [{ data: connection }, { data: repoRows }] = await Promise.all([
     supabase
       .from("github_connections")
-      .select("username, profile_url, code_dna_score, recruiter_summary, last_scanned_at, repositories_analyzed")
+      .select("username, profile_url, code_dna_score, recruiter_summary, last_scanned_at, repositories_analyzed, score_breakdown, account_facts, activity, originality")
       .eq("user_id", user.id)
       .maybeSingle(),
     // '*' kept: rowToFullRepoAnalysis and the signal derivers read most of the row
@@ -49,6 +54,8 @@ export default async function CodeDnaDetailPage() {
   ]);
 
   const repos = repoRows ?? [];
+  const { data: defenseRows } = await supabase.from("github_repo_defenses").select("full_name, score").eq("user_id", user.id);
+  const defenseScores = new Map((defenseRows ?? []).map((d) => [d.full_name, d.score]));
   const repoIds = repos.map((r) => r.id);
   const { data: similarityRows } = repoIds.length
     ? await supabase.from("github_similarity_signals").select("*").in("repository_id", repoIds)
@@ -80,7 +87,12 @@ export default async function CodeDnaDetailPage() {
         <CodeDnaEvidence
           repos={repos}
           similarityRows={similarityRows ?? []}
+          defenseScores={defenseScores}
           evidenceConfidence={connection.code_dna_score}
+          breakdown={connection.score_breakdown as ScoreBreakdown | null}
+          account={connection.account_facts as AccountFacts | null}
+          activity={connection.activity as ActivitySummary | null}
+          originality={connection.originality as OriginalityReport | null}
           recruiterSummary={connection.recruiter_summary}
           username={connection.username}
           profileUrl={connection.profile_url}
@@ -115,7 +127,12 @@ const SIMILARITY_LABEL: Record<string, string> = {
 function CodeDnaEvidence({
   repos,
   similarityRows,
+  defenseScores,
   evidenceConfidence,
+  breakdown,
+  account,
+  activity,
+  originality,
   recruiterSummary,
   username,
   profileUrl,
@@ -124,7 +141,12 @@ function CodeDnaEvidence({
 }: {
   repos: RepositoryRow[];
   similarityRows: SimilaritySignalRow[];
+  defenseScores: Map<string, number | null>;
   evidenceConfidence: number | null;
+  breakdown: ScoreBreakdown | null;
+  account: AccountFacts | null;
+  activity: ActivitySummary | null;
+  originality: OriginalityReport | null;
   recruiterSummary: string | null;
   username: string;
   profileUrl: string;
@@ -172,7 +194,7 @@ function CodeDnaEvidence({
           {evidenceConfidence != null && (
             <div className="text-right">
               <span className="font-lp-display text-[26px] font-semibold text-app-charcoal">{evidenceConfidence}</span>
-              <p className="font-lp-mono text-[10px] uppercase tracking-wide text-app-muted">GitHub Evidence Confidence</p>
+              <p className="font-lp-mono text-[10px] uppercase tracking-wide text-app-muted">Code DNA score</p>
             </div>
           )}
         </div>
@@ -188,6 +210,9 @@ function CodeDnaEvidence({
           </p>
         </div>
       )}
+
+      <ProfileActivityCard account={account} activity={activity} />
+      <ScoreBreakdownCard breakdown={breakdown} />
 
       {/* Engineering Activity */}
       <div className="rounded-xl border border-app-border bg-white p-5">
@@ -221,7 +246,7 @@ function CodeDnaEvidence({
         <h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Projects</h2>
         <div className="mt-3 flex flex-col gap-4">
           {okRepos.map((repo) => (
-            <RepoCard key={repo.id} repo={repo} similarity={similarityRows.filter((s) => s.repository_id === repo.id)} />
+            <RepoCard key={repo.id} repo={repo} similarity={similarityRows.filter((s) => s.repository_id === repo.id)} defense={defenseScores.get(repo.full_name) ?? null} />
           ))}
           {failedRepos.map((repo) => (
             <div key={repo.id} className="rounded-lg border border-dashed border-app-border p-3">
@@ -304,6 +329,8 @@ function CodeDnaEvidence({
         </div>
       )}
 
+      <OriginalityCoverage report={originality} flaggedCount={similarityRows.filter((s) => s.method === "file_fingerprint").length} />
+
       {/* Originality review */}
       {similarityRows.length > 0 && (
         <div className="rounded-xl border border-app-border bg-white p-5">
@@ -326,6 +353,7 @@ function CodeDnaEvidence({
                     </a>
                     {s.affected_area && ` · ${s.affected_area}`}
                   </p>
+                  {s.method === "file_fingerprint" && <FingerprintEvidence evidence={s.evidence as { matchedRepoCreatedAt?: string; matchedRepoStars?: number; nearCopyProbes?: number } | null} />}
                   {s.possible_explanations.length > 0 && (
                     <p className="mt-1 font-lp-body text-[11.5px] text-app-muted">
                       Possible explanations: {s.possible_explanations.join("; ")}.
@@ -408,7 +436,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function RepoCard({ repo, similarity }: { repo: RepositoryRow; similarity: SimilaritySignalRow[] }) {
+function RepoCard({ repo, similarity, defense }: { repo: RepositoryRow; similarity: SimilaritySignalRow[]; defense: number | null }) {
   const owner = repo.full_name.split("/")[0];
   const languages = (repo.languages ?? []) as { name: string; percentage: number }[];
   const topContributors = (repo.top_contributors ?? []) as { login: string; contributions: number }[];
@@ -487,6 +515,17 @@ function RepoCard({ repo, similarity }: { repo: RepositoryRow; similarity: Simil
         </div>
       )}
 
+      {!repo.is_fork && repo.candidate_commit_count > 0 && (
+        <p className="mt-3 flex items-center gap-2 border-t border-app-border pt-3 font-lp-body text-[12px] text-app-muted">
+          {defense != null && <span className="rounded-full bg-app-success-container px-2 py-0.5 font-lp-mono text-[10px] text-app-success">Explained · {defense}/100</span>}
+          <Link href={`/dashboard/vault/code-dna/explain/${encodeURIComponent(repo.name)}`} className="font-semibold text-app-blue hover:underline">
+            {defense != null ? "Try again" : "Explain this project in your own words"}
+          </Link>
+        </p>
+      )}
+
+      <CommitSignalList signals={(repo.commit_signals ?? []) as ForensicSignal[]} />
+
       {similarity.length > 0 && (
         <p className="mt-2 flex items-center gap-1 font-lp-mono text-[10.5px] text-app-attention">
           <Eye size={11} />
@@ -501,6 +540,16 @@ function RepoCard({ repo, similarity }: { repo: RepositoryRow; similarity: Simil
       )}
     </div>
   );
+}
+
+function FingerprintEvidence({ evidence }: { evidence: { matchedRepoCreatedAt?: string; matchedRepoStars?: number; nearCopyProbes?: number } | null }) {
+  if (!evidence) return null;
+  const parts = [
+    evidence.matchedRepoCreatedAt ? `Other repository created ${formatDate(evidence.matchedRepoCreatedAt)}, before yours` : null,
+    evidence.matchedRepoStars ? `${evidence.matchedRepoStars.toLocaleString("en-IN")} stars (a widely used project is more likely a template or library)` : null,
+    evidence.nearCopyProbes ? `${evidence.nearCopyProbes} large file${evidence.nearCopyProbes === 1 ? "" : "s"} share almost every line` : null,
+  ].filter(Boolean);
+  return parts.length ? <p className="mt-1 font-lp-body text-[11.5px] text-app-muted">Evidence: exact file-content comparison. {parts.join(" · ")}.</p> : null;
 }
 
 function AboutThisAnalysis() {
@@ -518,6 +567,8 @@ function AboutThisAnalysis() {
         <li>Commit and pull-request signals</li>
         <li>Repository structure and technology usage</li>
         <li>Provenance and public-source similarity signals</li>
+        <li>A year of contribution activity, from GitHub&rsquo;s contribution calendar</li>
+        <li>Commit history shape, and exact file-content comparison against older public repositories</li>
       </ul>
       <p className="mt-3 font-lp-mono text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">Important limitations</p>
       <ul className="mt-1.5 list-inside list-disc font-lp-body text-[12px] text-app-muted">
