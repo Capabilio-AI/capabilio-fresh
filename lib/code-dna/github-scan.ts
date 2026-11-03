@@ -26,7 +26,7 @@ export function hasGithubToken(): boolean {
 }
 
 export function authHeaders(): HeadersInit {
-  const token = process.env.GITHUB_TOKEN;
+  const token = process.env.GITHUB_TOKEN?.trim();
   return {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
@@ -35,12 +35,24 @@ export function authHeaders(): HeadersInit {
 }
 
 /**
+ * GET with the token, retrying anonymously if GitHub rejects the token
+ * (401 "Bad credentials": expired, revoked or mistyped). Public data must
+ * keep working on the anonymous rate limit rather than read as "not found".
+ */
+export async function githubGet(url: string): Promise<Response> {
+  const res = await fetch(url, { headers: authHeaders() });
+  if (res.status !== 401) return res;
+  console.error("[code-dna] GITHUB_TOKEN was rejected by GitHub (401); falling back to anonymous requests. Replace the token.");
+  return fetch(url, { headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" } });
+}
+
+/**
  * Retries on rate-limit responses with capped exponential backoff — real
  * resilience, not a silent failure into empty data. Bounded (3 attempts,
  * max 8s wait) so a single scan request never hangs indefinitely.
  */
 export async function fetchWithBackoff(url: string, attempt = 1): Promise<Response> {
-  const res = await fetch(url, { headers: authHeaders() });
+  const res = await githubGet(url);
   const isRateLimited = (res.status === 403 || res.status === 429) && res.headers.get("x-ratelimit-remaining") === "0";
   if (isRateLimited && attempt < MAX_BACKOFF_ATTEMPTS) {
     const waitMs = Math.min(BASE_BACKOFF_MS * 2 ** (attempt - 1), 8000);
@@ -78,7 +90,7 @@ export function normalizeGithubUsername(input: string): string {
 }
 
 export async function fetchGithubProfile(username: string): Promise<GithubProfile | null> {
-  const res = await fetch(`${GITHUB_API}/users/${encodeURIComponent(username)}`, { headers: authHeaders() });
+  const res = await githubGet(`${GITHUB_API}/users/${encodeURIComponent(username)}`);
   if (!res.ok) return null;
   const data = await res.json();
   return {
