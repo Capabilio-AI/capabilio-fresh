@@ -3,6 +3,8 @@ import type { Database, Json } from "@/lib/supabase/types";
 import { GROQ_MODEL } from "@/lib/ai/groq";
 import { advanceStreak } from "@/lib/arena-challenges/streak";
 import { currentWeekStart } from "@/lib/arena-challenges/week";
+import { ARENA_TEST_MODE } from "./test-mode";
+import { latestResultByArea, type TicketResult } from "./result";
 import { COOLDOWN_MS, resolveDailyState, type AssignmentRow } from "./daily";
 import { isRegisteredTool, toolFor } from "./registry";
 import { commitReservedAttempt, reserveNextArea } from "./rotation-store";
@@ -48,6 +50,8 @@ export interface AreaProgress {
   disabledReason: string | null;
   verifiedCount: number;
   lastVerifiedAt: string | null;
+  /** how the newest closed ticket in this area ended: drives the green / red on the chips */
+  lastResult: TicketResult | null;
 }
 
 /**
@@ -125,9 +129,10 @@ export async function getWorkstationState(service: Service, userId: string, stat
     service.from("arena_rotation_state").select("cycle_number, served, remaining").eq("user_id", userId).eq("role_key", role.role_key).maybeSingle(),
   ]);
 
+  const results = latestResultByArea(attempts as unknown as Parameters<typeof latestResultByArea>[0]);
   const progress: AreaProgress[] = areas.map((a) => {
     const r = ratings?.find((x) => x.area_key === a.area_key);
-    return { key: a.area_key, name: a.display_name, toolType: a.tool_type, enabled: a.enabled && isRegisteredTool(a.tool_type), disabledReason: a.disabled_reason, verifiedCount: r?.verified_count ?? 0, lastVerifiedAt: r?.last_verified_at ?? null };
+    return { key: a.area_key, name: a.display_name, toolType: a.tool_type, enabled: a.enabled && isRegisteredTool(a.tool_type), disabledReason: a.disabled_reason, verifiedCount: r?.verified_count ?? 0, lastVerifiedAt: r?.last_verified_at ?? null, lastResult: results.get(a.area_key) ?? null };
   });
   // the week's sprint board; a problem here must never hide the task itself
   const sprint = await loadSprintView(service, userId, role.role_key, Object.fromEntries(areas.map((a) => [a.area_key, a.display_name]))).catch((e) => {
@@ -478,7 +483,7 @@ export async function expireIfTimedOut(service: Service, userId: string, attempt
   if (attempt.status !== "presented") throw new AttemptError("This task is not waiting for an answer.", 409, { code: "not_applicable" });
   if (await sessionOfAttempt(service, attemptId)) throw new AttemptError("A Proof Session stage has no time limit of this kind.", 409, { code: "not_applicable" });
   const limitMinutes = (challenge as { time_limit_minutes?: number }).time_limit_minutes ?? 0;
-  if (limitMinutes <= 0 || !timeIsUp(await timeSpentOn(service, attemptId), limitMinutes, toleranceSeconds)) return null;
+  if (ARENA_TEST_MODE || limitMinutes <= 0 || !timeIsUp(await timeSpentOn(service, attemptId), limitMinutes, toleranceSeconds)) return null;
 
   const difficulty = difficultyOf(challenge.difficulty);
   const now = new Date();

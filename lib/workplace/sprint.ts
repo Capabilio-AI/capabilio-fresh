@@ -1,5 +1,6 @@
 import type { Difficulty } from "@/lib/arena-workstations/types";
 import { hashSeed } from "./rng";
+import type { TicketResult } from "@/lib/arena-workstations/result";
 
 /** A sprint is one work week at the company: five tickets that share a story. */
 export const SPRINT_SLOTS = 5;
@@ -32,6 +33,8 @@ export interface BoardAssignment {
   /** the kind of database work, when the ticket has one */
   kind: string | null;
   completedAt: string | null;
+  /** how a closed ticket ended; null while it is open */
+  result?: TicketResult | null;
   /** when the next ticket may start (set once this one is finished) */
   nextAvailableAt: string | null;
 }
@@ -45,6 +48,8 @@ export interface BoardSlot {
   areaName?: string;
   difficulty?: Difficulty;
   kind?: string | null;
+  /** for a done slot: passed (green) or failed (red) */
+  result?: TicketResult | null;
   /** for a cooling slot: when it opens */
   availableAt?: string;
 }
@@ -60,7 +65,7 @@ export interface Board {
 export function buildBoard({ assignments, now }: { assignments: readonly BoardAssignment[]; now: Date }): Board {
   const slots: BoardSlot[] = Array.from({ length: SPRINT_SLOTS }, (_, index) => {
     const a = assignments[index];
-    if (a) return { index, state: a.completedAt ? "done" : "active", title: a.title, areaName: a.areaName, difficulty: a.difficulty, kind: a.kind };
+    if (a) return { index, state: a.completedAt ? "done" : "active", title: a.title, areaName: a.areaName, difficulty: a.difficulty, kind: a.kind, result: a.result ?? null };
     const last = assignments[index - 1];
     // one ticket at a time: the next slot opens only when the previous one is finished
     if (index === assignments.length && (!last || last.completedAt)) {

@@ -151,16 +151,14 @@ export function generateStreamDraft(ask: StreamAsk, deps: Deps = realDeps, previ
 }
 
 /**
- * Up to MAX_ATTEMPTS tries: the asked kind (the second try is told why the first failed), then the other kind, because some subjects
- * (a management case, a design principle) simply do not reduce to one number. Returns null when nothing proved itself.
+ * Up to MAX_ATTEMPTS tries at the asked kind (the second try is told why the first failed). There is no fallback to a concept
+ * question: Arena never serves multiple choice. Returns null when nothing proved itself, so the slot is simply left for a later run.
  */
 export async function generateWithRetry(ask: StreamAsk, deps: Deps = realDeps): Promise<{ draft: StreamDraft | null; reasons: string[] }> {
   const reasons: string[] = [];
-  const other: StreamKind = ask.kind === "numeric" ? "mcq" : "numeric";
-  const tries: { kind: StreamKind; previous?: string }[] = [{ kind: ask.kind }, { kind: ask.kind }, { kind: other }];
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     try {
-      const draft = await generateStreamDraft({ ...ask, kind: tries[i].kind, seed: ask.seed + i }, deps, i === 1 ? reasons[0] : undefined);
+      const draft = await generateStreamDraft({ ...ask, kind: ask.kind, seed: ask.seed + i }, deps, i === 1 ? reasons[0] : undefined);
       return { draft, reasons };
     } catch (e) {
       reasons.push((e as Error).message.slice(0, 160));

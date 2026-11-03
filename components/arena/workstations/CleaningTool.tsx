@@ -27,7 +27,7 @@ function StepBuilder({ columns, onAdd }: { columns: string[]; onAdd: (s: Cleanin
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [format, setFormat] = useState<(typeof DATE_FORMATS)[number]>("DD/MM/YYYY");
-  const [operator, setOperator] = useState<">" | ">=" | "<" | "<=" | "=" | "!=">(">");
+  const [operator, setOperator] = useState<">" | ">=" | "<" | "<=" | "=" | "!=">("=");
   const [value, setValue] = useState("");
 
   function build(): CleaningStep | null {

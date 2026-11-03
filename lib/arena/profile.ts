@@ -7,6 +7,8 @@ import { chooseDomainCareer } from "@/lib/arena-challenges/career-state";
 import { loadExperienceLevel } from "@/lib/workplace/level-server";
 import type { ExperienceLevel } from "@/lib/workplace/level";
 import { loadSkillContext } from "./skill-context";
+import { latestResultByArea } from "@/lib/arena-workstations/result";
+import { untyped } from "@/lib/org/db";
 
 export interface ArenaProfile {
   rows: MatrixRow[];
@@ -32,6 +34,9 @@ export async function loadArenaProfile(service: SupabaseClient<Database>, userId
   const targets = new Map(roleSkills.map((s) => [s.skillId, s.targetLevel]));
   const arenaPasses = new Map<string, number>();
   for (const [skillId, inputs] of ctx.capabilities.inputs) arenaPasses.set(skillId, inputs.filter((i) => i.kind === "ARENA").length);
-  const rows = buildSkillMatrix({ capabilities: ctx.capabilities.bySkill, arenaPasses, names: ctx.names, practisable: ctx.practisable, targets, only: new Set(targets.keys()), limit: MAX_ROWS });
+  // how each area's newest graded ticket ended, so a miss shows red and a pass green without waiting for a rating
+  const { data: closed } = await untyped(service).from("arena_domain_assignments").select("skill_area_key, grade, assigned_at").eq("user_id", userId).not("grade", "is", null).order("assigned_at", { ascending: false }).limit(200);
+  const results = latestResultByArea((closed ?? []) as { skill_area_key: string | null; grade: unknown; assigned_at: string }[]);
+  const rows = buildSkillMatrix({ capabilities: ctx.capabilities.bySkill, arenaPasses, names: ctx.names, practisable: ctx.practisable, targets, results, only: new Set(targets.keys()), limit: MAX_ROWS });
   return { rows, level, careerName: chosen.career.name };
 }

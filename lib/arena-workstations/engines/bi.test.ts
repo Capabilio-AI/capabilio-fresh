@@ -30,6 +30,11 @@ describe("BI engine", () => {
     ]);
   });
 
+  it("ignores a filter that has no value yet instead of blanking the chart", () => {
+    const withBlank = spec({ filters: [{ column: "status", operator: "=", value: "delivered" }, { column: "region", operator: "=", value: "" }] });
+    expect(evaluateSpec(ds, withBlank)).toEqual(evaluateSpec(ds, spec({})));
+  });
+
   it("passes the correct chart", () => {
     expect(gradeDashboard(ds, spec({}), spec({})).passed).toBe(true);
   });

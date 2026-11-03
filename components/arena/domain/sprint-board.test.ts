@@ -32,6 +32,14 @@ describe("SprintBoard", () => {
     expect(out).toContain("Unlocks after the previous ticket");
   });
 
+  it("shows a passed ticket green and a missed one red, each named in words", () => {
+    const out = html(view([ticket(1, { result: "passed" }), ticket(2, { result: "failed" })], "2026-10-13T12:00:00Z"));
+    expect(out).toContain("Passed");
+    expect(out).toContain("Not passed");
+    expect(out).toContain("bg-app-success");
+    expect(out).toContain("bg-app-rose");
+  });
+
   it("shows a fresh week as one ticket ready and hides titles that do not exist yet", () => {
     const out = html(view([], "2026-10-13T12:00:00Z"));
     expect(out).toContain("Ready to start");

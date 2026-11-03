@@ -34,7 +34,7 @@ export default async function ArenaHubPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <LiveRefresh />
+      <LiveRefresh intervalMs={15_000} />
       <AreaHero
         tone="dark"
         title="Arena"

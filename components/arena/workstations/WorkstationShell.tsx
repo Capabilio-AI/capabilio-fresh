@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, CircleX, Database } from "lucide-react";
 import { ELO_BY_DIFFICULTY } from "@/lib/arena-workstations/types";
 import { Countdown } from "./Countdown";
 import { WorkTimer } from "./WorkTimer";
+import { ARENA_TEST_MODE } from "@/lib/arena-workstations/test-mode";
 import { ReviewDialog } from "./ReviewDialog";
 import { reviewSubmission } from "@/lib/arena-workstations/review";
 import { WORKSTATIONS } from "./registry";
@@ -148,7 +149,7 @@ export function WorkstationShell({ attempt, onClose }: { attempt: PublicAttempt;
         <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px]">
           <span className="text-white/60">{attempt.area.name}</span>
           <span className={`rounded px-2 py-0.5 font-semibold ${closed ? (feedback?.final ? "bg-app-rose" : "bg-app-success") : "bg-white/10"}`}>{closed ? (feedback?.final ? "Closed" : feedback?.session ? "Stage passed" : feedback?.explain ? "Solved" : "Verified") : "In progress"}</span>
-          {!closed && <WorkTimer attemptId={attempt.attemptId} limitSeconds={challenge.time_limit_minutes * 60} spentAtOpen={attempt.timeSpentSeconds ?? 0} running onTimeUp={timeUp} />}
+          {!closed && !ARENA_TEST_MODE && <WorkTimer attemptId={attempt.attemptId} limitSeconds={challenge.time_limit_minutes * 60} spentAtOpen={attempt.timeSpentSeconds ?? 0} running onTimeUp={timeUp} />}
           <span className="font-semibold text-app-orange" title={`Solving earns this after you explain your work. A wrong answer lowers your ELO by how wrong it is, up to ${elo}. If the time runs out with nothing submitted, the ticket closes unanswered and costs the full ${elo}.`}>+{elo} ELO if solved · up to −{elo} if wrong or unanswered</span>
         </span>
       </header>

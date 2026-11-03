@@ -102,7 +102,8 @@ export function evaluateSpec(ds: Dataset, spec: BiSpec): SeriesPoint[] {
   } else if ((spec.quick === "percent_of_total" || spec.quick === "running_total") && spec.aggregation !== "sum" && spec.aggregation !== "count") {
     throw new Error("Percent of total and running total only make sense for a total or a count");
   }
-  const filters = spec.filters.map((f) => ({ i: idx(f.column), f }));
+  // a filter with no value yet is not a condition (Power BI ignores it too), so it must not blank the visual
+  const filters = spec.filters.filter((f) => f.value !== "").map((f) => ({ i: idx(f.column), f }));
 
   if (spec.dax !== null) return daxSeries(ds, spec, dim, filters.map(({ i, f }) => ({ columns: new Set([ds.columns[i].name.toLowerCase()]), test: (row: readonly Cell[]) => matches(row[i], f.operator, f.value) })));
 
