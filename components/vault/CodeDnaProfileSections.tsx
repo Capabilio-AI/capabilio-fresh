@@ -114,7 +114,7 @@ export function OriginalityCoverage({ report, flaggedCount }: { report: Original
     <div className="rounded-xl border border-app-border bg-white p-5">
       <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-app-success" /><h2 className="font-lp-display text-[15px] font-semibold text-app-charcoal">Originality check</h2></div>
       <p className="mt-2 font-lp-body text-[12.5px] text-app-charcoal">
-        Compared {report.checkedRepos} of {report.eligibleRepos} original repositories against public code by exact file content.{" "}
+        Compared {report.checkedRepos} of {report.eligibleRepos} original repositories against public code by file content, exact and structural.{" "}
         {flaggedCount === 0 ? "No overlap with older public repositories was found." : `${flaggedCount} overlap${flaggedCount === 1 ? "" : "s"} listed below for review.`}
       </p>
       {report.copiedByOthers.length > 0 && (
@@ -123,7 +123,7 @@ export function OriginalityCoverage({ report, flaggedCount }: { report: Original
           Other public repositories contain {report.copiedByOthers.length === 1 ? "files" : "copies of files"} from {[...new Set(report.copiedByOthers.map((c) => c.repoName))].join(", ")} that were created later, which points to this being the original.
         </p>
       )}
-      <p className="mt-2 font-lp-body text-[11.5px] text-app-muted">Exact-match comparison can miss code that was reformatted or renamed. It shows evidence for a human to review, not a verdict.</p>
+      <p className="mt-2 font-lp-body text-[11.5px] text-app-muted">Comparison can miss code that was rewritten with a different structure. It shows evidence for a human to review, not a verdict.</p>
     </div>
   );
 }
