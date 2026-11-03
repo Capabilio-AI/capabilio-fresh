@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 const MAX_ANSWER_CHARS = 1200;
+const SESSION_MINUTES = 15;
 
 type Feedback = { strengths: string[]; improvements: string[]; notes: string[] };
 type Result = { score: number; best: number; defended: boolean; feedback: Feedback; attemptsLeft: number };
@@ -37,7 +38,10 @@ export function ExplainRepoPanel({ repo, initialBest, attemptsUsed, maxAttempts 
     setError(null);
     const { ok, data } = await call(repo, { action: "submit", answers });
     setBusy(false);
-    if (!ok) return setError(String(data.error ?? "Something went wrong."));
+    if (!ok) {
+      if (data.expired) setQuestions(null);
+      return setError(String(data.error ?? "Something went wrong."));
+    }
     setResult(data as unknown as Result);
     setQuestions(null);
   }
@@ -63,6 +67,7 @@ export function ExplainRepoPanel({ repo, initialBest, attemptsUsed, maxAttempts 
 
       {questions ? (
         <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+          <p className="font-lp-mono text-[11px] text-app-muted">You have {SESSION_MINUTES} minutes from when the questions appeared. If time runs out, no try is used.</p>
           {questions.map((q, i) => (
             <label key={q} className="flex flex-col gap-1.5">
               <span className="font-lp-body text-[13.5px] font-medium text-app-charcoal">{i + 1}. {q}</span>

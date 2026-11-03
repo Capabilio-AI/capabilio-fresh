@@ -32,3 +32,16 @@ describe("briefText", () => {
     expect(text).toContain("--- src/cart.ts ---");
   });
 });
+
+import { isSessionExpired, SESSION_MINUTES } from "./defend-repo";
+
+describe("isSessionExpired", () => {
+  const now = new Date("2026-11-03T12:00:00Z").getTime();
+  it("is open inside the window and closed after it", () => {
+    expect(isSessionExpired(new Date(now - (SESSION_MINUTES - 1) * 60_000).toISOString(), now)).toBe(false);
+    expect(isSessionExpired(new Date(now - (SESSION_MINUTES + 1) * 60_000).toISOString(), now)).toBe(true);
+  });
+  it("treats a missing start time as expired", () => {
+    expect(isSessionExpired(null, now)).toBe(true);
+  });
+});

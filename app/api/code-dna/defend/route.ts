@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/api/require-user";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
-import { cleanAnswers, DEFENDED_SCORE, generateRepoQuestions, hasSubstance, loadRepoBrief, MAX_ATTEMPTS, scoreRepoAnswers } from "@/lib/code-dna/defend-repo";
+import { cleanAnswers, DEFENDED_SCORE, generateRepoQuestions, hasSubstance, isSessionExpired, loadRepoBrief, MAX_ATTEMPTS, scoreRepoAnswers, SESSION_MINUTES } from "@/lib/code-dna/defend-repo";
 
 export const maxDuration = 60;
 
@@ -15,6 +15,7 @@ interface DefenseRow {
   asked: string[];
   attempts: number;
   score: number | null;
+  updated_at: string | null;
 }
 
 /**
@@ -48,19 +49,23 @@ export async function POST(request: Request) {
   }
 
   const key = { user_id: auth.userId, full_name: repoRow.full_name };
-  const { data: existing } = await service.from("github_repo_defenses").select("questions, asked, attempts, score").match(key).maybeSingle();
-  const row: DefenseRow = (existing as DefenseRow | null) ?? { questions: null, asked: [], attempts: 0, score: null };
+  const { data: existing } = await service.from("github_repo_defenses").select("questions, asked, attempts, score, updated_at").match(key).maybeSingle();
+  const row: DefenseRow = (existing as DefenseRow | null) ?? { questions: null, asked: [], attempts: 0, score: null, updated_at: null };
   if (row.attempts >= MAX_ATTEMPTS) return NextResponse.json({ error: "You've used both tries for this project.", score: row.score }, { status: 409 });
 
   const brief = await loadRepoBrief(repoRow.full_name, repoRow.description, repoRow.primary_language);
   if (!brief) return NextResponse.json({ error: "We couldn't read enough source code from this repository to ask about it." }, { status: 422 });
 
   if (action === "start") {
-    if (row.questions) return NextResponse.json({ questions: row.questions, attempts: row.attempts, maxAttempts: MAX_ATTEMPTS });
+    // Resume only while the answering window is open; an expired set is replaced with fresh questions.
+    if (row.questions && !isSessionExpired(row.updated_at)) {
+      return NextResponse.json({ questions: row.questions, attempts: row.attempts, maxAttempts: MAX_ATTEMPTS, minutes: SESSION_MINUTES, startedAt: row.updated_at });
+    }
     try {
       const questions = await generateRepoQuestions(brief, row.asked);
-      await service.from("github_repo_defenses").upsert({ ...key, questions, asked: [...row.asked, ...questions], updated_at: new Date().toISOString() });
-      return NextResponse.json({ questions, attempts: row.attempts, maxAttempts: MAX_ATTEMPTS });
+      const startedAt = new Date().toISOString();
+      await service.from("github_repo_defenses").upsert({ ...key, questions, asked: [...row.asked, ...questions], updated_at: startedAt });
+      return NextResponse.json({ questions, attempts: row.attempts, maxAttempts: MAX_ATTEMPTS, minutes: SESSION_MINUTES, startedAt });
     } catch (error) {
       console.error("[code-dna/defend] questions failed:", error);
       return NextResponse.json({ error: "We couldn't prepare your questions just now. Nothing was used up; try again in a minute." }, { status: 503 });
@@ -69,6 +74,11 @@ export async function POST(request: Request) {
 
   const answers = cleanAnswers(parsed.data.answers);
   if (!row.questions || !answers) return NextResponse.json({ error: "Start first, and answer every question." }, { status: 400 });
+  if (isSessionExpired(row.updated_at)) {
+    // Time ran out: nothing is scored and no try is used; the next start asks fresh questions.
+    await service.from("github_repo_defenses").upsert({ ...key, questions: null, updated_at: new Date().toISOString() });
+    return NextResponse.json({ error: `The ${SESSION_MINUTES} minutes are up. No try was used; start again for fresh questions.`, expired: true }, { status: 410 });
+  }
   if (!hasSubstance(answers)) return NextResponse.json({ error: "Write a little more: a few sentences across your answers." }, { status: 422 });
 
   try {
