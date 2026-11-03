@@ -11,6 +11,7 @@ import { initialsOf } from "@/lib/dashboard/viewer";
 import type { VaultItem } from "@/lib/vault/data";
 import type { CapabilityGroup } from "@/lib/portfolio/view";
 import { buildPortfolioSummary } from "@/lib/portfolio/summary";
+import { GithubEvidenceCard } from "@/components/portfolio/GithubEvidenceCard";
 import type { ArenaTask, GithubEvidence, InterviewSummary, PortfolioData } from "@/lib/portfolio/data";
 import type { EducationEntry } from "@/lib/dashboard/education";
 import { SkillSignal } from "@/components/portfolio/SkillSignal";
@@ -292,9 +293,7 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
         <aside className="flex min-w-0 flex-col gap-9">
           {github && (
             <Section title="GitHub">
-              <a href={github.profileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-lp-body text-[15px] font-bold text-[var(--m-ink)] hover:underline"><GitBranch size={16} aria-hidden />{github.username}<ExternalLink size={12} className="text-[var(--m-muted)]" aria-hidden /></a>
-              <p className="mt-1 font-lp-body text-[13px] text-[var(--m-muted)]">{[githubVerified ? "Ownership verified" : "Ownership not verified", github.repositoriesAnalyzed ? `${github.repositoriesAnalyzed} repositories analysed` : null].filter(Boolean).join(", ")}</p>
-              {isOwner && <Link href="/dashboard/vault/code-dna" className="mt-2 inline-block font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline print:hidden">Open Code DNA</Link>}
+              <GithubEvidenceCard github={github} isOwner={isOwner} />
             </Section>
           )}
         </aside>

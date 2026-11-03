@@ -2570,6 +2570,10 @@ export type Database = {
       github_connections: {
         Row: {
           analysis: Json | null
+          account_facts: Json | null
+          activity: Json | null
+          originality: Json | null
+          score_breakdown: Json | null
           code_dna_score: number | null
           confidence_level: string | null
           consecutive_failures: number
@@ -2589,6 +2593,10 @@ export type Database = {
         }
         Insert: {
           analysis?: Json | null
+          account_facts?: Json | null
+          activity?: Json | null
+          originality?: Json | null
+          score_breakdown?: Json | null
           code_dna_score?: number | null
           confidence_level?: string | null
           consecutive_failures?: number
@@ -2608,6 +2616,10 @@ export type Database = {
         }
         Update: {
           analysis?: Json | null
+          account_facts?: Json | null
+          activity?: Json | null
+          originality?: Json | null
+          score_breakdown?: Json | null
           code_dna_score?: number | null
           confidence_level?: string | null
           consecutive_failures?: number
@@ -2627,9 +2639,43 @@ export type Database = {
         }
         Relationships: []
       }
+      github_repo_defenses: {
+        Row: {
+          asked: Json
+          attempts: number
+          feedback: Json | null
+          full_name: string
+          questions: Json | null
+          score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asked?: Json
+          attempts?: number
+          feedback?: Json | null
+          full_name: string
+          questions?: Json | null
+          score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asked?: Json
+          attempts?: number
+          feedback?: Json | null
+          full_name?: string
+          questions?: Json | null
+          score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       github_repositories: {
         Row: {
           candidate_commit_count: number
+          commit_signals: Json | null
           candidate_pr_count: number
           candidate_pr_merged_count: number
           contributors_count: number | null
@@ -2668,6 +2714,7 @@ export type Database = {
         }
         Insert: {
           candidate_commit_count?: number
+          commit_signals?: Json | null
           candidate_pr_count?: number
           candidate_pr_merged_count?: number
           contributors_count?: number | null
@@ -2706,6 +2753,7 @@ export type Database = {
         }
         Update: {
           candidate_commit_count?: number
+          commit_signals?: Json | null
           candidate_pr_count?: number
           candidate_pr_merged_count?: number
           contributors_count?: number | null
@@ -2748,6 +2796,8 @@ export type Database = {
         Row: {
           affected_area: string | null
           detected_at: string
+          evidence: Json | null
+          method: string
           id: string
           matched_repo_full_name: string
           matched_repo_url: string
@@ -2758,6 +2808,8 @@ export type Database = {
         Insert: {
           affected_area?: string | null
           detected_at?: string
+          evidence?: Json | null
+          method?: string
           id?: string
           matched_repo_full_name: string
           matched_repo_url: string
@@ -2768,6 +2820,8 @@ export type Database = {
         Update: {
           affected_area?: string | null
           detected_at?: string
+          evidence?: Json | null
+          method?: string
           id?: string
           matched_repo_full_name?: string
           matched_repo_url?: string

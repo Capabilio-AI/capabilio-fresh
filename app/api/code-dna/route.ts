@@ -48,7 +48,7 @@ export async function GET() {
     supabase
       .from("github_connections")
       .select(
-        "username, profile_url, verification_state, verification_code, scan_status, code_dna_score, repositories_analyzed, recruiter_summary, last_scanned_at, next_scan_at, last_scan_error"
+        "username, profile_url, verification_state, verification_code, scan_status, code_dna_score, score_breakdown, repositories_analyzed, recruiter_summary, last_scanned_at, next_scan_at, last_scan_error"
       )
       .eq("user_id", auth.userId)
       .maybeSingle(),
@@ -104,6 +104,7 @@ export async function GET() {
     verificationCode: connection.verification_code,
     scanStatus: connection.scan_status,
     evidenceConfidence: connection.code_dna_score,
+    scoreBreakdown: connection.score_breakdown,
     repositoriesAnalyzed: connection.repositories_analyzed,
     recruiterSummary: connection.recruiter_summary,
     lastScannedAt: connection.last_scanned_at,

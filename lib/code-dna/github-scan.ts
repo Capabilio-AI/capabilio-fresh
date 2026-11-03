@@ -21,7 +21,11 @@ const MAX_REPO_LIST_PAGES = 20; // caps at 2000 repos discovered before ranking/
 const MAX_BACKOFF_ATTEMPTS = 3;
 const BASE_BACKOFF_MS = 1000;
 
-function authHeaders(): HeadersInit {
+export function hasGithubToken(): boolean {
+  return Boolean(process.env.GITHUB_TOKEN);
+}
+
+export function authHeaders(): HeadersInit {
   const token = process.env.GITHUB_TOKEN;
   return {
     Accept: "application/vnd.github+json",
