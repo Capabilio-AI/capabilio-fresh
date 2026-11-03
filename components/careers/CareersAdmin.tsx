@@ -39,25 +39,25 @@ export function CareersAdmin({ openings, applications, company = false }: { open
       <section aria-label="Openings">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Openings ({openings.length})</h2>
-          {!editing && <button type="button" onClick={() => setEditing("new")} className={`${BTN} bg-app-charcoal text-white`}>New opening</button>}
+          {!editing && <button type="button" onClick={() => setEditing("new")} className={`${BTN} bg-app-charcoal text-[#fff]`}>New opening</button>}
         </div>
         {editing && <div className="mt-3"><OpeningForm company={company} key={editing === "new" ? "new" : editing.id} opening={editing === "new" ? undefined : editing} onDone={() => setEditing(null)} /></div>}
         {openings.length === 0 && !editing ? <p className="mt-3 font-lp-body text-[13px] text-app-muted">{company ? "No roles yet. Post one and signed-in students can see and apply to it as soon as its status is Open." : "No openings yet. Post one and it appears on /careers as soon as its status is Open."}</p> : (
           <ul className="mt-3 flex flex-col gap-3">
             {openings.map((o) => (
-              <li key={o.id} className="rounded-2xl border border-[var(--m-rule)] bg-white p-4">
+              <li key={o.id} className="rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">{o.title} <span className={`ml-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${BADGE[o.status]}`}>{o.status}</span></p>
                     <p className="font-lp-body text-[12px] text-app-muted">{o.team} · {o.location} · {counts.get(o.id) ?? 0} applications{postedLabel(o.publishedAt) ? ` · ${postedLabel(o.publishedAt)}` : ""}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {!company && o.status !== "draft" && <Link href={`/careers/${o.slug}`} target="_blank" className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>View page</Link>}
-                    <button type="button" onClick={() => setEditing(o)} className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>Edit</button>
+                    {!company && o.status !== "draft" && <Link href={`/careers/${o.slug}`} target="_blank" className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>View page</Link>}
+                    <button type="button" onClick={() => setEditing(o)} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>Edit</button>
                     {o.status === "open" ? (
-                      <button type="button" disabled={busy !== null} onClick={() => call(o.id, `${base}/openings/${o.id}`, { status: "closed" })} className={`${BTN} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}>Close</button>
+                      <button type="button" disabled={busy !== null} onClick={() => call(o.id, `${base}/openings/${o.id}`, { status: "closed" })} className={`${BTN} border border-[var(--m-soft)] bg-[var(--m-ground)] hover:bg-[var(--m-accent-soft)] text-[var(--m-ink)]`}>Close</button>
                     ) : (
-                      <button type="button" disabled={busy !== null} onClick={() => call(o.id, `${base}/openings/${o.id}`, { status: "open" })} className={`${BTN} bg-app-charcoal text-white`}>{o.status === "draft" ? "Publish" : o.status === "soon" ? "Open now" : "Reopen"}</button>
+                      <button type="button" disabled={busy !== null} onClick={() => call(o.id, `${base}/openings/${o.id}`, { status: "open" })} className={`${BTN} bg-app-charcoal text-[#fff]`}>{o.status === "draft" ? "Publish" : o.status === "soon" ? "Open now" : "Reopen"}</button>
                     )}
                   </div>
                 </div>
@@ -70,7 +70,7 @@ export function CareersAdmin({ openings, applications, company = false }: { open
       <section aria-label="Applications">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Applications ({shown.length})</h2>
-          <select aria-label="Filter applications" value={filter} onChange={(e) => setFilter(e.target.value)} className="rounded-lg border border-[var(--m-rule)] bg-white px-3 py-1.5 font-lp-body text-[12.5px]">
+          <select aria-label="Filter applications" value={filter} onChange={(e) => setFilter(e.target.value)} className="rounded-lg border border-[var(--m-rule)] bg-[#fff] px-3 py-1.5 font-lp-body text-[12.5px]">
             <option value="all">All roles</option>
             <option value="intro">Open introductions</option>
             {openings.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
@@ -79,13 +79,13 @@ export function CareersAdmin({ openings, applications, company = false }: { open
         {shown.length === 0 ? <p className="mt-3 font-lp-body text-[13px] text-app-muted">Nothing here yet.</p> : (
           <ul className="mt-3 flex flex-col gap-3">
             {shown.map((a) => (
-              <li key={a.id} className="rounded-2xl border border-[var(--m-rule)] bg-white p-4">
+              <li key={a.id} className="rounded-2xl border border-[var(--m-rule)] bg-[#fff] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">{a.fullName} <a href={`mailto:${a.email}`} className="font-normal text-app-muted hover:underline">{a.email}</a></p>
                     <p className="font-lp-body text-[12px] text-app-muted">{a.openingTitle ?? "Open introduction"} · {new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
                   </div>
-                  <select aria-label={`Status for ${a.fullName}`} value={a.status} disabled={busy === a.id} onChange={(e) => call(a.id, `${base}/applications/${a.id}`, { status: e.target.value as ApplicationStatus })} className="rounded-lg border border-[var(--m-rule)] bg-white px-3 py-1.5 font-lp-body text-[12.5px] capitalize">
+                  <select aria-label={`Status for ${a.fullName}`} value={a.status} disabled={busy === a.id} onChange={(e) => call(a.id, `${base}/applications/${a.id}`, { status: e.target.value as ApplicationStatus })} className="rounded-lg border border-[var(--m-rule)] bg-[#fff] px-3 py-1.5 font-lp-body text-[12.5px] capitalize">
                     {APPLICATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
