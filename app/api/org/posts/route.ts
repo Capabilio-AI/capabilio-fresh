@@ -4,10 +4,12 @@ import { PostSchema } from "@/lib/org/schemas";
 import { untyped } from "@/lib/org/db";
 import { ownPathFromPublicUrl } from "@/lib/org/media";
 import { notifyPostPublished } from "@/lib/notifications/events";
+import { postTypeAllowed } from "@/lib/org/post-types";
 
-/** Events + announcements only. Staff and admins may publish (spec default); staff edit only their own (see /action). */
+/** Events and announcements for colleges; updates, hiring news and milestones for companies. Staff and admins may publish (spec default); staff edit only their own (see /action). */
 export async function POST(request: Request) {
   return orgRoute(request, PostSchema, "publishPost", async ({ ctx, service }, body) => {
+    if (!postTypeAllowed(ctx.kind === "company", body.type)) return NextResponse.json({ error: "That kind of post is not available for your account." }, { status: 400 });
     const startsAt = body.eventStartsAt ? new Date(body.eventStartsAt) : null;
     if (body.type === "event" && (!startsAt || Number.isNaN(startsAt.getTime()))) {
       return NextResponse.json({ error: "Enter a valid event date and time." }, { status: 400 });

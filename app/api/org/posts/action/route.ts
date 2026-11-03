@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const { data } = await db.from("org_posts").select("*").eq("id", body.postId).eq("institution_id", ctx.institutionId).maybeSingle();
     const post = data as OrgPostRow | null;
     // non-admins only touch their own posts; admins any post of their institution
-    if (!post || (ctx.kind !== "admin" && post.author_membership_id !== ctx.membershipId)) {
+    if (!post || (ctx.kind !== "admin" && ctx.kind !== "company" && post.author_membership_id !== ctx.membershipId)) {
       return NextResponse.json({ error: "Post not found." }, { status: 404 });
     }
     const { error } =

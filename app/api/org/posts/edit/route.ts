@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const db = untyped(service);
     const { data } = await db.from("org_posts").select("*").eq("id", body.postId).eq("institution_id", ctx.institutionId).maybeSingle();
     const post = data as OrgPostRow | null;
-    if (!post || (ctx.kind !== "admin" && post.author_membership_id !== ctx.membershipId)) return NextResponse.json({ error: "Post not found." }, { status: 404 });
+    if (!post || (ctx.kind !== "admin" && ctx.kind !== "company" && post.author_membership_id !== ctx.membershipId)) return NextResponse.json({ error: "Post not found." }, { status: 404 });
     const { error } = await db.from("org_posts").update({ body: body.body, title: (post.type === "event" ? post.title : body.body.split("\n")[0]).slice(0, 200) }).eq("id", post.id);
     if (error) throw error;
     return {};

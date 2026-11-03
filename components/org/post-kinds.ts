@@ -31,7 +31,8 @@ export const POST_KINDS: PostKind[] = [
 const BY_ID = Object.fromEntries(POST_KINDS.map((k) => [k.id, k])) as Record<PostKindId, PostKind>;
 
 /** The kind a stored post shows as; posts made before categories existed are an event or an announcement. */
-export function kindOf(post: { category?: string | null; type: "event" | "announcement" }): PostKind {
+/** A company post type (update, hiring, milestone) has no college kind of its own: it reads as an announcement wherever a college card is drawn. */
+export function kindOf(post: { category?: string | null; type: string }): PostKind {
   const id = (post.category ?? (post.type === "event" ? "event" : "announcement")) as PostKindId;
   return BY_ID[id] ?? BY_ID.announcement;
 }

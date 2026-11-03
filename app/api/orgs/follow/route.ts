@@ -18,12 +18,16 @@ export async function POST(request: Request) {
       : await db.from("org_follows").delete().eq("institution_id", org.institutionId).eq("user_id", userId);
     if (error) return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
     if (body.following) {
-      const { data: me } = await service.from("profiles").select("full_name").eq("id", userId).maybeSingle();
+      const [{ data: me }, { data: inst }] = await Promise.all([
+        service.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+        service.from("institutions").select("org_type").eq("id", org.institutionId).maybeSingle(),
+      ]);
+      const company = inst?.org_type === "company";
       await notify(service, {
         userIds: await staffWithPermission(service, org.institutionId, "page"),
         type: "org_follow",
-        title: `${me?.full_name ?? "Someone"} started following your college page`,
-        href: "/org/college",
+        title: `${me?.full_name ?? "Someone"} started following your ${company ? "company" : "college"} page`,
+        href: company ? "/company/profile" : "/org/college",
         actorId: userId,
         institutionId: org.institutionId,
         dedupeKey: `org-follow:${org.institutionId}:${userId}`,

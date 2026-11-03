@@ -50,7 +50,7 @@ export interface PagePost {
   orgName: string;
   orgSlug: string;
   logoUrl: string | null;
-  type: "event" | "announcement";
+  type: "event" | "announcement" | "update" | "hiring" | "milestone";
   title: string;
   body: string;
   coverImageUrl: string | null;

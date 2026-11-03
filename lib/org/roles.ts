@@ -40,7 +40,8 @@ export const ROLE_DEFAULTS: Record<OrgKind, readonly OrgPermissionKey[]> = {
   staff: ["students", "classroom", "posts", "chat"],
   tpo: ["placements", "outcomes", "insights", "chat"],
   student: [],
-  company: [], // companies have their own workspace (/company); no college permission applies
+  // companies have their own workspace (/company); only the page and posts permissions apply, so they can edit their public page and post updates
+  company: ["page", "posts"],
 };
 
 const isPermissionKey = (v: string): v is OrgPermissionKey => (ALL_PERMISSION_KEYS as readonly string[]).includes(v);
