@@ -183,7 +183,7 @@ export function CodeDnaCard() {
             <a href={state.profileUrl} target="_blank" rel="noopener noreferrer" className="text-lp-accent-indigo hover:underline">
               GitHub bio
             </a>{" "}
-            temporarily, so we can confirm the account is yours:
+            temporarily, so we can confirm the account is yours. We&rsquo;ll check <span className="font-semibold">@{state.username}</span>:
           </p>
           <code className="w-fit rounded-lg bg-lp-surface-subtle px-3 py-2 font-lp-mono text-lp-label-sm text-lp-text-ink">
             {state.verificationCode}
@@ -195,6 +195,9 @@ export function CodeDnaCard() {
             className="mt-1 w-fit rounded-lg bg-lp-text-ink px-4 py-2 font-lp-body text-lp-body-sm font-semibold text-lp-surface-card disabled:opacity-60"
           >
             {busy ? "Checking…" : "I've added it — Verify"}
+          </button>
+          <button type="button" onClick={() => { setError(null); setState({ ...state, connected: false }); }} className="w-fit font-lp-mono text-lp-label-sm text-lp-text-muted hover:text-lp-text-ink hover:underline">
+            Wrong account? Connect a different username
           </button>
         </div>
       )}
