@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import type { Resource } from "@/lib/roadmap-visual/graph-types";
-import type { ProjectGuide } from "@/lib/roadmap-visual/project-guide";
+import type { ProjectGuideView } from "@/lib/roadmap-visual/project-guide";
 import { send } from "@/components/roadmap/v2/api";
 import { StationMark } from "./StationMark";
 import { generateTables, seedOf, toCsv, type DatasetSpec } from "@/lib/roadmap-visual/dataset";
 
-type Guide = { state: "loading" } | { state: "ready"; guide: ProjectGuide } | { state: "error"; message: string };
+type Guide = { state: "loading" } | { state: "ready"; guide: ProjectGuideView } | { state: "error"; message: string };
 
 /** Fetches the AI-written guide for a project once per open; a retry is one button away. */
 function useGuide(resourceId: string, career: "primary" | "plan-b", enabled: boolean) {
@@ -18,7 +18,7 @@ function useGuide(resourceId: string, career: "primary" | "plan-b", enabled: boo
     let cancelled = false;
     void send("POST", "/api/roadmap/project-guide", { resourceId, career }).then((r) => {
       if (cancelled) return;
-      setGuide(r.ok && r.data?.guide ? { state: "ready", guide: r.data.guide as ProjectGuide } : { state: "error", message: r.error ?? "Couldn't load the guide." });
+      setGuide(r.ok && r.data?.guide ? { state: "ready", guide: r.data.guide as ProjectGuideView } : { state: "error", message: r.error ?? "Couldn't load the guide." });
     });
     return () => { cancelled = true; };
   }, [resourceId, career, enabled, attempt]);
@@ -56,6 +56,27 @@ export function ExtraPanel({ resource: r, career, onClose }: { resource: Resourc
 
       <div className="flex-1 space-y-6 overflow-y-auto p-5 font-lp-body text-[14px] leading-relaxed text-[var(--m-ink)]">
         <p>{(guide.state === "ready" && guide.guide.overview) || r.description}</p>
+
+        {isProject && guide.state === "ready" && guide.guide.scenario && (
+          <section aria-labelledby="scn-h">
+            <h3 id="scn-h" className={H}>The situation</h3>
+            <p className="mt-1.5 rounded-lg bg-[var(--m-ground)] p-3.5">{guide.guide.scenario}</p>
+          </section>
+        )}
+
+        {isProject && guide.state === "ready" && guide.guide.questions.length > 0 && (
+          <section aria-labelledby="qs-h">
+            <h3 id="qs-h" className={H}>Questions your work must answer</h3>
+            <ol className="mt-1.5 list-decimal space-y-1 pl-5">{guide.guide.questions.map((q) => <li key={q}>{q}</li>)}</ol>
+          </section>
+        )}
+
+        {isProject && guide.state === "ready" && guide.guide.tools.length > 0 && (
+          <section aria-labelledby="tools-h">
+            <h3 id="tools-h" className={H}>What you&apos;ll need</h3>
+            <ul className="mt-2 flex flex-wrap gap-2">{guide.guide.tools.map((t) => <li key={t} className="rounded-full border border-[var(--m-rule)] px-3 py-1 text-[12.5px]">{t}</li>)}</ul>
+          </section>
+        )}
 
         {gained.length > 0 && (
           <section aria-labelledby="gain-h">
@@ -122,6 +143,13 @@ export function ExtraPanel({ resource: r, career, onClose }: { resource: Resourc
               </ol>
             )}
             {guide.state === "ready" && <p className="mt-3 text-[12px] text-app-muted">Guide written by AI from the project description. Check anything important; it never changes your scores.</p>}
+          </section>
+        )}
+
+        {isProject && guide.state === "ready" && guide.guide.checklist.length > 0 && (
+          <section aria-labelledby="chk-h">
+            <h3 id="chk-h" className={H}>You&apos;re done when</h3>
+            <ul className="mt-1.5 space-y-1.5">{guide.guide.checklist.map((c) => <li key={c} className="flex gap-2"><span aria-hidden className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-2 border-[var(--m-ink)]" />{c}</li>)}</ul>
           </section>
         )}
 
