@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { authorizeOrg } from "@/lib/api/org-route";
 import { untyped } from "@/lib/org/db";
@@ -52,8 +53,10 @@ export async function POST(request: Request) {
   const uploaded = await uploadImage(service, ctx.userId, "material", file);
   if (!uploaded.ok) return NextResponse.json({ error: uploaded.message }, { status: uploaded.status });
 
+  const shareId = randomUUID();
   const { error } = await untyped(service).from("class_materials").insert(
     scopes.map((s) => ({
+      share_id: shareId,
       institution_id: ctx.institutionId,
       author_membership_id: ctx.membershipId,
       subject_id: s.subjectId,

@@ -1,62 +1,97 @@
 import type { Metadata } from "next";
-import { Search } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { staffBranchScope } from "@/lib/org/branch-scope";
 import { listMaterialsForStaff, listSubjects } from "@/lib/org/loaders";
 import { listCollegeBranches } from "@/lib/org/college-branches";
+import { groupShares, summariseAudience, type MaterialShare, type ShareRow } from "@/lib/org/material-share";
 import { MaterialsComposer } from "@/components/org/MaterialsComposer";
-import { ActionButton } from "@/components/org/ActionButton";
-import { EmptyState, PageHeader, Pill, formatDateTime } from "@/components/org/ui";
-import { GroupTitle, Segmented } from "@/components/org/widgets";
-import { ExternalLink, FileImage, FileSpreadsheet, FileText, Link2, Presentation, StickyNote, type LucideIcon } from "lucide-react";
+import { MaterialsLibrary, type LibraryItem, type LibraryKind } from "@/components/org/MaterialsLibrary";
+import { EmptyState, PageHeader, formatDateTime } from "@/components/org/ui";
 import { BUCKET, SIGNED_URL_SECONDS } from "@/lib/pulse/media";
+import { untyped } from "@/lib/org/db";
 
 export const metadata: Metadata = { title: "Course materials — Capabilio AI" };
 
-const TYPE_LABEL: Record<string, string> = { file: "Files", link: "Links", pdf: "PDFs", notes: "Notes" };
-type Look = { icon: LucideIcon; tone: string; label: string };
+const PAGE_SIZE = 15;
+type Params = { type?: string; q?: string; branch?: string; year?: string; sort?: string; view?: string; page?: string };
 
-/** How a material looks in the library: colour and icon by what it is, so a long list can be scanned. */
-function lookOf(m: { type: string; file_name: string | null }): Look {
+/** What a share looks like in the library, from what it is. */
+function kindOf(m: Pick<MaterialShare, "type" | "file_name">): LibraryKind {
   const name = (m.file_name ?? "").toLowerCase();
-  if (m.type === "link") return { icon: Link2, tone: "bg-app-blue-container text-app-blue", label: "Link" };
-  if (m.type === "notes") return { icon: StickyNote, tone: "bg-app-warning-container text-app-warning", label: "Note" };
-  if (m.type === "pdf" || name.endsWith(".pdf")) return { icon: FileText, tone: "bg-app-rose-container text-app-rose", label: "PDF" };
-  if (/\.(xlsx|xls)$/.test(name)) return { icon: FileSpreadsheet, tone: "bg-app-success-container text-app-success", label: "Excel" };
-  if (/\.(pptx|ppt)$/.test(name)) return { icon: Presentation, tone: "bg-app-orange-container text-app-orange", label: "Slides" };
-  if (/\.(png|jpe?g|webp)$/.test(name)) return { icon: FileImage, tone: "bg-app-blue-container text-app-blue", label: "Image" };
-  return { icon: FileText, tone: "bg-app-blue-container text-app-blue", label: "Document" };
+  if (m.type === "link") return "link";
+  if (m.type === "notes") return "note";
+  if (m.type === "pdf" || name.endsWith(".pdf")) return "pdf";
+  if (/\.(xlsx|xls)$/.test(name)) return "excel";
+  if (/\.(pptx|ppt)$/.test(name)) return "slides";
+  if (/\.(png|jpe?g|webp)$/.test(name)) return "image";
+  return "document";
 }
 const size = (n: number | null) => (n === null ? null : n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
-
-type Params = { type?: string; q?: string; branch?: string };
 
 export default async function MaterialsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
   const { ctx, service } = await orgPageContext("uploadMaterial");
   const scope = staffBranchScope(ctx);
-  const type = sp.type && Object.hasOwn(TYPE_LABEL, sp.type) ? sp.type : undefined;
-  const q = sp.q?.trim().toLowerCase() || undefined;
-  const [materials, subjects, branches] = await Promise.all([listMaterialsForStaff(service, ctx), listSubjects(service, ctx.institutionId, scope), listCollegeBranches(service, ctx.institutionId, scope)]);
+  const [rows, subjects, collegeBranches] = await Promise.all([listMaterialsForStaff(service, ctx), listSubjects(service, ctx.institutionId, scope), listCollegeBranches(service, ctx.institutionId, scope)]);
+  const shares = groupShares(rows as unknown as ShareRow[]);
 
-  // uploaded files have no url: give them a short-lived signed link, as students get in SkillStudio
-  const filePaths = [...new Set(materials.flatMap((m) => (m.file_path ? [m.file_path] : [])))];
+  const type = ["file", "link", "pdf", "notes"].includes(sp.type ?? "") ? sp.type : "";
+  const q = (sp.q ?? "").trim().toLowerCase();
+  const year = /^[1-6]$/.test(sp.year ?? "") ? Number(sp.year) : null;
+  const sort = ["old", "name", "size"].includes(sp.sort ?? "") ? (sp.sort as string) : "new";
+  const view = sp.view === "cards" ? "cards" : "list";
+
+  const matched = shares.filter(
+    (m) =>
+      (!type || m.type === type) &&
+      (!sp.branch || m.audiences.some((a) => a.branch === sp.branch)) &&
+      (year === null || m.audiences.some((a) => a.year === year)) &&
+      (!q || `${m.title} ${m.description ?? ""} ${m.file_name ?? ""}`.toLowerCase().includes(q))
+  );
+  const sorted = [...matched].sort((a, b) =>
+    sort === "old" ? a.published_at.localeCompare(b.published_at) : sort === "name" ? a.title.localeCompare(b.title) : sort === "size" ? (b.file_size ?? -1) - (a.file_size ?? -1) : b.published_at.localeCompare(a.published_at)
+  );
+  const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, /^\d{1,4}$/.test(sp.page ?? "") ? Number(sp.page) : 1), pages);
+  const slice = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // links for the visible files only
+  const filePaths = [...new Set(slice.flatMap((m) => (m.file_path ? [m.file_path] : [])))];
   const signed = filePaths.length ? await service.storage.from(BUCKET).createSignedUrls(filePaths, SIGNED_URL_SECONDS) : { data: [] };
   const fileUrl = new Map((signed.data ?? []).flatMap((u) => (u.path && u.signedUrl ? [[u.path, u.signedUrl] as const] : [])));
 
-  const matches = (m: (typeof materials)[number]) => (!type || m.type === type) && (!sp.branch || m.branch === sp.branch) && (!q || `${m.title} ${m.description ?? ""} ${m.file_name ?? ""}`.toLowerCase().includes(q));
-  const shown = materials.filter(matches);
-  const byGroup = new Map<string, typeof shown>();
-  for (const m of shown) byGroup.set(`Year ${m.year} · ${m.branch}`, [...(byGroup.get(`Year ${m.year} · ${m.branch}`) ?? []), m]);
-  const groups = [...byGroup.entries()].sort(([a], [b]) => a.localeCompare(b));
-  const usedBranches = [...new Set(materials.map((m) => m.branch))].sort();
-  const href = (next: Params) => {
-    const merged = { type: sp.type, q: sp.q, branch: sp.branch, ...next };
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
-    return params.toString() ? `/org/materials?${params}` : "/org/materials";
-  };
-  const count = (t: string) => materials.filter((m) => m.type === t).length;
+  // admins see everyone's shares, so say who shared each
+  const canSeeAuthors = ctx.kind === "admin";
+  const authors = new Map<string, string>();
+  if (canSeeAuthors && slice.length) {
+    const db = untyped(service);
+    const { data: ms } = await db.from("institution_memberships").select("id, user_id").in("id", [...new Set(slice.map((m) => m.author_membership_id))]);
+    const members = (ms ?? []) as { id: string; user_id: string }[];
+    const { data: ps } = members.length ? await db.from("profiles").select("id, full_name").in("id", members.map((m) => m.user_id)) : { data: [] };
+    const nameOf = new Map(((ps ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+    for (const m of members) authors.set(m.id, nameOf.get(m.user_id) ?? "Staff");
+  }
+
+  const allBranchNames = collegeBranches.map((b) => b.branch);
+  const items: LibraryItem[] = slice.map((m) => {
+    const summary = summariseAudience(m.audiences, allBranchNames);
+    return {
+      shareId: m.share_id,
+      title: m.title,
+      description: m.description,
+      kind: kindOf(m),
+      chips: summary.chips,
+      audienceFull: summary.full,
+      groups: m.audiences.length,
+      size: size(m.file_size),
+      sharedAt: formatDateTime(m.published_at).split(",")[0],
+      href: m.url ?? (m.file_path ? fileUrl.get(m.file_path) ?? null : null),
+      author: authors.get(m.author_membership_id) ?? null,
+    };
+  });
+
+  const count = (t: string[]) => shares.filter((m) => t.includes(m.type)).length;
+  const usedBranches = [...new Set(shares.flatMap((m) => m.audiences.map((a) => a.branch)))].sort();
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,77 +101,26 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
       />
 
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Library summary">
-        {[["Shared", materials.length], ["Files", count("file") + count("pdf")], ["Links", count("link")], ["Notes", count("notes")]].map(([label, n]) => (
-          <li key={String(label)} className="o-card p-4">
-            <p className="text-[26px] font-extrabold leading-none tabular-nums text-app-charcoal">{Number(n).toLocaleString("en-IN")}</p>
+        {([["Shared", shares.length], ["Files", count(["file"])], ["Links", count(["link", "pdf"])], ["Notes", count(["notes"])]] as const).map(([label, n]) => (
+          <li key={label} className="o-card p-4">
+            <p className="text-[26px] font-extrabold leading-none tabular-nums text-app-charcoal">{n.toLocaleString("en-IN")}</p>
             <p className="mt-1.5 text-[12.5px] text-app-muted">{label}</p>
           </li>
         ))}
       </ul>
 
-      <MaterialsComposer branches={branches} subjects={subjects.map((s) => ({ value: s.id, label: s.label }))} canPickAll={!scope} />
+      <MaterialsComposer branches={collegeBranches} subjects={subjects.map((s) => ({ value: s.id, label: s.label }))} canPickAll={!scope} />
 
-      <section aria-label="Library" className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <form method="get" role="search" className="relative">
-            {sp.type && <input type="hidden" name="type" value={sp.type} />}
-            {sp.branch && <input type="hidden" name="branch" value={sp.branch} />}
-            <label>
-              <span className="sr-only">Search the library</span>
-              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-app-muted" aria-hidden="true" />
-              <input name="q" defaultValue={sp.q ?? ""} placeholder="Search title or file name" className="o-input !w-64 !rounded-full !pl-9" />
-            </label>
-          </form>
-          <Segmented
-            label="Filter by type"
-            tabs={[
-              { label: "All", href: href({ type: undefined }), active: !type, count: materials.length },
-              ...Object.keys(TYPE_LABEL).map((t) => ({ label: TYPE_LABEL[t], href: href({ type: t }), active: type === t, count: count(t) })),
-            ]}
-          />
-        </div>
-        {usedBranches.length > 1 && (
-          <ul className="flex flex-wrap gap-2" aria-label="Filter by branch">
-            {usedBranches.map((b) => (
-              <li key={b}><a href={href({ branch: sp.branch === b ? undefined : b })} aria-current={sp.branch === b} className={`rounded-full border px-3 py-1 text-[12.5px] font-semibold ${sp.branch === b ? "border-[var(--m-ink)]! bg-[var(--m-accent-soft)] text-app-charcoal" : "border-app-border! text-app-muted hover:bg-[var(--m-accent-soft)]"}`}>{b}</a></li>
-            ))}
-          </ul>
-        )}
-
-        {shown.length === 0 ? (
-          <EmptyState title={materials.length === 0 ? "Nothing shared yet" : "Nothing matches"} body={materials.length === 0 ? "Share a file, a link or a note above. It appears here and in your students' SkillStudio." : "Try a different search or clear a filter."} />
-        ) : (
-          groups.map(([label, items]) => (
-            <section key={label} aria-label={label}>
-              <GroupTitle count={items.length}>{label}</GroupTitle>
-              <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {items.map((m) => {
-                  const look = lookOf(m);
-                  const open = m.url ?? (m.file_path ? fileUrl.get(m.file_path) : undefined);
-                  return (
-                    <li key={m.id} className="o-card flex items-start gap-3.5 p-4">
-                      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${look.tone}`}><look.icon size={19} aria-hidden="true" /></span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14.5px] font-semibold text-app-charcoal">{m.title}</p>
-                        {m.description && <p className="mt-0.5 line-clamp-2 text-[12.5px] text-app-muted">{m.description}</p>}
-                        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-app-muted">
-                          <Pill tone="neutral">{look.label}</Pill>
-                          {size(m.file_size) && <span>{size(m.file_size)}</span>}
-                          <span>{formatDateTime(m.published_at)}</span>
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        {open && <a href={open} target="_blank" rel="noopener noreferrer" aria-label={`Open ${m.title}`} className="o-btn-ghost !px-2.5"><ExternalLink size={14} aria-hidden="true" /></a>}
-                        <ActionButton action="/api/org/materials/delete" body={{ id: m.id }} label="Remove" variant="ghost" confirm={`Remove "${m.title}"? Students will no longer see it.`} />
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))
-        )}
-      </section>
+      {shares.length === 0 ? (
+        <EmptyState title="Nothing shared yet" body="Share a file, a link or a note above. It appears here and in your students' SkillStudio." />
+      ) : (
+        <MaterialsLibrary
+          items={items}
+          branches={usedBranches}
+          canSeeAuthors={canSeeAuthors}
+          filters={{ q: sp.q?.trim() ?? "", type: type ?? "", branch: sp.branch ?? "", year: year ? String(year) : "", sort, view, page, pages, total: sorted.length }}
+        />
+      )}
     </div>
   );
 }

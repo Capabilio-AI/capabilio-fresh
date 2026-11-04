@@ -42,7 +42,7 @@ export async function listSubjects(service: Service, institutionId: string, bran
 
 /** Staff see the materials they authored; admins see everything at their institution. */
 export async function listMaterialsForStaff(service: Service, ctx: OrgContext): Promise<MaterialRow[]> {
-  let q = untyped(service).from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(100);
+  let q = untyped(service).from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(1500);
   if (ctx.kind !== "admin") q = q.eq("author_membership_id", ctx.membershipId);
   const { data, error } = await q;
   if (error) throw new Error(`Materials load failed: ${error.message}`);
