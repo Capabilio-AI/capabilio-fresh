@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const { data: owned } = await db.from("class_project_groups").select("id, project_id").eq("id", body.groupId).maybeSingle();
     const g0 = owned as { id: string; project_id: string } | null;
     if (g0 && body.attachments.some((a) => !isGroupPath(a.path, g0.project_id, g0.id))) return NextResponse.json({ error: "One of the files does not belong to this group." }, { status: 400 });
-    const { error } = await db.rpc("class_submit_project", { p_user_id: ctx.userId, p_group_id: body.groupId, p_link: body.linkUrl ?? null, p_attachments: body.attachments });
+    const { error } = await db.rpc("class_submit_project", { p_user_id: ctx.userId, p_group_id: body.groupId, p_link: body.linkUrl ?? null, p_attachments: body.attachments, p_report: body.report ?? null });
     if (error) throw error;
     const { data: group } = await db.from("class_project_groups").select("name, project_id, class_projects(title)").eq("id", body.groupId).maybeSingle();
     const g = group as { name: string; project_id: string; class_projects: { title: string } | null } | null;

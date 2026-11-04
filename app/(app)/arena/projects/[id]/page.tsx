@@ -238,17 +238,19 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
                   {mine.submission.link_url && (
                     <a href={mine.submission.link_url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all font-lp-body text-[13px] text-app-blue hover:underline">{mine.submission.link_url}</a>
                   )}
+                  {mine.submission.report && <p className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap font-lp-body text-[13px] leading-relaxed text-[var(--m-ink)]">{mine.submission.report}</p>}
                   <AttachmentList files={mine.submission.attachments ?? []} urls={urls} />
                   <p className="mt-3 font-lp-body text-[12px] text-app-muted">You can resubmit until it is graded.</p>
                 </div>
               )}
-              {open && submit !== "small-wait" && <SubmissionForm closesGroup={submit === "small-lead"} key={mine.submission?.submitted_at ?? "new"} groupId={mine.group.id} resubmit={Boolean(mine.submission)} initialLink={mine.submission?.link_url ?? undefined} initialFiles={mine.submission?.attachments ?? []} />}
+              {open && submit !== "small-wait" && <SubmissionForm closesGroup={submit === "small-lead"} key={mine.submission?.submitted_at ?? "new"} groupId={mine.group.id} resubmit={Boolean(mine.submission)} initialLink={mine.submission?.link_url ?? undefined} initialFiles={mine.submission?.attachments ?? []} initialReport={mine.submission?.report ?? undefined} />}
             </section>
           )}
           {mine.submission && mine.group.status === "graded" && (
             <section className="rounded-2xl border border-[var(--m-rule)] bg-white p-6">
               <h2 className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">What you submitted</h2>
               {mine.submission.link_url && <a href={mine.submission.link_url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all font-lp-body text-[13px] text-app-blue hover:underline">{mine.submission.link_url}</a>}
+              {mine.submission.report && <p className="mt-2 whitespace-pre-wrap font-lp-body text-[13px] leading-relaxed text-[var(--m-ink)]">{mine.submission.report}</p>}
               <AttachmentList files={mine.submission.attachments ?? []} urls={urls} />
             </section>
           )}

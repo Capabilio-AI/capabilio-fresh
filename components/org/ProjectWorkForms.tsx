@@ -159,19 +159,25 @@ export function ReportForm({ groupId, nextWeek, existing = [] }: { groupId: stri
 }
 
 /** The final submission: a link, images or PDFs, or all of them. Resubmitting replaces the earlier submission until it is graded. */
-export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles, closesGroup = false }: { groupId: string; resubmit: boolean; initialLink?: string; initialFiles?: ProjectFile[]; closesGroup?: boolean }) {
+export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles, initialReport, closesGroup = false }: { groupId: string; resubmit: boolean; initialLink?: string; initialFiles?: ProjectFile[]; initialReport?: string; closesGroup?: boolean }) {
+  const [report, setReport] = useState(initialReport ?? "");
   const [link, setLink] = useState(initialLink ?? "");
   const [files, setFiles] = useState<ProjectFile[]>(initialFiles ?? []);
   const { busy, message, send } = useSubmit("/api/classroom/submissions", () => undefined);
-  const ready = link.trim().length > 0 || files.length > 0;
+  const ready = link.trim().length > 0 || files.length > 0 || report.trim().length > 0;
 
   function submit(e: FormEvent) {
     e.preventDefault();
     if (closesGroup && !window.confirm("Your group is not full. Submitting closes it, and nobody else can join. Submit now?")) return;
-    void send({ groupId, linkUrl: link.trim() || undefined, attachments: files }, resubmit ? "Resubmitted." : "Submitted. Your faculty has been told.");
+    void send({ groupId, linkUrl: link.trim() || undefined, attachments: files, report: report.trim() || undefined }, resubmit ? "Resubmitted." : "Submitted. Your faculty has been told.");
   }
   return (
     <form onSubmit={submit} className="flex flex-col gap-6">
+      <div>
+        <label htmlFor="sub-report" className={LABEL}>Project report <span className="font-normal text-app-muted">(optional)</span></label>
+        <textarea id="sub-report" rows={14} maxLength={20000} value={report} onChange={(e) => setReport(e.target.value)} placeholder="Describe the problem, your approach, what each member did, the results, and what you would improve." className={`${FIELD} min-h-[320px] resize-y`} />
+        <p className={`${HELP} text-right tabular-nums`}>{report.length.toLocaleString("en-IN")} / 20,000</p>
+      </div>
       <div>
         <label htmlFor="sub-link" className={LABEL}>Project link</label>
         <input id="sub-link" type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://github.com/… or a shared drive link" className={FIELD} />
@@ -180,7 +186,7 @@ export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles, c
       <FileAttach groupId={groupId} files={files} onChange={setFiles} />
       <div className="flex flex-wrap items-center gap-4">
         <button type="submit" disabled={busy || !ready} className={SAVE}>{busy && <Loader2 size={15} className="animate-spin" aria-hidden />}{busy ? "Submitting…" : resubmit ? "Resubmit" : "Submit project"}</button>
-        {!ready && <span className={HELP}>Add a link or at least one file.</span>}
+        {!ready && <span className={HELP}>Add a report, a link or at least one file.</span>}
         <Status message={message} />
       </div>
     </form>

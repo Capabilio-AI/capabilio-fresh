@@ -187,10 +187,16 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                         {submission.link_url}
                       </a>
                     ) : (
-                      (submission.attachments?.length ?? 0) > 0 ? "Submitted with files." : "Submitted."
+                      (submission.attachments?.length ?? 0) > 0 ? "Submitted with files." : submission.report ? "Submitted a written report." : "Submitted."
                     )}{" "}
                     <span className="text-app-muted">({formatDateTime(submission.submitted_at)})</span>
                   </p>
+                  {submission.report && (
+                    <details className="mt-2 rounded-lg border border-app-border p-3" open>
+                      <summary className="cursor-pointer font-lp-body text-[12.5px] font-semibold text-app-charcoal">Written report</summary>
+                      <p className="mt-2 max-h-96 overflow-y-auto whitespace-pre-wrap font-lp-body text-[13px] leading-relaxed text-app-charcoal">{submission.report}</p>
+                    </details>
+                  )}
                   <AttachmentList files={submission.attachments ?? []} urls={urls} />
                   </div>
                 ) : (

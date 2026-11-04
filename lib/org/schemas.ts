@@ -57,9 +57,9 @@ export const ReportSchema = z
   .object({ groupId: uuid, weekNumber: z.coerce.number().int().min(1).max(52), content: z.string().trim().min(1).max(5000), attachmentUrl: optionalUrl, attachments: ProjectFilesSchema.default([]) })
   .strict();
 export const SubmitSchema = z
-  .object({ groupId: uuid, linkUrl: httpUrl.optional(), attachments: ProjectFilesSchema.default([]) })
+  .object({ groupId: uuid, linkUrl: httpUrl.optional(), attachments: ProjectFilesSchema.default([]), report: z.string().trim().max(20000, "Keep the report under 20,000 characters.").optional() })
   .strict()
-  .refine((v) => Boolean(v.linkUrl) || v.attachments.length > 0, { message: "Add a link or attach a file." });
+  .refine((v) => Boolean(v.linkUrl) || v.attachments.length > 0 || Boolean(v.report), { message: "Add a link, a file or a written report." });
 export const GradeSchema = z
   .object({
     groupId: uuid,

@@ -75,6 +75,8 @@ export interface SubmissionRow {
   group_id: string;
   submission_type: "in_app" | "physical";
   link_url: string | null;
+  /** the group's written project report */
+  report?: string | null;
   attachments?: { path: string; name: string; contentType: string; size: number }[];
   submitted_at: string;
   physical_confirmed_by_membership_id: string | null;
