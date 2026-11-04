@@ -7,6 +7,7 @@ import { loadIceConfig, type IceConfig } from "./ice";
 import { conversationBetween, notify, toMessage } from "./messages";
 import { previewOf } from "./message-rules";
 import { loadPeople, type PersonSummary } from "./people";
+import { notify as notifyBell } from "@/lib/notifications/notify";
 
 type Service = SupabaseClient<Database>;
 
@@ -55,6 +56,10 @@ async function finalize(service: Service, call: CallRow, status: CallStatus): Pr
     await notify(service, [call.caller_id, call.callee_id], "message", { conversationId: call.conversation_id, status: "accepted", message });
   }
   await notify(service, [call.caller_id, call.callee_id], "call", { type: "ended", callId: call.id, status, duration });
+  if (status === "missed") {
+    const from = (await loadPeople(service, [call.caller_id])).get(call.caller_id);
+    await notifyBell(service, { userIds: [call.callee_id], actorId: call.caller_id, type: "call_missed", title: `Missed ${call.kind} call from ${from?.name ?? "someone"}`, href: `/pulse/messages?c=${call.conversation_id}`, dedupeKey: `call-missed:${call.id}` });
+  }
 }
 
 /** Closes calls that can no longer be in progress (a closed tab, a dropped connection) so nobody stays "busy". */
@@ -81,6 +86,8 @@ export async function startCall(service: Service, me: string, otherId: string, k
   const call = data as CallRow;
   const from = (await loadPeople(service, [me])).get(me) as PersonSummary | undefined;
   await notify(service, [otherId], "call", { type: "incoming", call: info(call), from });
+  // the live ring only reaches an open tab; the bell keeps a record for anyone who was away
+  await notifyBell(service, { userIds: [otherId], actorId: me, type: "call_incoming", title: `${from?.name ?? "Someone"} is calling you`, body: `${kind === "video" ? "Video" : "Voice"} call. Open Messages to call back.`, href: `/pulse/messages?c=${conversation.id}`, dedupeKey: `call:${call.id}` });
   return { ok: true, call: info(call), ice: await loadIceConfig() };
 }
 

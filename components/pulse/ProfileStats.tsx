@@ -11,9 +11,9 @@ import { MentorBadge } from "./MentorBadge";
 
 const TITLE: Record<ConnectionType, string> = { followers: "Followers", following: "Following" };
 
-function ConnectionsDialog({ userId, type, name, onClose }: { userId: string; type: ConnectionType; name: string; onClose: () => void }) {
+/** The live list of a person's followers or of who they follow (people and college pages), with Follow buttons. Used in the dialog and on its own page. */
+export function ConnectionsList({ userId, type, name, onNavigate }: { userId: string; type: ConnectionType; name: string; onNavigate?: () => void }) {
   const router = useRouter();
-  const closeRef = useRef<HTMLButtonElement>(null);
   const [state, setState] = useState<{ people: Connection[]; colleges: FollowedCollege[]; total: number } | "loading" | "failed">("loading");
 
   useEffect(() => {
@@ -25,6 +25,39 @@ function ConnectionsDialog({ userId, type, name, onClose }: { userId: string; ty
     return () => { live = false; };
   }, [userId, type]);
 
+  if (state === "loading") return <p className="flex items-center justify-center gap-2 py-10 text-[13px] text-app-muted"><Loader2 size={15} className="animate-spin" aria-hidden />Loading…</p>;
+  if (state === "failed") return <p role="alert" className="py-10 text-center text-[13px] text-app-rose">Couldn&apos;t load this list. Refresh and try again.</p>;
+  if (state.people.length === 0 && state.colleges.length === 0) {
+    return <p className="py-10 text-center text-[13.5px] text-app-muted">{type === "followers" ? `${name} has no followers yet.` : `${name} isn't following anyone yet.`}</p>;
+  }
+  return (
+    <ul className="flex flex-col gap-4 py-1">
+      {state.colleges.map((c) => (
+        <li key={c.id} className="flex items-center gap-3">
+          <Link href={`/o/${c.slug}`} onClick={onNavigate} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-app-orange-container text-app-orange"><Building2 size={16} aria-hidden /></Link>
+          <div className="min-w-0 flex-1">
+            <Link href={`/o/${c.slug}`} onClick={onNavigate} className="block truncate font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)] hover:underline">{c.name}</Link>
+            <p className="font-lp-body text-[11.5px] text-app-muted">College page</p>
+          </div>
+        </li>
+      ))}
+      {state.people.map((p) => (
+        <li key={p.id} className="flex items-center gap-3">
+          <Link href={`/pulse/u/${p.id}`} onClick={onNavigate}><Avatar person={p} size="sm" /></Link>
+          <div className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-1.5"><Link href={`/pulse/u/${p.id}`} onClick={onNavigate} className="truncate font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)] hover:underline">{p.name ?? "Capabilio member"}</Link>{p.isMentor && <MentorBadge />}</span>
+            {p.tagline && <p className="truncate font-lp-body text-[12px] font-medium text-app-blue">{p.tagline}</p>}
+            <p className="truncate font-lp-body text-[11.5px] text-app-muted">{p.headline ?? "Capabilio member"}</p>
+          </div>
+          {!p.isMe && <FollowButton userId={p.id} initialFollowing={p.following} compact onChange={() => router.refresh()} />}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ConnectionsDialog({ userId, type, name, onClose }: { userId: string; type: ConnectionType; name: string; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -33,43 +66,14 @@ function ConnectionsDialog({ userId, type, name, onClose }: { userId: string; ty
     document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
   }, [onClose]);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div role="dialog" aria-modal="true" aria-label={`${TITLE[type]} of ${name}`} className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <header className="flex items-center justify-between border-b border-[var(--m-rule)] px-5 py-4">
-          <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{TITLE[type]}{typeof state === "object" ? ` · ${state.total}` : ""}</h2>
+          <h2 className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{TITLE[type]}</h2>
           <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-[var(--m-muted)] hover:bg-[var(--m-ground)]"><X size={18} aria-hidden /></button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
-          {state === "loading" && <p className="flex items-center justify-center gap-2 py-10 text-[13px] text-app-muted"><Loader2 size={15} className="animate-spin" aria-hidden />Loading…</p>}
-          {state === "failed" && <p role="alert" className="py-10 text-center text-[13px] text-app-rose">Couldn&apos;t load this list. Close it and try again.</p>}
-          {typeof state === "object" && state.people.length === 0 && state.colleges.length === 0 && <p className="py-10 text-center text-[13.5px] text-app-muted">{type === "followers" ? `${name} has no followers yet.` : `${name} isn't following anyone yet.`}</p>}
-          {typeof state === "object" && (state.people.length > 0 || state.colleges.length > 0) && (
-            <ul className="flex flex-col gap-4 py-1">
-              {state.colleges.map((c) => (
-                <li key={c.id} className="flex items-center gap-3">
-                  <Link href={`/o/${c.slug}`} onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-app-orange-container text-app-orange"><Building2 size={16} aria-hidden /></Link>
-                  <div className="min-w-0 flex-1">
-                    <Link href={`/o/${c.slug}`} onClick={onClose} className="block truncate font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)] hover:underline">{c.name}</Link>
-                    <p className="font-lp-body text-[11.5px] text-app-muted">College page</p>
-                  </div>
-                </li>
-              ))}
-              {state.people.map((p) => (
-                <li key={p.id} className="flex items-center gap-3">
-                  <Link href={`/pulse/u/${p.id}`} onClick={onClose}><Avatar person={p} size="sm" /></Link>
-                  <div className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-1.5"><Link href={`/pulse/u/${p.id}`} onClick={onClose} className="truncate font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)] hover:underline">{p.name ?? "Capabilio member"}</Link>{p.isMentor && <MentorBadge />}</span>
-                    {p.tagline && <p className="truncate font-lp-body text-[12px] font-medium text-app-blue">{p.tagline}</p>}
-                    <p className="truncate font-lp-body text-[11.5px] text-app-muted">{p.headline ?? "Capabilio member"}</p>
-                  </div>
-                  {!p.isMe && <FollowButton userId={p.id} initialFollowing={p.following} compact onChange={() => router.refresh()} />}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3"><ConnectionsList userId={userId} type={type} name={name} onNavigate={onClose} /></div>
       </div>
     </div>
   );
@@ -94,5 +98,26 @@ export function ProfileStats({ userId, name, counts, inline = false }: { userId:
       </dl>
       {open && <ConnectionsDialog userId={userId} type={open} name={name} onClose={() => setOpen(null)} />}
     </>
+  );
+}
+
+export type RailTab = "mine" | "following" | "followers";
+const RAIL: { tab: RailTab; label: string; count: (c: { posts: number; followers: number; following: number }) => number }[] = [
+  { tab: "mine", label: "My feed", count: (c) => c.posts },
+  { tab: "following", label: "I Follow", count: (c) => c.following },
+  { tab: "followers", label: "They follow", count: (c) => c.followers },
+];
+
+/** The three numbers under your profile on Pulse, as tabs: your own posts, the posts of people you follow, and the people who follow you. */
+export function RailStats({ counts, active }: { counts: { posts: number; followers: number; following: number }; active: string }) {
+  return (
+    <nav aria-label="Your feed and network" className="mt-4 grid grid-cols-3 gap-1 border-t border-[var(--m-rule)] pt-4 text-center">
+      {RAIL.map((r) => (
+        <Link key={r.tab} href={`/pulse?tab=${r.tab}`} aria-current={active === r.tab ? "page" : undefined} className={`rounded-lg px-1 py-1.5 transition-colors hover:bg-app-background ${active === r.tab ? "bg-[var(--m-accent-soft)]" : ""}`}>
+          <span className="block font-lp-display text-[16px] font-bold text-[var(--m-ink)]">{r.count(counts)}</span>
+          <span className="block font-lp-body text-[10.5px] font-medium text-app-muted">{r.label}</span>
+        </Link>
+      ))}
+    </nav>
   );
 }

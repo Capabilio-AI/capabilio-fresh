@@ -12,11 +12,11 @@ import { MentorsHub } from "@/components/pulse/MentorsHub";
 import { PulseFeed, type FeedView } from "@/components/pulse/PulseFeed";
 import { PulseNav, type PulseTab } from "@/components/pulse/PulseNav";
 import { PulseSidebar } from "@/components/pulse/PulseSidebar";
-import { ProfileStats } from "@/components/pulse/ProfileStats";
+import { ConnectionsList, RailStats } from "@/components/pulse/ProfileStats";
 
 export const metadata: Metadata = { title: "Pulse | Capabilio AI", description: "Your network on Capabilio: what peers and mentors are building." };
 
-const TABS = new Set<PulseTab>(["for-you", "following", "trending", "communities", "mentors"]);
+const TABS = new Set<PulseTab>(["for-you", "following", "trending", "communities", "mentors", "mine", "followers"]);
 const TAG = /^[A-Za-z][A-Za-z0-9_]{1,29}$/;
 
 export default async function PulsePage({ searchParams }: { searchParams: Promise<{ tab?: string; tag?: string }> }) {
@@ -28,7 +28,7 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
   const me = people.get(user.id) ?? { id: user.id, name: null, avatarUrl: null, headline: null, role: null };
   const viewer = { id: user.id, name: me.name, avatarUrl: me.avatarUrl };
 
-  const view: FeedView = tag && TAG.test(tag) ? { mode: "tag", tag: tag.toLowerCase() } : tab === "following" ? { mode: "following" } : tab === "trending" ? { mode: "trending" } : { mode: "for_you" };
+  const view: FeedView = tag && TAG.test(tag) ? { mode: "tag", tag: tag.toLowerCase() } : tab === "following" ? { mode: "following" } : tab === "mine" ? { mode: "user", userId: user.id } : tab === "trending" ? { mode: "trending" } : { mode: "for_you" };
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_320px]">
@@ -42,7 +42,7 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
               {me.tagline && <span className="mt-0.5 font-lp-body text-[12.5px] font-medium text-app-blue">{me.tagline}</span>}
               <span className="mt-0.5 font-lp-body text-[12px] text-app-muted">{me.headline ?? "Student"}</span>
             </Link>
-            <ProfileStats userId={user.id} name={me.name ?? "You"} counts={counts} />
+            <RailStats counts={counts} active={tab} />
             {colleges.length > 0 && (
               <div className="mt-4 border-t border-[var(--m-rule)] pt-3">
                 <p className="font-lp-body text-[10.5px] font-semibold uppercase tracking-wide text-app-muted">Colleges you follow</p>
@@ -61,7 +61,12 @@ export default async function PulsePage({ searchParams }: { searchParams: Promis
       <div className="min-w-0">
         <div className="mb-4 lg:hidden"><PulseNav active={tab} variant="strip" /></div>
         <h1 className="sr-only">Pulse</h1>
-        {tab === "communities" ? <CommunitiesDirectory /> : tab === "mentors" ? <MentorsHub viewer={viewer} /> : <PulseFeed key={JSON.stringify(view)} view={view} viewer={viewer} />}
+        {tab === "followers" ? (
+          <section aria-labelledby="followers-h" className="rounded-3xl border border-[var(--m-rule)] bg-white p-5">
+            <h2 id="followers-h" className="font-lp-display text-[18px] font-bold text-[var(--m-ink)]">They follow you <span className="text-[13px] font-semibold text-app-muted">{counts.followers}</span></h2>
+            <ConnectionsList userId={user.id} type="followers" name={me.name ?? "You"} />
+          </section>
+        ) : tab === "communities" ? <CommunitiesDirectory /> : tab === "mentors" ? <MentorsHub viewer={viewer} /> : <PulseFeed key={JSON.stringify(view)} view={view} viewer={viewer} />}
       </div>
 
       <div className="hidden xl:block"><div className="sticky top-24"><PulseSidebar /></div></div>

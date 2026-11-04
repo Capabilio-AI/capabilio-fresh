@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { UnreadBadge } from "@/components/messages/UnreadBadge";
 import { GlassTabs } from "@/components/metro/GlassTabs";
 
-export type PulseTab = "for-you" | "following" | "trending" | "communities" | "mentors";
+export type PulseTab = "for-you" | "following" | "trending" | "communities" | "mentors" | "mine" | "followers";
 export const PULSE_TABS: { key: PulseTab; label: string; icon: typeof Home; soon?: boolean }[] = [
   { key: "for-you", label: "For You", icon: Home },
   { key: "following", label: "Following", icon: UserCheck },
