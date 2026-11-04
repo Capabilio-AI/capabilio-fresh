@@ -50,12 +50,15 @@ export interface FlowSnapshot {
 }
 
 export async function getFlowSnapshot(db: Db, userId: string, opts: { plan?: "b" | null; retake?: boolean; changeRole?: boolean } = {}): Promise<FlowSnapshot> {
-  const status = await getOnboardingStatus(db, userId);
-  const [{ data: careers }, { data: intent }, { data: me }, { data: resume }] = await Promise.all([
+  // One round of independent reads (not five in a row): this runs on every sign-in, so each saved round trip shows up as faster login.
+  const [status, { data: careers }, { data: intent }, { data: me }, { data: resume }, { count: openCount }, roleOptions] = await Promise.all([
+    getOnboardingStatus(db, userId),
     db.from("careers").select("id, key, name").eq("is_active", true).order("name"),
     db.from("student_career_intent").select("primary_career_id, secondary_career_id, is_exploring").eq("student_id", userId).maybeSingle(),
     db.from("profiles").select("student_status").eq("id", userId).maybeSingle(),
     db.from("graduate_resumes").select("skill_names").eq("user_id", userId).maybeSingle(),
+    db.from("assess_sessions").select("id", { count: "exact", head: true }).eq("student_id", userId).eq("layer", "CAREER").eq("status", "IN_PROGRESS"),
+    loadRoleOptions(db),
   ]);
   const isGraduate = isPostStudy(me?.student_status);
   const list = (careers ?? []) as CareerRef[];
@@ -79,14 +82,13 @@ export async function getFlowSnapshot(db: Db, userId: string, opts: { plan?: "b"
       graduateFocus = skills.filter((s) => claimed.has(s.skillId)).map((s) => s.name);
     }
   }
-  const { count: openCount } = await db.from("assess_sessions").select("id", { count: "exact", head: true }).eq("student_id", userId).eq("layer", "CAREER").eq("status", "IN_PROGRESS");
   const openCareer = (openCount ?? 0) > 0;
   const hasCareerResult = primary ? (await latestResult(db, userId, "CAREER", primary.id)) !== null : false;
   return {
     status, stage, careers: list, primary, secondary, hasCareerResult,
     general: { skills: GENERAL_SECTIONS.map((g) => g.label), total: GENERAL_TOTAL },
     assess, afterGeneral: !!intent?.is_exploring && !primary,
-    roleOptions: await loadRoleOptions(db),
+    roleOptions,
     commonSections: COMMON_SECTION_REGISTRY.filter((s) => s.enabled).map((s) => ({ label: s.label, questions: s.questions })),
     hasOpenCareerSession: openCareer,
     graduate: isGraduate ? { hasResume: !!resume, skills: ((resume?.skill_names as string[] | undefined) ?? []).slice(0, 18), focus: graduateFocus } : null,
