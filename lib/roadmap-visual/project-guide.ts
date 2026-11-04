@@ -56,7 +56,7 @@ export const GUIDE_SYSTEM = [
 /** Pure. The prompt is built from stored resource fields only; nothing the student typed reaches it. */
 export function buildGuidePrompt(r: Resource, careerName: string): string {
   return [
-    `Career: ${careerName}`,
+    careerName ? `Career: ${careerName}` : "",
     `Project: ${r.title}${r.difficulty ? ` (${r.difficulty.toLowerCase()})` : ""}${r.hours ? `, about ${r.hours} hours` : ""}`,
     r.description ? `Description: ${r.description}` : "",
     r.skills.length ? `Roadmap skills it builds: ${r.skills.join(", ")}` : "",
@@ -68,7 +68,7 @@ export function buildGuidePrompt(r: Resource, careerName: string): string {
 /** Pure. The prompt for the practice-data call, from the same stored resource fields. Returns empty datasets for projects that do not use data. */
 export function buildDataPrompt(r: Resource, careerName: string): string {
   return [
-    `Career: ${careerName}`,
+    careerName ? `Career: ${careerName}` : "",
     `Project: ${r.title}${r.difficulty ? ` (${r.difficulty.toLowerCase()})` : ""}`,
     r.description ? `Description: ${r.description}` : "",
     r.skills.length ? `Roadmap skills it builds: ${r.skills.join(", ")}` : "",
