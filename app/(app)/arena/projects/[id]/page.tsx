@@ -12,6 +12,7 @@ import { CopyLink } from "@/components/org/CopyLink";
 import { inviteHref } from "@/lib/org/group-invite";
 import { loadGroupMentorship } from "@/lib/org/mentorship";
 import { askableMentors } from "@/lib/org/project-notices";
+import { submitState } from "@/lib/org/submit-rules";
 import { AttachmentList } from "@/components/org/AttachmentList";
 import { ReportForm, SubmissionForm } from "@/components/org/ProjectWorkForms";
 import type { ProjectFile } from "@/lib/org/project-files";
@@ -33,6 +34,8 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
   if (!project) notFound();
   const mine = project.myGroup;
   const urls = mine ? await signProjectFiles(service, [...mine.reports.flatMap((r) => r.attachments ?? []), ...(mine.submission?.attachments ?? [])]) : new Map<string, string>();
+  const isLead = Boolean(mine?.members.some((m) => m.user_id === ctx.userId && m.role === "lead"));
+  const submit = mine ? submitState(mine.group, isLead) : null;
   const mentorship = mine ? await loadGroupMentorship(service, mine.group.id, ctx.institutionId, mine.members.map((m) => m.user_id)) : null;
   const open = project.acceptingWork;
 
@@ -127,7 +130,7 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
                 </li>
               ))}
             </ul>
-            {mine.group.status === "forming" && <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">Waiting for {project.team_size - mine.members.length} more member(s) before you can submit.</p>}
+            {mine.group.status === "forming" && <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">{mine.members.length} of {project.team_size} members. You can wait for {project.team_size - mine.members.length} more, or {isLead ? "submit with the people who are in the group" : "ask your group lead to submit with the current members"}.</p>}
             {(mine.group.status === "forming" || mine.group.status === "active") && (
               <div className="mt-3">
                 <ActionButton action="/api/classroom/groups/leave" body={{ groupId: mine.group.id }} label="Leave group" variant="danger" confirm="Leave this group?" />
@@ -223,10 +226,12 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
             </section>
           )}
 
-          {mine.group.status !== "forming" && project.submission_type === "in_app" && mine.group.status !== "graded" && (
+          {project.submission_type === "in_app" && submit !== "graded" && (
             <section className="rounded-2xl border border-[var(--m-rule)] bg-white p-6 sm:p-7">
               <h2 className="font-lp-display text-[18px] font-bold text-[var(--m-ink)]">Final submission</h2>
               <p className="mb-5 mt-1 font-lp-body text-[13px] text-app-muted">Submit your project as a link, files or both. Your faculty is notified and grades the whole group together.</p>
+              {submit === "small-lead" && <p className="mb-5 rounded-xl border border-[var(--m-rule)] bg-app-background px-4 py-3 font-lp-body text-[12.5px] text-[var(--m-ink)]">Your group has {mine.members.length} of {project.team_size} members. If you submit now, the group closes and nobody else can join.</p>}
+              {submit === "small-wait" && <p className="mb-5 rounded-xl border border-[var(--m-rule)] bg-app-background px-4 py-3 font-lp-body text-[12.5px] text-[var(--m-ink)]">Your group has {mine.members.length} of {project.team_size} members. Only your group lead can submit it before it is full.</p>}
               {mine.submission && (
                 <div className="mb-6 rounded-xl border border-[var(--m-rule)] bg-app-background p-4">
                   <p className="font-lp-body text-[12.5px] font-semibold text-[var(--m-ink)]">Submitted {formatDateTime(mine.submission.submitted_at)}</p>
@@ -237,7 +242,7 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
                   <p className="mt-3 font-lp-body text-[12px] text-app-muted">You can resubmit until it is graded.</p>
                 </div>
               )}
-              {open && <SubmissionForm key={mine.submission?.submitted_at ?? "new"} groupId={mine.group.id} resubmit={Boolean(mine.submission)} initialLink={mine.submission?.link_url ?? undefined} initialFiles={mine.submission?.attachments ?? []} />}
+              {open && submit !== "small-wait" && <SubmissionForm closesGroup={submit === "small-lead"} key={mine.submission?.submitted_at ?? "new"} groupId={mine.group.id} resubmit={Boolean(mine.submission)} initialLink={mine.submission?.link_url ?? undefined} initialFiles={mine.submission?.attachments ?? []} />}
             </section>
           )}
           {mine.submission && mine.group.status === "graded" && (

@@ -159,7 +159,7 @@ export function ReportForm({ groupId, nextWeek, existing = [] }: { groupId: stri
 }
 
 /** The final submission: a link, images or PDFs, or all of them. Resubmitting replaces the earlier submission until it is graded. */
-export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles }: { groupId: string; resubmit: boolean; initialLink?: string; initialFiles?: ProjectFile[] }) {
+export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles, closesGroup = false }: { groupId: string; resubmit: boolean; initialLink?: string; initialFiles?: ProjectFile[]; closesGroup?: boolean }) {
   const [link, setLink] = useState(initialLink ?? "");
   const [files, setFiles] = useState<ProjectFile[]>(initialFiles ?? []);
   const { busy, message, send } = useSubmit("/api/classroom/submissions", () => undefined);
@@ -167,6 +167,7 @@ export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles }:
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (closesGroup && !window.confirm("Your group is not full. Submitting closes it, and nobody else can join. Submit now?")) return;
     void send({ groupId, linkUrl: link.trim() || undefined, attachments: files }, resubmit ? "Resubmitted." : "Submitted. Your faculty has been told.");
   }
   return (
