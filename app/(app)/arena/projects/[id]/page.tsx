@@ -10,6 +10,8 @@ import { JsonForm } from "@/components/org/JsonForm";
 import { EmptyState, Pill, formatDateTime } from "@/components/org/ui";
 import { CopyLink } from "@/components/org/CopyLink";
 import { inviteHref } from "@/lib/org/group-invite";
+import { loadGroupMentorship } from "@/lib/org/mentorship";
+import { askableMentors } from "@/lib/org/project-notices";
 
 export const metadata: Metadata = { title: "Project — Capabilio AI" };
 
@@ -26,6 +28,7 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
   const project = (await loadStudentProjects(service, ctx)).find((p) => p.id === id);
   if (!project) notFound();
   const mine = project.myGroup;
+  const mentorship = mine ? await loadGroupMentorship(service, mine.group.id, ctx.institutionId, mine.members.map((m) => m.user_id)) : null;
   const open = project.acceptingWork;
 
   return (
@@ -150,6 +153,56 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
                     </li>
                   ))}
                 </ul>
+              )}
+            </section>
+          )}
+
+          {mentorship && mine.group.status !== "graded" && (
+            <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
+              <h2 className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Mentor</h2>
+              {mentorship.mentor ? (
+                <p className="mt-1 font-lp-body text-[13px] text-[var(--m-ink)]">{mentorship.mentor.name} <span className="text-app-muted">({mentorship.mentor.role === "hod" ? "HoD" : "faculty"}) is mentoring your group.</span></p>
+              ) : (
+                <>
+                  <p className="mb-3 mt-1 font-lp-body text-[12.5px] text-app-muted">Ask a faculty member to mentor your group. They can accept, or decline and tell you why.</p>
+                  {mentorship.requests.filter((r) => r.status !== "cancelled").length > 0 && (
+                    <ul className="mb-4 divide-y divide-app-border">
+                      {mentorship.requests.filter((r) => r.status !== "cancelled").map((r) => (
+                        <li key={r.id} className="flex flex-wrap items-start justify-between gap-2 py-2.5">
+                          <div className="min-w-0">
+                            <p className="font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">{r.mentorName}</p>
+                            {r.status === "rejected" && <p className="mt-0.5 max-w-xl font-lp-body text-[12.5px] text-app-muted">Declined{r.reason ? `: ${r.reason}` : "."}</p>}
+                          </div>
+                          {r.status === "pending" ? (
+                            <span className="flex items-center gap-2">
+                              <Pill tone="warn">Waiting for an answer</Pill>
+                              <ActionButton action="/api/classroom/mentors/cancel" body={{ requestId: r.id }} label="Cancel" variant="ghost" />
+                            </span>
+                          ) : (
+                            <Pill tone="neutral">Declined</Pill>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {(() => {
+                    const options = askableMentors(mentorship.options, mentorship.requests.map((r) => ({ mentorMembershipId: r.mentorMembershipId, status: r.status })));
+                    return options.length === 0 ? (
+                      <p className="font-lp-body text-[12.5px] text-app-muted">No other faculty to ask right now.</p>
+                    ) : (
+                      <JsonForm
+                        action="/api/classroom/mentors/request"
+                        extra={{ groupId: mine.group.id }}
+                        submitLabel="Send request"
+                        successMessage="Request sent."
+                        fields={[
+                          { name: "mentorMembershipId", label: "Faculty member", type: "select", required: true, options: [{ value: "", label: "Choose…" }, ...options.map((o) => ({ value: o.membershipId, label: `${o.name} (${o.role === "hod" ? "HoD" : "faculty"}${o.branch ? `, ${o.branch}` : ""})` }))] },
+                          { name: "message", label: "Message (optional)", type: "textarea", placeholder: "What you are building and why you would like their guidance." },
+                        ]}
+                      />
+                    );
+                  })()}
+                </>
               )}
             </section>
           )}

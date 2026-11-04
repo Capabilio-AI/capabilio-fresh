@@ -33,6 +33,8 @@ export interface ProjectProgress {
   /** the first few students who have not joined a group, by name */
   notInGroup: { userId: string; name: string; branch: string | null }[];
   notInGroupTotal: number;
+  /** every student not in a group (ids only), for reminders */
+  notInGroupIds: string[];
   counts: GroupCounts;
 }
 
@@ -66,6 +68,7 @@ export async function loadProjectProgress(service: Service, project: ProjectRow,
     inGroup: eligible.length - waiting.length,
     notInGroup: shown.map((s) => ({ userId: s.user_id, name: names.get(s.user_id) ?? "Student", branch: s.branch })),
     notInGroupTotal: waiting.length,
+    notInGroupIds: waiting.map((s) => s.user_id),
     counts: countGroups(groups),
   };
 }

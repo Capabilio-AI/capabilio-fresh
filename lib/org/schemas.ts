@@ -43,6 +43,13 @@ export const ProjectSchema = z
 export const ProjectStatusSchema = z.object({ projectId: uuid, status: z.enum(["open", "closed", "archived"]) }).strict();
 export const GroupCreateSchema = z.object({ projectId: uuid, name: z.string().trim().min(1).max(80) }).strict();
 export const GroupIdSchema = z.object({ groupId: uuid }).strict();
+export const MentorRequestSchema = z.object({ groupId: uuid, mentorMembershipId: uuid, message: z.string().trim().max(500).optional() }).strict();
+export const MentorDecisionSchema = z
+  .object({ requestId: uuid, decision: z.enum(["accept", "reject"]), reason: z.string().trim().max(500).optional() })
+  .strict()
+  .refine((v) => v.decision === "accept" || (v.reason ?? "").length >= 3, { message: "Give a reason of at least 3 characters." });
+export const AddMemberSchema = z.object({ groupId: uuid, userId: uuid }).strict();
+export const ProjectRemindSchema = z.object({ projectId: uuid }).strict();
 export const JoinRequestIdSchema = z.object({ requestId: uuid }).strict();
 export const JoinRequestDecisionSchema = z.object({ requestId: uuid, decision: z.enum(["accept", "reject"]) }).strict();
 export const ReportSchema = z

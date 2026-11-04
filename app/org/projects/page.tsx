@@ -6,13 +6,16 @@ import { listProjectsForStaff, listSubjects } from "@/lib/org/loaders";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Pill, formatDateTime } from "@/components/org/ui";
 import { GroupTitle, Meter } from "@/components/org/widgets";
+import { ActionButton } from "@/components/org/ActionButton";
+import { RejectWithReason } from "@/components/org/RejectWithReason";
+import { loadMentorInbox } from "@/lib/org/mentorship";
 
 export const metadata: Metadata = { title: "Projects — Capabilio AI" };
 
 export default async function OrgProjectsPage() {
   const { ctx, service } = await orgPageContext("createProject");
   const scope = staffBranchScope(ctx);
-  const [projects, subjects] = await Promise.all([listProjectsForStaff(service, ctx), listSubjects(service, ctx.institutionId, scope)]);
+  const [projects, subjects, inbox] = await Promise.all([listProjectsForStaff(service, ctx), listSubjects(service, ctx.institutionId, scope), loadMentorInbox(service, ctx)]);
 
   const now = new Date().getTime();
   const needsGrading = projects.filter((p) => p.submitted > p.graded);
@@ -30,6 +33,47 @@ export default async function OrgProjectsPage() {
         title="Projects"
         subtitle={scope ? `Post a project brief for ${scope}. Only ${scope} students see it, in Arena, and form groups of four themselves. Only your final grade becomes evidence on each member's Portfolio.` : "Post a project brief. Students form groups of four themselves, across departments unless you restrict it. Only your final grade becomes evidence on each member's Portfolio."}
       />
+      {(inbox.pending.length > 0 || inbox.mentoring.length > 0) && (
+        <section aria-label="Mentoring" className="flex flex-col gap-4">
+          {inbox.pending.length > 0 && (
+            <div>
+              <GroupTitle count={inbox.pending.length}>Mentor requests</GroupTitle>
+              <ul className="o-card divide-y divide-app-border">
+                {inbox.pending.map((r) => (
+                  <li key={r.id} className="flex flex-wrap items-start justify-between gap-3 p-4">
+                    <div className="min-w-0">
+                      <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{r.groupName}</p>
+                      <p className="font-lp-body text-[12.5px] text-app-muted">{r.projectTitle} · asked by {r.requestedBy} · {formatDateTime(r.createdAt)}</p>
+                      {r.message && <p className="mt-1.5 max-w-xl whitespace-pre-wrap font-lp-body text-[13px] text-app-charcoal">“{r.message}”</p>}
+                    </div>
+                    <div className="flex flex-wrap items-start gap-2">
+                      <ActionButton action="/api/org/mentor-requests/decide" body={{ requestId: r.id, decision: "accept" }} label="Accept" />
+                      <RejectWithReason action="/api/org/mentor-requests/decide" body={{ requestId: r.id, decision: "reject" }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {inbox.mentoring.length > 0 && (
+            <div>
+              <GroupTitle count={inbox.mentoring.length}>Groups you mentor</GroupTitle>
+              <ul className="grid gap-3 md:grid-cols-2">
+                {inbox.mentoring.map((g) => (
+                  <li key={g.groupId} className="o-card p-4">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-lp-body text-[14px] font-semibold text-app-charcoal">{g.groupName}</p>
+                      <Pill tone={g.status === "graded" ? "ok" : g.status === "forming" ? "warn" : "neutral"}>{g.status}</Pill>
+                    </div>
+                    <p className="font-lp-body text-[12.5px] text-app-muted">{g.projectTitle}</p>
+                    <p className="mt-2 font-lp-body text-[12.5px] text-app-charcoal">{g.members.join(", ")}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
       <Collapsible title="New project">
         <JsonForm
           action="/api/org/projects"

@@ -7,6 +7,8 @@ import { loadManagedProject } from "@/lib/org/project-access";
 import { loadProjectGroups } from "@/lib/org/loaders";
 import { loadProjectProgress, orderForStaff } from "@/lib/org/project-progress";
 import { ActionButton } from "@/components/org/ActionButton";
+import { AddToGroup } from "@/components/org/AddToGroup";
+import { loadProjectMentors } from "@/lib/org/mentorship";
 import { JsonForm } from "@/components/org/JsonForm";
 import { EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
 
@@ -23,6 +25,8 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
   const allGroups = await loadProjectGroups(service, project.id);
   const progress = await loadProjectProgress(service, project, allGroups);
   const groups = orderForStaff(allGroups);
+  const mentors = await loadProjectMentors(service, project.id);
+  const openGroups = allGroups.filter((g) => g.group.status === "forming" && g.members.length < project.team_size).map((g) => ({ id: g.group.id, label: `${g.group.name} (${g.members.length}/${project.team_size})` }));
   const { counts } = progress;
 
   return (
@@ -77,11 +81,20 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
         {progress.notInGroup.length > 0 && (
           <details className="mt-4">
             <summary className="cursor-pointer font-lp-body text-[13px] font-semibold text-app-orange hover:underline">Students not in a group yet ({progress.notInGroupTotal.toLocaleString("en-IN")})</summary>
-            <ul className="mt-2 grid gap-x-6 gap-y-1 font-lp-body text-[13px] text-app-charcoal sm:grid-cols-2">
+            {project.status === "open" && (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <ActionButton action="/api/org/projects/remind" body={{ projectId: project.id }} label={`Remind ${progress.notInGroupTotal.toLocaleString("en-IN")} student${progress.notInGroupTotal === 1 ? "" : "s"}`} variant="ghost" />
+                <span className="font-lp-body text-[12px] text-app-muted">Sends a notification. Once a day at most.</span>
+              </div>
+            )}
+            <ul className="mt-3 flex flex-col divide-y divide-app-border font-lp-body text-[13px] text-app-charcoal">
               {progress.notInGroup.map((s) => (
-                <li key={s.userId} className="truncate">
-                  {s.name}
-                  {s.branch && <span className="text-app-muted"> · {s.branch}</span>}
+                <li key={s.userId} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <span className="min-w-0 truncate">
+                    {s.name}
+                    {s.branch && <span className="text-app-muted"> · {s.branch}</span>}
+                  </span>
+                  {project.status === "open" && <AddToGroup userId={s.userId} groups={openGroups} />}
                 </li>
               ))}
             </ul>
@@ -123,6 +136,8 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                   </li>
                 ))}
               </ul>
+
+              {mentors.get(group.id) && <p className="mt-2 font-lp-body text-[12.5px] text-app-muted">Mentor: <span className="font-semibold text-app-charcoal">{mentors.get(group.id)}</span></p>}
 
               <div className="mt-4">
                 <h3 className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">Weekly reports</h3>
