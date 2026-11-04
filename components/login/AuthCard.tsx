@@ -94,10 +94,6 @@ export function AuthCard({ path = "student" }: { path?: AuthPath }) {
     if (redirectPath) router.push(redirectPath);
   }, [redirectPath, router]);
 
-  // Warm every landing page while the person is still typing, so the click after sign-in opens an already-loaded shell.
-  useEffect(() => {
-    for (const to of ["/assessment", "/dashboard", "/org", "/company"]) router.prefetch(to);
-  }, [router]);
 
   /** Shared by the password step and the second-factor step: both end in the same outcomes. */
   const handleOutcome = (outcome: AuthOutcome) => {
