@@ -8,13 +8,16 @@ import { loadStudentProjects } from "@/lib/org/loaders";
 import { ActionButton } from "@/components/org/ActionButton";
 import { JsonForm } from "@/components/org/JsonForm";
 import { EmptyState, Pill, formatDateTime } from "@/components/org/ui";
+import { CopyLink } from "@/components/org/CopyLink";
+import { inviteHref } from "@/lib/org/group-invite";
 
 export const metadata: Metadata = { title: "Project — Capabilio AI" };
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
-export default async function ClassroomProjectPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClassroomProjectPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ group?: string }> }) {
   const { id } = await params;
+  const invited = (await searchParams).group;
   if (!UUID.test(id)) notFound();
   const { supabase, user } = await requireAuthedUser();
   const ctx = await getOrgContext(supabase, user.id);
@@ -42,6 +45,20 @@ export default async function ClassroomProjectPage({ params }: { params: Promise
 
       {!mine ? (
         <>
+          {open && project.openGroups.some((g) => g.group.id === invited) && (() => {
+            const g = project.openGroups.find((x) => x.group.id === invited)!;
+            const req = project.myRequests[g.group.id];
+            return (
+              <section className="rounded-xl border-2 border-[var(--m-ink)] bg-white p-5">
+                <p className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">You were invited</p>
+                <h2 className="mt-1 font-lp-body text-[16px] font-semibold text-[var(--m-ink)]">{g.group.name}</h2>
+                <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">{g.memberCount}/{project.team_size} members. The group lead will accept or reject your request.</p>
+                <div className="mt-3">
+                  {req?.status === "pending" ? <Pill tone="warn">Request sent. Waiting for the lead.</Pill> : req?.status === "rejected" ? <Pill tone="neutral">The lead declined this request</Pill> : <ActionButton action="/api/classroom/groups/join" body={{ groupId: g.group.id }} label="Request to join" />}
+                </div>
+              </section>
+            );
+          })()}
           {open ? (
             <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
               <h2 className="mb-1 font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Start a group</h2>
@@ -66,7 +83,18 @@ export default async function ClassroomProjectPage({ params }: { params: Promise
                         {g.memberBranches.length ? ` · ${g.memberBranches.join(", ")}` : ""}
                       </p>
                     </div>
-                    {open && <ActionButton action="/api/classroom/groups/join" body={{ groupId: g.group.id }} label="Join" />}
+                    {open && (() => {
+                      const req = project.myRequests[g.group.id];
+                      if (req?.status === "rejected") return <Pill tone="neutral">Declined</Pill>;
+                      if (req?.status === "pending")
+                        return (
+                          <span className="flex items-center gap-2">
+                            <Pill tone="warn">Request sent</Pill>
+                            <ActionButton action="/api/classroom/groups/requests/cancel" body={{ requestId: req.id }} label="Cancel" variant="ghost" />
+                          </span>
+                        );
+                      return <ActionButton action="/api/classroom/groups/join" body={{ groupId: g.group.id }} label="Request to join" />;
+                    })()}
                   </li>
                 ))}
               </ul>
@@ -98,6 +126,33 @@ export default async function ClassroomProjectPage({ params }: { params: Promise
               </div>
             )}
           </section>
+
+          {mine.group.status === "forming" && mine.members.some((m) => m.user_id === ctx.userId && m.role === "lead") && (
+            <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
+              <h2 className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Invite classmates</h2>
+              <p className="mb-3 mt-1 font-lp-body text-[12.5px] text-app-muted">Share this link. Classmates who open it can ask to join, and you accept or reject each request.</p>
+              <CopyLink path={inviteHref(project.id, mine.group.id)} />
+              <h3 className="mt-5 font-lp-body text-[13px] font-semibold text-[var(--m-ink)]">Join requests{project.joinRequests.length ? ` (${project.joinRequests.length})` : ""}</h3>
+              {project.joinRequests.length === 0 ? (
+                <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">No requests yet.</p>
+              ) : (
+                <ul className="mt-2 divide-y divide-app-border">
+                  {project.joinRequests.map((r) => (
+                    <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                      <div>
+                        <p className="font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">{r.name}</p>
+                        <p className="font-lp-mono text-[11px] text-app-muted">Asked {formatDateTime(r.createdAt)}</p>
+                      </div>
+                      <span className="flex items-center gap-2">
+                        <ActionButton action="/api/classroom/groups/requests/decide" body={{ requestId: r.id, decision: "accept" }} label="Accept" />
+                        <ActionButton action="/api/classroom/groups/requests/decide" body={{ requestId: r.id, decision: "reject" }} label="Reject" variant="ghost" confirm={`Reject ${r.name}'s request? They will not be able to ask this group again.`} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
           {mine.group.status === "graded" && mine.grade && (
             <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">

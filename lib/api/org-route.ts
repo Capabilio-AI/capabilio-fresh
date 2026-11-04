@@ -25,6 +25,9 @@ const DB_ERRORS: Record<string, [number, string]> = {
   in_app_submission_only: [409, "This project takes in-app submissions."],
   invalid_grade: [400, "Enter a grade of 1-10 characters."],
   invalid_contribution_notes: [400, "Contribution notes may only name members of the group."],
+  request_rejected: [409, "The group lead declined your request to join this group."],
+  request_not_found: [404, "That request no longer exists."],
+  request_not_pending: [409, "That request was already answered."],
   group_not_found: [404, "Group not found."],
   project_not_found: [404, "Project not found."],
 };

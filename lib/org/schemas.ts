@@ -43,6 +43,8 @@ export const ProjectSchema = z
 export const ProjectStatusSchema = z.object({ projectId: uuid, status: z.enum(["open", "closed", "archived"]) }).strict();
 export const GroupCreateSchema = z.object({ projectId: uuid, name: z.string().trim().min(1).max(80) }).strict();
 export const GroupIdSchema = z.object({ groupId: uuid }).strict();
+export const JoinRequestIdSchema = z.object({ requestId: uuid }).strict();
+export const JoinRequestDecisionSchema = z.object({ requestId: uuid, decision: z.enum(["accept", "reject"]) }).strict();
 export const ReportSchema = z
   .object({ groupId: uuid, weekNumber: z.coerce.number().int().min(1).max(52), content: z.string().trim().min(1).max(5000), attachmentUrl: optionalUrl })
   .strict();
