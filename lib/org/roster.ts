@@ -8,6 +8,8 @@ import { getTier } from "@/lib/portfolio/elo";
 export interface RosterRow {
   userId: string;
   name: string;
+  /** the student's profile picture, when they have one */
+  avatarUrl: string | null;
   branch: string | null;
   endYear: number | null;
   rollNumber: string | null;
@@ -78,13 +80,14 @@ export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgCont
 
   const since = new Date(Date.now() - 30 * DAY).toISOString();
   const [profiles, members, evidence, arena, elos] = await Promise.all([
-    service.from("profiles").select("id, full_name, email").in("id", ids),
+    service.from("profiles").select("id, full_name, email, avatar_url").in("id", ids),
     untyped(service).from("class_project_group_members").select("user_id").in("user_id", ids),
     service.from("evidence").select("user_id").in("user_id", ids).eq("evidence_type", "staff_graded_project"),
     service.from("arena_attempt_completions").select("user_id").in("user_id", ids).gte("completed_at", since),
     loadElos(service, ids),
   ]);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
+  const avatars = new Map((profiles.data ?? []).map((p) => [p.id, p.avatar_url ?? null]));
   const tally = (rows: { user_id: string }[] | null) => {
     const m = new Map<string, number>();
     for (const r of rows ?? []) m.set(r.user_id, (m.get(r.user_id) ?? 0) + 1);
@@ -98,6 +101,7 @@ export async function loadRoster(service: SupabaseClient<Database>, ctx: OrgCont
     .map((m): RosterRow => ({
       userId: m.user_id,
       name: names.get(m.user_id) ?? "Student",
+      avatarUrl: avatars.get(m.user_id) ?? null,
       branch: m.branch,
       endYear: m.end_year,
       rollNumber: m.roll_number,
@@ -130,6 +134,8 @@ export interface RosterOverview {
   rows: RosterRow[];
   page: number;
   pageCount: number;
+  /** every student matching the filters (ids only), so the page can summarise the whole cohort, not just the 25 shown */
+  visibleIds: string[];
 }
 
 export const PAGE_SIZE = 25;
@@ -202,17 +208,18 @@ export async function loadRosterOverview(service: SupabaseClient<Database>, ctx:
   const page = Math.min(Math.max(1, f.page ?? 1), pageCount);
   const slice = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const ids = slice.map((m) => m.user_id);
-  if (ids.length === 0) return { total, matrix: { branches, years, cells, branchTotals, yearTotals }, rollFlagged, incomplete, matched, rows: [], page, pageCount };
+  if (ids.length === 0) return { total, matrix: { branches, years, cells, branchTotals, yearTotals }, rollFlagged, incomplete, matched, rows: [], page, pageCount, visibleIds: [] };
 
   const since = new Date(Date.now() - 30 * DAY).toISOString();
   const [profiles, groupRows, evidence, arena, elos] = await Promise.all([
-    service.from("profiles").select("id, full_name, email").in("id", ids),
+    service.from("profiles").select("id, full_name, email, avatar_url").in("id", ids),
     untyped(service).from("class_project_group_members").select("user_id").in("user_id", ids),
     service.from("evidence").select("user_id").in("user_id", ids).eq("evidence_type", "staff_graded_project"),
     service.from("arena_attempt_completions").select("user_id").in("user_id", ids).gte("completed_at", since),
     loadElos(service, ids),
   ]);
   const names = new Map((profiles.data ?? []).map((p) => [p.id, p.full_name ?? p.email]));
+  const avatars = new Map((profiles.data ?? []).map((p) => [p.id, p.avatar_url ?? null]));
   const tally = (rows: { user_id: string }[] | null) => {
     const m = new Map<string, number>();
     for (const r of rows ?? []) m.set(r.user_id, (m.get(r.user_id) ?? 0) + 1);
@@ -224,6 +231,7 @@ export async function loadRosterOverview(service: SupabaseClient<Database>, ctx:
   const rows = slice.map((m): RosterRow => ({
     userId: m.user_id,
     name: names.get(m.user_id) ?? "Student",
+    avatarUrl: avatars.get(m.user_id) ?? null,
     branch: m.branch,
     endYear: m.end_year,
     rollNumber: m.roll_number,
@@ -233,5 +241,5 @@ export async function loadRosterOverview(service: SupabaseClient<Database>, ctx:
     arenaLast30: arenaCounts.get(m.user_id) ?? 0,
     elo: elos.get(m.user_id) ?? null,
   }));
-  return { total, matrix: { branches, years, cells, branchTotals, yearTotals }, rollFlagged, incomplete, matched, rows, page, pageCount };
+  return { total, matrix: { branches, years, cells, branchTotals, yearTotals }, rollFlagged, incomplete, matched, rows, page, pageCount, visibleIds: visible.map((m) => m.user_id) };
 }
