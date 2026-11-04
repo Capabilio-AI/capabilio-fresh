@@ -1,22 +1,39 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ConnectionState, Room, RoomEvent, Track, type Participant } from "livekit-client";
 import type { CallKind } from "@/lib/pulse/call-rules";
 import { RING_SECONDS } from "@/lib/pulse/call-rules";
 import type { PersonSummary } from "@/lib/pulse/people";
 import { useMessaging } from "./MessagingProvider";
 
 export type CallPhase = "idle" | "outgoing" | "incoming" | "connecting" | "active";
+/** One person's tile in the call: their camera when it is on, otherwise their picture. */
+export interface CallTile {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+  isLocal: boolean;
+  speaking: boolean;
+  micOn: boolean;
+  /** their camera track, when it is on (attach it to a video element) */
+  video: Track | null;
+}
+export interface RingingPerson { id: string; name: string | null; avatarUrl: string | null }
 export interface CallState {
   phase: CallPhase;
   kind: CallKind;
+  /** the person who rang you, or the person you rang */
   peer: PersonSummary | null;
+  /** someone was added: more than two people are (or were) in this call */
+  group: boolean;
   muted: boolean;
   cameraOff: boolean;
-  /** when the media connected, for the timer */
+  /** when the call connected, for the timer */
   startedAt: number | null;
-  localStream: MediaStream | null;
-  remoteStream: MediaStream | null;
+  tiles: CallTile[];
+  /** people added to the call who have not answered yet */
+  ringing: RingingPerson[];
   /** a message to show once, e.g. why a call could not start */
   notice: string | null;
 }
@@ -30,10 +47,12 @@ interface Ctx {
   hangup: () => void;
   toggleMute: () => void;
   toggleCamera: () => void;
+  /** add people to the call in progress; resolves to a message when some could not be added, or null */
+  invite: (userIds: string[]) => Promise<string | null>;
   dismissNotice: () => void;
 }
 
-const IDLE: CallState = { phase: "idle", kind: "voice", peer: null, muted: false, cameraOff: false, startedAt: null, localStream: null, remoteStream: null, notice: null };
+const IDLE: CallState = { phase: "idle", kind: "voice", peer: null, group: false, muted: false, cameraOff: false, startedAt: null, tiles: [], ringing: [], notice: null };
 const CallContext = createContext<Ctx | null>(null);
 export function useCall(): Ctx {
   const ctx = useContext(CallContext);
@@ -42,9 +61,7 @@ export function useCall(): Ctx {
 }
 
 const INCOMING_TIMEOUT_MS = (RING_SECONDS + 5) * 1000;
-const OFFER_TIMEOUT_MS = 20_000;
-const DISCONNECT_GRACE_MS = 10_000;
-type Ice = { iceServers: RTCIceServer[] };
+const CONNECT_TIMEOUT_MS = 25_000;
 
 const post = (url: string, body?: unknown, keepalive = false) =>
   fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), keepalive });
@@ -55,6 +72,12 @@ function mediaMessage(error: unknown): string {
   if (name === "NotFoundError" || name === "OverconstrainedError") return "No microphone or camera was found on this device.";
   if (name === "NotReadableError") return "Your microphone or camera is being used by another app.";
   return "Couldn't access your microphone or camera.";
+}
+
+/** Asks for the microphone (and camera) now, so a refusal is reported before anyone's phone rings. The tracks are released straight away. */
+async function probeMedia(kind: CallKind): Promise<void> {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: kind === "video" });
+  stream.getTracks().forEach((t) => t.stop());
 }
 
 /** A soft two-tone ring while a call rings. Browsers only allow sound after the person has used the page, so this fails silently otherwise. */
@@ -92,22 +115,22 @@ function useRingtone(on: boolean) {
 }
 
 /**
- * One-to-one voice and video calls. Signalling (offer, answer, ICE candidates) travels through the server over each person's private
- * channel; the media itself goes peer to peer, or through the TURN relay when a network blocks that.
+ * Voice and video calls, one to one or in a group. The server decides who may be in a call and hands each person a short-lived token; the
+ * audio and video themselves run through LiveKit, which connects people through firewalls and carries a whole group. Ringing, answering and
+ * adding people go through the server and each person's private channel.
  */
 export function CallProvider({ children }: { children: ReactNode }) {
   const { subscribe } = useMessaging();
   const [state, setState] = useState<CallState>(IDLE);
-  const [supported] = useState(() => typeof window !== "undefined" && window.isSecureContext && Boolean(navigator.mediaDevices?.getUserMedia) && typeof RTCPeerConnection !== "undefined");
+  const [supported] = useState(() => typeof window !== "undefined" && window.isSecureContext && Boolean(navigator.mediaDevices?.getUserMedia));
 
   const callId = useRef<string | null>(null);
   const role = useRef<"caller" | "callee" | null>(null);
-  const ice = useRef<Ice | null>(null);
   const kindRef = useRef<CallKind>("voice");
-  const pc = useRef<RTCPeerConnection | null>(null);
-  const local = useRef<MediaStream | null>(null);
-  const pendingCandidates = useRef<RTCIceCandidateInit[]>([]);
-  const timers = useRef<{ ring?: ReturnType<typeof setTimeout>; offer?: ReturnType<typeof setTimeout>; drop?: ReturnType<typeof setTimeout> }>({});
+  const room = useRef<Room | null>(null);
+  const audioEls = useRef<HTMLMediaElement[]>([]);
+  const people = useRef(new Map<string, { name: string | null; avatarUrl: string | null }>());
+  const timers = useRef<{ ring?: ReturnType<typeof setTimeout>; connect?: ReturnType<typeof setTimeout> }>({});
   const acceptedHere = useRef(false);
 
   const clearTimers = () => {
@@ -117,101 +140,111 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
   const cleanup = useCallback((notice: string | null = null) => {
     clearTimers();
-    pc.current?.close();
-    pc.current = null;
-    local.current?.getTracks().forEach((t) => t.stop());
-    local.current = null;
-    pendingCandidates.current = [];
+    audioEls.current.forEach((el) => el.remove());
+    audioEls.current = [];
+    const r = room.current;
+    room.current = null;
+    if (r) void r.disconnect().catch(() => undefined);
     callId.current = null;
     role.current = null;
-    ice.current = null;
     acceptedHere.current = false;
+    people.current.clear();
     setState({ ...IDLE, notice });
   }, []);
 
-  const send = useCallback((kind: "offer" | "answer" | "candidate", data: unknown) => {
-    if (callId.current) void post(`/api/pulse/calls/${callId.current}/signal`, { kind, data });
+  /** Rebuilds the tiles from who is in the room right now. */
+  const rebuild = useCallback(() => {
+    const r = room.current;
+    if (!r) return;
+    const tile = (p: Participant, isLocal: boolean): CallTile => {
+      const known = people.current.get(p.identity);
+      const cam = p.getTrackPublication(Track.Source.Camera);
+      return { id: p.identity, name: p.name || known?.name || null, avatarUrl: known?.avatarUrl ?? null, isLocal, speaking: p.isSpeaking, micOn: p.isMicrophoneEnabled, video: cam?.track && !cam.isMuted ? cam.track : null };
+    };
+    const tiles = [tile(r.localParticipant, true), ...[...r.remoteParticipants.values()].map((p) => tile(p, false))];
+    setState((s) => ({ ...s, tiles, muted: !r.localParticipant.isMicrophoneEnabled, cameraOff: !r.localParticipant.isCameraEnabled, group: s.group || tiles.length > 2 }));
   }, []);
 
-  const createPeer = useCallback(() => {
-    const peer = new RTCPeerConnection({ iceServers: ice.current?.iceServers ?? [] });
-    pc.current = peer;
-    local.current?.getTracks().forEach((t) => peer.addTrack(t, local.current as MediaStream));
-    peer.onicecandidate = (e) => {
-      if (e.candidate) send("candidate", e.candidate.toJSON());
-    };
-    peer.ontrack = (e) => {
-      const stream = e.streams[0] ?? new MediaStream([e.track]);
-      setState((s) => ({ ...s, remoteStream: stream }));
-    };
-    peer.onconnectionstatechange = () => {
-      if (timers.current.drop) clearTimeout(timers.current.drop);
-      if (peer.connectionState === "connected") {
-        if (timers.current.offer) clearTimeout(timers.current.offer);
-        setState((s) => (s.phase === "active" ? s : { ...s, phase: "active", startedAt: Date.now() }));
-      } else if (peer.connectionState === "failed") {
-        if (callId.current) void post(`/api/pulse/calls/${callId.current}/end`);
-        cleanup("The call couldn't connect. Check your connection and try again.");
-      } else if (peer.connectionState === "disconnected") {
-        timers.current.drop = setTimeout(() => {
-          if (callId.current) void post(`/api/pulse/calls/${callId.current}/end`);
-          cleanup("The call dropped.");
-        }, DISCONNECT_GRACE_MS);
+  /** Joins the call's room with a token from the server and starts the microphone (and camera for a video call). */
+  const connect = useCallback(async (id: string) => {
+    setState((s) => ({ ...s, phase: "connecting" }));
+    timers.current.connect = setTimeout(() => {
+      void post(`/api/pulse/calls/${id}/end`);
+      cleanup("The call couldn't connect. Check your connection and try again.");
+    }, CONNECT_TIMEOUT_MS);
+    try {
+      const res = await post(`/api/pulse/calls/${id}/token`);
+      const json = (await res.json().catch(() => null)) as { token?: string; url?: string; error?: string } | null;
+      if (!res.ok || !json?.token || !json.url) {
+        void post(`/api/pulse/calls/${id}/end`);
+        return cleanup(json?.error ?? "The call couldn't connect.");
       }
-    };
-    return peer;
-  }, [cleanup, send]);
-
-  const flushCandidates = useCallback(async () => {
-    const peer = pc.current;
-    if (!peer?.remoteDescription) return;
-    for (const c of pendingCandidates.current.splice(0)) await peer.addIceCandidate(c).catch(() => undefined);
-  }, []);
-
-  const getMedia = useCallback(async (kind: CallKind) => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: kind === "video" ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false });
-    local.current = stream;
-    return stream;
-  }, []);
+      const r = new Room({ adaptiveStream: true, dynacast: true, audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      room.current = r;
+      r.on(RoomEvent.TrackSubscribed, (track) => {
+        if (track.kind === Track.Kind.Audio) {
+          const el = track.attach();
+          el.style.display = "none";
+          document.body.appendChild(el);
+          audioEls.current.push(el);
+        }
+        rebuild();
+      });
+      r.on(RoomEvent.TrackUnsubscribed, (track) => {
+        track.detach().forEach((el) => { el.remove(); audioEls.current = audioEls.current.filter((x) => x !== el); });
+        rebuild();
+      });
+      for (const e of [RoomEvent.ParticipantConnected, RoomEvent.ParticipantDisconnected, RoomEvent.TrackMuted, RoomEvent.TrackUnmuted, RoomEvent.LocalTrackPublished, RoomEvent.LocalTrackUnpublished, RoomEvent.ActiveSpeakersChanged]) r.on(e, rebuild);
+      r.on(RoomEvent.AudioPlaybackStatusChanged, () => { if (!r.canPlaybackAudio) void r.startAudio().catch(() => undefined); });
+      r.on(RoomEvent.Disconnected, () => {
+        if (room.current !== r) return; // we ended it ourselves
+        void post(`/api/pulse/calls/${id}/end`);
+        cleanup("The call dropped.");
+      });
+      await r.connect(json.url, json.token);
+      if (r.state !== ConnectionState.Connected) throw new Error("not connected");
+      await r.localParticipant.setMicrophoneEnabled(true);
+      if (kindRef.current === "video") await r.localParticipant.setCameraEnabled(true);
+      await r.startAudio().catch(() => undefined);
+      clearTimeout(timers.current.connect);
+      setState((s) => ({ ...s, phase: "active", startedAt: Date.now() }));
+      rebuild();
+    } catch (error) {
+      void post(`/api/pulse/calls/${id}/end`);
+      cleanup(["NotAllowedError", "NotFoundError", "NotReadableError", "SecurityError"].includes((error as { name?: string })?.name ?? "") ? mediaMessage(error) : "The call couldn't connect. Check your connection and try again.");
+    }
+  }, [cleanup, rebuild]);
 
   const startCall = useCallback(async (peer: PersonSummary, kind: CallKind) => {
     if (state.phase !== "idle" || !supported) return;
-    let stream: MediaStream;
     try {
-      stream = await getMedia(kind);
+      await probeMedia(kind);
     } catch (error) {
       return setState({ ...IDLE, notice: mediaMessage(error) });
     }
     try {
       const res = await post("/api/pulse/calls", { userId: peer.id, kind });
-      const json = (await res.json().catch(() => null)) as { call?: { id: string }; ice?: Ice; error?: string } | null;
-      if (!res.ok || !json?.call) {
-        stream.getTracks().forEach((t) => t.stop());
-        local.current = null;
-        return setState({ ...IDLE, notice: json?.error ?? "Couldn't start the call." });
-      }
+      const json = (await res.json().catch(() => null)) as { call?: { id: string }; error?: string } | null;
+      if (!res.ok || !json?.call) return setState({ ...IDLE, notice: json?.error ?? "Couldn't start the call." });
       callId.current = json.call.id;
       role.current = "caller";
-      ice.current = json.ice ?? null;
       kindRef.current = kind;
-      setState({ ...IDLE, phase: "outgoing", kind, peer, localStream: stream });
+      people.current.set(peer.id, { name: peer.name, avatarUrl: peer.avatarUrl });
+      setState({ ...IDLE, phase: "outgoing", kind, peer });
       timers.current.ring = setTimeout(() => {
         if (callId.current) void post(`/api/pulse/calls/${callId.current}/end`);
         cleanup("No answer.");
       }, RING_SECONDS * 1000);
     } catch {
-      stream.getTracks().forEach((t) => t.stop());
-      local.current = null;
       setState({ ...IDLE, notice: "Couldn't reach the server." });
     }
-  }, [state.phase, supported, getMedia, cleanup]);
+  }, [state.phase, supported, cleanup]);
 
   const accept = useCallback(async () => {
     if (state.phase !== "incoming" || !callId.current) return;
     const id = callId.current;
-    let stream: MediaStream;
     try {
-      stream = await getMedia(kindRef.current);
+      await probeMedia(kindRef.current);
     } catch (error) {
       void post(`/api/pulse/calls/${id}/respond`, { action: "decline" });
       return cleanup(mediaMessage(error));
@@ -219,19 +252,13 @@ export function CallProvider({ children }: { children: ReactNode }) {
     clearTimers();
     acceptedHere.current = true;
     const res = await post(`/api/pulse/calls/${id}/respond`, { action: "accept" });
-    const json = (await res.json().catch(() => null)) as { ice?: Ice; error?: string } | null;
     if (!res.ok) {
-      stream.getTracks().forEach((t) => t.stop());
+      const json = (await res.json().catch(() => null)) as { error?: string } | null;
       return cleanup(json?.error ?? "This call is no longer available.");
     }
-    ice.current = json?.ice ?? null;
     role.current = "callee";
-    setState((s) => ({ ...s, phase: "connecting", localStream: stream }));
-    timers.current.offer = setTimeout(() => {
-      void post(`/api/pulse/calls/${id}/end`);
-      cleanup("The call couldn't connect.");
-    }, OFFER_TIMEOUT_MS);
-  }, [state.phase, getMedia, cleanup]);
+    await connect(id);
+  }, [state.phase, cleanup, connect]);
 
   const decline = useCallback(() => {
     if (callId.current) void post(`/api/pulse/calls/${callId.current}/respond`, { action: "decline" });
@@ -243,69 +270,54 @@ export function CallProvider({ children }: { children: ReactNode }) {
     cleanup();
   }, [cleanup]);
 
-  // events from the other side, via the server
+  const invite = useCallback(async (userIds: string[]): Promise<string | null> => {
+    if (!callId.current || userIds.length === 0) return null;
+    try {
+      const res = await post(`/api/pulse/calls/${callId.current}/invite`, { userIds });
+      const json = (await res.json().catch(() => null)) as { invited?: string[]; skipped?: { message: string }[]; error?: string } | null;
+      if (!res.ok) return json?.error ?? "Couldn't add them.";
+      if (json?.invited?.length) setState((s) => ({ ...s, group: true }));
+      return json?.skipped?.length ? json.skipped[0].message : null;
+    } catch {
+      return "Couldn't reach the server.";
+    }
+  }, []);
+
+  // events from the server: someone rings you, answers, is added, or the call ends
   useEffect(() => {
     return subscribe((event, payload) => {
-      if (event === "call") {
-        const type = payload.type as string;
-        if (type === "incoming" && !callId.current) {
-          const call = payload.call as { id: string; kind: CallKind };
-          callId.current = call.id;
-          role.current = "callee";
-          kindRef.current = call.kind;
-          setState({ ...IDLE, phase: "incoming", kind: call.kind, peer: (payload.from as PersonSummary) ?? null });
-          timers.current.ring = setTimeout(() => cleanup(), INCOMING_TIMEOUT_MS);
-        } else if (payload.callId !== callId.current) {
-          return;
-        } else if (type === "accepted" && role.current === "caller") {
-          if (timers.current.ring) clearTimeout(timers.current.ring);
-          setState((s) => ({ ...s, phase: "connecting" }));
-          const peer = createPeer();
-          void (async () => {
-            try {
-              const offer = await peer.createOffer();
-              await peer.setLocalDescription(offer);
-              send("offer", peer.localDescription?.toJSON());
-            } catch {
-              void post(`/api/pulse/calls/${callId.current}/end`);
-              cleanup("The call couldn't connect.");
-            }
-          })();
-        } else if (type === "handled" && !acceptedHere.current) {
-          cleanup(); // answered on another tab or device
-        } else if (type === "ended") {
-          const status = payload.status as string;
-          cleanup(status === "declined" ? "Call declined." : status === "missed" || status === "cancelled" ? (role.current === "caller" ? "No answer." : null) : null);
-        }
+      if (event !== "call") return;
+      const type = payload.type as string;
+      if (type === "incoming" && !callId.current) {
+        const call = payload.call as { id: string; kind: CallKind };
+        callId.current = call.id;
+        role.current = "callee";
+        kindRef.current = call.kind;
+        const from = (payload.from as PersonSummary) ?? null;
+        if (from) people.current.set(from.id, { name: from.name, avatarUrl: from.avatarUrl });
+        setState({ ...IDLE, phase: "incoming", kind: call.kind, peer: from, group: Boolean(payload.group) });
+        timers.current.ring = setTimeout(() => cleanup(), INCOMING_TIMEOUT_MS);
+        return;
       }
-      if (event === "signal" && payload.callId === callId.current) {
-        const kind = payload.kind as "offer" | "answer" | "candidate";
-        void (async () => {
-          try {
-            if (kind === "offer" && role.current === "callee") {
-              const peer = pc.current ?? createPeer();
-              await peer.setRemoteDescription(payload.data as RTCSessionDescriptionInit);
-              await flushCandidates();
-              const answer = await peer.createAnswer();
-              await peer.setLocalDescription(answer);
-              send("answer", peer.localDescription?.toJSON());
-            } else if (kind === "answer" && pc.current) {
-              await pc.current.setRemoteDescription(payload.data as RTCSessionDescriptionInit);
-              await flushCandidates();
-            } else if (kind === "candidate") {
-              if (pc.current?.remoteDescription) await pc.current.addIceCandidate(payload.data as RTCIceCandidateInit).catch(() => undefined);
-              else pendingCandidates.current.push(payload.data as RTCIceCandidateInit);
-            }
-          } catch {
-            void post(`/api/pulse/calls/${callId.current}/end`);
-            cleanup("The call couldn't connect.");
-          }
-        })();
+      if (payload.callId !== callId.current) return;
+      if (type === "accepted" && role.current === "caller") {
+        if (timers.current.ring) clearTimeout(timers.current.ring);
+        void connect(callId.current as string);
+      } else if (type === "handled" && !acceptedHere.current) {
+        cleanup(); // answered on another tab or device
+      } else if (type === "participants") {
+        const list = payload.participants as { id: string; status: string; name: string | null; avatarUrl: string | null }[];
+        list.forEach((p) => people.current.set(p.id, { name: p.name, avatarUrl: p.avatarUrl }));
+        setState((s) => ({ ...s, ringing: list.filter((p) => p.status === "ringing").map((p) => ({ id: p.id, name: p.name, avatarUrl: p.avatarUrl })) }));
+        rebuild();
+      } else if (type === "ended") {
+        const status = payload.status as string;
+        cleanup(status === "declined" ? "Call declined." : status === "missed" || status === "cancelled" ? (role.current === "caller" ? "No answer." : null) : null);
       }
     });
-  }, [subscribe, cleanup, createPeer, flushCandidates, send]);
+  }, [subscribe, cleanup, connect, rebuild]);
 
-  // closing the tab hangs up, so the other person isn't left ringing or connected to nothing
+  // closing the tab hangs up, so nobody is left ringing or talking to an empty room
   useEffect(() => {
     const onHide = () => {
       if (callId.current) void post(`/api/pulse/calls/${callId.current}/end`, undefined, true);
@@ -317,17 +329,15 @@ export function CallProvider({ children }: { children: ReactNode }) {
   useRingtone(state.phase === "incoming" || state.phase === "outgoing");
 
   const toggleMute = useCallback(() => {
-    const next = !state.muted;
-    local.current?.getAudioTracks().forEach((t) => (t.enabled = !next));
-    setState((s) => ({ ...s, muted: next }));
-  }, [state.muted]);
+    const lp = room.current?.localParticipant;
+    if (lp) void lp.setMicrophoneEnabled(!lp.isMicrophoneEnabled).then(rebuild).catch(() => undefined);
+  }, [rebuild]);
   const toggleCamera = useCallback(() => {
-    const next = !state.cameraOff;
-    local.current?.getVideoTracks().forEach((t) => (t.enabled = !next));
-    setState((s) => ({ ...s, cameraOff: next }));
-  }, [state.cameraOff]);
+    const lp = room.current?.localParticipant;
+    if (lp) void lp.setCameraEnabled(!lp.isCameraEnabled).then(rebuild).catch((error) => setState((s) => ({ ...s, notice: mediaMessage(error) })));
+  }, [rebuild]);
   const dismissNotice = useCallback(() => setState((s) => ({ ...s, notice: null })), []);
 
-  const value = useMemo<Ctx>(() => ({ state, supported, startCall, accept, decline, hangup, toggleMute, toggleCamera, dismissNotice }), [state, supported, startCall, accept, decline, hangup, toggleMute, toggleCamera, dismissNotice]);
+  const value = useMemo<Ctx>(() => ({ state, supported, startCall, accept, decline, hangup, toggleMute, toggleCamera, invite, dismissNotice }), [state, supported, startCall, accept, decline, hangup, toggleMute, toggleCamera, invite, dismissNotice]);
   return <CallContext.Provider value={value}>{children}</CallContext.Provider>;
 }

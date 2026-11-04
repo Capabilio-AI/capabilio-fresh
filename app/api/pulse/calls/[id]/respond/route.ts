@@ -14,5 +14,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = Body.safeParse(await request.json().catch(() => null));
   if (!id.success || !body.success) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   const result = await respondToCall(createServiceClient(), auth.userId, id.data, body.data.action);
-  return result.ok ? NextResponse.json({ ok: true, call: result.call, ice: result.ice }) : NextResponse.json({ error: result.message }, { status: result.status });
+  return result.ok ? NextResponse.json({ ok: true, call: result.call }) : NextResponse.json({ error: result.message }, { status: result.status });
 }

@@ -3,7 +3,8 @@ import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { blockedWith } from "./graph";
 import { callLogText, canStartCall, isLive, transition, type CallAction, type CallKind, type CallStatus } from "./call-rules";
-import { loadIceConfig, type IceConfig } from "./ice";
+import { livekitConfig, mintCallToken } from "./livekit";
+import { INVITE_MESSAGE, inviteVerdict, shouldEnd, type ParticipantStatus } from "./group-call-rules";
 import { conversationBetween, notify, toMessage } from "./messages";
 import { previewOf } from "./message-rules";
 import { loadPeople, type PersonSummary } from "./people";
@@ -55,7 +56,10 @@ async function finalize(service: Service, call: CallRow, status: CallStatus): Pr
     await db.from("dm_conversations").update({ last_message_at: message.createdAt, last_message_preview: previewOf(text), last_sender_id: call.caller_id }).eq("id", call.conversation_id);
     await notify(service, [call.caller_id, call.callee_id], "message", { conversationId: call.conversation_id, status: "accepted", message });
   }
-  await notify(service, [call.caller_id, call.callee_id], "call", { type: "ended", callId: call.id, status, duration });
+  const rows = await loadParticipants(service, call.id);
+  await db.from("call_participants").update({ status: "missed", left_at: now.toISOString() }).eq("call_id", call.id).eq("status", "ringing");
+  await db.from("call_participants").update({ status: "left", left_at: now.toISOString() }).eq("call_id", call.id).eq("status", "joined");
+  await notify(service, [...new Set([call.caller_id, call.callee_id, ...rows.map((r) => r.user_id)])], "call", { type: "ended", callId: call.id, status, duration });
   if (status === "missed") {
     const from = (await loadPeople(service, [call.caller_id])).get(call.caller_id);
     await notifyBell(service, { userIds: [call.callee_id], actorId: call.caller_id, type: "call_missed", title: `Missed ${call.kind} call from ${from?.name ?? "someone"}`, href: `/pulse/messages?c=${call.conversation_id}`, dedupeKey: `call-missed:${call.id}` });
@@ -70,12 +74,35 @@ async function closeStale(service: Service, userIds: string[]): Promise<void> {
 }
 
 async function busy(service: Service, userId: string): Promise<boolean> {
-  const { data } = await untyped(service).from("calls").select(COLUMNS).in("status", ["ringing", "accepted"]).or(`caller_id.eq.${userId},callee_id.eq.${userId}`);
-  return ((data ?? []) as CallRow[]).some((c) => isLive(c));
+  const db = untyped(service);
+  const { data } = await db.from("calls").select(COLUMNS).in("status", ["ringing", "accepted"]).or(`caller_id.eq.${userId},callee_id.eq.${userId}`);
+  if (((data ?? []) as CallRow[]).some((c) => isLive(c))) return true;
+  // someone added to a group call is busy too, even though they are neither its caller nor its first callee
+  const { data: mine } = await db.from("call_participants").select("call_id").eq("user_id", userId).in("status", ["ringing", "joined"]);
+  const ids = ((mine ?? []) as { call_id: string }[]).map((r) => r.call_id);
+  if (ids.length === 0) return false;
+  const { data: calls } = await db.from("calls").select(COLUMNS).in("id", ids).in("status", ["ringing", "accepted"]);
+  return ((calls ?? []) as CallRow[]).some((c) => isLive(c));
 }
 
-export async function startCall(service: Service, me: string, otherId: string, kind: CallKind): Promise<CallResult<{ call: CallInfo; ice: IceConfig }>> {
+interface ParticipantRow { user_id: string; status: ParticipantStatus }
+async function loadParticipants(service: Service, callId: string): Promise<ParticipantRow[]> {
+  const { data } = await untyped(service).from("call_participants").select("user_id, status").eq("call_id", callId);
+  return (data ?? []) as ParticipantRow[];
+}
+const asLike = (rows: ParticipantRow[]) => rows.map((r) => ({ userId: r.user_id, status: r.status }));
+
+/** Tells everyone in the call who is in it and who is still being rung. */
+async function broadcastParticipants(service: Service, callId: string): Promise<void> {
+  const rows = await loadParticipants(service, callId);
+  const people = await loadPeople(service, rows.map((r) => r.user_id));
+  const list = rows.map((r) => ({ id: r.user_id, status: r.status, name: people.get(r.user_id)?.name ?? null, avatarUrl: people.get(r.user_id)?.avatarUrl ?? null }));
+  await notify(service, rows.filter((r) => r.status === "joined").map((r) => r.user_id), "call", { type: "participants", callId, participants: list });
+}
+
+export async function startCall(service: Service, me: string, otherId: string, kind: CallKind): Promise<CallResult<{ call: CallInfo }>> {
   if (otherId === me) return fail(400, "You can't call yourself.");
+  if (!livekitConfig()) return fail(503, "Calls aren't available right now. Please try again later.");
   await closeStale(service, [me, otherId]);
   const [conversation, blocked, callerBusy, calleeBusy] = await Promise.all([conversationBetween(service, me, otherId), blockedWith(service, me), busy(service, me), busy(service, otherId)]);
   const verdict = canStartCall({ conversationStatus: conversation?.status ?? null, blocked: blocked.has(otherId), callerBusy, calleeBusy });
@@ -84,16 +111,37 @@ export async function startCall(service: Service, me: string, otherId: string, k
   const { data, error } = await untyped(service).from("calls").insert({ conversation_id: conversation.id, caller_id: me, callee_id: otherId, kind }).select(COLUMNS).single();
   if (error || !data) return fail(500, "Couldn't start the call. Please try again.");
   const call = data as CallRow;
+  await untyped(service).from("call_participants").insert([
+    { call_id: call.id, user_id: me, status: "joined", joined_at: new Date().toISOString() },
+    { call_id: call.id, user_id: otherId, invited_by: me, status: "ringing" },
+  ]);
   const from = (await loadPeople(service, [me])).get(me) as PersonSummary | undefined;
   await notify(service, [otherId], "call", { type: "incoming", call: info(call), from });
   // the live ring only reaches an open tab; the bell keeps a record for anyone who was away
   await notifyBell(service, { userIds: [otherId], actorId: me, type: "call_incoming", title: `${from?.name ?? "Someone"} is calling you`, body: `${kind === "video" ? "Video" : "Voice"} call. Open Messages to call back.`, href: `/pulse/messages?c=${conversation.id}`, dedupeKey: `call:${call.id}` });
-  return { ok: true, call: info(call), ice: await loadIceConfig() };
+  return { ok: true, call: info(call) };
 }
 
-export async function respondToCall(service: Service, me: string, callId: string, action: "accept" | "decline"): Promise<CallResult<{ call: CallInfo; ice: IceConfig | null }>> {
+/** Someone added to a call who is not its caller or first callee answers (or turns down) the invitation. */
+async function respondAsInvitee(service: Service, me: string, call: CallRow, action: "accept" | "decline"): Promise<CallResult<{ call: CallInfo }> | null> {
+  const mine = (await loadParticipants(service, call.id)).find((r) => r.user_id === me);
+  if (!mine) return null;
+  if (call.status !== "accepted" || !isLive(call)) return fail(410, "This call has ended.");
+  if (mine.status !== "ringing") return fail(409, "You've already answered this call.");
+  const next = action === "accept" ? "joined" : "declined";
+  await untyped(service).from("call_participants").update({ status: next, joined_at: action === "accept" ? new Date().toISOString() : null }).eq("call_id", call.id).eq("user_id", me);
+  if (action === "accept") await notify(service, [me], "call", { type: "handled", callId: call.id });
+  await broadcastParticipants(service, call.id);
+  return { ok: true, call: info(call) };
+}
+
+export async function respondToCall(service: Service, me: string, callId: string, action: "accept" | "decline"): Promise<CallResult<{ call: CallInfo }>> {
   const call = await loadCall(service, callId);
   if (!call) return fail(404, "Call not found.");
+  if (me !== call.caller_id && me !== call.callee_id) {
+    const invited = await respondAsInvitee(service, me, call, action);
+    return invited ?? fail(404, "Call not found.");
+  }
   const t = transition({ status: call.status, callerId: call.caller_id, calleeId: call.callee_id }, me, action);
   if (!t.ok) return fail(409, t.message);
   if (!isLive(call)) {
@@ -104,18 +152,34 @@ export async function respondToCall(service: Service, me: string, callId: string
     const { data } = await untyped(service).from("calls").update({ status: "accepted", answered_at: new Date().toISOString() }).eq("id", callId).eq("status", "ringing").select("id");
     if (!data || data.length === 0) return fail(409, "This call is no longer ringing.");
     // the caller starts the connection; the callee's other tabs stop ringing
+    await untyped(service).from("call_participants").update({ status: "joined", joined_at: new Date().toISOString() }).eq("call_id", callId).eq("user_id", call.callee_id);
     await notify(service, [call.caller_id], "call", { type: "accepted", callId });
     await notify(service, [call.callee_id], "call", { type: "handled", callId });
-    return { ok: true, call: info(call), ice: await loadIceConfig() };
+    return { ok: true, call: info(call) };
   }
   await finalize(service, call, "declined");
-  return { ok: true, call: info(call), ice: null };
+  return { ok: true, call: info(call) };
 }
 
-/** Hang up, or cancel a ring that has not been answered. */
+/**
+ * Hang up, or cancel a ring that has not been answered. In a call that is under way, leaving only takes you out of it: the others carry on,
+ * and the call ends for everyone once fewer than two people are left in it.
+ */
 export async function endCall(service: Service, me: string, callId: string): Promise<CallResult> {
   const call = await loadCall(service, callId);
   if (!call) return fail(404, "Call not found.");
+  if (call.status === "accepted") {
+    const rows = await loadParticipants(service, callId);
+    const mine = rows.find((r) => r.user_id === me);
+    if (!mine && me !== call.caller_id && me !== call.callee_id) return fail(404, "Call not found.");
+    if (shouldEnd(asLike(rows), me)) {
+      await finalize(service, call, "ended");
+    } else {
+      await untyped(service).from("call_participants").update({ status: "left", left_at: new Date().toISOString() }).eq("call_id", callId).eq("user_id", me);
+      await broadcastParticipants(service, callId);
+    }
+    return { ok: true };
+  }
   const action: CallAction = "end";
   const t = transition({ status: call.status, callerId: call.caller_id, calleeId: call.callee_id }, me, action);
   if (!t.ok) return fail(409, t.message);
@@ -123,17 +187,40 @@ export async function endCall(service: Service, me: string, callId: string): Pro
   return { ok: true };
 }
 
-export interface Signal {
-  kind: "offer" | "answer" | "candidate";
-  data: unknown;
+/** A short-lived token for one person to join the call's room, only if they are in the call and it is under way. */
+export async function issueCallToken(service: Service, me: string, callId: string): Promise<CallResult<{ token: string; url: string }>> {
+  const config = livekitConfig();
+  if (!config) return fail(503, "Calls aren't available right now. Please try again later.");
+  const call = await loadCall(service, callId);
+  const mine = call ? (await loadParticipants(service, callId)).find((r) => r.user_id === me) : null;
+  if (!call || !mine) return fail(404, "Call not found.");
+  if (call.status !== "accepted" || !isLive(call) || mine.status !== "joined") return fail(409, "This call isn't in progress.");
+  const name = (await loadPeople(service, [me])).get(me)?.name ?? null;
+  return { ok: true, token: await mintCallToken(config, { callId, identity: me, name }), url: config.url };
 }
 
-/** Passes a WebRTC offer, answer or ICE candidate to the other person, only within a call they are both in. */
-export async function relaySignal(service: Service, me: string, callId: string, signal: Signal): Promise<CallResult> {
+/** Anyone in a call under way can add people to it. Each is rung like a normal call; those who cannot be added are reported, not silently dropped. */
+export async function inviteToCall(service: Service, me: string, callId: string, userIds: string[]): Promise<CallResult<{ invited: string[]; skipped: { userId: string; message: string }[] }>> {
   const call = await loadCall(service, callId);
-  if (!call || (call.caller_id !== me && call.callee_id !== me)) return fail(404, "Call not found.");
-  if (call.status !== "accepted") return fail(409, "This call isn't in progress.");
-  if (JSON.stringify(signal.data ?? null).length > MAX_SIGNAL_CHARS) return fail(413, "That signal is too large.");
-  await notify(service, [me === call.caller_id ? call.callee_id : call.caller_id], "signal", { callId, kind: signal.kind, data: signal.data });
-  return { ok: true };
+  const rows = call ? await loadParticipants(service, callId) : [];
+  if (!call || !rows.some((r) => r.user_id === me && r.status === "joined")) return fail(404, "Call not found.");
+  if (call.status !== "accepted" || !isLive(call)) return fail(409, "This call isn't in progress.");
+
+  const blocked = await blockedWith(service, me);
+  const from = (await loadPeople(service, [me])).get(me) as PersonSummary | undefined;
+  const invited: string[] = [];
+  const skipped: { userId: string; message: string }[] = [];
+  let participants = asLike(rows);
+  for (const id of [...new Set(userIds)]) {
+    const verdict = inviteVerdict({ candidate: id, me, participants, blocked: blocked.has(id), busy: await busy(service, id) });
+    if (!verdict.allow) { skipped.push({ userId: id, message: INVITE_MESSAGE[verdict.reason] }); continue; }
+    const { error } = await untyped(service).from("call_participants").upsert({ call_id: callId, user_id: id, invited_by: me, status: "ringing", invited_at: new Date().toISOString(), joined_at: null, left_at: null }, { onConflict: "call_id,user_id" });
+    if (error) { skipped.push({ userId: id, message: "Couldn't add them. Try again." }); continue; }
+    participants = [...participants.filter((p) => p.userId !== id), { userId: id, status: "ringing" }];
+    invited.push(id);
+    await notify(service, [id], "call", { type: "incoming", call: info(call), from, group: true });
+    await notifyBell(service, { userIds: [id], actorId: me, type: "call_incoming", title: `${from?.name ?? "Someone"} added you to a call`, body: "Open Capabilio to join.", href: "/pulse/messages", dedupeKey: `call-invite:${callId}:${id}:${Math.floor(Date.now() / 60000)}` });
+  }
+  if (invited.length) await broadcastParticipants(service, callId);
+  return { ok: true, invited, skipped };
 }

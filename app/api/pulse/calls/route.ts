@@ -8,7 +8,7 @@ import { startCall } from "@/lib/pulse/calls";
 
 const Body = z.object({ userId: z.string().uuid(), kind: z.enum(["voice", "video"]) }).strict();
 
-/** Start a call. Only between people whose conversation is accepted. Returns the ICE servers to connect with. */
+/** Start a call. Only between people whose conversation is accepted. Returns the call; the browser then asks for a token to join its room. */
 export async function POST(request: Request) {
   const auth = await requireUser(await createClient());
   if ("error" in auth) return auth.error;
@@ -17,5 +17,5 @@ export async function POST(request: Request) {
   const body = Body.safeParse(await request.json().catch(() => null));
   if (!body.success) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   const result = await startCall(createServiceClient(), auth.userId, body.data.userId, body.data.kind);
-  return result.ok ? NextResponse.json({ ok: true, call: result.call, ice: result.ice }, { status: 201 }) : NextResponse.json({ error: result.message }, { status: result.status });
+  return result.ok ? NextResponse.json({ ok: true, call: result.call }, { status: 201 }) : NextResponse.json({ error: result.message }, { status: result.status });
 }
