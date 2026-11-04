@@ -6,16 +6,14 @@ export interface SignalSkill {
   name: string;
   score: number;
   evidenceCount: number;
-  /** What the target role asks for, when known. */
-  targetLevel: number | null;
 }
 
 const CELLS = 20;
 const STAGGER_MS = 16;
 
 /**
- * Measured skills as an instrument panel: every skill is a 20-cell signal strip that lights up to its measured score, with a white tick
- * where the target role needs it to be. The numbers are the graded scores; the strip is only another way to read them.
+ * Measured skills as an instrument panel: every skill is a 20-cell signal strip that lights up to its measured score. The numbers are
+ * the graded scores; the strip is only another way to read them. Nothing here compares a skill with a role: that is the reader's call.
  */
 export function SkillSignal({ skills }: { skills: SignalSkill[] }) {
   const [on, setOn] = useState(false);
@@ -30,14 +28,12 @@ export function SkillSignal({ skills }: { skills: SignalSkill[] }) {
         <h3 className="font-lp-display text-[16px] font-bold">Skill signal</h3>
         <p className="flex items-center gap-4 font-lp-mono text-[11.5px] text-white/70" aria-hidden>
           <span className="inline-flex items-center gap-1.5"><i className="h-2 w-3.5 rounded-[2px] bg-[var(--m-accent)]" />measured</span>
-          <span className="inline-flex items-center gap-1.5"><i className="h-3.5 w-0.5 bg-white" />role target</span>
         </p>
       </div>
 
       <ul className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
         {skills.map((s, row) => {
           const lit = Math.round((Math.min(100, s.score) / 100) * CELLS);
-          const gap = s.targetLevel !== null ? Math.max(0, s.targetLevel - s.score) : null;
           return (
             <li key={s.name}>
               <div className="flex items-baseline justify-between gap-3">
@@ -54,12 +50,11 @@ export function SkillSignal({ skills }: { skills: SignalSkill[] }) {
                     );
                   })}
                 </div>
-                {s.targetLevel !== null && <span className="absolute -top-1 -bottom-1 w-0.5 bg-white" style={{ left: `calc(${Math.min(100, s.targetLevel)}% - 1px)` }} />}
               </div>
               <p className="mt-1.5 font-lp-mono text-[11.5px] text-white/60">
-                {s.evidenceCount} evidence{gap !== null ? ` · ${gap > 0 ? `${gap} pts to target` : "target met"}` : ""}
+                {s.evidenceCount} evidence
               </p>
-              <span className="sr-only">{`${s.name}: ${s.score} percent${s.targetLevel !== null ? `, target ${s.targetLevel} percent` : ""}.`}</span>
+              <span className="sr-only">{`${s.name}: ${s.score} percent.`}</span>
             </li>
           );
         })}

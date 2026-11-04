@@ -2,9 +2,8 @@
 
 import type { SkillProficiency } from "@/lib/proficiency/by-skill";
 import { EvidenceShareToggle } from "./EvidenceShareToggle";
-import type { StudentRoleReadiness } from "@/lib/proficiency/readiness-load";
 import { useEffect, useRef, useState } from "react";
-import { Award, Download, ExternalLink, FileText, GitBranch, GraduationCap, Link2, Mail, MapPin, Phone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
+import { Award, ChevronRight, Download, ExternalLink, FileText, GraduationCap, Link2, Mail, MapPin, Phone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ViewerSummary } from "@/lib/dashboard/viewer";
 import { initialsOf } from "@/lib/dashboard/viewer";
@@ -29,17 +28,20 @@ const MAX_TASKS = 8;
 /** Honest provenance on every claim: "Verified" only when a document backs it, otherwise "Self-reported". */
 function TrustTag({ verified, verifiedLabel }: { verified: boolean; verifiedLabel: string }) {
   return verified ? (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--m-ground)] px-2.5 py-1 font-lp-body text-[12px] font-bold text-[var(--m-ink)]"><ShieldCheck size={13} aria-hidden className="text-[var(--m-accent-ink)]" />{verifiedLabel}</span>
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--m-ground)] px-2.5 py-1 font-lp-body text-[12px] font-semibold text-[var(--m-ink)]"><ShieldCheck size={13} aria-hidden className="text-[var(--m-accent-ink)]" />{verifiedLabel}</span>
   ) : (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-[var(--m-rule)] px-2.5 py-1 font-lp-body text-[12px] text-[var(--m-muted)]">Self-reported</span>
+    <span className="inline-flex shrink-0 items-center rounded-full border border-[var(--m-rule)]! px-2.5 py-1 font-lp-body text-[12px] text-[var(--m-muted)]">Self-reported</span>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="break-inside-avoid">
-      <h2 className="border-b border-[var(--m-rule)] pb-2 font-lp-display text-[18px] font-bold text-[var(--m-ink)]">{title}</h2>
-      <div className="pt-4">{children}</div>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-lp-display text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--m-muted)]">{title}</h2>
+        {aside}
+      </div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -53,7 +55,6 @@ export interface PortfolioBodyProps {
   arenaTasks: ArenaTask[];
   arenaWork: ArenaWorkRole[];
   proficiency: SkillProficiency[];
-  roleReadiness: StudentRoleReadiness | null;
   /** Kept so the public share page and the dashboard pass the same data; interview sessions are practice and stay out of the recruiter view. */
   interviews?: InterviewSummary[];
   github: GithubEvidence | null;
@@ -70,10 +71,11 @@ export interface PortfolioBodyProps {
 }
 
 /**
- * The portfolio a student hands a recruiter, laid out like a professional profile: who they are, a factual summary, the work they have
- * completed (each piece opens its full evidence), their measured skills, GitHub, and projects. Everything comes from verified records.
+ * The portfolio a person hands a recruiter: who they are, a factual summary, the work they have completed (each piece opens its full
+ * evidence), their measured skills, GitHub and projects. Everything comes from verified records. It says nothing about a target role or
+ * about learning: what a company needs is for the company to decide, from the evidence.
  */
-export function PortfolioBody({ viewer, profile, education, statedRole, groups, arenaTasks, arenaWork, proficiency, roleReadiness, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, profile, education, arenaTasks, arenaWork, proficiency, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   // Work that arrives while the page is open (live updates) is marked "New" for a few seconds so a watching recruiter sees what just landed.
   const seen = useRef(new Set(arenaTasks.map((t) => t.attemptId)));
@@ -87,100 +89,89 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
     return () => clearTimeout(t);
   }, [arenaTasks]);
   const githubVerified = github?.verified ?? false;
-  const role = graph?.careerName ?? statedRole;
 
   const measured = (graph?.skills ?? []).filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, MAX_SKILLS);
   const scored = arenaTasks.filter((t) => t.score !== undefined);
   const averageScore = scored.length ? Math.round(scored.reduce((n, t) => n + (t.score ?? 0), 0) / scored.length) : null;
   const summary = buildPortfolioSummary({
-    name: viewer.fullName, role, branch: viewer.branch, college: viewer.collegeName,
-    readiness: graph?.readiness ?? null, skills: measured, verifiedChallenges: arenaTasks.length, averageScore,
+    name: viewer.fullName, branch: viewer.branch, college: viewer.collegeName,
+    skills: measured, verifiedChallenges: arenaTasks.length, averageScore,
     githubVerified, githubRepos: github?.repositoriesAnalyzed ?? null, projects: items.length,
   });
   const facts: [string, React.ReactNode][] = [
-    ...(role ? [["Target role", role] as [string, React.ReactNode]] : []),
-    ["ELO score", <LiveNumber key="elo" value={elo.rating} />],
-    ...(graph ? [["Proven readiness", <LiveNumber key="ready" value={graph.readiness} suffix="%" />] as [string, React.ReactNode]] : []),
+    ["ELO rating", <LiveNumber key="elo" value={elo.rating} />],
     ["Verified tickets", <LiveNumber key="tickets" value={arenaTasks.length} />],
     ...(averageScore !== null ? [["Average score", <LiveNumber key="avg" value={averageScore} suffix="%" />] as [string, React.ReactNode]] : []),
+    ...(github?.repositoriesAnalyzed ? [["Repositories analysed", <LiveNumber key="repos" value={github.repositoriesAnalyzed} />] as [string, React.ReactNode]] : []),
   ];
-  const empty = education.length === 0 && measured.length === 0 && arenaTasks.length === 0 && items.length === 0 && !github && groups.length === 0;
+  const empty = education.length === 0 && measured.length === 0 && arenaTasks.length === 0 && items.length === 0 && !github;
+  const headline = profile.headline ?? [viewer.branch, viewer.collegeName].filter(Boolean).join(", ");
+  const email = profile.contact?.email;
+  const phone = profile.contact?.phone;
 
   return (
-    <article className="rounded-2xl border border-[var(--m-rule)] bg-white print:border-0">
-      <header className="flex flex-wrap items-start gap-5 p-6 sm:p-8">
-        <span className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--m-ink)] font-lp-display text-[24px] font-bold text-white">
-          {viewer.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- storage-hosted user avatar, arbitrary origin
-            <img src={viewer.avatarUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            initialsOf(viewer.fullName, viewer.email)
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <h1 className="font-lp-display text-[30px] font-bold leading-tight text-[var(--m-ink)] sm:text-[34px]">{viewer.fullName ?? viewer.email}</h1>
-          <p className="mt-1 font-lp-body text-[15.5px] text-[var(--m-ink)]">{profile.headline ?? [viewer.branch, viewer.collegeName].filter(Boolean).join(", ")}</p>
-          <ul className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5 font-lp-body text-[13.5px] text-[var(--m-muted)]">
-            {profile.location && <li className="inline-flex items-center gap-1.5"><MapPin size={14} aria-hidden />{profile.location}</li>}
-            {profile.contact && <li><a href={`mailto:${profile.contact.email}`} className="inline-flex items-center gap-1.5 hover:text-[var(--m-ink)] hover:underline"><Mail size={14} aria-hidden />{profile.contact.email}</a></li>}
-            {profile.contact?.phone && <li><a href={`tel:${profile.contact.phone.replace(/[^+\d]/g, "")}`} className="inline-flex items-center gap-1.5 hover:text-[var(--m-ink)] hover:underline"><Phone size={14} aria-hidden />{profile.contact.phone}</a></li>}
-          </ul>
-          {isOwner && <p className="mt-2 font-lp-body text-[12.5px] text-[var(--m-muted)] print:hidden">{profile.contactShared ? "Recruiters can see your email and mobile number." : "Your email and mobile number are hidden from recruiters."} <Link href="/profile" className="font-bold text-[var(--m-accent-ink)] hover:underline">Change in Profile</Link></p>}
-          {githubVerified && <p className="mt-2 inline-flex items-center gap-1.5 font-lp-body text-[13px] font-bold text-[var(--m-ink)]"><ShieldCheck size={15} aria-hidden className="text-[var(--m-accent-ink)]" />GitHub ownership verified</p>}
+    <article className="overflow-hidden rounded-3xl border border-[var(--m-rule)]! bg-white shadow-[0_1px_2px_rgba(12,16,32,0.04),0_12px_40px_-24px_rgba(12,16,32,0.25)] print:rounded-none print:border-0 print:shadow-none">
+      <header className="border-b border-[var(--m-rule)]! bg-[var(--m-ground)] px-6 pb-7 pt-8 sm:px-10 sm:pt-10 print:bg-white">
+        <div className="flex flex-wrap items-start gap-6">
+          <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[var(--m-ink)] font-lp-display text-[30px] font-bold text-white ring-4 ring-white">
+            {viewer.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- storage-hosted user avatar, arbitrary origin
+              <img src={viewer.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              initialsOf(viewer.fullName, viewer.email)
+            )}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-lp-display text-[32px] font-bold leading-[1.05] tracking-tight text-[var(--m-ink)] sm:text-[40px]">{viewer.fullName ?? viewer.email}</h1>
+            {headline && <p className="mt-1.5 font-lp-body text-[16px] text-[var(--m-ink)]/80">{headline}</p>}
+            <ul className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 font-lp-body text-[13.5px] text-[var(--m-muted)]">
+              {profile.location && <li className="inline-flex items-center gap-1.5"><MapPin size={14} aria-hidden />{profile.location}</li>}
+              {githubVerified && <li className="inline-flex items-center gap-1.5 font-semibold text-[var(--m-ink)]"><ShieldCheck size={15} aria-hidden className="text-[var(--m-accent-ink)]" />GitHub ownership verified</li>}
+              {phone && <li><a href={`tel:${phone.replace(/[^+\d]/g, "")}`} className="inline-flex items-center gap-1.5 hover:text-[var(--m-ink)] hover:underline"><Phone size={14} aria-hidden />{phone}</a></li>}
+            </ul>
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2.5 sm:w-auto sm:flex-col sm:items-end print:hidden">
+            {email && <a href={`mailto:${email}`} className="inline-flex items-center gap-2 rounded-full bg-[var(--m-ink)] px-5 py-2.5 font-lp-body text-[14px] font-semibold text-white transition-opacity hover:opacity-90"><Mail size={15} aria-hidden />Contact</a>}
+            <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-full border border-[var(--m-rule)]! bg-white px-5 py-2.5 font-lp-body text-[14px] font-semibold text-[var(--m-ink)] hover:bg-[var(--m-ground)]"><Download size={15} aria-hidden />Download PDF</button>
+            <LiveStatus pulseUrl={pulseUrl} initialLatest={mostRecent} />
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-2 print:hidden">
-        <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded-lg border border-[var(--m-rule)] px-3.5 py-2 font-lp-body text-[13px] font-bold text-[var(--m-ink)] hover:bg-[var(--m-ground)]"><Download size={14} aria-hidden />Download PDF</button>
-        <LiveStatus pulseUrl={pulseUrl} initialLatest={mostRecent} />
-        </div>
+        {isOwner && <p className="mt-5 font-lp-body text-[12.5px] text-[var(--m-muted)] print:hidden">{profile.contactShared ? "Recruiters can see your email and mobile number." : "Your email and mobile number are hidden from recruiters, so there is no Contact button."} <Link href="/profile" className="font-semibold text-[var(--m-accent-ink)] hover:underline">Change in Profile</Link></p>}
       </header>
 
-      <dl className="mx-6 flex flex-wrap gap-px overflow-hidden rounded-xl border border-[var(--m-rule)] bg-[var(--m-rule)] sm:mx-8">
+      <dl className="flex flex-wrap divide-x divide-[var(--m-rule)]! border-b border-[var(--m-rule)]!">
         {facts.map(([k, v]) => (
-          <div key={k} className="flex-1 basis-[140px] bg-white px-4 py-3">
-            <dt className="font-lp-body text-[12px] text-[var(--m-muted)]">{k}</dt>
-            <dd className="mt-0.5 font-lp-display text-[17px] font-bold tabular-nums text-[var(--m-ink)]">{v}</dd>
+          <div key={k} className="min-w-[50%] flex-1 border-t border-[var(--m-rule)]! px-6 py-5 first:border-t-0 sm:min-w-0 sm:border-t-0 sm:px-8 [&:nth-child(2)]:border-t-0">
+            <dd className="font-lp-display text-[28px] font-bold tabular-nums leading-none text-[var(--m-ink)]">{v}</dd>
+            <dt className="mt-2 font-lp-body text-[12.5px] text-[var(--m-muted)]">{k}</dt>
           </div>
         ))}
       </dl>
 
-      <div className={`grid gap-10 p-6 sm:p-8 ${github ? "lg:grid-cols-[minmax(0,1fr)_300px]" : ""}`}>
-        <div className="flex min-w-0 flex-col gap-9">
-          <Section title="Professional summary">
-            <p className="max-w-[68ch] font-lp-body text-[15.5px] leading-[1.7] text-[var(--m-ink)]">{summary}</p>
-            {profile.bio && <p className="mt-4 max-w-[68ch] whitespace-pre-line font-lp-body text-[14.5px] leading-[1.7] text-[var(--m-muted)]"><span className="font-bold text-[var(--m-ink)]">In their own words (self-written): </span>{profile.bio}</p>}
+      <div className="grid gap-10 px-6 py-8 sm:px-10 sm:py-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
+        <div className="flex min-w-0 flex-col gap-11">
+          <Section title="Summary">
+            <p className="max-w-[68ch] font-lp-body text-[16px] leading-[1.75] text-[var(--m-ink)]">{summary}</p>
+            {profile.bio && <p className="mt-4 max-w-[68ch] whitespace-pre-line font-lp-body text-[15px] leading-[1.75] text-[var(--m-muted)]"><span className="font-semibold text-[var(--m-ink)]">In their own words: </span>{profile.bio}</p>}
           </Section>
 
           {measured.length > 0 && <SkillSignal skills={measured} />}
 
-          {education.length > 0 && (
-            <Section title="Education">
-              <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
-                {education.map((e) => (
-                  <li key={e.id} className="flex items-start gap-3 py-3.5 first:pt-0">
-                    <GraduationCap size={18} aria-hidden className="mt-0.5 shrink-0 text-[var(--m-muted)]" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{[e.degree, e.fieldOfStudy ?? e.branch].filter(Boolean).join(", ") || e.branch || "Education"}</p>
-                      <p className="mt-0.5 font-lp-body text-[13.5px] text-[var(--m-ink)]">{[e.institutionName, [e.city, e.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</p>
-                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{e.startYear ? `${e.startYear} – ${e.endYear ?? "Present"}` : e.endYear ? `Class of ${e.endYear}` : e.year ?? ""}</p>
-                    </div>
-                    <TrustTag verified={e.hasVerifiedCertificate} verifiedLabel="Verified by certificate" />
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-
           {arenaTasks.length > 0 && (
-            <Section title="Verified work">
-              <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
+            <Section title="Verified work" aside={<span className="font-lp-body text-[12.5px] text-[var(--m-muted)]">{arenaTasks.length} graded {arenaTasks.length === 1 ? "ticket" : "tickets"}</span>}>
+              <ul className="grid gap-3">
                 {arenaTasks.slice(0, MAX_TASKS).map((t) => (
-                  <li key={t.attemptId} className={`flex items-start justify-between gap-4 py-3.5 transition-colors duration-700 first:pt-0 ${fresh.has(t.attemptId) ? "-mx-2 rounded-lg bg-[var(--m-ground)] px-2" : ""}`}>
-                    <div className="min-w-0">
-                      <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{t.title}{fresh.has(t.attemptId) && <span className="ml-2 rounded-full bg-[var(--m-accent)] px-2 py-0.5 align-middle font-lp-mono text-[11px] font-bold text-white">New</span>}</p>
-                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.area, t.score !== undefined ? `Score ${t.score}%` : null, t.explanationScore !== undefined ? `Explained ${t.explanationScore}/100` : null, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
+                  <li key={t.attemptId} className={`rounded-2xl border border-[var(--m-rule)]! p-4 transition-colors duration-700 sm:p-5 ${fresh.has(t.attemptId) ? "bg-[var(--m-ground)]" : "bg-white"}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-lp-body text-[15.5px] font-semibold text-[var(--m-ink)]">{t.title}{fresh.has(t.attemptId) && <span className="ml-2 rounded-full bg-[var(--m-accent)] px-2 py-0.5 align-middle font-lp-mono text-[11px] font-bold text-white">New</span>}</p>
+                        <p className="mt-1 font-lp-body text-[13px] text-[var(--m-muted)]">{[t.company, t.area, fmtDate(t.completedAt)].filter(Boolean).join(" · ")}</p>
+                      </div>
+                      {t.score !== undefined && <span className="shrink-0 rounded-full bg-[var(--m-ground)] px-3 py-1 font-lp-display text-[15px] font-bold tabular-nums text-[var(--m-ink)] print:border print:border-[var(--m-rule)]!">{t.score}%</span>}
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-0.5">
-                      <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="rounded-md px-2 py-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:bg-[var(--m-ground)] print:hidden">View evidence</button>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--m-rule)]! pt-3 print:hidden">
+                      <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="inline-flex items-center gap-1 font-lp-body text-[13px] font-semibold text-[var(--m-accent-ink)] hover:underline">View evidence<ChevronRight size={14} aria-hidden /></button>
+                      {t.explanationScore !== undefined && <span className="font-lp-body text-[12.5px] text-[var(--m-muted)]">Explained {t.explanationScore}/100</span>}
                       {isOwner && t.sealed && <EvidenceShareToggle attemptId={t.attemptId} initialShared={t.sealed.shared} />}
                     </div>
                   </li>
@@ -189,69 +180,39 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
             </Section>
           )}
 
-          {roleReadiness && (
-            <Section title={`Readiness for ${roleReadiness.careerName}`}>
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">{roleReadiness.label}</p>
-                <p className="font-lp-body text-[13px] text-[var(--m-muted)]">{roleReadiness.met} of {roleReadiness.total} requirements met · {roleReadiness.progressPct}% progress</p>
-              </div>
-              <p className="mt-1.5 font-lp-body text-[14px] text-[var(--m-ink)]">{roleReadiness.why}</p>
-              {roleReadiness.gaps.length > 0 && (
-                <div className="mt-3">
-                  <p className="font-lp-body text-[12px] font-bold uppercase tracking-wide text-[var(--m-muted)]">Skill gaps</p>
-                  <ul className="mt-1.5 flex flex-col gap-1.5">
-                    {roleReadiness.gaps.slice(0, 5).map((g) => (
-                      <li key={g.skillName} className="font-lp-body text-[13px] text-[var(--m-ink)]">
-                        <span className="font-bold">{g.skillName}</span> ({g.importance.toLowerCase()}): Level {g.have} of the Level {g.need} a junior needs
-                        {isOwner && g.nextSteps.length > 0 && <span className="text-[var(--m-muted)]"> · next: {g.nextSteps.join("; ")}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <p className="mt-3 font-lp-body text-[12px] text-[var(--m-muted)]">Measured from graded tasks against the skills the role asks for. It describes demonstrated skill, not the likelihood of being hired.</p>
-            </Section>
-          )}
-
           {proficiency.length > 0 && (
             <Section title="Verified skill levels">
-              <p className="mb-3 font-lp-body text-[13px] text-[var(--m-muted)]">Levels come only from graded tasks, never from answers or self-ratings. The tools are simulations of professional software, not field experience.</p>
-              <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
+              <ul className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
                 {proficiency.map((s) => (
-                  <li key={`${s.roleKey}:${s.skillId}`} className="py-3.5 first:pt-0">
+                  <li key={`${s.roleKey}:${s.skillId}`}>
                     <div className="flex items-baseline justify-between gap-3">
-                      <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{s.skillName}</p>
-                      <p className="shrink-0 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)]">Level {s.proficiency.level} of 5 · {s.proficiency.name}</p>
+                      <p className="truncate font-lp-body text-[14.5px] font-semibold text-[var(--m-ink)]">{s.skillName}</p>
+                      <p className="shrink-0 font-lp-body text-[12.5px] font-semibold text-[var(--m-accent-ink)]">{s.proficiency.name}</p>
                     </div>
                     <div className="mt-2 flex gap-1" role="img" aria-label={`Level ${s.proficiency.level} of 5`}>
                       {[1, 2, 3, 4, 5].map((n) => (
                         <span key={n} className={`h-1.5 flex-1 rounded-full ${n <= s.proficiency.level ? "bg-[var(--m-accent)]" : "bg-[var(--m-rule)]"}`} />
                       ))}
                     </div>
-                    <p className="mt-1.5 font-lp-body text-[12.5px] text-[var(--m-muted)]">
-                      {s.proficiency.passes} graded task{s.proficiency.passes === 1 ? "" : "s"} passed{s.proficiency.reached.length > 0 ? `. Basis for this level: ${s.proficiency.reached.map((c) => c.label).join("; ")}.` : "."}
-                    </p>
-                    {isOwner && s.proficiency.next && s.proficiency.next.needs.length > 0 && (
-                      <p className="mt-1 font-lp-body text-[12.5px] text-[var(--m-ink)] print:hidden">To reach Level {s.proficiency.next.level} ({s.proficiency.next.name}): {s.proficiency.next.needs.join("; ")}.</p>
-                    )}
+                    <p className="mt-1.5 font-lp-body text-[12.5px] text-[var(--m-muted)]">Level {s.proficiency.level} of 5 · {s.proficiency.passes} graded task{s.proficiency.passes === 1 ? "" : "s"} passed</p>
                   </li>
                 ))}
               </ul>
+              <p className="mt-4 font-lp-body text-[12.5px] text-[var(--m-muted)]">Levels come only from graded tasks, never from answers or self-ratings.</p>
             </Section>
           )}
 
           {arenaWork.length > 0 && (
-            <Section title="Graded Arena work">
-              <ul className="flex flex-col gap-4">
+            <Section title="Work by area">
+              <ul className="grid gap-5">
                 {arenaWork.map((r) => (
                   <li key={r.roleKey}>
-                    <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{r.roleName}</p>
+                    <p className="font-lp-body text-[15px] font-semibold text-[var(--m-ink)]">{r.roleName}</p>
                     <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-muted)]">{[`${r.verifiedCount} graded task${r.verifiedCount === 1 ? "" : "s"} passed`, r.lastPassedAt ? `last passed ${fmtDate(r.lastPassedAt)}` : null].filter(Boolean).join(" · ")}</p>
-                    <ul className="mt-2 flex flex-wrap gap-2">
+                    <ul className="mt-2.5 flex flex-wrap gap-2">
                       {r.areas.map((a) => (
-                        <li key={a.areaKey} className="rounded-full border border-[var(--m-rule)] px-2.5 py-1 font-lp-body text-[12px] text-[var(--m-ink)]">
+                        <li key={a.areaKey} className="rounded-full border border-[var(--m-rule)]! px-3 py-1 font-lp-body text-[12.5px] text-[var(--m-ink)]">
                           {a.areaName} · {a.verifiedCount}
-                          {a.lastPassedAt && <span className="text-[var(--m-muted)]"> · {fmtDate(a.lastPassedAt)}</span>}
                         </li>
                       ))}
                     </ul>
@@ -263,19 +224,21 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
 
           {items.length > 0 && (
             <Section title="Projects and certificates">
-              <ul className="flex flex-col divide-y divide-[var(--m-rule)]">
+              <ul className="grid gap-3">
                 {items.map((item) => {
                   const Icon = TYPE_ICON[item.item_type] ?? FileText;
                   const href = item.fileUrl ?? item.url;
                   return (
-                    <li key={item.id} className="flex items-start gap-3 py-3.5 first:pt-0">
-                      <Icon size={17} aria-hidden className="mt-0.5 shrink-0 text-[var(--m-muted)]" />
+                    <li key={item.id} className="flex items-start gap-3.5 rounded-2xl border border-[var(--m-rule)]! p-4">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--m-ground)] text-[var(--m-ink)]"><Icon size={17} aria-hidden /></span>
                       <div className="min-w-0 flex-1">
-                        <p className="font-lp-body text-[15px] font-bold text-[var(--m-ink)]">{item.title}</p>
+                        <p className="font-lp-body text-[15px] font-semibold text-[var(--m-ink)]">{item.title}</p>
                         {item.description && <p className="mt-0.5 line-clamp-2 font-lp-body text-[13px] text-[var(--m-muted)]">{item.description}</p>}
+                        <div className="mt-2 flex flex-wrap items-center gap-3">
+                          <TrustTag verified={item.verified} verifiedLabel="Verified upload" />
+                          {href && <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-lp-body text-[13px] font-semibold text-[var(--m-accent-ink)] hover:underline print:hidden"><ExternalLink size={12} aria-hidden />View</a>}
+                        </div>
                       </div>
-                      <TrustTag verified={item.verified} verifiedLabel="Verified upload" />
-                      {href && <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 font-lp-body text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline"><ExternalLink size={12} aria-hidden />View</a>}
                     </li>
                   );
                 })}
@@ -284,16 +247,34 @@ export function PortfolioBody({ viewer, profile, education, statedRole, groups, 
           )}
 
           {empty && (
-            <p className="rounded-xl border border-dashed border-[var(--m-rule)] px-6 py-12 text-center font-lp-body text-[14px] text-[var(--m-muted)]">
+            <p className="rounded-2xl border border-dashed border-[var(--m-rule)]! px-6 py-12 text-center font-lp-body text-[14px] text-[var(--m-muted)]">
               {isOwner ? "Nothing verified yet. Complete an Arena task or connect GitHub, and your portfolio builds itself from that evidence." : "Nothing verified yet."}
             </p>
           )}
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-9">
+        <aside className="flex min-w-0 flex-col gap-10 lg:border-l lg:border-[var(--m-rule)]! lg:pl-10">
           {github && (
             <Section title="GitHub">
               <GithubEvidenceCard github={github} isOwner={isOwner} />
+            </Section>
+          )}
+
+          {education.length > 0 && (
+            <Section title="Education">
+              <ul className="flex flex-col gap-5">
+                {education.map((e) => (
+                  <li key={e.id} className="flex items-start gap-3">
+                    <GraduationCap size={18} aria-hidden className="mt-0.5 shrink-0 text-[var(--m-muted)]" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-lp-body text-[14.5px] font-semibold text-[var(--m-ink)]">{[e.degree, e.fieldOfStudy ?? e.branch].filter(Boolean).join(", ") || e.branch || "Education"}</p>
+                      <p className="mt-0.5 font-lp-body text-[13px] text-[var(--m-ink)]">{[e.institutionName, [e.city, e.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</p>
+                      <p className="mt-0.5 font-lp-body text-[12.5px] text-[var(--m-muted)]">{e.startYear ? `${e.startYear} – ${e.endYear ?? "Present"}` : e.endYear ? `Class of ${e.endYear}` : e.year ?? ""}</p>
+                      <div className="mt-2"><TrustTag verified={e.hasVerifiedCertificate} verifiedLabel="Verified by certificate" /></div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </Section>
           )}
         </aside>
