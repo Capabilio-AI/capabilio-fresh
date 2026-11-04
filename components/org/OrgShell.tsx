@@ -92,7 +92,7 @@ export function OrgShell({
       <header className="ws-topbar sticky top-0 z-30">
         <div className="mx-auto flex h-[64px] max-w-[1400px] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Link href={variant === "company" ? "/company" : "/org"} aria-label="Capabilio AI, workspace home" className="flex shrink-0 items-center">
-            <Image src="/brand/capabilio-logo.png" alt="Capabilio AI" width={1130} height={234} priority className="h-[36px] w-auto sm:h-[42px]" />
+            <Image src="/brand/capabilio-logo.png" alt="Capabilio AI" width={1130} height={234} priority className="h-[26px] w-auto sm:h-[30px]" />
           </Link>
 
           <div className="ws-pill hidden min-w-0 items-center gap-2.5 rounded-full py-1 pl-1 pr-4 md:flex" title={institutionName}>
