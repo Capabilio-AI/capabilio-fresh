@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { orgPageContext } from "@/lib/org/page";
 import { loadManagedProject } from "@/lib/org/project-access";
 import { loadProjectGroups } from "@/lib/org/loaders";
+import { loadProjectProgress, orderForStaff } from "@/lib/org/project-progress";
 import { ActionButton } from "@/components/org/ActionButton";
 import { JsonForm } from "@/components/org/JsonForm";
 import { EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
@@ -17,10 +20,16 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
   const { ctx, service } = await orgPageContext("createProject");
   const project = await loadManagedProject(service, ctx, id);
   if (!project) notFound();
-  const groups = await loadProjectGroups(service, project.id);
+  const allGroups = await loadProjectGroups(service, project.id);
+  const progress = await loadProjectProgress(service, project, allGroups);
+  const groups = orderForStaff(allGroups);
+  const { counts } = progress;
 
   return (
     <div className="flex flex-col gap-6">
+      <Link href="/org/projects" className="inline-flex w-fit items-center gap-1.5 font-lp-body text-[13px] font-semibold text-app-blue hover:underline">
+        <ArrowLeft size={14} aria-hidden /> Projects
+      </Link>
       <PageHeader
         title={project.title}
         subtitle={`Due ${formatDateTime(project.deadline_at)} · ${project.submission_type === "in_app" ? "in-app submission" : "physical submission"} · groups of ${project.team_size}${
@@ -37,8 +46,55 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
           </div>
         }
       />
-      <Panel title="Brief">
-        <p className="whitespace-pre-wrap font-lp-body text-[13.5px] text-app-charcoal">{project.brief}</p>
+      <Panel title="Assignment and progress">
+        <dl className="grid gap-x-8 gap-y-3 font-lp-body text-[13px] sm:grid-cols-2">
+          <div>
+            <dt className="text-[11.5px] uppercase tracking-wide text-app-muted">Assigned by</dt>
+            <dd className="mt-0.5 font-semibold text-app-charcoal">{progress.assignedBy ? `${progress.assignedBy.name} (${progress.assignedBy.role.replace("_", " ")})` : "Staff"}</dd>
+          </div>
+          <div>
+            <dt className="text-[11.5px] uppercase tracking-wide text-app-muted">Assigned to</dt>
+            <dd className="mt-0.5 font-semibold text-app-charcoal">
+              {project.department_scope?.length ? project.department_scope.join(", ") : "All departments"} · {progress.eligible.toLocaleString("en-IN")} student{progress.eligible === 1 ? "" : "s"}
+            </dd>
+            <dd className="mt-0.5 text-[12px] text-app-muted">Students in these departments were notified when it was posted. They form groups of {project.team_size} themselves.</dd>
+          </div>
+        </dl>
+        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {[
+            ["In a group", progress.inGroup, "text-app-charcoal"],
+            ["Not in a group", progress.notInGroupTotal, progress.notInGroupTotal ? "text-app-warning" : "text-app-charcoal"],
+            ["Waiting for grade", counts.submitted, counts.submitted ? "text-app-orange" : "text-app-charcoal"],
+            ["Graded", counts.graded, "text-app-success"],
+            ["Groups", counts.total, "text-app-charcoal"],
+          ].map(([label, n, tone]) => (
+            <li key={String(label)} className="rounded-xl border border-app-border px-3.5 py-3">
+              <p className={`text-[22px] font-extrabold leading-none tabular-nums ${tone}`}>{Number(n).toLocaleString("en-IN")}</p>
+              <p className="mt-1.5 text-[12px] text-app-muted">{label}</p>
+            </li>
+          ))}
+        </ul>
+        {progress.notInGroup.length > 0 && (
+          <details className="mt-4">
+            <summary className="cursor-pointer font-lp-body text-[13px] font-semibold text-app-orange hover:underline">Students not in a group yet ({progress.notInGroupTotal.toLocaleString("en-IN")})</summary>
+            <ul className="mt-2 grid gap-x-6 gap-y-1 font-lp-body text-[13px] text-app-charcoal sm:grid-cols-2">
+              {progress.notInGroup.map((s) => (
+                <li key={s.userId} className="truncate">
+                  {s.name}
+                  {s.branch && <span className="text-app-muted"> · {s.branch}</span>}
+                </li>
+              ))}
+            </ul>
+            {progress.notInGroupTotal > progress.notInGroup.length && <p className="mt-2 font-lp-body text-[12px] text-app-muted">Showing the first {progress.notInGroup.length}.</p>}
+          </details>
+        )}
+      </Panel>
+
+      <Panel>
+        <details>
+          <summary className="cursor-pointer font-lp-body text-[13px] font-extrabold text-app-charcoal">Brief <span className="font-medium text-app-muted">· show or hide</span></summary>
+          <p className="mt-3 whitespace-pre-wrap font-lp-body text-[13.5px] text-app-charcoal">{project.brief}</p>
+        </details>
       </Panel>
 
       {groups.length === 0 ? (
@@ -47,12 +103,16 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
         groups.map(({ group, members, reports, submission, grade }) => {
           const canGrade = group.status === "submitted" || group.status === "graded";
           return (
-            <Panel key={group.id}>
+            <Panel key={group.id} className="scroll-mt-24">
+              <span id={`group-${group.id}`} />
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-lp-body text-[15px] font-semibold text-app-charcoal">{group.name}</h2>
-                <Pill tone={group.status === "graded" ? "ok" : group.status === "forming" ? "warn" : "neutral"}>
-                  {group.status} · {members.length}/{project.team_size}
-                </Pill>
+                <span className="flex items-center gap-2">
+                  {group.status === "submitted" && <Pill tone="warn">Needs grading</Pill>}
+                  <Pill tone={group.status === "graded" ? "ok" : group.status === "forming" ? "warn" : "neutral"}>
+                    {group.status} · {members.length}/{project.team_size}
+                  </Pill>
+                </span>
               </div>
               <ul className="mt-2 font-lp-body text-[13px] text-app-muted">
                 {members.map((m) => (
@@ -99,7 +159,8 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                     {submission.submission_type === "physical" ? (
                       "Physical submission received."
                     ) : submission.link_url ? (
-                      <a href={submission.link_url} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">
+                      <a href={submission.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 break-all text-app-blue hover:underline">
+                        <ExternalLink size={13} aria-hidden className="shrink-0" />
                         {submission.link_url}
                       </a>
                     ) : (
