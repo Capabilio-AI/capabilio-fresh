@@ -59,7 +59,7 @@ export function MessagesApp({ me, initialId, startWith }: { me: string; initialI
     <div className="grid h-[calc(100vh-190px)] min-h-[480px] grid-cols-1 overflow-hidden rounded-2xl border border-app-border bg-white md:grid-cols-[340px_minmax(0,1fr)]">
       <div className={clsx("min-h-0 border-app-border md:border-r", hasThread ? "hidden md:block" : "block")}>
         {failed && <p role="alert" className="border-b border-app-border bg-app-rose-container px-4 py-2 font-lp-body text-[12px] text-app-rose">Couldn&apos;t load your conversations. <button type="button" onClick={reload} className="underline">Retry</button></p>}
-        <ConversationList items={items} tab={effectiveTab} onTab={setTab} activeId={activeId} onOpen={open} loading={loading} />
+        <ConversationList items={items} tab={effectiveTab} onTab={setTab} activeId={activeId} onOpen={open} onPickPerson={(person) => { setActiveId(null); setComposeWith(person); router.replace("/pulse/messages", { scroll: false }); }} loading={loading} />
       </div>
       <div className={clsx("min-h-0", hasThread ? "block" : "hidden md:block")}>
         {hasThread ? (

@@ -66,7 +66,8 @@ export function PulseFeed({ view, viewer }: { view: FeedView; viewer: { id: stri
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const home = view.mode === "for_you" || view.mode === "following";
+  // stories and "share an update" belong to For You only; Following and a person's feed show just the posts
+  const home = view.mode === "for_you";
   const posts = items;
   const key = JSON.stringify(view);
 
