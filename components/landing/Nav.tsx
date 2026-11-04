@@ -15,6 +15,7 @@ const LINKS = [
   { label: "Principles", href: "#principles" },
   { label: "Organisations", href: "#institutions" },
   { label: "Careers", href: "/careers" },
+  { label: "Contact", href: "#contact" },
 ];
 
 export default function Nav() {

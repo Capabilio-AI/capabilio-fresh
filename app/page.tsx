@@ -10,6 +10,8 @@ import Showcase from "@/components/landing/Showcase";
 import Paths from "@/components/landing/Paths";
 import Principles from "@/components/landing/Principles";
 import Institutions from "@/components/landing/Institutions";
+import Recognition from "@/components/landing/Recognition";
+import Contact from "@/components/landing/Contact";
 import Closing from "@/components/landing/Closing";
 import CommandPalette from "@/components/landing/CommandPalette";
 
@@ -28,6 +30,8 @@ export default function Home() {
         <Paths />
         <Principles />
         <Institutions />
+        <Recognition />
+        <Contact />
         <Closing />
       </main>
     </div>
