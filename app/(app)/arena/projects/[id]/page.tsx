@@ -14,6 +14,7 @@ import { loadGroupMentorship } from "@/lib/org/mentorship";
 import { askableMentors } from "@/lib/org/project-notices";
 import { AttachmentList } from "@/components/org/AttachmentList";
 import { ReportForm, SubmissionForm } from "@/components/org/ProjectWorkForms";
+import type { ProjectFile } from "@/lib/org/project-files";
 import { signProjectFiles } from "@/lib/org/project-files-server";
 
 export const metadata: Metadata = { title: "Project — Capabilio AI" };
@@ -273,7 +274,7 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
               {open && mine.group.status !== "graded" && (
                 <>
                   <h3 className="mb-4 font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Add this week&apos;s report</h3>
-                  <ReportForm groupId={mine.group.id} nextWeek={Math.min(52, Math.max(0, ...mine.reports.map((r) => r.week_number)) + 1)} />
+                  <ReportForm groupId={mine.group.id} nextWeek={Math.min(52, Math.max(0, ...mine.reports.map((r) => r.week_number)) + 1)} existing={mine.reports.map((r) => ({ week: r.week_number, content: r.content, link: r.attachment_url, files: (r.attachments ?? []) as ProjectFile[] }))} />
                 </>
               )}
             </section>

@@ -25,10 +25,13 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
   const project = await loadManagedProject(service, ctx, id);
   if (!project) notFound();
   const allGroups = await loadProjectGroups(service, project.id);
-  const progress = await loadProjectProgress(service, project, allGroups);
   const groups = orderForStaff(allGroups);
-  const mentors = await loadProjectMentors(service, project.id);
-  const urls = await signProjectFiles(service, allGroups.flatMap((g) => [...g.reports.flatMap((r) => r.attachments ?? []), ...(g.submission?.attachments ?? [])]));
+  // independent reads together: this page reloads after every action, so each one saved is a faster save
+  const [progress, mentors, urls] = await Promise.all([
+    loadProjectProgress(service, project, allGroups),
+    loadProjectMentors(service, project.id),
+    signProjectFiles(service, allGroups.flatMap((g) => [...g.reports.flatMap((r) => r.attachments ?? []), ...(g.submission?.attachments ?? [])])),
+  ]);
   const openGroups = allGroups.filter((g) => g.group.status === "forming" && g.members.length < project.team_size).map((g) => ({ id: g.group.id, label: `${g.group.name} (${g.members.length}/${project.team_size})` }));
   const { counts } = progress;
 
@@ -162,7 +165,7 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                           <p className="mt-2 rounded bg-white/[0.04] px-2 py-1 font-lp-body text-[12.5px] text-app-charcoal">Your feedback: {r.staff_feedback}</p>
                         ) : (
                           <div className="mt-2">
-                            <JsonForm action="/api/org/report-feedback" extra={{ reportId: r.id }} submitLabel="Send feedback" fields={[{ name: "feedback", label: "Feedback", required: true }]} />
+                            <JsonForm action="/api/org/report-feedback" extra={{ reportId: r.id }} submitLabel="Send feedback" fields={[{ name: "feedback", label: "Feedback for the group", type: "textarea", required: true, placeholder: "What went well, what to fix before next week." }]} />
                           </div>
                         )}
                       </li>
@@ -199,6 +202,8 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                   </div>
                 )}
               </div>
+
+              {!canGrade && <p className="mt-4 border-t border-app-border pt-4 font-lp-body text-[12.5px] text-app-muted">Grading opens when this group submits its project. Until then you can read their weekly reports and leave feedback.</p>}
 
               {canGrade && (
                 <div className="mt-4 border-t border-app-border pt-4">
