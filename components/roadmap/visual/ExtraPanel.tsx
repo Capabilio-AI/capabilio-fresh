@@ -7,22 +7,37 @@ import { send } from "@/components/roadmap/v2/api";
 import { StationMark } from "./StationMark";
 import { generateTables, seedOf, toCsv, type DatasetSpec } from "@/lib/roadmap-visual/dataset";
 
-type Guide = { state: "loading" } | { state: "ready"; guide: ProjectGuideView } | { state: "error"; message: string };
+type Guide = { state: "loading"; seconds: number } | { state: "ready"; guide: ProjectGuideView } | { state: "error"; message: string };
 
-/** Fetches the AI-written guide for a project once per open; a retry is one button away. */
+const POLL_MS = 4000;
+const GIVE_UP_MS = 6 * 60_000;
+
+/**
+ * Asks for the project's guide. If it is written the answer is immediate; otherwise the server is writing it in the background and we ask
+ * again every few seconds (showing how long it has been), until it is ready, it fails, or six minutes pass.
+ */
 function useGuide(resourceId: string, career: "primary" | "plan-b", enabled: boolean) {
-  const [guide, setGuide] = useState<Guide>({ state: "loading" });
+  const [guide, setGuide] = useState<Guide>({ state: "loading", seconds: 0 });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
-    void send("POST", "/api/roadmap/project-guide", { resourceId, career }).then((r) => {
-      if (cancelled) return;
-      setGuide(r.ok && r.data?.guide ? { state: "ready", guide: r.data.guide as ProjectGuideView } : { state: "error", message: r.error ?? "Couldn't load the guide." });
-    });
-    return () => { cancelled = true; };
+    const started = Date.now();
+    const tick = setInterval(() => !cancelled && setGuide((g) => (g.state === "loading" ? { state: "loading", seconds: Math.round((Date.now() - started) / 1000) } : g)), 1000);
+    async function run() {
+      while (!cancelled) {
+        const r = await send("POST", "/api/roadmap/project-guide", { resourceId, career, ...(attempt > 0 ? { retry: true } : {}) });
+        if (cancelled) return;
+        if (!r.ok) return setGuide({ state: "error", message: r.error ?? "Couldn't load the guide." });
+        if (r.data?.guide) return setGuide({ state: "ready", guide: r.data.guide as ProjectGuideView });
+        if (Date.now() - started > GIVE_UP_MS) return setGuide({ state: "error", message: "This is taking longer than usual." });
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+      }
+    }
+    void run();
+    return () => { cancelled = true; clearInterval(tick); };
   }, [resourceId, career, enabled, attempt]);
-  return { guide, retry: () => { setGuide({ state: "loading" }); setAttempt((n) => n + 1); } };
+  return { guide, retry: () => { setGuide({ state: "loading", seconds: 0 }); setAttempt((n) => n + 1); } };
 }
 
 /** Builds the CSV in the browser from the spec (same seed, same file) and downloads it. Nothing is stored or fetched. */
@@ -123,7 +138,7 @@ export function ExtraPanel({ resource: r, career, onClose }: { resource: Resourc
         {isProject && (
           <section aria-labelledby="steps-h">
             <h3 id="steps-h" className={H}>Step by step</h3>
-            {guide.state === "loading" && <p role="status" className="mt-2 text-app-muted">Writing your step-by-step guide…</p>}
+            {guide.state === "loading" && <p role="status" className="mt-2 text-app-muted">Writing the guide for this project{guide.seconds > 5 ? ` (${guide.seconds}s)` : ""}. The first student to open a project waits about a minute; after that it opens instantly.</p>}
             {guide.state === "error" && (
               <p role="alert" className="mt-2 text-app-muted">{guide.message} <button type="button" onClick={retry} className="font-bold text-[var(--m-accent-ink)] underline">Try again</button></p>
             )}
