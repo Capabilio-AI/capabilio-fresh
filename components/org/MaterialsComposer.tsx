@@ -80,7 +80,7 @@ export function MaterialsComposer({ branches, subjects, canPickAll }: { branches
 
   async function publish() {
     setMessage(null);
-    const jobs = tab === "files" ? files.length : subjectId ? 1 : audiences.length;
+    const jobs = tab === "files" ? files.length : 1;
     setProgress({ done: 0, total: jobs });
     let failure: string | null = null;
     if (tab === "files") {
@@ -96,15 +96,12 @@ export function MaterialsComposer({ branches, subjects, canPickAll }: { branches
         setProgress({ done: i + 1, total: jobs });
       }
     } else {
-      const targets: ({ subjectId: string } | Audience)[] = subjectId ? [{ subjectId }] : audiences;
-      for (const [i, t] of targets.entries()) {
-        const base = tab === "link"
-          ? { type: /\.pdf(\?|#|$)/i.test(link.url) ? "pdf" : "link", title: link.title.trim(), url: link.url.trim() }
-          : { type: "notes", title: note.title.trim(), body: note.body.trim() };
-        failure = await post("/api/org/materials", JSON.stringify({ ...base, ...(description.trim() ? { description: description.trim() } : {}), ...t }), true);
-        if (failure) break;
-        setProgress({ done: i + 1, total: jobs });
-      }
+      const base = tab === "link"
+        ? { type: /\.pdf(\?|#|$)/i.test(link.url) ? "pdf" : "link", title: link.title.trim(), url: link.url.trim() }
+        : { type: "notes", title: note.title.trim(), body: note.body.trim() };
+      // one request for every group, so it is one item for students and in the library
+      failure = await post("/api/org/materials", JSON.stringify({ ...base, ...(description.trim() ? { description: description.trim() } : {}), ...(subjectId ? { subjectId } : { audiences }) }), true);
+      if (!failure) setProgress({ done: 1, total: jobs });
     }
     setProgress(null);
     if (failure) return setMessage({ ok: false, text: failure });

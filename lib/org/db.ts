@@ -44,6 +44,8 @@ export interface MaterialRow {
   institution_id: string;
   subject_id: string | null;
   author_membership_id: string;
+  /** rows made by one share (several branch-and-year groups) carry the same id */
+  share_id: string;
   type: "notes" | "pdf" | "link" | "file";
   title: string;
   description: string | null;

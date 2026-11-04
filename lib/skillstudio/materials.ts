@@ -1,5 +1,6 @@
 // What staff have shared with the student's own branch (and their year or earlier): notes, links and uploaded files, each with who shared it.
 // Files are served through short-lived signed links, one for viewing in the popup and one that forces a download.
+import { onePerShare } from "@/lib/org/material-share";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { getOrgContext } from "@/lib/org/context";
@@ -33,9 +34,9 @@ export async function loadStudyMaterials(supabase: SupabaseClient<Database>, ser
   if (!ctx || ctx.kind !== "student" || !ctx.branch) return null;
   const db = untyped(service);
 
-  const { data } = await db.from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(300);
+  const { data } = await db.from("class_materials").select("*").eq("institution_id", ctx.institutionId).order("published_at", { ascending: false }).limit(1500);
   // their own branch; their current year and the years before it (revision), never a later year's material
-  const rows = ((data ?? []) as MaterialRow[]).filter((m) => sameBranch(m.branch, ctx.branch) && (currentYear === null || m.year <= currentYear));
+  const rows = onePerShare(((data ?? []) as MaterialRow[]).filter((m) => sameBranch(m.branch, ctx.branch) && (currentYear === null || m.year <= currentYear)), currentYear);
   if (rows.length === 0) return { institutionName: ctx.institutionName, branch: ctx.branch, year: currentYear, items: [] };
 
   const [{ data: authors }, { data: subjects }] = await Promise.all([

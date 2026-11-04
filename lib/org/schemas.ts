@@ -18,6 +18,8 @@ export const MaterialSchema = z
     body: optionalText(20000),
     url: optionalUrl,
     subjectId: uuid.optional().or(z.literal("").transform(() => undefined)),
+    /** several branch-and-year groups in one share (one item for students and in the library) */
+    audiences: z.array(z.object({ branch: z.string().trim().min(1).max(200), year: z.number().int().min(1).max(6) })).min(1).max(24).optional(),
     branch: optionalText(200),
     year: z.coerce.number("Enter the year as a number, 1 to 6.").int("Enter the year as a whole number, 1 to 6.").min(1, "Year must be between 1 and 6.").max(6, "Year must be between 1 and 6.").optional(),
   })
@@ -26,7 +28,7 @@ export const MaterialSchema = z
     if (v.type === "notes" && !v.body) ctx.addIssue({ code: "custom", path: ["body"], message: "Notes need some text." });
     if (v.type !== "notes" && !v.url) ctx.addIssue({ code: "custom", path: ["url"], message: "Add a link." });
     // The branch is checked by the route: a faculty member's own branch is implied, so it is not always sent.
-    if (!v.subjectId && v.year === undefined) ctx.addIssue({ code: "custom", path: ["year"], message: "Pick a subject, or enter a year." });
+    if (!v.subjectId && !v.audiences && v.year === undefined) ctx.addIssue({ code: "custom", path: ["year"], message: "Pick a subject, or enter a year." });
   });
 
 export const ProjectSchema = z
