@@ -29,7 +29,7 @@
     },
     {
       "path": "/api/cron/project-guides",
-      "schedule": "17 * * * *"
+      "schedule": "40 4 * * *"
     }
   ]
 }
