@@ -10,6 +10,7 @@ import { getCareerProfile } from "@/lib/assess/career-profile";
 import type { Db } from "@/lib/assess/db";
 import { getEducationEntries, type EducationEntry } from "@/lib/dashboard/education";
 import { getPortfolioElo, type PortfolioElo } from "@/lib/portfolio/elo";
+import { buildClassProjects, type ClassProject } from "@/lib/portfolio/class-projects";
 import { GITHUB_CONNECTION_COLUMNS, loadGithubEvidence, type GithubEvidence } from "@/lib/portfolio/github-evidence";
 
 export type { GithubEvidence };
@@ -66,6 +67,8 @@ export interface PortfolioData {
   items: VaultItem[];
   groups: CapabilityGroup[];
   arenaTasks: ArenaTask[];
+  /** Group projects graded by college staff (the shared grade only). */
+  classProjects: ClassProject[];
   /** Graded Arena work per role and skill area: exact verified counts and the last pass date. */
   arenaWork: ArenaWorkRole[];
   /** A level per skill, from graded work only, with the reason; empty until the student has passed a task. */
@@ -212,6 +215,7 @@ export async function getPortfolioData(supabase: SupabaseClient<Database>, userI
     items,
     groups,
     arenaTasks,
+    classProjects: buildClassProjects(evidenceResult.data ?? []),
     arenaWork,
     proficiency,
     roleReadiness,

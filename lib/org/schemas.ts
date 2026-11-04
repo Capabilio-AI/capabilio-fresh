@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProjectFilesSchema } from "./project-files";
 
 // Every body is strict(): institution, role, status, org type, user ids and team size are never accepted from a client.
 const httpUrl = z.string().trim().max(2000).regex(/^https?:\/\/\S+$/, "Enter a full http(s) link.");
@@ -43,12 +44,22 @@ export const ProjectSchema = z
 export const ProjectStatusSchema = z.object({ projectId: uuid, status: z.enum(["open", "closed", "archived"]) }).strict();
 export const GroupCreateSchema = z.object({ projectId: uuid, name: z.string().trim().min(1).max(80) }).strict();
 export const GroupIdSchema = z.object({ groupId: uuid }).strict();
+export const MentorRequestSchema = z.object({ groupId: uuid, mentorMembershipId: uuid, message: z.string().trim().max(500).optional() }).strict();
+export const MentorDecisionSchema = z
+  .object({ requestId: uuid, decision: z.enum(["accept", "reject"]), reason: z.string().trim().max(500).optional() })
+  .strict()
+  .refine((v) => v.decision === "accept" || (v.reason ?? "").length >= 3, { message: "Give a reason of at least 3 characters." });
+export const AddMemberSchema = z.object({ groupId: uuid, userId: uuid }).strict();
+export const ProjectRemindSchema = z.object({ projectId: uuid }).strict();
 export const JoinRequestIdSchema = z.object({ requestId: uuid }).strict();
 export const JoinRequestDecisionSchema = z.object({ requestId: uuid, decision: z.enum(["accept", "reject"]) }).strict();
 export const ReportSchema = z
-  .object({ groupId: uuid, weekNumber: z.coerce.number().int().min(1).max(52), content: z.string().trim().min(1).max(5000), attachmentUrl: optionalUrl })
+  .object({ groupId: uuid, weekNumber: z.coerce.number().int().min(1).max(52), content: z.string().trim().min(1).max(5000), attachmentUrl: optionalUrl, attachments: ProjectFilesSchema.default([]) })
   .strict();
-export const SubmitSchema = z.object({ groupId: uuid, linkUrl: httpUrl }).strict();
+export const SubmitSchema = z
+  .object({ groupId: uuid, linkUrl: httpUrl.optional(), attachments: ProjectFilesSchema.default([]) })
+  .strict()
+  .refine((v) => Boolean(v.linkUrl) || v.attachments.length > 0, { message: "Add a link or attach a file." });
 export const GradeSchema = z
   .object({
     groupId: uuid,

@@ -10,6 +10,11 @@ import { JsonForm } from "@/components/org/JsonForm";
 import { EmptyState, Pill, formatDateTime } from "@/components/org/ui";
 import { CopyLink } from "@/components/org/CopyLink";
 import { inviteHref } from "@/lib/org/group-invite";
+import { loadGroupMentorship } from "@/lib/org/mentorship";
+import { askableMentors } from "@/lib/org/project-notices";
+import { AttachmentList } from "@/components/org/AttachmentList";
+import { ReportForm, SubmissionForm } from "@/components/org/ProjectWorkForms";
+import { signProjectFiles } from "@/lib/org/project-files-server";
 
 export const metadata: Metadata = { title: "Project — Capabilio AI" };
 
@@ -26,6 +31,8 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
   const project = (await loadStudentProjects(service, ctx)).find((p) => p.id === id);
   if (!project) notFound();
   const mine = project.myGroup;
+  const urls = mine ? await signProjectFiles(service, [...mine.reports.flatMap((r) => r.attachments ?? []), ...(mine.submission?.attachments ?? [])]) : new Map<string, string>();
+  const mentorship = mine ? await loadGroupMentorship(service, mine.group.id, ctx.institutionId, mine.members.map((m) => m.user_id)) : null;
   const open = project.acceptingWork;
 
   return (
@@ -154,6 +161,56 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
             </section>
           )}
 
+          {mentorship && mine.group.status !== "graded" && (
+            <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
+              <h2 className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Mentor</h2>
+              {mentorship.mentor ? (
+                <p className="mt-1 font-lp-body text-[13px] text-[var(--m-ink)]">{mentorship.mentor.name} <span className="text-app-muted">({mentorship.mentor.role === "hod" ? "HoD" : "faculty"}) is mentoring your group.</span></p>
+              ) : (
+                <>
+                  <p className="mb-3 mt-1 font-lp-body text-[12.5px] text-app-muted">Ask a faculty member to mentor your group. They can accept, or decline and tell you why.</p>
+                  {mentorship.requests.filter((r) => r.status !== "cancelled").length > 0 && (
+                    <ul className="mb-4 divide-y divide-app-border">
+                      {mentorship.requests.filter((r) => r.status !== "cancelled").map((r) => (
+                        <li key={r.id} className="flex flex-wrap items-start justify-between gap-2 py-2.5">
+                          <div className="min-w-0">
+                            <p className="font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">{r.mentorName}</p>
+                            {r.status === "rejected" && <p className="mt-0.5 max-w-xl font-lp-body text-[12.5px] text-app-muted">Declined{r.reason ? `: ${r.reason}` : "."}</p>}
+                          </div>
+                          {r.status === "pending" ? (
+                            <span className="flex items-center gap-2">
+                              <Pill tone="warn">Waiting for an answer</Pill>
+                              <ActionButton action="/api/classroom/mentors/cancel" body={{ requestId: r.id }} label="Cancel" variant="ghost" />
+                            </span>
+                          ) : (
+                            <Pill tone="neutral">Declined</Pill>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {(() => {
+                    const options = askableMentors(mentorship.options, mentorship.requests.map((r) => ({ mentorMembershipId: r.mentorMembershipId, status: r.status })));
+                    return options.length === 0 ? (
+                      <p className="font-lp-body text-[12.5px] text-app-muted">No other faculty to ask right now.</p>
+                    ) : (
+                      <JsonForm
+                        action="/api/classroom/mentors/request"
+                        extra={{ groupId: mine.group.id }}
+                        submitLabel="Send request"
+                        successMessage="Request sent."
+                        fields={[
+                          { name: "mentorMembershipId", label: "Faculty member", type: "select", required: true, options: [{ value: "", label: "Choose…" }, ...options.map((o) => ({ value: o.membershipId, label: `${o.name} (${o.role === "hod" ? "HoD" : "faculty"}${o.branch ? `, ${o.branch}` : ""})` }))] },
+                          { name: "message", label: "Message (optional)", type: "textarea", placeholder: "What you are building and why you would like their guidance." },
+                        ]}
+                      />
+                    );
+                  })()}
+                </>
+              )}
+            </section>
+          )}
+
           {mine.group.status === "graded" && mine.grade && (
             <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
               <h2 className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Grade: {mine.grade.grade}</h2>
@@ -166,54 +223,58 @@ export default async function ClassroomProjectPage({ params, searchParams }: { p
           )}
 
           {mine.group.status !== "forming" && project.submission_type === "in_app" && mine.group.status !== "graded" && (
-            <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
-              <h2 className="mb-1 font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Submission</h2>
+            <section className="rounded-2xl border border-[var(--m-rule)] bg-white p-6 sm:p-7">
+              <h2 className="font-lp-display text-[18px] font-bold text-[var(--m-ink)]">Final submission</h2>
+              <p className="mb-5 mt-1 font-lp-body text-[13px] text-app-muted">Submit your project as a link, files or both. Your faculty is notified and grades the whole group together.</p>
               {mine.submission && (
-                <p className="mb-2 font-lp-body text-[12.5px] text-app-muted">
-                  Submitted {formatDateTime(mine.submission.submitted_at)}:{" "}
-                  <a href={mine.submission.link_url ?? "#"} target="_blank" rel="noopener noreferrer" className="text-app-blue hover:underline">
-                    {mine.submission.link_url}
-                  </a>
-                  . You can resubmit until it is graded.
-                </p>
+                <div className="mb-6 rounded-xl border border-[var(--m-rule)] bg-app-background p-4">
+                  <p className="font-lp-body text-[12.5px] font-semibold text-[var(--m-ink)]">Submitted {formatDateTime(mine.submission.submitted_at)}</p>
+                  {mine.submission.link_url && (
+                    <a href={mine.submission.link_url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all font-lp-body text-[13px] text-app-blue hover:underline">{mine.submission.link_url}</a>
+                  )}
+                  <AttachmentList files={mine.submission.attachments ?? []} urls={urls} />
+                  <p className="mt-3 font-lp-body text-[12px] text-app-muted">You can resubmit until it is graded.</p>
+                </div>
               )}
-              {open && <JsonForm action="/api/classroom/submissions" extra={{ groupId: mine.group.id }} submitLabel={mine.submission ? "Resubmit" : "Submit"} successMessage="Submitted." fields={[{ name: "linkUrl", label: "Link to your work", type: "url", required: true, placeholder: "https://…" }]} />}
+              {open && <SubmissionForm key={mine.submission?.submitted_at ?? "new"} groupId={mine.group.id} resubmit={Boolean(mine.submission)} initialLink={mine.submission?.link_url ?? undefined} initialFiles={mine.submission?.attachments ?? []} />}
+            </section>
+          )}
+          {mine.submission && mine.group.status === "graded" && (
+            <section className="rounded-2xl border border-[var(--m-rule)] bg-white p-6">
+              <h2 className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">What you submitted</h2>
+              {mine.submission.link_url && <a href={mine.submission.link_url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all font-lp-body text-[13px] text-app-blue hover:underline">{mine.submission.link_url}</a>}
+              <AttachmentList files={mine.submission.attachments ?? []} urls={urls} />
             </section>
           )}
           {project.submission_type === "physical" && (
-            <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
-              <h2 className="font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Submission</h2>
-              <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">{mine.submission ? "Your physical submission was received by staff." : "Hand in your work as instructed; staff will mark it received here."}</p>
+            <section className="rounded-2xl border border-[var(--m-rule)] bg-white p-6">
+              <h2 className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">Submission</h2>
+              <p className="mt-1 font-lp-body text-[13px] text-app-muted">{mine.submission ? "Your physical submission was received by staff." : "Hand in your work as instructed; staff will mark it received here."}</p>
             </section>
           )}
 
           {project.weekly_report_required && (
-            <section className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
-              <h2 className="mb-1 font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Weekly reports</h2>
-              <p className="mb-3 font-lp-body text-[12px] text-app-muted">Progress notes for your faculty. They&apos;re process updates, not evidence — only the final grade counts toward your Portfolio.</p>
+            <section className="rounded-2xl border border-[var(--m-rule)] bg-white p-6 sm:p-7">
+              <h2 className="font-lp-display text-[18px] font-bold text-[var(--m-ink)]">Weekly reports</h2>
+              <p className="mb-5 mt-1 font-lp-body text-[13px] text-app-muted">Progress notes for your faculty. They are process updates, not evidence: only the final grade counts toward your Portfolio.</p>
               {mine.reports.length > 0 && (
-                <ul className="mb-4 flex flex-col gap-2">
+                <ul className="mb-7 flex flex-col gap-3">
                   {mine.reports.map((r) => (
-                    <li key={r.id} className="rounded-lg border border-[var(--m-rule)] p-3">
-                      <p className="font-lp-mono text-[11px] text-app-muted">Week {r.week_number}</p>
-                      <p className="mt-1 whitespace-pre-wrap font-lp-body text-[13px] text-[var(--m-ink)]">{r.content}</p>
-                      {r.staff_feedback && <p className="mt-2 rounded bg-app-background px-2 py-1 font-lp-body text-[12.5px] text-[var(--m-ink)]">Faculty: {r.staff_feedback}</p>}
+                    <li key={r.id} className="rounded-xl border border-[var(--m-rule)] p-4">
+                      <p className="font-lp-body text-[12px] font-bold uppercase tracking-wide text-app-muted">Week {r.week_number}</p>
+                      <p className="mt-1.5 whitespace-pre-wrap font-lp-body text-[14px] leading-relaxed text-[var(--m-ink)]">{r.content}</p>
+                      {r.attachment_url && <a href={r.attachment_url} target="_blank" rel="noopener noreferrer" className="mt-2 block break-all font-lp-body text-[13px] text-app-blue hover:underline">{r.attachment_url}</a>}
+                      <AttachmentList files={r.attachments ?? []} urls={urls} />
+                      {r.staff_feedback && <p className="mt-3 rounded-lg bg-app-background px-3 py-2 font-lp-body text-[13px] text-[var(--m-ink)]"><span className="font-semibold">Faculty feedback: </span>{r.staff_feedback}</p>}
                     </li>
                   ))}
                 </ul>
               )}
               {open && mine.group.status !== "graded" && (
-                <JsonForm
-                  action="/api/classroom/reports"
-                  extra={{ groupId: mine.group.id }}
-                  submitLabel="Save report"
-                  successMessage="Report saved."
-                  fields={[
-                    { name: "weekNumber", label: "Week number", type: "number", required: true, defaultValue: String(mine.reports.length + 1) },
-                    { name: "content", label: "What did the group do this week?", type: "textarea", required: true },
-                    { name: "attachmentUrl", label: "Attachment link (optional)", type: "url" },
-                  ]}
-                />
+                <>
+                  <h3 className="mb-4 font-lp-body text-[14px] font-semibold text-[var(--m-ink)]">Add this week&apos;s report</h3>
+                  <ReportForm groupId={mine.group.id} nextWeek={Math.min(52, Math.max(0, ...mine.reports.map((r) => r.week_number)) + 1)} />
+                </>
               )}
             </section>
           )}
