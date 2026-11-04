@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { orgRoute } from "@/lib/api/org-route";
 import { ReportSchema } from "@/lib/org/schemas";
 import { untyped, type GroupRow, type ProjectRow } from "@/lib/org/db";
+import { isGroupPath } from "@/lib/org/project-files";
 
 /** Weekly report (process data only — never evidence). Any member of the group may file/edit a week until the project is graded. */
 export async function POST(request: Request) {
@@ -14,9 +15,11 @@ export async function POST(request: Request) {
     if (!group || !project) return NextResponse.json({ error: "Group not found." }, { status: 404 });
     if (group.status === "graded" || project.status !== "open") return NextResponse.json({ error: "Reports are closed for this project." }, { status: 409 });
 
+    if (body.attachments.some((a) => !isGroupPath(a.path, project.id, group.id))) return NextResponse.json({ error: "One of the files does not belong to this group." }, { status: 400 });
+
     // upsert content only; staff_feedback on an existing week is preserved
     const { data: existing } = await db.from("class_weekly_reports").select("id").eq("group_id", body.groupId).eq("week_number", body.weekNumber).maybeSingle();
-    const fields = { content: body.content, attachment_url: body.attachmentUrl ?? null, submitted_by_user_id: ctx.userId, submitted_at: new Date().toISOString() };
+    const fields = { content: body.content, attachment_url: body.attachmentUrl ?? null, attachments: body.attachments, submitted_by_user_id: ctx.userId, submitted_at: new Date().toISOString() };
     const { error } = existing
       ? await db.from("class_weekly_reports").update(fields).eq("id", existing.id)
       : await db.from("class_weekly_reports").insert({ group_id: body.groupId, week_number: body.weekNumber, ...fields });

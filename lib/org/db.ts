@@ -64,6 +64,8 @@ export interface ReportRow {
   submitted_by_user_id: string;
   content: string;
   attachment_url: string | null;
+  /** images and PDFs the group attached (private storage; read through signed links) */
+  attachments?: { path: string; name: string; contentType: string; size: number }[];
   submitted_at: string;
   staff_feedback: string | null;
   staff_seen_at: string | null;
@@ -73,6 +75,7 @@ export interface SubmissionRow {
   group_id: string;
   submission_type: "in_app" | "physical";
   link_url: string | null;
+  attachments?: { path: string; name: string; contentType: string; size: number }[];
   submitted_at: string;
   physical_confirmed_by_membership_id: string | null;
 }

@@ -8,6 +8,8 @@ import { loadProjectGroups } from "@/lib/org/loaders";
 import { loadProjectProgress, orderForStaff } from "@/lib/org/project-progress";
 import { ActionButton } from "@/components/org/ActionButton";
 import { AddToGroup } from "@/components/org/AddToGroup";
+import { AttachmentList } from "@/components/org/AttachmentList";
+import { signProjectFiles } from "@/lib/org/project-files-server";
 import { loadProjectMentors } from "@/lib/org/mentorship";
 import { JsonForm } from "@/components/org/JsonForm";
 import { EmptyState, PageHeader, Panel, Pill, formatDateTime } from "@/components/org/ui";
@@ -26,6 +28,7 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
   const progress = await loadProjectProgress(service, project, allGroups);
   const groups = orderForStaff(allGroups);
   const mentors = await loadProjectMentors(service, project.id);
+  const urls = await signProjectFiles(service, allGroups.flatMap((g) => [...g.reports.flatMap((r) => r.attachments ?? []), ...(g.submission?.attachments ?? [])]));
   const openGroups = allGroups.filter((g) => g.group.status === "forming" && g.members.length < project.team_size).map((g) => ({ id: g.group.id, label: `${g.group.name} (${g.members.length}/${project.team_size})` }));
   const { counts } = progress;
 
@@ -154,6 +157,7 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                             Attachment
                           </a>
                         )}
+                        <AttachmentList files={r.attachments ?? []} urls={urls} />
                         {r.staff_feedback ? (
                           <p className="mt-2 rounded bg-white/[0.04] px-2 py-1 font-lp-body text-[12.5px] text-app-charcoal">Your feedback: {r.staff_feedback}</p>
                         ) : (
@@ -170,6 +174,7 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
               <div className="mt-4">
                 <h3 className="font-lp-mono text-[11px] uppercase tracking-wide text-app-muted">Submission</h3>
                 {submission ? (
+                  <div>
                   <p className="mt-1 font-lp-body text-[13px] text-app-charcoal">
                     {submission.submission_type === "physical" ? (
                       "Physical submission received."
@@ -179,10 +184,12 @@ export default async function OrgProjectPage({ params }: { params: Promise<{ id:
                         {submission.link_url}
                       </a>
                     ) : (
-                      "Submitted."
+                      (submission.attachments?.length ?? 0) > 0 ? "Submitted with files." : "Submitted."
                     )}{" "}
                     <span className="text-app-muted">({formatDateTime(submission.submitted_at)})</span>
                   </p>
+                  <AttachmentList files={submission.attachments ?? []} urls={urls} />
+                  </div>
                 ) : (
                   <div className="mt-1 flex items-center gap-3">
                     <p className="font-lp-body text-[12.5px] text-app-muted">Nothing submitted.</p>

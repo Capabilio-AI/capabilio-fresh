@@ -18,6 +18,7 @@ import { LiveNumber } from "@/components/portfolio/LiveNumber";
 import { LiveStatus } from "@/components/portfolio/LiveStatus";
 import type { PortfolioElo } from "@/lib/portfolio/elo";
 import type { ArenaWorkRole } from "@/lib/portfolio/arena-work";
+import type { ClassProject } from "@/lib/portfolio/class-projects";
 import { EvidenceModal } from "@/components/portfolio/EvidenceModal";
 
 const TYPE_ICON: Record<string, LucideIcon> = { certificate: Award, project: Sparkles, resume: FileText, link: Link2, other: FileText };
@@ -53,6 +54,7 @@ export interface PortfolioBodyProps {
   statedRole: string | null;
   groups: CapabilityGroup[];
   arenaTasks: ArenaTask[];
+  classProjects: ClassProject[];
   arenaWork: ArenaWorkRole[];
   proficiency: SkillProficiency[];
   /** Kept so the public share page and the dashboard pass the same data; interview sessions are practice and stay out of the recruiter view. */
@@ -75,7 +77,7 @@ export interface PortfolioBodyProps {
  * evidence), their measured skills, GitHub and projects. Everything comes from verified records. It says nothing about a target role or
  * about learning: what a company needs is for the company to decide, from the evidence.
  */
-export function PortfolioBody({ viewer, profile, education, arenaTasks, arenaWork, proficiency, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
+export function PortfolioBody({ viewer, profile, education, arenaTasks, classProjects, arenaWork, proficiency, github, items, elo, graph, mostRecent, pulseUrl, isOwner, evidenceBaseUrl }: PortfolioBodyProps) {
   const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
   // Work that arrives while the page is open (live updates) is marked "New" for a few seconds so a watching recruiter sees what just landed.
   const seen = useRef(new Set(arenaTasks.map((t) => t.attemptId)));
@@ -104,7 +106,7 @@ export function PortfolioBody({ viewer, profile, education, arenaTasks, arenaWor
     ...(averageScore !== null ? [["Average score", <LiveNumber key="avg" value={averageScore} suffix="%" />] as [string, React.ReactNode]] : []),
     ...(github?.repositoriesAnalyzed ? [["Repositories analysed", <LiveNumber key="repos" value={github.repositoriesAnalyzed} />] as [string, React.ReactNode]] : []),
   ];
-  const empty = education.length === 0 && measured.length === 0 && arenaTasks.length === 0 && items.length === 0 && !github;
+  const empty = education.length === 0 && measured.length === 0 && arenaTasks.length === 0 && classProjects.length === 0 && items.length === 0 && !github;
   const headline = profile.headline ?? [viewer.branch, viewer.collegeName].filter(Boolean).join(", ");
   const email = profile.contact?.email;
   const phone = profile.contact?.phone;
@@ -173,6 +175,28 @@ export function PortfolioBody({ viewer, profile, education, arenaTasks, arenaWor
                       <button type="button" onClick={() => setOpenAttemptId(t.attemptId)} className="inline-flex items-center gap-1 font-lp-body text-[13px] font-semibold text-[var(--m-accent-ink)] hover:underline">View evidence<ChevronRight size={14} aria-hidden /></button>
                       {t.explanationScore !== undefined && <span className="font-lp-body text-[12.5px] text-[var(--m-muted)]">Explained {t.explanationScore}/100</span>}
                       {isOwner && t.sealed && <EvidenceShareToggle attemptId={t.attemptId} initialShared={t.sealed.shared} />}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {classProjects.length > 0 && (
+            <Section title="Staff-graded projects" aside={<span className="font-lp-body text-[12.5px] text-[var(--m-muted)]">{classProjects.length} graded by college staff</span>}>
+              <ul className="grid gap-3">
+                {classProjects.map((p) => (
+                  <li key={`${p.title}:${p.gradedAt}`} className="rounded-2xl border border-[var(--m-rule)]! bg-white p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-lp-body text-[15.5px] font-semibold text-[var(--m-ink)]">{p.title}</p>
+                        <p className="mt-1 font-lp-body text-[13px] text-[var(--m-muted)]">{[p.subject, p.groupSize ? `Group of ${p.groupSize}` : null, `Graded by ${p.gradedBy}`, fmtDate(p.gradedAt)].filter(Boolean).join(" · ")}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-[var(--m-ground)] px-3 py-1 font-lp-display text-[15px] font-bold text-[var(--m-ink)] print:border print:border-[var(--m-rule)]">Grade {p.grade}</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[var(--m-rule)]! pt-3">
+                      <TrustTag verified verifiedLabel="Verified by college staff" />
+                      {p.link && <a href={p.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-lp-body text-[13px] font-semibold text-[var(--m-accent-ink)] hover:underline print:hidden"><ExternalLink size={12} aria-hidden />View project</a>}
                     </div>
                   </li>
                 ))}

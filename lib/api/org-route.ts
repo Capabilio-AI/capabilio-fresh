@@ -25,6 +25,7 @@ const DB_ERRORS: Record<string, [number, string]> = {
   in_app_submission_only: [409, "This project takes in-app submissions."],
   invalid_grade: [400, "Enter a grade of 1-10 characters."],
   invalid_contribution_notes: [400, "Contribution notes may only name members of the group."],
+  submission_empty: [400, "Add a link or attach a file."],
   invalid_mentor: [400, "Pick a faculty member or HoD of your college."],
   group_has_mentor: [409, "This group already has a mentor."],
   too_many_requests: [409, "Three mentor requests are already waiting. Wait for an answer or cancel one."],
