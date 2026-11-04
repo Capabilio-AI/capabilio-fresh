@@ -1,14 +1,14 @@
 import Image from "next/image";
 
 // Only recognitions Capabilio holds. Add the certificate / Udyam number once you have it; it is shown only when set.
-export const RECOGNITIONS = [
+const RECOGNITIONS = [
   {
     key: "msme", logo: "/brand/recognition/msme.png", status: "Registered", title: "MSME Registered",
-    body: "Registered as a Micro, Small & Medium Enterprise.", issuer: "Ministry of MSME, Govt. of India", pill: "MSME (Udyam) registered", number: "",
+    body: "Registered as a Micro, Small & Medium Enterprise.", issuer: "Ministry of MSME, Govt. of India", number: "",
   },
   {
     key: "dpiit", logo: "/brand/recognition/startupindia.png", status: "Recognised", title: "Startup India",
-    body: "Recognised as a startup by the Government of India.", issuer: "DPIIT, Ministry of Commerce & Industry", pill: "DPIIT recognised startup", number: "",
+    body: "Recognised as a startup by the Government of India.", issuer: "DPIIT, Ministry of Commerce & Industry", number: "",
   },
 ];
 

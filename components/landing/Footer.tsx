@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { RECOGNITIONS } from "./Recognition";
 
 // Hash links are absolute ("/#...") so the footer works from /careers as well as from the landing page.
 const FOOT = [
@@ -34,17 +33,7 @@ export default function Footer() {
           </nav>
         ))}
       </div>
-      <div className="mx-auto mt-12 flex max-w-[84rem] flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/10! pt-6 text-xs text-white/45">
-        <span>© 2026 Capabilio AI</span>
-        <ul className="flex flex-wrap gap-2">
-          {RECOGNITIONS.map((r) => (
-            <li key={r.pill} className="rounded-full border border-white/15! px-3 py-1 text-white/70">
-              {r.pill}
-              {r.number && <span className="ml-1.5 text-white/45">{r.number}</span>}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <div className="mx-auto mt-12 max-w-[84rem] border-t border-white/10! pt-6 text-xs text-white/45">© 2026 Capabilio AI</div>
     </footer>
   );
 }
