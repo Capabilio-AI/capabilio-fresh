@@ -7,6 +7,11 @@ export const mentorAnswerCopy = (mentor: string, group: string, accepted: boolea
     ? { title: `${mentor} will mentor ${group}`, body: "Your mentor request was accepted." }
     : { title: `${mentor} cannot mentor ${group}`, body: reason ? `Reason: ${reason}` : "Your mentor request was declined." };
 
+export const feedbackCopy = (staff: string, group: string, week: number, feedback: string) => ({
+  title: `${staff} left feedback on ${group}, week ${week}`,
+  body: feedback.length > 140 ? `${feedback.slice(0, 137)}...` : feedback,
+});
+
 /** Pure. Staff a group may still ask: everyone except people who already declined it or have a request waiting. */
 export function askableMentors<T extends { membershipId: string }>(all: T[], requests: { mentorMembershipId: string; status: string }[]): T[] {
   const blocked = new Set(requests.filter((r) => r.status === "pending" || r.status === "rejected" || r.status === "accepted").map((r) => r.mentorMembershipId));

@@ -110,12 +110,24 @@ const Status = ({ message }: { message: { ok: boolean; text: string } | null }) 
 const SAVE = "inline-flex items-center justify-center gap-2 rounded-full bg-[var(--m-ink)] px-6 py-3 font-lp-body text-[14px] font-semibold text-[var(--m-paper,#fff)] transition-opacity hover:opacity-90 disabled:opacity-60";
 
 /** The weekly progress note: a roomy text box, an optional link, and images or PDFs. */
-export function ReportForm({ groupId, nextWeek }: { groupId: string; nextWeek: number }) {
+export interface ExistingReport { week: number; content: string; link: string | null; files: ProjectFile[] }
+
+export function ReportForm({ groupId, nextWeek, existing = [] }: { groupId: string; nextWeek: number; existing?: ExistingReport[] }) {
   const [week, setWeek] = useState(String(nextWeek));
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
   const [files, setFiles] = useState<ProjectFile[]>([]);
+  const editing = existing.find((r) => r.week === Number(week));
   const { busy, message, send } = useSubmit("/api/classroom/reports", () => { setContent(""); setLink(""); setFiles([]); setWeek(String(Number(week) + 1)); });
+
+  // Picking a week that is already filed loads it, so adding another image or fixing a line never wipes what was saved before.
+  function pickWeek(value: string) {
+    setWeek(value);
+    const found = existing.find((r) => r.week === Number(value));
+    setContent(found?.content ?? "");
+    setLink(found?.link ?? "");
+    setFiles(found?.files ?? []);
+  }
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -125,8 +137,8 @@ export function ReportForm({ groupId, nextWeek }: { groupId: string; nextWeek: n
     <form onSubmit={submit} className="flex flex-col gap-6">
       <div>
         <label htmlFor="rep-week" className={LABEL}>Week</label>
-        <input id="rep-week" type="number" min={1} max={52} required value={week} onChange={(e) => setWeek(e.target.value)} className={`${FIELD} !w-28`} />
-        <p className={HELP}>Saving a week that already exists replaces its text.</p>
+        <input id="rep-week" type="number" min={1} max={52} required value={week} onChange={(e) => pickWeek(e.target.value)} className={`${FIELD} !w-28`} />
+        <p className={HELP}>{editing ? `Week ${editing.week} is already saved. Its text and files are loaded below: add more images or edit, then save.` : "Pick an earlier week to add to it or edit it."}</p>
       </div>
       <div>
         <label htmlFor="rep-body" className={LABEL}>What did the group do this week? <span className="text-app-rose">*</span></label>
@@ -139,7 +151,7 @@ export function ReportForm({ groupId, nextWeek }: { groupId: string; nextWeek: n
         <input id="rep-link" type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" className={FIELD} />
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <button type="submit" disabled={busy || !content.trim()} className={SAVE}>{busy && <Loader2 size={15} className="animate-spin" aria-hidden />}{busy ? "Saving…" : "Save report"}</button>
+        <button type="submit" disabled={busy || !content.trim()} className={SAVE}>{busy && <Loader2 size={15} className="animate-spin" aria-hidden />}{busy ? "Saving…" : editing ? "Update report" : "Save report"}</button>
         <Status message={message} />
       </div>
     </form>
@@ -147,7 +159,7 @@ export function ReportForm({ groupId, nextWeek }: { groupId: string; nextWeek: n
 }
 
 /** The final submission: a link, images or PDFs, or all of them. Resubmitting replaces the earlier submission until it is graded. */
-export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles }: { groupId: string; resubmit: boolean; initialLink?: string; initialFiles?: ProjectFile[] }) {
+export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles, closesGroup = false }: { groupId: string; resubmit: boolean; initialLink?: string; initialFiles?: ProjectFile[]; closesGroup?: boolean }) {
   const [link, setLink] = useState(initialLink ?? "");
   const [files, setFiles] = useState<ProjectFile[]>(initialFiles ?? []);
   const { busy, message, send } = useSubmit("/api/classroom/submissions", () => undefined);
@@ -155,6 +167,7 @@ export function SubmissionForm({ groupId, resubmit, initialLink, initialFiles }:
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (closesGroup && !window.confirm("Your group is not full. Submitting closes it, and nobody else can join. Submit now?")) return;
     void send({ groupId, linkUrl: link.trim() || undefined, attachments: files }, resubmit ? "Resubmitted." : "Submitted. Your faculty has been told.");
   }
   return (

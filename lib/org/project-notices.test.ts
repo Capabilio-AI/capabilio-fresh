@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { askableMentors, mentorAnswerCopy } from "./project-notices";
+import { askableMentors, feedbackCopy, mentorAnswerCopy } from "./project-notices";
 
 describe("mentor notices", () => {
   it("passes the reason to the students on a rejection", () => {
@@ -10,5 +10,13 @@ describe("mentor notices", () => {
     const all = [{ membershipId: "a" }, { membershipId: "b" }, { membershipId: "c" }, { membershipId: "d" }];
     const reqs = [{ mentorMembershipId: "a", status: "rejected" }, { mentorMembershipId: "b", status: "pending" }, { mentorMembershipId: "c", status: "cancelled" }];
     expect(askableMentors(all, reqs).map((m) => m.membershipId)).toEqual(["c", "d"]);
+  });
+});
+
+describe("feedbackCopy", () => {
+  it("names the group and week and shortens long feedback", () => {
+    const c = feedbackCopy("Dr Rao", "Cookie", 1, "x".repeat(300));
+    expect(c.title).toBe("Dr Rao left feedback on Cookie, week 1");
+    expect(c.body.length).toBeLessThanOrEqual(140);
   });
 });
