@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   // Dashboard tabs were merged; keep old bookmarks and emailed links working.
   async redirects() {
     return [
+      { source: "/jobs", destination: "/launchpad", permanent: false },
       { source: "/dashboard/career-path", destination: "/dashboard", permanent: true },
       { source: "/dashboard/skill-gap", destination: "/dashboard/skills?view=gaps", permanent: true },
       { source: "/dashboard/education", destination: "/dashboard/vault", permanent: true },

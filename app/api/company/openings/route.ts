@@ -30,6 +30,6 @@ export async function POST(request: Request) {
     console.error("[company] could not create opening:", error.message);
     return NextResponse.json({ error: "Could not save the role." }, { status: 500 });
   }
-  revalidatePath("/jobs");
+  revalidatePath("/launchpad");
   return NextResponse.json({ ok: true, id: data.id as string });
 }

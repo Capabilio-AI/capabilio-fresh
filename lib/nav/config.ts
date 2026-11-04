@@ -4,7 +4,6 @@ import {
   Swords,
   Activity,
   Rocket,
-  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 import type { CareerStage } from "@/lib/stage/stage";
@@ -30,7 +29,6 @@ export const PRIMARY_NAV: NavItem[] = [
     requiresLaunchpad: true,
     lockedMessage: "Opens when you enter your final year (4-1).",
   },
-  { label: "Jobs", href: "/jobs", icon: Briefcase },
 ];
 
 /** Which pages each stage sees. A graduate's Launchpad is always open (they are job-hunting now); a professional keeps learning but has no Arena or Launchpad. */

@@ -158,7 +158,7 @@ export function CompanyPublicPage({ data, tab, signedIn }: { data: PublicCompany
                 <EmptyState title="No open roles" body={`Follow ${org.name} to see new roles in your feed first.`} />
               ) : (
                 roles.map((r) => (
-                  <Link key={r.id} href={`/jobs#role-${r.id}`} className="o-pub-card block p-5 transition-colors hover:bg-app-background">
+                  <Link key={r.id} href={`/launchpad#role-${r.id}`} className="o-pub-card block p-5 transition-colors hover:bg-app-background">
                     <h3 className="text-[16px] font-extrabold text-app-charcoal">{r.title}</h3>
                     <p className="mt-0.5 text-[13px] text-app-muted">{r.team} · {r.location} · {WORK_MODE_LABEL[r.workMode]} · {EMPLOYMENT_LABEL[r.employmentType]}{r.compensation ? ` · ${r.compensation}` : ""}</p>
                     <p className="mt-2 text-[14px] leading-relaxed text-app-charcoal">{r.summary}</p>
@@ -186,7 +186,7 @@ export function CompanyPublicPage({ data, tab, signedIn }: { data: PublicCompany
               <ul className="mt-3 flex flex-col gap-3">
                 {roles.slice(0, 3).map((r) => (
                   <li key={r.id}>
-                    <Link href={`/jobs#role-${r.id}`} className="text-[13.5px] font-bold leading-snug text-app-charcoal hover:underline">{r.title}</Link>
+                    <Link href={`/launchpad#role-${r.id}`} className="text-[13.5px] font-bold leading-snug text-app-charcoal hover:underline">{r.title}</Link>
                     <p className="text-[12px] text-app-muted">{r.location} · {EMPLOYMENT_LABEL[r.employmentType]}</p>
                   </li>
                 ))}

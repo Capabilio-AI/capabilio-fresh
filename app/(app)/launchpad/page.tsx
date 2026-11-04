@@ -14,6 +14,9 @@ import { matchJob } from "@/lib/launchpad/match";
 import { JobMatch } from "@/components/launchpad/JobMatch";
 import { StudentPlacementOffers } from "@/components/org/StudentPlacementOffers";
 import { ActionButton } from "@/components/org/ActionButton";
+import { untyped } from "@/lib/org/db";
+import { listCompanyOpenings } from "@/lib/hiring/openings";
+import { JobBoard } from "@/components/jobs/JobBoard";
 import { REGISTRATION_LABEL, canWithdraw, hasRollNumber } from "@/lib/org/visits";
 
 export const metadata: Metadata = { title: "Launchpad — Capabilio AI" };
@@ -61,12 +64,15 @@ export default async function LaunchpadPage() {
   // independent reads, one round trip
   // own rows only (RLS); status is written by the college, never by the student
   // measured capability per catalog skill, read once; each listing is compared with it
-  const [opportunities, { data: myApps }, skillContext, { data: myMembership }] = await Promise.all([
+  const [opportunities, { data: myApps }, skillContext, { data: myMembership }, companyRoles, { data: companyApplied }] = await Promise.all([
     listOpenOpportunities(supabase),
     supabase.from("applications").select("opportunity_id, status").eq("user_id", user.id),
     loadSkillContext(createGateClient(), user.id),
     supabase.from("institution_memberships").select("roll_number").eq("user_id", user.id).eq("role", "student").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    listCompanyOpenings(createGateClient()),
+    untyped(createGateClient()).from("job_applications").select("opening_id").eq("user_id", user.id),
   ]);
+  const companyAppliedIds = ((companyApplied ?? []) as { opening_id: string | null }[]).map((a) => a.opening_id).filter((id): id is string => Boolean(id));
   const appliedStatus = new Map((myApps ?? []).map((a) => [a.opportunity_id, a.status]));
   const APPLIED_LABEL = REGISTRATION_LABEL;
 
@@ -197,6 +203,12 @@ export default async function LaunchpadPage() {
           })}
         </div>
       )}
+
+      <section id="company-roles" aria-labelledby="company-roles-h" className="mt-10 scroll-mt-24">
+        <h2 id="company-roles-h" className="font-lp-display text-[22px] font-bold tracking-tight text-[var(--m-ink)]">Company roles</h2>
+        <p className="mt-1 font-lp-body text-[13px] text-app-muted">Posted by companies on Capabilio. Applying shares your Skill Passport with that company, and nothing else.</p>
+        <div className="pt-5"><JobBoard openings={companyRoles} appliedIds={companyAppliedIds} /></div>
+      </section>
     </div>
   );
 }
