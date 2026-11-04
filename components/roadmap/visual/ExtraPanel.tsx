@@ -5,6 +5,7 @@ import type { Resource } from "@/lib/roadmap-visual/graph-types";
 import type { ProjectGuide } from "@/lib/roadmap-visual/project-guide";
 import { send } from "@/components/roadmap/v2/api";
 import { StationMark } from "./StationMark";
+import { generateTables, seedOf, toCsv, type DatasetSpec } from "@/lib/roadmap-visual/dataset";
 
 type Guide = { state: "loading" } | { state: "ready"; guide: ProjectGuide } | { state: "error"; message: string };
 
@@ -22,6 +23,17 @@ function useGuide(resourceId: string, career: "primary" | "plan-b", enabled: boo
     return () => { cancelled = true; };
   }, [resourceId, career, enabled, attempt]);
   return { guide, retry: () => { setGuide({ state: "loading" }); setAttempt((n) => n + 1); } };
+}
+
+/** Builds the CSV in the browser from the spec (same seed, same file) and downloads it. Nothing is stored or fetched. */
+function downloadCsv(spec: DatasetSpec, resourceId: string) {
+  const table = generateTables([spec], seedOf(`${resourceId}:${spec.name}`))[0];
+  const url = URL.createObjectURL(new Blob([toCsv(table)], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${spec.name}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 const H = "text-[11.5px] font-bold uppercase tracking-wide text-[var(--m-muted)]";
@@ -56,6 +68,34 @@ export function ExtraPanel({ resource: r, career, onClose }: { resource: Resourc
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {isProject && guide.state === "ready" && guide.guide.datasets.length > 0 && (
+          <section aria-labelledby="data-h">
+            <h3 id="data-h" className={H}>Data you&apos;ll use</h3>
+            <p className="mt-1 text-[13px] text-app-muted">Practice data made for this project, so you can start right away. It is generated, not real, so do not quote it as findings.</p>
+            <ul className="mt-3 space-y-3">
+              {guide.guide.datasets.map((d) => (
+                <li key={d.name} className="rounded-lg border border-[var(--m-rule)] p-3.5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold">{d.name}.csv <span className="font-normal text-app-muted">· {d.rows.toLocaleString("en-IN")} rows · {d.columns.length} columns</span></p>
+                      <p className="mt-0.5 text-[13px] text-app-muted">{d.description}</p>
+                    </div>
+                    <button type="button" onClick={() => downloadCsv(d, r.id)} className="shrink-0 rounded-md bg-[var(--m-ink)] px-3.5 py-2 text-[13px] font-bold text-white">Download CSV</button>
+                  </div>
+                  <ul className="mt-2.5 grid gap-x-4 gap-y-1 text-[12.5px] sm:grid-cols-2">
+                    {d.columns.map((c) => (
+                      <li key={c.name}><span className="font-bold">{c.name}</span> <span className="text-app-muted">({c.type}){c.description ? `: ${c.description}` : ""}</span></li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+            {guide.guide.realDataIdeas.length > 0 && (
+              <p className="mt-3 text-[12.5px] text-app-muted"><span className="font-bold text-[var(--m-ink)]">Want real data too?</span> Look for: {guide.guide.realDataIdeas.join("; ")}.</p>
+            )}
           </section>
         )}
 

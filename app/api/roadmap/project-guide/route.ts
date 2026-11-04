@@ -23,13 +23,13 @@ export async function POST(request: Request) {
 
   const service = createServiceClient();
   try {
-    const hit = cache.get(body.data.resourceId);
+    const hit = cache.get(`v2:${body.data.resourceId}`);
     if (hit) return NextResponse.json({ guide: hit }, { headers: { "Cache-Control": "no-store" } });
     const loaded = await loadGraphContext(service, auth.userId, body.data.career);
     const resource = loaded.ok ? findResource(loaded.ctx.resources, body.data.resourceId) : null;
     if (!loaded.ok || !resource || resource.kind !== "PROJECT") return NextResponse.json({ error: "That project isn't available." }, { status: 404 });
     const guide = await loggedCompleteJson(service, { feature: "roadmap_project_guide", userId: auth.userId, meta: { resource: resource.id } }, buildGuidePrompt(resource, loaded.ctx.career.name), GUIDE_SYSTEM, ProjectGuide);
-    cache.set(resource.id, guide);
+    cache.set(`v2:${resource.id}`, guide);
     return NextResponse.json({ guide }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("[roadmap/project-guide]", error);

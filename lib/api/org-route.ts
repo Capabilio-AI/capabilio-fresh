@@ -26,7 +26,7 @@ const DB_ERRORS: Record<string, [number, string]> = {
   invalid_grade: [400, "Enter a grade of 1-10 characters."],
   invalid_contribution_notes: [400, "Contribution notes may only name members of the group."],
   lead_must_submit: [403, "Your group is not full yet, so only the group lead can submit it."],
-  submission_empty: [400, "Add a link or attach a file."],
+  submission_empty: [400, "Add a link, a file or a written report."],
   invalid_mentor: [400, "Pick a faculty member or HoD of your college."],
   group_has_mentor: [409, "This group already has a mentor."],
   too_many_requests: [409, "Three mentor requests are already waiting. Wait for an answer or cancel one."],
