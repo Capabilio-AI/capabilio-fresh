@@ -5,9 +5,9 @@ import { loadProjectResource, projectsMissingGuides, writeProjectGuide } from "@
 
 export const maxDuration = 300;
 
-const PER_RUN = 4;
+const PER_RUN = 8;
 
-/** Hourly (see vercel.json). Writes the guide and practice data for projects that have none yet, so students find them ready. Fails closed without CRON_SECRET. */
+/** Daily (see vercel.json; the Hobby plan allows nothing more frequent). Writes the guide and practice data for projects that have none yet, so students find them ready. Fails closed without CRON_SECRET. */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
