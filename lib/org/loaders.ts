@@ -106,11 +106,22 @@ export async function loadProjectGroups(service: Service, projectId: string): Pr
 
 // ---------------- student side ----------------
 
+export interface JoinRequestView {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface StudentProject extends ProjectRow {
   /** open and before its deadline, evaluated server-side at load time */
   acceptingWork: boolean;
   myGroup: GroupDetail | null;
   openGroups: { group: GroupRow; memberCount: number; memberBranches: string[] }[];
+  /** the student's own requests to join forming groups: group id -> request id and where it stands */
+  myRequests: Record<string, { id: string; status: "pending" | "rejected" }>;
+  /** requests waiting on this student, when they lead their group */
+  joinRequests: JoinRequestView[];
 }
 
 export const inScope = (scope: string[] | null, branch: string | null) =>
@@ -139,9 +150,19 @@ export async function loadStudentProjects(service: Service, ctx: OrgContext): Pr
       if (detail) myDetails.set(project.id, detail);
     }
   }
+  // Join requests. A missing table (migration not applied yet) must not break the page, so an error reads as "none".
+  const { data: requestData } = await db.from("class_group_join_requests").select("id, group_id, project_id, user_id, status, created_at").in("project_id", ids).in("status", ["pending", "rejected"]);
+  const requests = (requestData ?? []) as { id: string; group_id: string; project_id: string; user_id: string; status: "pending" | "rejected"; created_at: string }[];
+  const ledGroups = new Set(members.filter((m) => m.user_id === ctx.userId && m.role === "lead").map((m) => m.group_id));
+  const waiting = requests.filter((r) => r.status === "pending" && ledGroups.has(r.group_id));
+  const requesterNames = await nameMap(service, waiting.map((r) => r.user_id));
   const now = Date.now();
   return projects.map((project) => ({
     ...project,
+    myRequests: Object.fromEntries(requests.filter((r) => r.project_id === project.id && r.user_id === ctx.userId).map((r) => [r.group_id, { id: r.id, status: r.status }])),
+    joinRequests: waiting
+      .filter((r) => r.project_id === project.id)
+      .map((r) => ({ id: r.id, userId: r.user_id, name: requesterNames.get(r.user_id) ?? "Student", createdAt: r.created_at })),
     acceptingWork: project.status === "open" && new Date(project.deadline_at).getTime() > now,
     myGroup: myDetails.get(project.id) ?? null,
     openGroups: groups
