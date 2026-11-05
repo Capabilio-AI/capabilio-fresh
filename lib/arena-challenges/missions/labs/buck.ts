@@ -40,12 +40,12 @@ const lab: Lab<S> = {
   tools: ["Switch (MOSFET)", "Diode", "Inductor", "Output capacitor", "Scope"],
   skillTags: ["Buck converter", "Inductor ripple", "Switching losses"],
   makeScenario(rng, d) {
-    const vin = rng.pick([12, 24, 36, 48]);
-    const d0 = rng.int(4, 15) * 5;
+    const vin = rng.pick([12, 15, 18, 24, 28, 36, 48]);
+    const d0 = rng.int(8, 30) * 2.5;
     return {
-      vin, d0, vout: Number(((vin * d0) / 100).toFixed(2)), iout: rng.pick([1, 2, 3, 5]),
-      ripIPct: d === "easy" ? 40 : d === "medium" ? 30 : 20,
-      ripVmV: d === "easy" ? 200 : d === "medium" ? 100 : 50,
+      vin, d0, vout: Number(((vin * d0) / 100).toFixed(2)), iout: rng.pick([1, 1.5, 2, 2.5, 3, 4, 5]),
+      ripIPct: (d === "easy" ? 40 : d === "medium" ? 30 : 20) + rng.int(-1, 2) * 2,
+      ripVmV: (d === "easy" ? 200 : d === "medium" ? 100 : 50) + rng.int(0, 2) * (d === "hard" ? 10 : 25),
       etaMin: d === "easy" ? 88 : d === "medium" ? 92 : 94,
     };
   },

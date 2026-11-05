@@ -2,7 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { currentStreamWeek, weekStartOf } from "./week";
 import type { StreamScope } from "./resolve-scope";
-import { BATCH_SIZE, selectStreamBatch } from "./select-stream";
+import { BATCH_SIZE, IT_KIND_CAPS, selectStreamBatch } from "./select-stream";
+import { IT_CLUSTER_SCOPE_KEY } from "./branch-clusters";
 import { loadStreamPool, type StreamStudentContext } from "./stream-context";
 
 export interface WeeklyBatch {
@@ -23,7 +24,12 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
   const weekStart = currentStreamWeek();
 
   const { data: existing } = await service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).eq("week_start", weekStart).maybeSingle();
-  if (existing && existing.challenge_ids.length > 0) return { weekStart, challengeIds: existing.challenge_ids, shortfall: Math.max(0, size - existing.challenge_ids.length) };
+  if (existing && existing.challenge_ids.length > 0) {
+    // a board is kept only while every challenge in it still belongs to this student's stream; one written before a content bug was fixed is re-drawn
+    const pool = await loadStreamPool(service, scope, userId);
+    const allowed = new Set(pool.map((c) => c.id));
+    if (existing.challenge_ids.every((id) => allowed.has(id))) return { weekStart, challengeIds: existing.challenge_ids, shortfall: Math.max(0, size - existing.challenge_ids.length) };
+  }
   if (existing) await service.from("arena_stream_weeks").delete().eq("user_id", userId).eq("week_start", weekStart);
 
   const since = weekStartOf(new Date(Date.now() - RECENT_WEEKS * 7 * 24 * 60 * 60 * 1000));
@@ -44,6 +50,7 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
     year: student.currentYear,
     seed: `${userId}:${weekStart}`,
     size,
+    kindCaps: scope.scopeKey === IT_CLUSTER_SCOPE_KEY ? IT_KIND_CAPS(size) : undefined,
   });
 
   const { error } = await service.from("arena_stream_weeks").insert({ user_id: userId, week_start: weekStart, scope_key: scope.scopeKey, challenge_ids: selection.ids });

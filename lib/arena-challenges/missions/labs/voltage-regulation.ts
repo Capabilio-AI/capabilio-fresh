@@ -26,8 +26,8 @@ const lab: Lab<S> = {
   skillTags: ["Voltage regulation", "Reactive power", "Feeder losses"],
   makeScenario(rng, d) {
     return {
-      r: rng.pick([0.04, 0.05, 0.06, 0.07]), x: rng.pick([0.08, 0.1, 0.12, 0.15]), p: rng.pick([0.6, 0.7, 0.8, 0.9]), pf: rng.pick([0.8, 0.85, 0.9]),
-      offFactor: rng.pick([0.2, 0.25, 0.3]), lossMaxPct: d === "easy" ? 8 : d === "medium" ? 5 : 4, capMax: d === "easy" ? 4 : d === "medium" ? 3 : 2,
+      r: rng.int(3, 9) / 100, x: rng.int(7, 16) / 100, p: rng.int(11, 19) / 20, pf: rng.pick([0.75, 0.8, 0.85, 0.9, 0.95]),
+      offFactor: rng.pick([0.2, 0.25, 0.3, 0.35]), lossMaxPct: (d === "easy" ? 8 : d === "medium" ? 5 : 4) + rng.int(0, 2) * 0.5, capMax: d === "easy" ? 4 : d === "medium" ? 3 : 2,
     };
   },
   given: (s) => [

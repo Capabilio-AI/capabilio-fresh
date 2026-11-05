@@ -13,14 +13,11 @@ import { generateOnDemand, weeklyPool } from "@/lib/arena-challenges/leetcode/we
 import { mixFor, scaleMix } from "@/lib/arena-challenges/select-stream";
 import { currentStreamWeek } from "@/lib/arena-challenges/week";
 import { timeLimitForDifficulty } from "@/lib/arena-challenges/timer";
-import { MISSION_MINUTES } from "@/lib/arena-challenges/missions/score";
 import { loadStreamGate } from "@/lib/arena-challenges/stream-gate";
 import { preparePersonalPool } from "@/lib/arena-challenges/stream-ai/personal";
 
 export const maxDuration = 300;
 
-/** LeetCode-style problems get a longer clock than the quick classic ones. */
-const LEETCODE_MINUTES: Record<string, number> = { easy: 20, medium: 30, hard: 40 };
 const DIFFICULTY_RANK: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
 
 /** Exactly this week's assigned batch (see getOrAssignWeeklyBatch) -- never the full pool. */
@@ -105,7 +102,7 @@ export async function GET() {
     shortfall: batch.shortfall,
     emptyReason: batch.challengeIds.length === 0 ? "no_published_content" : null,
     challenges: ((challenges ?? []) as Row[])
-      .map((c) => ({ ...c, time_limit_minutes: c.kind === "leetcode" ? LEETCODE_MINUTES[c.difficulty] ?? 20 : c.kind === "mission" ? MISSION_MINUTES[c.difficulty as keyof typeof MISSION_MINUTES] ?? 12 : timeLimitForDifficulty(c.difficulty), solved: solvedIds.has(c.id), answered: answeredIds.has(c.id) }))
+      .map((c) => ({ ...c, time_limit_minutes: timeLimitForDifficulty(c.difficulty), solved: solvedIds.has(c.id), answered: answeredIds.has(c.id) }))
       .sort((a, b) => (DIFFICULTY_RANK[a.difficulty] ?? 0) - (DIFFICULTY_RANK[b.difficulty] ?? 0)),
   });
 }

@@ -38,10 +38,10 @@ const lab: Lab<S> = {
   skillTags: ["BJT biasing", "Q-point", "Amplifier gain"],
   makeScenario(rng, d) {
     return {
-      vcc: rng.pick([9, 12, 15]),
-      gainMin: d === "easy" ? 60 : d === "medium" ? 100 : 130,
-      driftMaxPct: d === "easy" ? 25 : d === "medium" ? 15 : 10,
-      supplyMaxMa: d === "easy" ? 4 : d === "medium" ? 3 : 2.5,
+      vcc: rng.int(8, 18),
+      gainMin: (d === "easy" ? 50 : d === "medium" ? 90 : 120) + rng.int(0, 5) * 5,
+      driftMaxPct: (d === "easy" ? 22 : d === "medium" ? 13 : 8) + rng.int(0, 3),
+      supplyMaxMa: (d === "easy" ? 3.5 : d === "medium" ? 2.8 : 2.3) + rng.int(0, 4) * 0.1,
     };
   },
   given: (s) => [

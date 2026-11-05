@@ -42,8 +42,8 @@ const lab: Lab<S> = {
   skillTags: ["Webster delay", "Degree of saturation", "Signal design"],
   makeScenario(rng, d) {
     // the hardest level has no widening budget, so timing alone must work and the demand is chosen to allow it
-    if (d === "hard") return { qA: rng.pick([600, 700, 800]), qB: rng.pick([300, 400, 500]), delayMax: 30, budget: 0 };
-    return { qA: rng.pick([700, 800, 900, 1000]), qB: rng.pick([400, 500, 600, 700]), delayMax: d === "easy" ? 36 : 29, budget: 1_500_000 };
+    if (d === "hard") return { qA: rng.int(11, 17) * 50, qB: rng.int(5, 11) * 50, delayMax: rng.pick([28, 30, 32]), budget: 0 };
+    return { qA: rng.int(12, 22) * 50, qB: rng.int(6, 15) * 50, delayMax: (d === "easy" ? 34 : 27) + rng.int(0, 4), budget: 1_500_000 + rng.int(0, 4) * 250_000 };
   },
   given: (s) => [
     { label: "Demand", value: `${s.qA} veh/h on the main road, ${s.qB} veh/h on the side road` },

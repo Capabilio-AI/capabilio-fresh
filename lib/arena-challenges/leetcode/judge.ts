@@ -112,7 +112,7 @@ export async function judge(language: string, code: string, tests: readonly Judg
 }
 
 /** The shared public code runner drops requests now and then: retry a failed run a couple of times before calling it unavailable. */
-export function withRetry(run: Runner, waits: readonly number[] = [1500, 4000], sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Runner {
+export function withRetry(run: Runner, waits: readonly number[] = [1500, 4000, 9000], sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Runner {
   return async (language, code, stdin) => {
     for (let attempt = 0; ; attempt++) {
       try {

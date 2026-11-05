@@ -32,10 +32,10 @@ const lab: Lab<S> = {
   tools: ["Tilt adjuster", "Panel count", "Battery bank", "Inverter"],
   skillTags: ["PV tilt", "Battery sizing", "Inverter sizing"],
   makeScenario(rng, d) {
-    const dayKwh = rng.pick([30, 40, 50, 60]);
-    const nightKwh = rng.pick([15, 20, 25, 30]);
-    const peakKw = rng.pick([6, 8, 10]);
-    const lat = rng.pick([9, 13, 17, 21, 26]);
+    const dayKwh = rng.int(5, 16) * 5;
+    const nightKwh = rng.int(2, 8) * 5;
+    const peakKw = rng.int(3, 7) * 2;
+    const lat = rng.int(8, 28);
     // the budget is the cost of a sound design with a margin, so a plan always exists
     const tilt = Math.round(lat / 5) * 5;
     const psh = PSH0 * Math.cos(((tilt - lat) * Math.PI) / 180);

@@ -13,6 +13,8 @@ export interface StreamCandidate {
   stale?: boolean;
   /** a shared catalog challenge: served only after the student's own written-for-them ones, which are better fitted */
   shared?: boolean;
+  /** what sort of challenge it is (leetcode, sql, mission ...); only needed when the batch has a per-kind cap */
+  kind?: string;
 }
 
 export interface StudentCourse {
@@ -36,7 +38,12 @@ export interface StreamSelectionInput {
   size?: number;
   /** the student's current year of study, when known and confirmed: it sets the difficulty mix */
   year?: number | null;
+  /** at most this many of a kind in the batch (IT boards keep SQL to a third); lifted only when nothing else is left to serve */
+  kindCaps?: Record<string, number>;
 }
+
+/** IT boards are code, fix-the-bug and SQL tasks; SQL is at most a third, so code problems get the rest. */
+export const IT_KIND_CAPS = (size: number): Record<string, number> => ({ sql: Math.max(1, Math.ceil(size / 3)) });
 
 export interface StreamSelection {
   ids: string[];
@@ -128,13 +135,17 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
 
   const picked: StreamCandidate[] = [];
   const perCategory = new Map<string, number>();
+  const perKind = new Map<string, number>();
+  let capsOn = true;
+  const capped = (c: StreamCandidate) => capsOn && c.kind !== undefined && input.kindCaps?.[c.kind] !== undefined && (perKind.get(c.kind) ?? 0) >= input.kindCaps[c.kind];
   const take = (c: StreamCandidate) => {
     picked.push(c);
     perCategory.set(c.category, (perCategory.get(c.category) ?? 0) + 1);
+    if (c.kind) perKind.set(c.kind, (perKind.get(c.kind) ?? 0) + 1);
   };
   // best remaining candidate: the best-ranked bucket (curriculum tier, then not-recently-served) first; within it, the least-used subject
   const next = (from: StreamCandidate[]) => {
-    const left = from.filter((c) => !picked.includes(c));
+    const left = from.filter((c) => !picked.includes(c) && !capped(c));
     if (left.length === 0) return undefined;
     const best = Math.min(...left.map((c) => bucketOf.get(c.id)!));
     return left.filter((c) => bucketOf.get(c.id) === best).sort((a, b) => (perCategory.get(a.category) ?? 0) - (perCategory.get(b.category) ?? 0))[0];
@@ -151,12 +162,16 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
     }
   }
   // a difficulty ran short: fill from whatever real content remains, nearest to the student's target level first
+  // a difficulty or a kind ran short: first fill from what is still allowed, then (only if the board would otherwise be short) lift the caps
   const targetRank = mix.hard > mix.easy && mix.hard >= mix.medium ? 2 : mix.easy > mix.hard && mix.easy >= mix.medium ? 0 : 1;
   const rest = candidates.filter((c) => !picked.includes(c)).sort((a, b) => Math.abs(rankOf(a.difficulty) - targetRank) - Math.abs(rankOf(b.difficulty) - targetRank));
-  while (picked.length < size) {
-    const c = next(rest);
-    if (!c) break;
-    take(c);
+  for (const lift of [false, true]) {
+    capsOn = !lift;
+    while (picked.length < size) {
+      const c = next(rest);
+      if (!c) break;
+      take(c);
+    }
   }
 
   picked.sort((a, b) => rankOf(a.difficulty) - rankOf(b.difficulty));

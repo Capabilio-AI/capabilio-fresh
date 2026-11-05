@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BATCH_SIZE, selectStreamBatch, targetMix, tierFor, type StreamCandidate, type StreamSelectionInput } from "./select-stream";
+import { BATCH_SIZE, IT_KIND_CAPS, selectStreamBatch, targetMix, tierFor, type StreamCandidate, type StreamSelectionInput } from "./select-stream";
 
 const cand = (id: string, difficulty: string, category = "general", courseTags: string[] = []): StreamCandidate => ({ id, difficulty, category, courseTags });
 const base = (over: Partial<StreamSelectionInput>): StreamSelectionInput => ({ pool: [], solvedIds: new Set(), recentIds: new Set(), courses: [], currentYear: null, points: 0, seed: "u1:2026-10-05", ...over });
@@ -116,5 +116,22 @@ describe("year of study", () => {
     const last = selectStreamBatch(base({ pool, year: 4, size: 8 }));
     expect(first.ids.filter((id) => id.startsWith("h"))).toHaveLength(0);
     expect(last.ids.filter((id) => id.startsWith("h"))).toHaveLength(4);
+  });
+});
+
+describe("kind caps (IT boards)", () => {
+  const mk = (id: string, kind: string): StreamCandidate => ({ id, difficulty: "medium", category: kind, courseTags: [], kind });
+  const base = { solvedIds: new Set<string>(), recentIds: new Set<string>(), courses: [], currentYear: null, points: 150, seed: "u:w", size: 9 };
+  it("keeps SQL to a third of the board while code problems are available", () => {
+    const pool = [...Array.from({ length: 30 }, (_, i) => mk(`s${i}`, "sql")), ...Array.from({ length: 12 }, (_, i) => mk(`l${i}`, "leetcode"))];
+    const { ids } = selectStreamBatch({ ...base, pool, kindCaps: IT_KIND_CAPS(9) });
+    expect(ids).toHaveLength(9);
+    expect(ids.filter((id) => id.startsWith("s"))).toHaveLength(3);
+  });
+  it("lifts the cap rather than serve a short board", () => {
+    const pool = [...Array.from({ length: 30 }, (_, i) => mk(`s${i}`, "sql")), mk("l0", "leetcode")];
+    const { ids, shortfall } = selectStreamBatch({ ...base, pool, kindCaps: IT_KIND_CAPS(9) });
+    expect(ids).toHaveLength(9);
+    expect(shortfall).toBe(0);
   });
 });

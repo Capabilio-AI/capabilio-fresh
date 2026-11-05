@@ -7,6 +7,9 @@ import { ArrowRight, Check, Clock, Lock } from "lucide-react";
 import { ChallengeSolvePanel, type ChallengeDetail } from "./ChallengeSolvePanel";
 import { LeetcodeScreen } from "./LeetcodeScreen";
 import { MissionScreen } from "./mission/MissionScreen";
+import { SqlTaskScreen } from "./SqlTaskScreen";
+import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
+import type { PublicSqlTask } from "@/lib/arena-challenges/workbench/sql-task";
 import { MISSION_POINTS } from "@/lib/arena-challenges/missions/score";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 
@@ -36,6 +39,8 @@ const WORKSPACE_HINT: Record<string, string> = {
   code: "Write and run your program in the code workspace.",
   numeric: "Work it out and submit your answer in the calculation workspace.",
   mcq: "Read the situation and choose the best answer. One try.",
+  sql: "Write SQL against real tables in the SQL workbench. Run it, see the table, then submit.",
+  leetcode: "Write, run and submit your solution in the code workspace. Pick any language.",
   mission: "Experiment in the lab: change the controls, run tests, and work out why it behaves that way.",
 };
 
@@ -92,8 +97,12 @@ export function TrackWorkspaceView({ state, emptyHint, onRefresh }: { state: Tra
     );
   }
 
+  if (openChallenge?.kind === "sql" && openChallenge.problem) {
+    return <SqlTaskScreen challenge={openChallenge} task={openChallenge.problem as PublicSqlTask} onDone={() => { setOpenChallenge(null); onRefresh(); }} />;
+  }
+
   if (openChallenge?.kind === "leetcode" && openChallenge.problem) {
-    return <LeetcodeScreen challenge={openChallenge} problem={openChallenge.problem} onDone={() => { setOpenChallenge(null); onRefresh(); }} />;
+    return <LeetcodeScreen challenge={openChallenge} problem={openChallenge.problem as PublicProblem} onDone={() => { setOpenChallenge(null); onRefresh(); }} />;
   }
 
   if (openChallenge) {

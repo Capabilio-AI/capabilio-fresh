@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Countdown } from "./workstations/Countdown";
 import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
+import type { PublicSqlTask } from "@/lib/arena-challenges/workbench/sql-task";
 
 export interface ChallengeDetail {
   id: string;
@@ -27,7 +28,7 @@ export interface ChallengeDetail {
   /** set for ticket-style challenges that run in a workstation (opened on their own page) */
   workstation_template_id?: string | null;
   /** LeetCode-style problem (kind "leetcode"): opens in the full-screen workspace */
-  problem?: PublicProblem | null;
+  problem?: PublicProblem | PublicSqlTask | null;
 }
 
 export const DIFFICULTY_CLASS: Record<string, string> = {

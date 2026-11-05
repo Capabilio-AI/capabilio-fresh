@@ -17,8 +17,8 @@ export const planDifficulties = (missing: Readonly<Record<Difficulty, number>>, 
 /** Pure. Arena is real-world work only, so every written challenge is a calculation: multiple-choice belongs to the sign-up assessment, never here. */
 export const kindFor = (_index: number): StreamKind => "numeric";
 
-/** Pure. For a branch with labs, two of every three slots are hands-on missions and the third is a calculation. Branches without labs are all calculations. */
-export const slotKind = (index: number, hasLabs: boolean): StreamKind | "mission" => (!hasLabs || index % 3 === 2 ? "numeric" : "mission");
+/** Pure. A branch with labs (ECE, EEE, Mech, Civil) gets hands-on missions only; other branches get calculations. */
+export const slotKind = (_index: number, hasLabs: boolean): StreamKind | "mission" => (hasLabs ? "mission" : "numeric");
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 

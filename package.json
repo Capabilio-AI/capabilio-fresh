@@ -21,6 +21,12 @@
     "arena:backfill-domain": "node --env-file=.env.local --import tsx scripts/arena-backfill-domain.mts",
     "stream:import": "node --env-file=.env.local --import tsx scripts/stream-import.mts",
     "stream:bulk": "node --env-file=.env.local --import tsx scripts/stream-bulk.mts",
+    "it:workbench": "node --env-file=.env.local --import tsx scripts/it-workbench-bulk.mts",
+    "it:debug": "node --env-file=.env.local --import tsx scripts/it-debug-bulk.mts",
+    "it:debug-langs": "node --env-file=.env.local --import tsx scripts/it-debug-langs-bulk.mts",
+    "it:debug-mutants": "node --env-file=.env.local --import tsx scripts/it-debug-mutants-bulk.mts",
+    "it:leetcode": "node --env-file=.env.local --import tsx scripts/it-leetcode-bulk.mts",
+    "stream:branch-bulk": "node --env-file=.env.local --import tsx scripts/stream-branch-bulk.mts",
     "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts",
     "pg:template": "node --import tsx scripts/pg-template.mts"
   },

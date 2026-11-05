@@ -42,9 +42,9 @@ const lab: Lab<S> = {
   skillTags: ["PID tuning", "Step response", "Stability"],
   makeScenario(rng, d) {
     return {
-      m: rng.pick([0.5, 1, 2]), b: rng.pick([0.2, 0.5, 1]), umax: rng.pick([40, 60, 100]),
-      osMax: d === "easy" ? 25 : d === "medium" ? 10 : 5,
-      tsMax: d === "easy" ? 4 : d === "medium" ? 2.5 : 1.5,
+      m: rng.pick([0.5, 0.75, 1, 1.5, 2, 2.5]), b: rng.pick([0.2, 0.3, 0.5, 0.75, 1, 1.5]), umax: rng.pick([40, 50, 60, 80, 100, 120]),
+      osMax: (d === "easy" ? 25 : d === "medium" ? 10 : 5) + rng.int(0, 2) * (d === "hard" ? 1 : 2.5),
+      tsMax: (d === "easy" ? 4 : d === "medium" ? 2.5 : 1.5) + rng.int(0, 2) * 0.25,
     };
   },
   given: (s) => [

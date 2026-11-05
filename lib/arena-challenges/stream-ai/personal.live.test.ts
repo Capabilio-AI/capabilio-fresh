@@ -5,9 +5,9 @@ import type { StreamScope } from "../resolve-scope";
 import { loadStreamPool } from "../stream-context";
 import { getOrAssignWeeklyBatch } from "../weekly-batch";
 import { currentStreamWeek } from "../week";
-import { generatePersonal, personalRunKey, preparePersonalPool } from "./personal";
+import { generatePersonal, branchRunKey, preparePersonalPool } from "./personal";
 
-// Live (needs migrations 114 and 115): real model, real database. A non-IT student gets challenges written for them, private to them, served from their weekly batch.
+// Live (needs migrations 114 and 115): real model, real database. A non-IT branch gets one shared bank, written on demand and served to every student of that branch.
 const service = liveServiceClient();
 const db = untyped(service);
 let userId: string;
@@ -21,15 +21,15 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   for (const id of [userId, otherId]) {
-    await db.from("arena_challenges").delete().eq("user_id", id);
     await db.from("arena_stream_weeks").delete().eq("user_id", id);
-    await db.from("arena_weekly_generation").delete().eq("scope_key", personalRunKey(id));
     await deleteThrowawayUser(service, id);
   }
+  await db.from("arena_challenges").delete().eq("scope_key", scope.scopeKey);
+  await db.from("arena_weekly_generation").delete().eq("scope_key", branchRunKey(scope.scopeKey));
 });
 
 describe("personal Stream pool", () => {
-  it("writes challenges for one student, stores them privately and serves them in the weekly batch", async () => {
+  it("writes challenges into the branch bank and serves them in the weekly batch", async () => {
     const args = { userId, scope, student, count: 4, points: 0 };
     const first = await preparePersonalPool(service, args);
     expect(first.preparing).toBe(true);
@@ -40,9 +40,11 @@ describe("personal Stream pool", () => {
 
     const mine = await loadStreamPool(service, scope, userId);
     expect(mine.length).toBe(added);
-    expect((await loadStreamPool(service, scope, otherId)).length).toBe(0); // private to this student
-    const { data: rows } = await db.from("arena_challenges").select("kind, status, active, user_id, expected_output, options, course_tags, branch_keys").eq("user_id", userId);
-    for (const r of rows as { kind: string; status: string; active: boolean; user_id: string; expected_output: string; options: unknown; course_tags: string[]; branch_keys: string[] }[]) {
+    expect((await loadStreamPool(service, scope, otherId)).length).toBe(added); // the bank is shared by the whole branch
+    const { data: rows } = await db.from("arena_challenges").select("kind, status, active, user_id, source, expected_output, options, course_tags, branch_keys").eq("scope_key", scope.scopeKey);
+    for (const r of rows as { kind: string; status: string; active: boolean; user_id: string | null; source: string; expected_output: string; options: unknown; course_tags: string[]; branch_keys: string[] }[]) {
+      expect(r.user_id).toBeNull();
+      expect(r.source).toBe("AI_WEEKLY");
       expect(["numeric", "mcq", "mission"]).toContain(r.kind); // Mechanical has labs, so most slots are missions
       expect(r.status).toBe("PUBLISHED");
       expect(r.active).toBe(true);
@@ -56,7 +58,7 @@ describe("personal Stream pool", () => {
   });
 
   it("does not start a second run while the first is claimed", async () => {
-    const run = await db.from("arena_weekly_generation").select("status").eq("scope_key", personalRunKey(userId)).maybeSingle();
+    const run = await db.from("arena_weekly_generation").select("status").eq("scope_key", branchRunKey(scope.scopeKey)).maybeSingle();
     expect(["DONE", "FAILED"]).toContain(run.data?.status);
     const again = await preparePersonalPool(service, { userId, scope, student, count: 4, points: 0 });
     expect(again.preparing).toBe(false); // the week's batch is already fixed

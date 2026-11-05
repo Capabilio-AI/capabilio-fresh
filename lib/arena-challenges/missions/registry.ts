@@ -19,8 +19,27 @@ import crane from "./labs/crane";
 import heatExchanger from "./labs/heat-exchanger";
 import levelling from "./labs/levelling";
 import signalTiming from "./labs/signal-timing";
+import sampling from "./labs/sampling";
+import firFilter from "./labs/fir-filter";
+import digitalLink from "./labs/digital-link";
+import amModulation from "./labs/am-modulation";
+import tlineMatch from "./labs/tline-match";
+import mcuPwm from "./labs/mcu-pwm";
+import rlcStep from "./labs/rlc-step";
+import transformer from "./labs/transformer";
+import inductionMotor from "./labs/induction-motor";
+import relayCoordination from "./labs/relay-coordination";
+import evRange from "./labs/ev-range";
+import vibrationIsolation from "./labs/vibration-isolation";
+import refrigeration from "./labs/refrigeration";
+import hydraulicCylinder from "./labs/hydraulic-cylinder";
+import finHeatSink from "./labs/fin-heat-sink";
+import concreteMix from "./labs/concrete-mix";
+import retainingWall from "./labs/retaining-wall";
+import openChannel from "./labs/open-channel";
+import reservoir from "./labs/reservoir";
 
-export const LABS: AnyLab[] = [rectifier, led, rcFilter, logicGate, buck, pid, voltageRegulation, beam, otto, pipe, rccColumn, foundation, construction, amplifier, dcMotor, solarFarm, crane, heatExchanger, levelling, signalTiming];
+export const LABS: AnyLab[] = [rectifier, led, rcFilter, logicGate, buck, pid, voltageRegulation, beam, otto, pipe, rccColumn, foundation, construction, amplifier, dcMotor, solarFarm, crane, heatExchanger, levelling, signalTiming, sampling, firFilter, digitalLink, amModulation, tlineMatch, mcuPwm, rlcStep, transformer, inductionMotor, relayCoordination, evRange, vibrationIsolation, refrigeration, hydraulicCylinder, finHeatSink, concreteMix, retainingWall, openChannel, reservoir];
 const BY_KEY = new Map(LABS.map((l) => [l.key, l]));
 
 export const labByKey = (key: string): AnyLab | undefined => BY_KEY.get(key);

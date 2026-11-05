@@ -16,6 +16,8 @@ import { recordEvidence } from "@/lib/evidence/record";
 import { judge, type TestVerdict } from "@/lib/arena-challenges/leetcode/judge";
 import { untyped } from "@/lib/org/db";
 import { loadLeetcodeForStudent } from "@/lib/arena-challenges/leetcode/access";
+import { loadSqlForStudent } from "@/lib/arena-challenges/workbench/access";
+import { judgeSql } from "@/lib/arena-challenges/workbench/sql-task";
 
 export const maxDuration = 120;
 
@@ -27,6 +29,8 @@ const BodySchema = z.object({
   /** concept / case question: the chosen option key */
   choice: z.enum(["A", "B", "C", "D"]).optional(),
   working: z.string().max(5000).optional(),
+  /** SQL workbench task: the student's query */
+  query: z.string().min(1).max(6000).optional(),
 });
 
 /** Any active Stream challenge can be submitted directly — there is no batch/reveal gate. "Once passed it locks": a challenge already solved correctly can't be re-awarded points. */
@@ -87,6 +91,17 @@ export async function POST(request: Request) {
       return hidden ? { index: i, passed: v.passed, hidden } : { index: i, passed: v.passed, hidden, input: lc.tests[i].input.trimEnd(), expected: lc.tests[i].output, actual: v.actual.trimEnd(), error: v.error };
     });
     submission = parsed.data.code;
+  } else if (challenge.kind === "sql") {
+    // SQL workbench: the query runs on the task's own data and its result is compared with the stored answer. Once passed it is locked.
+    if (!parsed.data.query) return NextResponse.json({ error: "Write your query first." }, { status: 400 });
+    const sc = await loadSqlForStudent(service, auth.userId, challenge.id);
+    if (!sc) return NextResponse.json({ error: "This challenge isn't in your batch this week." }, { status: 403 });
+    const { data: solved } = await service.from("arena_challenge_completions").select("is_correct").eq("user_id", auth.userId).eq("challenge_id", challenge.id).maybeSingle();
+    if (solved?.is_correct) return NextResponse.json({ error: "You've already passed this challenge. It is locked." }, { status: 409 });
+    const { verdict } = await judgeSql(sc.task, sc.answer, parsed.data.query);
+    isCorrect = verdict.passed;
+    submission = parsed.data.query;
+    stdout = verdict.message;
   } else if (challenge.kind === "mcq") {
     if (!parsed.data.choice) return NextResponse.json({ error: "Choose an option." }, { status: 400 });
     // four options can be guessed through, so a concept question gets one answer

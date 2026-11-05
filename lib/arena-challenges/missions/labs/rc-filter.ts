@@ -26,10 +26,10 @@ const lab: Lab<S> = {
   tools: ["Resistors", "Capacitors", "Signal generator", "Spectrum plot"],
   skillTags: ["RC filters", "Cutoff frequency", "Noise rejection"],
   makeScenario(rng, d) {
-    const fs = rng.pick([500, 1000, 2000, 3400, 5000]);
+    const fs = rng.int(4, 100) * 50;
     // a first-order filter only falls 20 dB a decade, so the interference must sit far enough above the signal for one cutoff to fit between them
     const ratio = d === "easy" ? rng.int(25, 60) : d === "medium" ? rng.int(30, 50) : rng.int(45, 80);
-    return { fs, fn: fs * ratio, attenDb: d === "hard" ? 26 : 20, lossDb: d === "easy" ? 1.5 : 1, rMin: 1000 };
+    return { fs, fn: fs * ratio, attenDb: d === "hard" ? rng.pick([24, 26, 28]) : rng.pick([18, 20, 22]), lossDb: d === "easy" ? rng.pick([1.5, 2]) : rng.pick([0.5, 1, 1.5]), rMin: 1000 };
   },
   given: (s) => [
     { label: "Wanted signal", value: fmtHz(s.fs) },
