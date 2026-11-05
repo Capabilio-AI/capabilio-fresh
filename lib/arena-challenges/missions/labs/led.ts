@@ -24,11 +24,12 @@ const lab: Lab<S> = {
   tools: ["DC supply", "Resistors", "LEDs", "Ammeter"],
   skillTags: ["Ohm's law", "KVL", "Series circuits"],
   makeScenario(rng, d) {
-    const colour = rng.pick([["red", 1.9], ["green", 2.1], ["white", 3.0]] as const);
+    const colour = rng.pick([["red", 1.8], ["red", 1.9], ["red", 2.0], ["amber", 2.0], ["yellow", 2.1], ["green", 2.1], ["green", 2.2], ["white", 3.0], ["white", 3.2], ["blue", 3.1]] as const);
     const vf = colour[1];
-    const vs = rng.pick([5, 9, 12]);
+    const vs = rng.pick([5, 6, 9, 10, 12, 15, 18, 24]);
     const maxN = Math.max(1, Math.min(3, Math.floor((vs - 1) / vf)));
-    return { vs, vf, count: rng.int(1, maxN), imin: d === "hard" ? 15 : 8, imax: 20, pRating: d === "hard" ? 0.125 : 0.25, colour: colour[0] };
+    const imax = rng.pick([20, 25, 30]);
+    return { vs, vf, count: rng.int(1, maxN), imin: d === "hard" ? rng.pick([12, 15, 18]) : rng.pick([5, 8, 10]), imax, pRating: d === "hard" ? rng.pick([0.1, 0.125, 0.15]) : rng.pick([0.25, 0.5]), colour: colour[0] };
   },
   given: (s) => [
     { label: "Supply", value: `${s.vs} V DC` },

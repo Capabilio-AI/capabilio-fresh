@@ -30,8 +30,8 @@ const lab: Lab<S> = {
   makeScenario(rng, d) {
     const soil = rng.pick(["clay", "sand"] as const);
     const base: S = soil === "clay"
-      ? { soil, load: rng.int(8, 20) * 100, qa0: rng.int(9, 15) * 10, k: 6, e: rng.int(6, 12), sMax: d === "hard" ? 25 : 40, budget: Infinity }
-      : { soil, load: rng.int(10, 25) * 100, qa0: rng.int(15, 25) * 10, k: rng.pick([25, 30, 40]), e: rng.int(15, 30), sMax: d === "hard" ? 25 : 40, budget: Infinity };
+      ? { soil, load: rng.int(16, 44) * 50, qa0: rng.int(8, 18) * 10, k: rng.pick([5, 6, 7]), e: rng.int(5, 14), sMax: d === "hard" ? rng.pick([20, 25, 30]) : rng.pick([35, 40, 45]), budget: Infinity }
+      : { soil, load: rng.int(20, 50) * 50, qa0: rng.int(14, 28) * 10, k: rng.pick([20, 25, 30, 35, 40]), e: rng.int(12, 34), sMax: d === "hard" ? rng.pick([20, 25, 30]) : rng.pick([35, 40, 45]), budget: Infinity };
     let cheapest = Infinity;
     for (const st of gridSettings(lab.controls(base))) {
       const a = analyse(base, st);

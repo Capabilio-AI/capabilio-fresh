@@ -40,12 +40,12 @@ const lab: Lab<S> = {
   tools: ["Crew allocation", "Overtime shift", "Schedule table", "Budget tracker"],
   skillTags: ["Critical path", "Resource planning", "Cost control"],
   makeScenario(rng, d) {
-    const scale = rng.pick([0.7, 0.85, 1, 1.15]);
+    const scale = rng.int(12, 26) / 20;
     const ref = (n: number): Settings => ({ shift: "normal", crew_a: n, crew_b: n, crew_c: n, crew_d: n, crew_e: n });
     const base: S = { scale, deadline: 0, budget: 0, siteLimit: 0 };
-    const mid = plan(base, ref(rng.pick([12, 16])));
+    const mid = plan(base, ref(rng.int(10, 20)));
     const slack = d === "easy" ? 1.25 : d === "medium" ? 1.1 : 1.02;
-    return { scale, deadline: Math.ceil(mid.finish * slack), budget: Math.ceil((mid.cost * (d === "easy" ? 1.3 : d === "medium" ? 1.12 : 1.04)) / 10000) * 10000, siteLimit: d === "easy" ? 40 : d === "medium" ? 36 : 32 };
+    return { scale, deadline: Math.ceil(mid.finish * slack), budget: Math.ceil((mid.cost * (d === "easy" ? 1.3 : d === "medium" ? 1.12 : 1.04)) / 10000) * 10000, siteLimit: (d === "easy" ? 40 : d === "medium" ? 36 : 32) + rng.int(0, 4) };
   },
   given: (s) => [
     { label: "Work", value: "excavation, foundations, then structure and services together, then finishing" },

@@ -35,7 +35,7 @@ const lab: Lab<S> = {
   tools: ["Concrete grades", "Reinforcement bars", "Section sizes", "Utilisation check"],
   skillTags: ["RCC columns", "Reinforcement limits", "Axial capacity"],
   makeScenario(rng, d) {
-    const base: S = { height: rng.pick([3, 3.3, 3.6, 4]), demand: rng.int(6, d === "hard" ? 30 : 22) * 100, budget: Infinity };
+    const base: S = { height: rng.int(24, 44) / 8, demand: rng.int(12, d === "hard" ? 60 : 44) * 50, budget: Infinity };
     let cheapest = Infinity;
     for (const st of gridSettings(lab.controls(base))) {
       const a = analyse(base, st);

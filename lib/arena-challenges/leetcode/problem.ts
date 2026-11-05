@@ -3,7 +3,7 @@ import { z } from "zod";
 export const TARGET_BY_DIFFICULTY = { easy: 3, medium: 4, hard: 2 } as const;
 export const WEEKLY_TARGET = 9; // the largest number the wheel can give
 /** Once this many LeetCode-style problems are stored, the AI is never asked for more: every week is served from the database. */
-export const STREAM_BANK_CAP = 1000;
+export const STREAM_BANK_CAP = 2000;
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
 
@@ -34,4 +34,9 @@ export interface PublicProblem {
   constraints: string[];
   examples: { input: string; output: string; explanation: string }[];
   starters: { python: string; c: string };
+  /** a fix-the-bug task: the Python starter is the buggy program and the language is fixed to Python */
+  debug?: boolean;
+  /** a fix-the-bug task in another language: the editor is fixed to it and opens on `debugStarter` */
+  debugLang?: string;
+  debugStarter?: string;
 }

@@ -36,10 +36,10 @@ const lab: Lab<S> = {
   tools: ["Anchor height", "Rope selector", "Pin selector", "Force meter"],
   skillTags: ["Equilibrium", "Cable tension", "Pin shear"],
   makeScenario(rng, d) {
-    const l = rng.pick([2.5, 3, 3.5, 4]);
+    const l = rng.int(5, 10) / 2;
     return {
-      l, a: l * rng.pick([0.8, 0.9, 1]), w: rng.pick([8, 10, 12, 15]), sfMin: d === "easy" ? 3 : d === "medium" ? 4 : 4.5,
-      hMax: rng.pick([2.5, 3, 3.5]), budget: d === "easy" ? 9000 : d === "medium" ? 8000 : 7500,
+      l, a: Number((l * rng.pick([0.7, 0.8, 0.9, 1])).toFixed(2)), w: rng.int(6, 20), sfMin: d === "easy" ? 3 : d === "medium" ? 4 : 4.5,
+      hMax: rng.int(5, 8) / 2, budget: (d === "easy" ? 9000 : d === "medium" ? 8000 : 7500) + rng.int(0, 4) * 250,
     };
   },
   given: (s) => [

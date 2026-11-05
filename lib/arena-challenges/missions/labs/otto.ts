@@ -35,11 +35,11 @@ const lab: Lab<S> = {
   tools: ["Compression ratio", "Fuel selector", "Throttle", "Dynamometer"],
   skillTags: ["Otto cycle", "Compression ratio", "Engine knock"],
   makeScenario(rng, d) {
-    const rpm = rng.pick([2500, 3000, 4000, 5000]);
+    const rpm = rng.int(10, 24) * 250;
     const full = BRAKE * etaAir(10) * Q_FULL * (rpm / 120);
     return {
-      rpm, powerMin: Math.round(full * rng.pick([0.5, 0.6, 0.7])), etaMin: d === "easy" ? 54 : d === "medium" ? 57 : 60,
-      costMax: d === "easy" ? 40 : d === "medium" ? 34 : 30,
+      rpm, powerMin: Math.round(full * rng.int(10, 14) / 20), etaMin: (d === "easy" ? 52 : d === "medium" ? 55 : 58) + rng.int(0, 4),
+      costMax: (d === "easy" ? 38 : d === "medium" ? 32 : 28) + rng.int(0, 4),
     };
   },
   given: (s) => [

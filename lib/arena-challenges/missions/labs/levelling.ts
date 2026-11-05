@@ -34,10 +34,10 @@ const lab: Lab<S> = {
   tools: ["Level selector", "Sight length", "Readings per sight", "Loop misclosure"],
   skillTags: ["Differential levelling", "Misclosure", "Error accumulation"],
   makeScenario(rng, d) {
-    const k = rng.pick([1, 1.5, 2, 3]);
+    const k = rng.pick([0.8, 1, 1.2, 1.5, 1.8, 2, 2.5, 3, 4]);
     return {
-      k, tolMm: Math.round(k ** 0.5 * (d === "easy" ? 9 : d === "medium" ? 8 : 7)), hoursMax: d === "easy" ? 10 : d === "medium" ? 8 : 7,
-      visibility: rng.pick([50, 60, 80]), budget: d === "easy" ? 3600 : d === "medium" ? 3000 : 2400,
+      k, tolMm: Math.round(k ** 0.5 * (d === "easy" ? 9 : d === "medium" ? 8 : 7)), hoursMax: (d === "easy" ? 9 : d === "medium" ? 7.5 : 6.5) + rng.int(0, 3) * 0.5,
+      visibility: rng.int(8, 18) * 5, budget: (d === "easy" ? 3400 : d === "medium" ? 2800 : 2200) + rng.int(0, 4) * 100,
     };
   },
   given: (s) => [

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, Lock, Maximize2, Play, Send, XCircle } from "lucide-react";
 import { pointsForDifficulty } from "@/lib/arena-challenges/points";
 import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
+import { JUDGE_LANGUAGES, starterFor, type JudgeLanguage } from "@/lib/arena-challenges/leetcode/starters";
 import { Countdown } from "./workstations/Countdown";
 import type { ChallengeDetail } from "./ChallengeSolvePanel";
 
@@ -11,8 +12,8 @@ import type { ChallengeDetail } from "./ChallengeSolvePanel";
 // Colours are explicit hex on purpose: this screen is dark whatever the surrounding page theme is.
 // Light, high-contrast palette: students code outdoors in sunlight, where a dark screen is unreadable. Every text colour is at least 4.5:1 on white.
 const C = { bg: "#ffffff", panel: "#f5f2ea", line: "#aeb6c4", text: "#0b0d12", soft: "#3a4352", accent: "#c2410c", ok: "#0a7d4f", bad: "#b3162e", okBg: "#d9f4e6", badBg: "#fde0e6" };
-const LANGS = [{ id: "python", label: "Python 3" }, { id: "c", label: "C" }] as const;
-type Lang = (typeof LANGS)[number]["id"];
+const ALL_LANGS = JUDGE_LANGUAGES;
+type Lang = JudgeLanguage;
 const DIFF_COLOR: Record<string, string> = { easy: "#0a7d4f", medium: "#8a5a00", hard: "#b3162e" };
 
 interface RunResult { index: number; passed: boolean; input: string; expected: string; actual: string; error: string }
@@ -23,8 +24,11 @@ const draftKey = (id: string, lang: Lang) => `capabilio:lc:${id}:${lang}`;
 const readDraft = (id: string, lang: Lang): string | null => { try { return localStorage.getItem(draftKey(id, lang)); } catch { return null; } };
 
 export function LeetcodeScreen({ challenge, problem, onDone }: { challenge: ChallengeDetail; problem: PublicProblem; onDone: () => void }) {
-  const [lang, setLang] = useState<Lang>("python");
-  const [code, setCode] = useState(problem.starters.python);
+  // a fix-the-bug task is a program in one language (Python unless the task says otherwise), so it is judged and edited in that language only
+  const fixedLang = (problem.debugLang ?? "python") as Lang;
+  const LANGS = problem.debug ? ALL_LANGS.filter((l) => l.id === fixedLang) : ALL_LANGS;
+  const [lang, setLang] = useState<Lang>(problem.debug ? fixedLang : "python");
+  const [code, setCode] = useState(starterFor(problem, problem.debug ? fixedLang : "python"));
   const [pane, setPane] = useState<"problem" | "code">("problem");
   const [customInput, setCustomInput] = useState(problem.examples[0]?.input ?? "");
   const [consoleTab, setConsoleTab] = useState<"cases" | "custom" | "result">("cases");
@@ -39,7 +43,7 @@ export function LeetcodeScreen({ challenge, problem, onDone }: { challenge: Chal
 
   // restore a saved draft after mount (localStorage is browser-only)
   useEffect(() => {
-    queueMicrotask(() => setCode(readDraft(challenge.id, lang) ?? (lang === "python" ? problem.starters.python : problem.starters.c)));
+    queueMicrotask(() => setCode(readDraft(challenge.id, lang) ?? starterFor(problem, lang)));
   }, [challenge.id, lang, problem.starters]);
 
   function edit(next: string) {

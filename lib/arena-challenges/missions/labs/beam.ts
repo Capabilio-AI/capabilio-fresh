@@ -36,8 +36,8 @@ const lab: Lab<S> = {
   makeScenario(rng, d) {
     const kind = rng.pick(["point", "udl"] as const);
     const base: S = {
-      span: rng.pick([2, 3, 4, 5, 6]), kind, load: kind === "point" ? rng.int(2, 12) * 5 : rng.int(1, 5) * 5,
-      sfMin: d === "easy" ? 1.5 : d === "medium" ? 2 : 2.5, deflDiv: d === "easy" ? 200 : d === "medium" ? 250 : 360, massMax: Infinity, budget: Infinity,
+      span: rng.int(4, 16) / 2, kind, load: kind === "point" ? rng.int(2, 24) * 2.5 : rng.int(1, 12) * 2.5,
+      sfMin: (d === "easy" ? 1.5 : d === "medium" ? 2 : 2.5) + rng.int(0, 2) * 0.25, deflDiv: (d === "easy" ? 200 : d === "medium" ? 250 : 360) + rng.int(0, 2) * 20, massMax: Infinity, budget: Infinity,
     };
     let mass = Infinity;
     let cost = Infinity;

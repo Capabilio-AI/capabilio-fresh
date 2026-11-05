@@ -27,13 +27,13 @@ const lab: Lab<S> = {
   tools: ["Starter resistance", "Run resistance", "Field regulator", "Ammeter and tachometer"],
   skillTags: ["DC motor starting", "Back-emf", "Field control"],
   makeScenario(rng, d) {
-    const ra = rng.pick([0.4, 0.5, 0.6, 0.8]);
-    const iRated = rng.pick([16, 20, 25, 30]);
-    const ratedRpm = rng.pick([1200, 1500, 1800]);
+    const ra = rng.pick([0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1]);
+    const iRated = rng.pick([12, 16, 18, 20, 22, 25, 28, 30, 35]);
+    const ratedRpm = rng.pick([900, 1000, 1200, 1400, 1500, 1750, 1800, 2000, 2400]);
     const center = ratedRpm * rng.pick([0.96, 1, 1.04]);
     const half = d === "easy" ? 0.06 : d === "medium" ? 0.035 : 0.025;
     return {
-      ra, iRated, ratedRpm, loadFrac: rng.pick([0.7, 0.8, 0.9]), iStartMaxX: d === "easy" ? 2.4 : d === "medium" ? 2 : 1.8,
+      ra, iRated, ratedRpm, loadFrac: rng.pick([0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]), iStartMaxX: d === "easy" ? 2.4 : d === "medium" ? 2 : 1.8,
       torqueRatio: d === "easy" ? 1.3 : d === "medium" ? 1.5 : 1.7, rpmLow: Math.round(center * (1 - half)), rpmHigh: Math.round(center * (1 + half)),
     };
   },

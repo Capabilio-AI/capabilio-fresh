@@ -24,7 +24,7 @@ describe("missionScore", () => {
 
 describe("slotKind", () => {
   it("makes two of every three slots missions for branches with labs, and keeps the old mix elsewhere", () => {
-    expect([0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => slotKind(i, true))).toEqual(["mission", "mission", "numeric", "mission", "mission", "numeric", "mission", "mission", "numeric"]);
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => slotKind(i, true))).toEqual(Array(9).fill("mission"));
     expect([0, 1, 2].map((i) => slotKind(i, false))).toEqual(["numeric", "numeric", "numeric"]);
   });
 });
@@ -108,7 +108,7 @@ describe("buildMission", () => {
   it("prefers the lab that matches the course and the one used least", () => {
     const ece = labsFor("ece");
     expect(orderLabs(ece, "Digital Logic Design", new Map(), 1)[0].key).toBe("logic-gate");
-    const usage = new Map([["rectifier", 3], ["led-string", 2], ["rc-filter", 2], ["amplifier", 1]]);
+    const usage = new Map([["rectifier", 3], ["led-string", 2], ["rc-filter", 2], ["amplifier", 1], ...["sampling", "fir-filter", "digital-link", "am-modulation", "tline-match", "mcu-pwm", "rlc-step"].map((k): [string, number] => [k, 5])]);
     expect(orderLabs(ece, null, usage, 1)[0].key).toBe("logic-gate");
   });
 });

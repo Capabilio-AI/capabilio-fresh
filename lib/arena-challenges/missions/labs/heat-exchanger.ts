@@ -37,10 +37,10 @@ const lab: Lab<S> = {
   tools: ["Coolant flow valve", "Exchanger area", "Flow arrangement", "Thermometers"],
   skillTags: ["Effectiveness–NTU", "Counterflow", "Pumping power"],
   makeScenario(rng, d) {
-    const tHotIn = rng.pick([85, 90, 95]);
+    const tHotIn = rng.int(16, 20) * 5;
     return {
-      mHot: rng.pick([0.8, 1, 1.2]), tHotIn, tColdIn: rng.pick([25, 28, 30]), tHotMax: tHotIn - (d === "easy" ? 30 : d === "medium" ? 34 : 36),
-      tColdMax: d === "easy" ? 70 : d === "medium" ? 60 : 55, pumpMaxKw: d === "easy" ? 0.6 : d === "medium" ? 0.4 : 0.3, budget: d === "easy" ? 80_000 : d === "medium" ? 64_000 : 58_000,
+      mHot: rng.int(6, 16) / 10, tHotIn, tColdIn: rng.int(5, 8) * 5, tHotMax: tHotIn - (d === "easy" ? 30 : d === "medium" ? 34 : 36),
+      tColdMax: d === "easy" ? 70 : d === "medium" ? 60 : 55, pumpMaxKw: (d === "easy" ? 0.6 : d === "medium" ? 0.4 : 0.3) + rng.int(0, 2) * 0.05, budget: (d === "easy" ? 80_000 : d === "medium" ? 64_000 : 58_000) + rng.int(0, 4) * 2500,
     };
   },
   given: (s) => [

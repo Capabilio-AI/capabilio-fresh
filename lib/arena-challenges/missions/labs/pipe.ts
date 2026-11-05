@@ -40,9 +40,9 @@ const lab: Lab<S> = {
   tools: ["Pipe catalogue", "Pump curve", "Flow meter"],
   skillTags: ["Darcy-Weisbach", "Head loss", "Pipe sizing"],
   makeScenario(rng, d) {
-    const q = rng.pick([5, 8, 12, 20, 30]);
-    const length = rng.pick([300, 500, 800, 1200]);
-    const lift = rng.pick([5, 10, 15, 20]);
+    const q = rng.pick([4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40]);
+    const length = rng.int(5, 30) * 50;
+    const lift = rng.int(1, 12) * 2.5;
     const options = Object.keys(DIAMETERS).flatMap((dd) => Object.keys(MATERIALS).map((m) => ({ dd: Number(dd), m })));
     const good = options.filter(({ dd, m }) => {
       const h = head(q, length, lift, dd, m);

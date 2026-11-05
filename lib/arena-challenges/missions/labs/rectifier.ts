@@ -60,10 +60,10 @@ const lab: Lab<S> = {
   skillTags: ["Rectifiers", "Diode circuits", "Ripple"],
   makeScenario(rng, d) {
     const base: S = {
-      iload: rng.pick([100, 150, 250, 400, 500]),
-      vmin: rng.pick([7, 9, 10.5, 12]),
-      rippleMax: d === "easy" ? rng.pick([2, 2.5, 3]) : d === "medium" ? rng.pick([1, 1.5]) : rng.pick([0.5, 0.8]),
-      pivRating: rng.pick([50, 100]),
+      iload: rng.int(15, 100) * 5,
+      vmin: rng.int(14, 26) / 2,
+      rippleMax: d === "easy" ? rng.pick([2, 2.5, 3, 3.5]) : d === "medium" ? rng.pick([1, 1.2, 1.5, 1.8]) : rng.pick([0.5, 0.6, 0.8, 0.9]),
+      pivRating: rng.pick([50, 75, 100, 150]),
       budget: Infinity,
     };
     let cheapest = Infinity;
