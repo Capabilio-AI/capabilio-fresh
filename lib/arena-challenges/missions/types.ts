@@ -3,7 +3,7 @@
 import type { Rng } from "@/lib/workplace/rng";
 
 export type Difficulty = "easy" | "medium" | "hard";
-export type Family = "ece" | "eee" | "mech" | "civil" | "it";
+export type Family = "ece" | "eee" | "mech" | "civil";
 /** A: interactive simulation, B: virtual lab, C: engineering puzzle, D: decision game */
 export type MissionFormat = "simulation" | "lab" | "puzzle" | "decision";
 export type Settings = Record<string, string | number>;

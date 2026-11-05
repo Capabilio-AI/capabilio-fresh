@@ -34,22 +34,12 @@ const BY_LAB: Record<string, string> = {
   "retaining-wall": "Rankine active pressure on a smooth vertical wall with level backfill and no water; real walls also check bending and deep failure.",
   "open-channel": "Uniform flow by Manning's equation in a straight prismatic trapezoidal channel; no backwater or structures.",
   reservoir: "Monthly mass balance with no evaporation or seepage and a repeating two-year inflow record; a teaching model, not a yield study.",
-  "cache-sim": "Trace-driven LRU cache simulation with simplified hit-time and miss-penalty formulas; a single-level cache.",
-  "cpu-scheduler": "Single CPU, no I/O and zero cost for a context switch beyond the count; ties broken by arrival order.",
-  "page-replacement": "Textbook algorithms on a fixed reference string; no dirty pages or prefetching.",
-  "subnet-planner": "IPv4 VLSM arithmetic only; allocation order and routing are not modelled.",
-  "hash-table": "Idealised hash functions on a generated key set; memory counts only slots and chained nodes.",
-  "db-index": "Page-I/O cost model with fixed selectivities; real optimisers use statistics, caching and many plan types.",
-  "load-balancer": "Discrete one-second steps with fixed server speeds and no health checks, retries or warm-up.",
-  "sort-profiler": "Real implementations on generated data counting comparisons and moves; ignores cache effects and constants.",
-  "ml-threshold": "Two equal-variance Gaussian score distributions; real models have messier score shapes and drift.",
 };
 const BY_FAMILY: Record<Family, string> = {
   ece: "A simplified model that follows the textbook equations. Real components have tolerances and extra effects.",
   eee: "A simplified model that follows the textbook equations. Real equipment has limits not shown here.",
   mech: "A simplified model that follows the textbook equations, for learning rather than for design.",
   civil: "A simplified model that follows the textbook equations, for learning rather than for design.",
-  it: "A simplified simulation of the textbook idea, with generated data, for learning rather than for production use.",
 };
 
 export const assumptionsFor = (labKey: string, family: Family): string => BY_LAB[labKey] ?? BY_FAMILY[family];

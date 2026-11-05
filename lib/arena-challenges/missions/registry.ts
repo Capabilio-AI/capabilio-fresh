@@ -38,17 +38,8 @@ import concreteMix from "./labs/concrete-mix";
 import retainingWall from "./labs/retaining-wall";
 import openChannel from "./labs/open-channel";
 import reservoir from "./labs/reservoir";
-import cacheSim from "./labs/cache-sim";
-import cpuScheduler from "./labs/cpu-scheduler";
-import pageReplacement from "./labs/page-replacement";
-import subnetPlanner from "./labs/subnet-planner";
-import hashTable from "./labs/hash-table";
-import dbIndex from "./labs/db-index";
-import loadBalancer from "./labs/load-balancer";
-import sortProfiler from "./labs/sort-profiler";
-import mlThreshold from "./labs/ml-threshold";
 
-export const LABS: AnyLab[] = [rectifier, led, rcFilter, logicGate, buck, pid, voltageRegulation, beam, otto, pipe, rccColumn, foundation, construction, amplifier, dcMotor, solarFarm, crane, heatExchanger, levelling, signalTiming, sampling, firFilter, digitalLink, amModulation, tlineMatch, mcuPwm, rlcStep, transformer, inductionMotor, relayCoordination, evRange, vibrationIsolation, refrigeration, hydraulicCylinder, finHeatSink, concreteMix, retainingWall, openChannel, reservoir, cacheSim, cpuScheduler, pageReplacement, subnetPlanner, hashTable, dbIndex, loadBalancer, sortProfiler, mlThreshold];
+export const LABS: AnyLab[] = [rectifier, led, rcFilter, logicGate, buck, pid, voltageRegulation, beam, otto, pipe, rccColumn, foundation, construction, amplifier, dcMotor, solarFarm, crane, heatExchanger, levelling, signalTiming, sampling, firFilter, digitalLink, amModulation, tlineMatch, mcuPwm, rlcStep, transformer, inductionMotor, relayCoordination, evRange, vibrationIsolation, refrigeration, hydraulicCylinder, finHeatSink, concreteMix, retainingWall, openChannel, reservoir];
 const BY_KEY = new Map(LABS.map((l) => [l.key, l]));
 
 export const labByKey = (key: string): AnyLab | undefined => BY_KEY.get(key);
@@ -61,6 +52,5 @@ export function labFamily(branch: string): Family | null {
   if (/electrical|\beee\b|\bee\b/.test(b)) return "eee";
   if (/mechanical|\bmech\b|automobile|automotive|production|industrial engineering|mechatronics/.test(b)) return "mech";
   if (/civil|\bcivil\b|construction/.test(b)) return "civil";
-  if (/computer science|information technology|artificial intelligence|machine learning|data science|\bcse\b|\bit\b|csbs|cyber|software/.test(b)) return "it";
   return null;
 }

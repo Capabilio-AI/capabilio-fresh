@@ -3,7 +3,6 @@
 //   npm run stream:branch-bulk -- 1000                  (top every lab branch up to 1000 missions)
 //   npm run stream:branch-bulk -- 1000 civil mechanical (only branches whose name contains one of these words)
 //   add --ai to have the model write each story (slow); the default uses each lab's own story, with the same numbers and the same checks.
-// IT branches are skipped: their bank is code, SQL and debugging tasks (npm run it:workbench, it:debug), never simulations.
 // Every mission is validated before it is stored (some settings win, the starting ones do not) and no lab set-up is stored twice.
 import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
@@ -28,7 +27,7 @@ const noAi: StoryDeps = { llm: async () => { throw new Error("templated story");
 // one entry per shared bank: every IT-related branch uses the single it-cluster bank
 const seenScopes = new Set<string>();
 const branches = BRANCH_CATALOG.map((b) => b.name).filter((name) => {
-  if (labFamily(name) === null || labFamily(name) === "it" || !(words.length === 0 || words.some((w) => name.toLowerCase().includes(w)))) return false;
+  if (labFamily(name) === null || !(words.length === 0 || words.some((w) => name.toLowerCase().includes(w)))) return false;
   const key = clusterKeyForBranch(name);
   if (seenScopes.has(key)) return false;
   seenScopes.add(key);
