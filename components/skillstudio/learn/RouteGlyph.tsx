@@ -15,7 +15,7 @@ export function RouteGlyph({ topics, className }: { topics: readonly ModuleTopic
   const label = `${topics.filter((t) => t.status === "TARGET_MET").length} of ${topics.length} lessons proven`;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className={className} preserveAspectRatio="xMidYMid meet">
-      <polyline points={pts.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" className="ss-route-line" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline pathLength="1" points={pts.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" className="ss-route-line" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       {shown.map((t, i) => {
         const { x, y } = pts[i];
         const proven = t.status === "TARGET_MET";

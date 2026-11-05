@@ -61,7 +61,7 @@ export function CourseShelf({ modules, careerName }: { modules: LearningModule[]
           <button type="button" onClick={() => { setQuery(""); setStage("all"); }} className="text-[13.5px] font-bold text-[var(--m-accent-ink)] hover:underline">Clear search and filters</button>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((m) => <CourseCard key={m.key} m={m} />)}
         </ul>
       )}
