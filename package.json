@@ -28,6 +28,7 @@
     "it:leetcode": "node --env-file=.env.local --import tsx scripts/it-leetcode-bulk.mts",
     "stream:branch-bulk": "node --env-file=.env.local --import tsx scripts/stream-branch-bulk.mts",
     "assess:roles": "node --env-file=.env.local --import tsx scripts/seed-roles.mts",
+    "crt:seed": "node --env-file=.env.local --import tsx scripts/crt-seed.mts",
     "pg:template": "node --import tsx scripts/pg-template.mts"
   },
   "dependencies": {

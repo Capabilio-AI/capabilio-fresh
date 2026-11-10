@@ -7,6 +7,7 @@ const TABS = [
   { label: "Courses", href: "/skillstudio" },
   { label: "Materials", href: "/skillstudio/materials" },
   { label: "Certifications", href: "/skillstudio/certifications" },
+  { label: "CRT", href: "/skillstudio/crt" },
 ];
 
 export function SkillStudioSubNav() {
