@@ -30,6 +30,10 @@
     {
       "path": "/api/cron/project-guides",
       "schedule": "40 4 * * *"
+    },
+    {
+      "path": "/api/cron/crt-cycles",
+      "schedule": "45 5 * * *"
     }
   ]
 }

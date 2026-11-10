@@ -7,12 +7,30 @@ import { MIN_COHORT } from "@/lib/org/insights";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Pill } from "@/components/org/ui";
 import { Fact, GroupTitle, Initial, Meter } from "@/components/org/widgets";
+import { SectionTabs } from "@/components/org/SectionTabs";
+import { CrtSection } from "@/components/org/CrtSection";
+import { loadCrtOverview } from "@/lib/crt/org";
 
 export const metadata: Metadata = { title: "Outcomes — Capabilio AI" };
 
-export default async function OutcomesPage({ searchParams }: { searchParams: Promise<{ pq?: string }> }) {
+const TABS = [
+  { label: "Placements", href: "/org/outcomes", show: true },
+  { label: "CRT", href: "/org/outcomes?tab=crt", show: true },
+];
+
+export default async function OutcomesPage({ searchParams }: { searchParams: Promise<{ pq?: string; tab?: string; cycle?: string }> }) {
   const { ctx, service } = await orgPageContext("viewOutcomes");
-  const { pq } = await searchParams;
+  const { pq, tab, cycle } = await searchParams;
+  if (tab === "crt") {
+    const overview = await loadCrtOverview(service, ctx.institutionId, cycle ?? null);
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Outcomes" subtitle="Campus recruitment training: one timed assessment every cycle, with the results sent to your placement cell." />
+        <SectionTabs tabs={TABS} active="/org/outcomes?tab=crt" label="Outcomes sections" />
+        <CrtSection overview={overview} canSchedule={can(ctx, "postPlacement")} />
+      </div>
+    );
+  }
   const canPost = can(ctx, "postPlacement");
   // the student picker is searched by name, and only loaded when someone who can record an offer is looking for a student
   const [{ placements, stats, funnel, driveCount }, options] = await Promise.all([
@@ -41,6 +59,7 @@ export default async function OutcomesPage({ searchParams }: { searchParams: Pro
           )
         }
       />
+      <SectionTabs tabs={TABS} active="/org/outcomes" label="Outcomes sections" />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Fact label="Students placed" value={stats.placed} tone="text-app-success" />

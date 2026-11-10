@@ -34,6 +34,8 @@ import { loadGraduateHome } from "@/lib/graduate/home";
 import { loadProfessionalHome } from "@/lib/stage/professional";
 import { GraduateHome } from "@/components/graduate/GraduateHome";
 import { ProfessionalHome } from "@/components/graduate/ProfessionalHome";
+import { CrtDueCard } from "@/components/crt/CrtDueCard";
+import { loadCrtDue, type CrtDue } from "@/lib/crt/server";
 
 export const metadata: Metadata = {
   title: "Dashboard — Capabilio AI",
@@ -68,8 +70,9 @@ export default async function DashboardPage() {
   let rollNotice: Awaited<ReturnType<typeof loadRollNumberNotice>>;
   let direction: Awaited<ReturnType<typeof getStudentDirection>>;
   let careerProfile: Awaited<ReturnType<typeof getCareerProfile>>;
+  let crtDue: CrtDue | null;
   try {
-    const [dashboardData, skillRows, matches, vault, interest, { data: profile }, roll, dir, career] = await Promise.all([
+    const [dashboardData, skillRows, matches, vault, interest, { data: profile }, roll, dir, career, crt] = await Promise.all([
       getDashboardData(supabase, user.id, { lenient: true }),
       getSkills(supabase, user.id),
       matchCareersForStudent(supabase, user.id),
@@ -79,7 +82,9 @@ export default async function DashboardPage() {
       loadRollNumberNotice(service, user.id),
       getStudentDirection(service, user.id),
       getCareerProfile(service as unknown as Db, user.id),
+      loadCrtDue(service, user.id).catch(() => null),
     ]);
+    crtDue = crt;
     rollNotice = roll;
     direction = dir;
     careerProfile = career;
@@ -117,6 +122,7 @@ export default async function DashboardPage() {
       )}
       <DashboardHeader data={data} hideScore={Boolean(overview)} />
       {rollNotice && <div className="pb-2"><RollNumberBanner notice={rollNotice} /></div>}
+      {crtDue && <CrtDueCard due={crtDue} />}
       {askPlanB && (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white p-4">
           <div className="max-w-[60ch]">
