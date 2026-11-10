@@ -14,7 +14,7 @@ export function ModuleBars({ scores }: { scores: ModuleScores }) {
               <span className="tabular-nums text-app-muted">{pct}%</span>
             </div>
             <div role="meter" aria-label={MODULE_LABEL[m]} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-2 overflow-hidden rounded-full bg-[var(--m-accent-soft)]">
-              <div className={`h-full rounded-full ${pct >= 60 ? "bg-app-success" : pct >= 40 ? "bg-[var(--m-accent)]" : "bg-app-orange"}`} style={{ width: `${pct}%` }} />
+              <div className={`h-full rounded-full ${pct >= 60 ? "bg-app-success" : pct >= 40 ? "bg-[var(--m-accent)]" : "bg-app-warning"}`} style={{ width: `${pct}%` }} />
             </div>
           </li>
         );

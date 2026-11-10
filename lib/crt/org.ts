@@ -6,26 +6,26 @@ import { onlyCurrentStudents } from "@/lib/org/current-students";
 import { computeCurrentAcademicYear } from "@/lib/career/academic-year";
 import { staffWithPermission } from "@/lib/notifications/audiences";
 import { notify } from "@/lib/notifications/notify";
-import { appliesTo, attemptExpired, cycleStatus, suggestNextWindow, type CycleStatus } from "./cycle";
+import { appliesTo, attemptExpired, cycleStatusAt, defaultTimes, suggestNextWindow, type CycleStatus } from "./cycle";
 import { summarizeCycle, type CycleSummary, type ResultRow } from "./aggregate";
-import { MODULE_LABEL, type ModuleScores } from "./model";
+import { CRT_MODULES, MODULE_LABEL, QUESTIONS_PER_MODULE, type ModuleScores } from "./model";
 import { finalizeAttempt, todayIst } from "./server";
 
 type Service = SupabaseClient<Database>;
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date.").refine((d) => !Number.isNaN(Date.parse(d)), "Enter a valid date.");
+const instant = z.string().datetime({ offset: true, message: "Enter a valid date and time." });
 
 export const CreateCycleSchema = z
   .object({
     title: z.string().trim().min(2, "Give the cycle a name.").max(120),
-    opensOn: isoDate,
-    closesOn: isoDate,
+    opensAt: instant,
+    closesAt: instant,
     branches: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
     years: z.array(z.coerce.number().int().min(1).max(6)).max(6).optional(),
-    durationMinutes: z.coerce.number().int().min(15, "At least 15 minutes.").max(180, "At most 180 minutes.").default(60),
   })
   .strict()
-  .refine((v) => v.closesOn > v.opensOn, { message: "The close date must be after the open date.", path: ["closesOn"] });
+  .refine((v) => Date.parse(v.closesAt) > Date.parse(v.opensAt), { message: "The close time must be after the open time.", path: ["closesAt"] })
+  .refine((v) => Date.parse(v.closesAt) > Date.now(), { message: "The close time must be in the future.", path: ["closesAt"] });
 export type CreateCycleInput = z.infer<typeof CreateCycleSchema>;
 
 interface CycleRow {
@@ -34,6 +34,8 @@ interface CycleRow {
   title: string;
   opens_on: string;
   closes_on: string;
+  opens_at: string;
+  closes_at: string;
   branches: string[] | null;
   years: number[] | null;
   duration_minutes: number;
@@ -90,8 +92,8 @@ async function profilesFor(service: Service, ids: readonly string[]): Promise<Ma
 export interface OrgCycle {
   id: string;
   title: string;
-  opensOn: string;
-  closesOn: string;
+  opensAt: string;
+  closesAt: string;
   durationMinutes: number;
   branches: string[] | null;
   years: number[] | null;
@@ -103,14 +105,14 @@ export interface OrgCycle {
 export interface OrgCrtOverview {
   cycles: OrgCycle[];
   selected: { cycle: OrgCycle; rows: (ResultRow & { rollNumber: string | null; email: string | null })[] } | null;
-  suggested: { opensOn: string; closesOn: string };
+  suggested: { opensAt: string; closesAt: string };
   branchOptions: { value: string; label: string }[];
 }
 
 export async function loadCrtOverview(service: Service, institutionId: string, selectedId?: string | null): Promise<OrgCrtOverview> {
   const db = untyped(service);
   const [{ data: cycleRows }, students] = await Promise.all([
-    db.from("crt_cycles").select("*").eq("college_id", institutionId).order("opens_on", { ascending: false }).limit(12),
+    db.from("crt_cycles").select("*").eq("college_id", institutionId).order("opens_at", { ascending: false }).limit(12),
     collegeStudents(service, institutionId),
   ]);
   const rows = (cycleRows ?? []) as CycleRow[];
@@ -132,12 +134,12 @@ export async function loadCrtOverview(service: Service, institutionId: string, s
   const cycles: OrgCycle[] = rows.map((c) => ({
     id: c.id,
     title: c.title,
-    opensOn: c.opens_on,
-    closesOn: c.closes_on,
+    opensAt: c.opens_at,
+    closesAt: c.closes_at,
     durationMinutes: c.duration_minutes,
     branches: c.branches,
     years: c.years,
-    status: cycleStatus({ opensOn: c.opens_on, closesOn: c.closes_on }, today),
+    status: cycleStatusAt({ opensAt: c.opens_at, closesAt: c.closes_at }, new Date()),
     reportSent: Boolean(c.report_sent_at),
     summary: summarizeCycle(resultRows(c).rows, resultRows(c).eligible),
   }));
@@ -157,20 +159,36 @@ export async function loadCrtOverview(service: Service, institutionId: string, s
   }
 
   const branchOptions = [...new Set(students.map((s) => s.branch?.trim()).filter((b): b is string => Boolean(b)))].sort().map((b) => ({ value: b, label: b }));
-  return { cycles, selected, suggested: suggestNextWindow(rows[0]?.opens_on ?? null, today), branchOptions };
+  return { cycles, selected, suggested: defaultTimes(suggestNextWindow(rows[0]?.opens_on ?? null, today)), branchOptions };
 }
 
 export async function createCycle(service: Service, institutionId: string, createdBy: string, input: CreateCycleInput): Promise<{ id: string }> {
   const { data, error } = await untyped(service)
     .from("crt_cycles")
-    .insert({ college_id: institutionId, title: input.title, opens_on: input.opensOn, closes_on: input.closesOn, branches: input.branches?.length ? input.branches : null, years: input.years?.length ? input.years : null, duration_minutes: input.durationMinutes, created_by: createdBy })
+    .insert({
+      college_id: institutionId,
+      title: input.title,
+      opens_at: input.opensAt,
+      closes_at: input.closesAt,
+      // the whole-day columns are the India dates of those instants
+      opens_on: todayIst(new Date(input.opensAt)),
+      closes_on: todayIst(new Date(input.closesAt)),
+      branches: input.branches?.length ? input.branches : null,
+      years: input.years?.length ? input.years : null,
+      // one minute per question
+      duration_minutes: CRT_MODULES.length * QUESTIONS_PER_MODULE,
+      created_by: createdBy,
+    })
     .select("id")
     .single();
   if (error) throw error;
   const id = (data as { id: string }).id;
-  if (input.opensOn <= todayIst()) await announceOpen(service, institutionId, id);
+  // told straight away if it is already open or opens today; otherwise the daily job tells them on the day it opens
+  if (todayIst(new Date(input.opensAt)) <= todayIst()) await announceOpen(service, institutionId, id);
   return { id };
 }
+
+const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 
 /** Tells every student the cycle applies to that it is open. Safe to repeat: each student is told once per cycle. */
 export async function announceOpen(service: Service, institutionId: string, cycleId: string): Promise<number> {
@@ -181,8 +199,8 @@ export async function announceOpen(service: Service, institutionId: string, cycl
   return notify(service, {
     userIds: students.map((s) => s.userId),
     type: "crt_open",
-    title: `${c.title} is open`,
-    body: `Finish your CRT assessment by ${c.closes_on}. It takes about ${c.duration_minutes} minutes.`,
+    title: Date.parse(c.opens_at) > Date.now() ? `${c.title} opens ${when(c.opens_at)}` : `${c.title} is open`,
+    body: `Take your CRT assessment between ${when(c.opens_at)} and ${when(c.closes_at)}. It takes about ${c.duration_minutes} minutes, one minute per question.`,
     href: "/skillstudio/crt",
     institutionId,
     dedupeKey: `crt-open:${c.id}`,

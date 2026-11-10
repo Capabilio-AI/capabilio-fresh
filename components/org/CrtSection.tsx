@@ -14,7 +14,7 @@ const STATUS_PILL: Record<OrgCycle["status"], { tone: "ok" | "warn" | "neutral";
 };
 const BAND_TONE: Record<Band, "ok" | "warn" | "neutral"> = { strong: "ok", proficient: "ok", developing: "warn", needs_work: "neutral" };
 
-const day = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const day = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 
 /** The CRT tab of Outcomes: schedule a cycle, see who has taken it and how they did. */
 export function CrtSection({ overview, canSchedule }: { overview: OrgCrtOverview; canSchedule: boolean }) {
@@ -27,17 +27,16 @@ export function CrtSection({ overview, canSchedule }: { overview: OrgCrtOverview
       {canSchedule && (
         <Collapsible title="Schedule a CRT cycle" defaultOpen={cycles.length === 0}>
           <p className="mb-3 font-lp-body text-[12.5px] text-app-muted">
-            Students in scope are notified when the cycle opens and take one timed assessment of four modules. When it closes, the placement cell gets the results here and in notifications. Students are told before they start that you can see their score.
+            Students in scope receive the assessment only from the opening time you set. It has four modules and gives one minute per question. When it closes, the placement cell gets the results here and in notifications. Students are told before they start that you can see their score.
           </p>
           <JsonForm
             action="/api/org/crt"
             submitLabel="Schedule cycle"
             successMessage="Cycle scheduled."
             fields={[
-              { name: "title", label: "Name", required: true, defaultValue: `CRT ${new Date(`${suggested.opensOn}T00:00:00`).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}` },
-              { name: "opensOn", label: "Opens on", type: "date", required: true, defaultValue: suggested.opensOn },
-              { name: "closesOn", label: "Closes on", type: "date", required: true, defaultValue: suggested.closesOn },
-              { name: "durationMinutes", label: "Time allowed (minutes)", type: "number", defaultValue: "60" },
+              { name: "title", label: "Name", required: true, defaultValue: `CRT ${new Date(`${suggested.opensAt.slice(0, 10)}T00:00:00`).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}` },
+              { name: "opensAt", label: "Opens at", type: "datetime-local", required: true, defaultValue: suggested.opensAt, help: "Students receive the assessment from this exact time, and not before." },
+              { name: "closesAt", label: "Closes at", type: "datetime-local", required: true, defaultValue: suggested.closesAt, help: "Anyone who has started has one minute per question, up to this time." },
               { name: "branches", label: "Branches", type: "list", placeholder: branchOptions.slice(0, 3).map((b) => b.label).join(", ") || "CSE, ECE", help: "Comma-separated. Leave empty for every branch." },
               { name: "years", label: "Years of study", type: "list", placeholder: "3, 4", help: "Comma-separated. Leave empty for every year." },
             ]}
@@ -57,7 +56,7 @@ export function CrtSection({ overview, canSchedule }: { overview: OrgCrtOverview
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-[18px] font-extrabold text-app-charcoal">{cycle.title}</h2>
                   <Pill tone={STATUS_PILL[cycle.status].tone}>{STATUS_PILL[cycle.status].label}</Pill>
-                  <span className="text-[12.5px] text-app-muted">{day(cycle.opensOn)} to {day(cycle.closesOn)} · {cycle.durationMinutes} min</span>
+                  <span className="text-[12.5px] text-app-muted">{day(cycle.opensAt)} to {day(cycle.closesAt)} · {cycle.durationMinutes} min</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Pill tone={cycle.reportSent ? "ok" : "neutral"}>{cycle.reportSent ? "Results report sent" : "Report sends when the cycle closes"}</Pill>

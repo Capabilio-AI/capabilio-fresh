@@ -23,6 +23,6 @@ for (let i = 0; i < fresh.length; i += 200) {
 }
 console.log(`questions: inserted ${fresh.length}, already present ${bank.length - fresh.length}`);
 
-const { error } = await db.from("crt_sessions").upsert(SESSIONS.map((s) => ({ module: s.module, position: s.position, title: s.title, summary: s.summary, minutes: s.minutes, content: s.content, status: "published" })), { onConflict: "module,position" });
+const { error } = await db.from("crt_sessions").upsert(SESSIONS.map((s) => ({ module: s.module, category: s.category, position: s.position, title: s.title, summary: s.summary, minutes: s.minutes, content: s.content, status: "published" })), { onConflict: "module,position" });
 if (error) throw error;
 console.log(`sessions: upserted ${SESSIONS.length}`);

@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { getStudentDirection } from "@/lib/career/direction";
-import { appliesTo, attemptExpired, cycleStatus, type CycleStatus } from "./cycle";
+import { appliesTo, attemptExpired, cycleStatusAt, SECONDS_PER_QUESTION, type CycleStatus } from "./cycle";
 import { CRT_MODULES, QUESTIONS_PER_MODULE, type Band, type CrtModule, type CrtOption, type CrtQuestion, type ModuleScores } from "./model";
 import { bandFor, scoreAttempt } from "./score";
 
@@ -21,11 +21,10 @@ interface CycleRow {
   id: string;
   college_id: string;
   title: string;
-  opens_on: string;
-  closes_on: string;
+  opens_at: string;
+  closes_at: string;
   branches: string[] | null;
   years: number[] | null;
-  duration_minutes: number;
 }
 
 interface AttemptRow {
@@ -53,8 +52,9 @@ export interface AttemptResult {
 export interface StudentCycle {
   id: string;
   title: string;
-  opensOn: string;
-  closesOn: string;
+  opensAt: string;
+  closesAt: string;
+  /** one minute per question */
   durationMinutes: number;
   status: CycleStatus;
   /** the student is expected to take it (their branch and year are in scope) */
@@ -63,16 +63,6 @@ export interface StudentCycle {
   /** an attempt that is started and still has time on the clock */
   inProgress: boolean;
   canStart: boolean;
-}
-
-export interface SessionCard {
-  id: string;
-  module: CrtModule;
-  position: number;
-  title: string;
-  summary: string;
-  minutes: number;
-  done: boolean;
 }
 
 export interface RunnerPayload {
@@ -126,14 +116,13 @@ async function loadCycles(service: Service, userId: string): Promise<{ ctx: Stud
   const ctx = await crtStudentContext(service, userId);
   if (!ctx) return null;
   const db = untyped(service);
-  const { data: cycleRows } = await db.from("crt_cycles").select("*").eq("college_id", ctx.institutionId).order("opens_on", { ascending: false }).limit(12);
+  const { data: cycleRows } = await db.from("crt_cycles").select("*").eq("college_id", ctx.institutionId).order("opens_at", { ascending: false }).limit(12);
   const rows = (cycleRows ?? []) as CycleRow[];
   if (rows.length === 0) return { ctx, cycles: [] };
   const { data: attemptRows } = await db.from("crt_attempts").select("*").eq("user_id", userId).in("cycle_id", rows.map((c) => c.id));
   const attempts = new Map(((attemptRows ?? []) as AttemptRow[]).map((a) => [a.cycle_id, a]));
 
   const now = new Date();
-  const today = todayIst(now);
   const cycles: StudentCycle[] = [];
   for (const c of rows) {
     let attempt = attempts.get(c.id) ?? null;
@@ -142,16 +131,17 @@ async function loadCycles(service: Service, userId: string): Promise<{ ctx: Stud
       const r = await finalizeAttempt(service, attempt);
       attempt = { ...attempt, submitted_at: r.submittedAt, module_scores: r.moduleScores, total_pct: r.totalPct };
     }
-    const status = cycleStatus({ opensOn: c.opens_on, closesOn: c.closes_on }, today);
+    const status = cycleStatusAt({ opensAt: c.opens_at, closesAt: c.closes_at }, now);
     const applies = appliesTo({ branches: c.branches, years: c.years }, ctx.branch, ctx.year);
-    if (!applies && !attempt) continue;
+    // a student receives an assessment only once the placement cell has opened it
+    if ((!applies && !attempt) || (status === "upcoming" && !attempt)) continue;
     const result = attempt ? toResult(attempt) : null;
     cycles.push({
       id: c.id,
       title: c.title,
-      opensOn: c.opens_on,
-      closesOn: c.closes_on,
-      durationMinutes: c.duration_minutes,
+      opensAt: c.opens_at,
+      closesAt: c.closes_at,
+      durationMinutes: CRT_MODULES.length * QUESTIONS_PER_MODULE,
       status,
       applies,
       result,
@@ -162,27 +152,17 @@ async function loadCycles(service: Service, userId: string): Promise<{ ctx: Stud
   return { ctx, cycles };
 }
 
-export async function loadStudentCrt(service: Service, userId: string): Promise<{ cycles: StudentCycle[]; sessions: SessionCard[] } | null> {
+export async function loadStudentCrt(service: Service, userId: string): Promise<{ cycles: StudentCycle[] } | null> {
   const base = await loadCycles(service, userId);
-  if (!base) return null;
-  const db = untyped(service);
-  const [{ data: sessionRows }, { data: doneRows }] = await Promise.all([
-    db.from("crt_sessions").select("id, module, position, title, summary, minutes").eq("status", "published").order("position", { ascending: true }),
-    db.from("crt_session_progress").select("session_id").eq("user_id", userId),
-  ]);
-  const done = new Set(((doneRows ?? []) as { session_id: string }[]).map((r) => r.session_id));
-  const order = new Map(CRT_MODULES.map((m, i) => [m, i]));
-  const sessions = ((sessionRows ?? []) as Omit<SessionCard, "done">[])
-    .map((s) => ({ ...s, done: done.has(s.id) }))
-    .sort((a, b) => (order.get(a.module)! - order.get(b.module)!) || a.position - b.position);
-  return { cycles: base.cycles, sessions };
+  return base ? { cycles: base.cycles } : null;
 }
 
 export interface CrtDue {
   cycleId: string;
   title: string;
-  closesOn: string;
-  daysLeft: number;
+  closesAt: string;
+  /** closes within three days */
+  closesSoon: boolean;
   inProgress: boolean;
 }
 
@@ -191,8 +171,7 @@ export async function loadCrtDue(service: Service, userId: string): Promise<CrtD
   const base = await loadCycles(service, userId).catch(() => null);
   const c = base?.cycles.find((x) => x.canStart || (x.inProgress && x.status === "open"));
   if (!c) return null;
-  const days = Math.round((Date.parse(`${c.closesOn}T00:00:00Z`) - Date.parse(`${todayIst()}T00:00:00Z`)) / 86_400_000);
-  return { cycleId: c.id, title: c.title, closesOn: c.closesOn, daysLeft: Math.max(0, days), inProgress: c.inProgress };
+  return { cycleId: c.id, title: c.title, closesAt: c.closesAt, closesSoon: Date.parse(c.closesAt) - Date.now() < 3 * 86_400_000, inProgress: c.inProgress };
 }
 
 const shuffle = <T,>(xs: readonly T[]): T[] => {
@@ -246,7 +225,7 @@ export async function startOrResume(service: Service, userId: string, cycleId: s
     return { ok: true, payload: await payloadFor(service, existing, cycle.title) };
   }
 
-  if (cycleStatus({ opensOn: cycle.opens_on, closesOn: cycle.closes_on }, todayIst()) !== "open") return fail(409, "This assessment is not open right now.");
+  if (cycleStatusAt({ opensAt: cycle.opens_at, closesAt: cycle.closes_at }, new Date()) !== "open") return fail(409, "This assessment is not open right now.");
 
   const [{ data: pool }, { data: past }] = await Promise.all([
     db.from("crt_questions").select("id, module").eq("status", "published").limit(5000),
@@ -256,7 +235,8 @@ export async function startOrResume(service: Service, userId: string, cycleId: s
   const ids = drawQuestionIds((pool ?? []) as { id: string; module: CrtModule }[], seen, QUESTIONS_PER_MODULE);
   if (ids.length === 0) return fail(503, "The question bank is not ready yet. Please try again later.");
 
-  const deadline = new Date(Date.now() + cycle.duration_minutes * 60_000).toISOString();
+  // one minute per question: the whole test is as many minutes as it has questions
+  const deadline = new Date(Date.now() + ids.length * SECONDS_PER_QUESTION * 1000).toISOString();
   const { data: created, error } = await db.from("crt_attempts").insert({ cycle_id: cycleId, user_id: userId, college_id: ctx.institutionId, branch: ctx.branch, year_of_study: ctx.year, deadline_at: deadline, question_ids: ids }).select("*").single();
   if (error) {
     // two taps at once: the unique (cycle, user) index let the other one in, so resume that
@@ -296,23 +276,4 @@ export async function submitAttempt(service: Service, userId: string, attemptId:
   if (attempt.submitted_at) return { ok: true, result: (await finalizeAttempt(service, attempt)) };
   const answers = attemptExpired(attempt.deadline_at, new Date()) ? attempt.answers : { ...attempt.answers, ...cleanAnswers(attempt.question_ids, incoming) };
   return { ok: true, result: await finalizeAttempt(service, { ...attempt, answers }) };
-}
-
-export async function openSession(service: Service, userId: string, sessionId: string): Promise<Outcome<{ session: { id: string; module: CrtModule; title: string; minutes: number; content: unknown; done: boolean } }>> {
-  const db = untyped(service);
-  const [{ data }, { data: progress }] = await Promise.all([
-    db.from("crt_sessions").select("id, module, title, minutes, content").eq("id", sessionId).eq("status", "published").maybeSingle(),
-    db.from("crt_session_progress").select("session_id").eq("user_id", userId).eq("session_id", sessionId).maybeSingle(),
-  ]);
-  if (!data) return fail(404, "Session not found.");
-  return { ok: true, session: { ...(data as { id: string; module: CrtModule; title: string; minutes: number; content: unknown }), done: Boolean(progress) } };
-}
-
-export async function completeSession(service: Service, userId: string, sessionId: string): Promise<Outcome<{ done: true }>> {
-  const db = untyped(service);
-  const { data } = await db.from("crt_sessions").select("id").eq("id", sessionId).eq("status", "published").maybeSingle();
-  if (!data) return fail(404, "Session not found.");
-  const { error } = await db.from("crt_session_progress").upsert({ user_id: userId, session_id: sessionId }, { onConflict: "user_id,session_id", ignoreDuplicates: true });
-  if (error) throw error;
-  return { ok: true, done: true };
 }
