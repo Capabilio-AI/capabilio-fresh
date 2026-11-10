@@ -3,7 +3,7 @@ import type { TheoryLesson } from "@/lib/skillstudio/lesson-content";
 import { CheckYourself } from "./CheckYourself";
 
 /** The written lesson: scannable sections, a worked example each, then what to remember and what trips people up. */
-export function TheoryView({ lesson }: { lesson: TheoryLesson }) {
+export function TheoryView({ lesson, onCheckDone }: { lesson: TheoryLesson; onCheckDone?: (right: number, total: number) => void }) {
   return (
     <article className="flex flex-col gap-6">
       <p className="max-w-[64ch] text-[17px] leading-relaxed text-[var(--m-ink)]">{lesson.summary}</p>
@@ -30,7 +30,7 @@ export function TheoryView({ lesson }: { lesson: TheoryLesson }) {
           <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-[15px] leading-relaxed text-[var(--m-ink)]">{lesson.mistakes.map((m, i) => <li key={i}>{m}</li>)}</ul>
         </section>
       )}
-      <CheckYourself id="theory-check" questions={lesson.check} />
+      <CheckYourself id="theory-check" questions={lesson.check} onDone={onCheckDone} />
     </article>
   );
 }

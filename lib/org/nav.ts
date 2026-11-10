@@ -49,6 +49,7 @@ const GROUPS: { label: string; items: Candidate[] }[] = [
       { label: "Career intent", href: "/org/career", needs: "placements" },
       { label: "Insights", href: "/org/insights", needs: "insights" },
       { label: "Outcomes", href: "/org/outcomes", needs: "outcomes" },
+      { label: "Integrity", href: "/org/integrity", needs: "students" },
     ],
   },
   { label: "Collaboration", items: [{ label: "Team chat", href: "/org/chat", needs: "chat", tabOf: "members" }] },
