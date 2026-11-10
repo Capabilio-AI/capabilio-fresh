@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appliesTo, attemptExpired, cycleStatus, suggestNextWindow } from "./cycle";
+import { appliesTo, attemptExpired, cycleStatusAt, suggestNextWindow } from "./cycle";
 import type { CrtQuestion } from "./model";
 import { bandFor, scoreAttempt } from "./score";
 
@@ -39,11 +39,12 @@ describe("bandFor", () => {
 
 describe("cycle rules", () => {
   const c = { opensOn: "2026-12-01", closesOn: "2026-12-15" };
-  it("is open on its first and last day", () => {
-    expect(cycleStatus(c, "2026-11-30")).toBe("upcoming");
-    expect(cycleStatus(c, "2026-12-01")).toBe("open");
-    expect(cycleStatus(c, "2026-12-15")).toBe("open");
-    expect(cycleStatus(c, "2026-12-16")).toBe("closed");
+  it("is open from the exact opening time to the exact closing time", () => {
+    const c = { opensAt: "2026-12-01T10:00:00+05:30", closesAt: "2026-12-01T18:00:00+05:30" };
+    expect(cycleStatusAt(c, new Date("2026-12-01T09:59:59+05:30"))).toBe("upcoming");
+    expect(cycleStatusAt(c, new Date("2026-12-01T10:00:00+05:30"))).toBe("open");
+    expect(cycleStatusAt(c, new Date("2026-12-01T18:00:00+05:30"))).toBe("open");
+    expect(cycleStatusAt(c, new Date("2026-12-01T18:00:01+05:30"))).toBe("closed");
   });
 
   it("applies to everyone when no scope is set, and honours branch codes and years", () => {

@@ -11,10 +11,12 @@ export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const db = untyped(createServiceClient());
-  const today = todayIst();
+  const now = new Date();
+  // a cycle is announced on the day it opens (the notice says at what time) and while it is open
+  const endOfToday = new Date(`${todayIst(now)}T23:59:59+05:30`).toISOString();
   const [{ data: open }, { data: closed }] = await Promise.all([
-    db.from("crt_cycles").select("id, college_id").lte("opens_on", today).gte("closes_on", today).limit(200),
-    db.from("crt_cycles").select("id").lt("closes_on", today).is("report_sent_at", null).limit(200),
+    db.from("crt_cycles").select("id, college_id").lte("opens_at", endOfToday).gte("closes_at", now.toISOString()).limit(200),
+    db.from("crt_cycles").select("id").lt("closes_at", now.toISOString()).is("report_sent_at", null).limit(200),
   ]);
   const service = createServiceClient();
   let announced = 0;

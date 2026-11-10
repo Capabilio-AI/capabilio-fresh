@@ -1,3 +1,4 @@
+import type { Category } from "../categories";
 import type { CrtModule } from "../model";
 
 export type Block =
@@ -8,6 +9,7 @@ export type Block =
 
 export interface SessionDef {
   module: CrtModule;
+  category: Category;
   position: number;
   title: string;
   summary: string;
@@ -22,7 +24,7 @@ const practice = (prompt: string, options: string[], answer: number, why: string
 
 export const SESSIONS: SessionDef[] = [
   {
-    module: "aptitude", position: 1, title: "Percentages, profit and loss", minutes: 25,
+    module: "aptitude", category: "aptitude", position: 1, title: "Percentages, profit and loss", minutes: 25,
     summary: "Turn percentage problems into one multiplication, and stop adding discounts together.",
     content: [
       text("Almost every percentage question is one idea: a percentage is a fraction of 100. Convert it to a multiplier and multiply. 20% becomes 0.2; a 20% rise becomes ×1.2; a 20% fall becomes ×0.8."),
@@ -34,7 +36,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "aptitude", position: 2, title: "Ratios, averages and mixtures", minutes: 25,
+    module: "aptitude", category: "aptitude", position: 2, title: "Ratios, averages and mixtures", minutes: 25,
     summary: "Share, average and mix without equations, using totals.",
     content: [
       text("Ratios split a total into equal parts. For 2:3, there are 5 parts; one part is total ÷ 5, so the first share is 2 parts."),
@@ -46,7 +48,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "aptitude", position: 3, title: "Time, work and speed", minutes: 30,
+    module: "aptitude", category: "aptitude", position: 3, title: "Time, work and speed", minutes: 30,
     summary: "Use rates: work per day and distance per hour make hard questions easy.",
     content: [
       text("Treat every job as a rate. If A finishes in 10 days, A does 1/10 of the work per day. Together, add the rates and take the reciprocal."),
@@ -58,7 +60,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "reasoning", position: 1, title: "Series and patterns", minutes: 20,
+    module: "reasoning", category: "reasoning", position: 1, title: "Series and patterns", minutes: 20,
     summary: "A short checklist that cracks most number and letter series.",
     content: [
       text("Look at the gaps first. If the gaps are constant, it is arithmetic. If each term is multiplied, it is geometric. If the gaps themselves grow, look at the gaps of the gaps."),
@@ -70,7 +72,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "reasoning", position: 2, title: "Coding, directions and ranking", minutes: 20,
+    module: "reasoning", category: "reasoning", position: 2, title: "Coding, directions and ranking", minutes: 20,
     summary: "Track position changes on paper and the answers are never hard.",
     content: [
       text("Coding-decoding questions use a rule: letters shifted by a fixed number, reversed, or replaced. Find the rule from the example and apply it to the new word."),
@@ -83,7 +85,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "reasoning", position: 3, title: "Syllogisms and blood relations", minutes: 25,
+    module: "reasoning", category: "reasoning", position: 3, title: "Syllogisms and blood relations", minutes: 25,
     summary: "Four syllogism patterns and one trick for relationship chains.",
     content: [
       text("In a syllogism you decide whether a conclusion must follow from the statements, however strange they sound. Use only the statements, never your own knowledge."),
@@ -96,7 +98,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "verbal", position: 1, title: "Grammar that interviews notice", minutes: 20,
+    module: "verbal", category: "verbal", position: 1, title: "Grammar that interviews notice", minutes: 20,
     summary: "The handful of errors recruiters actually hear, and how to avoid them.",
     content: [
       text("You do not need all of grammar. A few rules cause most of the visible mistakes: subject-verb agreement, tenses, prepositions and word choice."),
@@ -109,7 +111,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "verbal", position: 2, title: "Writing a professional email", minutes: 20,
+    module: "verbal", category: "workplace", position: 2, title: "Writing a professional email", minutes: 20,
     summary: "A five-line structure for any email to a professor, recruiter or colleague.",
     content: [
       text("A good professional email is short and complete. The reader should understand who you are, what you want and what to do next without needing to write back."),
@@ -121,7 +123,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "verbal", position: 3, title: "Interviews and group discussions", minutes: 25,
+    module: "verbal", category: "interview", position: 3, title: "Interviews and group discussions", minutes: 25,
     summary: "How to speak so people remember the point you made.",
     content: [
       text("In interviews and group discussions, structure beats vocabulary. Make your point first, back it with one example, and stop."),
@@ -133,7 +135,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "soft_skills", position: 1, title: "Teamwork and handling conflict", minutes: 20,
+    module: "soft_skills", category: "soft_skills", position: 1, title: "Teamwork and handling conflict", minutes: 20,
     summary: "How strong teammates behave when work gets uncomfortable.",
     content: [
       text("Teams rarely fail because people lack skills. They fail because problems stay unspoken. The habits below keep problems small."),
@@ -145,7 +147,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "soft_skills", position: 2, title: "Time management and ownership", minutes: 20,
+    module: "soft_skills", category: "soft_skills", position: 2, title: "Time management and ownership", minutes: 20,
     summary: "Plan the week, protect your focus, and own your mistakes.",
     content: [
       text("Time management is choosing what to do first. Ownership is finishing what you said you would, and speaking up early when you cannot."),
@@ -157,7 +159,7 @@ export const SESSIONS: SessionDef[] = [
     ],
   },
   {
-    module: "soft_skills", position: 3, title: "Interview conduct and workplace etiquette", minutes: 20,
+    module: "soft_skills", category: "soft_skills", position: 3, title: "Interview conduct and workplace etiquette", minutes: 20,
     summary: "The small habits that decide first impressions.",
     content: [
       text("Recruiters notice conduct as much as answers: punctuality, how you listen, how you handle not knowing, and how you treat everyone you meet."),
@@ -167,6 +169,89 @@ export const SESSIONS: SessionDef[] = [
       tip("Thank the interviewer, and the receptionist. Follow up with a short thank-you email within a day."),
       practice("You do not know the answer to a technical question. What is best?", ["Guess confidently", "Say you do not know, then explain how you would find out", "Stay silent", "Change the subject"], 1, "Honesty with a method shows how you work."),
       practice("A friend asks you to share your lab record so they can copy it. Best response?", ["Share it", "Say no and avoid them", "Offer to explain the concepts so they can write their own", "Sell it"], 2, "You help them learn without breaking integrity."),
+    ],
+  },
+  {
+    module: "verbal", category: "speaking", position: 4, title: "Introducing yourself clearly", minutes: 15,
+    summary: "A 45-second self-introduction you can say calmly, then practise aloud in the speaking studio.",
+    content: [
+      text("A good introduction answers three questions in order: who you are, what you have done, and what you want next. Keep it to about 45 seconds. Practise it aloud until it sounds like talking, not reciting."),
+      example("A simple structure", "\"I am Priya, a final-year CSE student from Vijayawada. I built a student-attendance app in React and SQL, and I enjoy solving data problems. I am looking for a software role where I can keep learning.\""),
+      tip("Pace matters more than accent. Speak slightly slower than feels natural, pause at the end of each idea, and let your own accent be. Clear beats fast."),
+      practice("Which is the best first sentence of a self-introduction in an interview?", ["I was born in 2003 in a small village.", "I am Arjun, a final-year ECE student who has built an IoT irrigation project.", "Sir, my name is Arjun, please see my resume.", "I am a hardworking person."], 1, "It gives your name, your stage and one concrete thing you have done."),
+      practice("How long should a self-introduction be?", ["10 seconds", "About 45 seconds", "3 minutes", "As long as possible"], 1, "Long enough to be useful and short enough to keep attention."),
+    ],
+  },
+  {
+    module: "verbal", category: "speaking", position: 5, title: "Fluency habits for everyday English", minutes: 15,
+    summary: "Small habits that make your spoken English steady: short sentences, pauses and connecting phrases.",
+    content: [
+      text("Fluency is not speed. It is finishing your thoughts without losing the thread. Short sentences, a clear order of ideas, and a few connecting phrases do most of the work."),
+      example("Connecting phrases", "First… Then… As a result… For example… On the other hand… To sum up. Using two or three of these gives your answer a shape."),
+      example("Replacing fillers", "Instead of \"umm, like, you know\", pause quietly for a second. A silent pause sounds thoughtful; fillers sound unsure."),
+      tip("Record yourself for one minute on any topic and listen back once. You will notice fillers and run-on sentences straight away."),
+      practice("Which is the better way to pause while thinking?", ["Say \"umm, umm, like\" repeatedly", "Take a short silent pause and continue", "Restart the whole sentence", "Stop speaking completely"], 1, "A quiet pause sounds more confident than fillers."),
+      practice("Which opening makes an answer easier to follow?", ["Because, and also, so then.", "There are two reasons. First, …", "It depends on many things and various situations.", "I do not know how to say it."], 1, "Announcing the structure helps both you and the listener."),
+    ],
+  },
+  {
+    module: "soft_skills", category: "group_discussion", position: 4, title: "Group discussion: structure and etiquette", minutes: 20,
+    summary: "What evaluators look for in a group discussion and how to show it without dominating.",
+    content: [
+      text("A group discussion tests how you think with other people, not who talks the most. Evaluators watch for clear ideas, listening, respect, and whether you move the discussion forward."),
+      example("Good moves", "\"I would like to build on Meera's point…\"; \"Can we agree that…?\"; \"One angle we have not covered is…\". Each shows listening and adds something new."),
+      example("What loses marks", "Interrupting, repeating what was said, shouting, going off-topic, or staying silent for the whole discussion."),
+      tip("Two to four well-timed points beat ten rushed ones. Quality and relevance are marked above quantity."),
+      practice("Another participant makes a point you agree with. What adds the most value?", ["Say \"I agree\" and stop", "Repeat their point in your words", "Build on it with a new example or angle", "Argue with it to look independent"], 2, "Building on a point shows listening and moves the discussion forward."),
+      practice("You have not spoken for several minutes. What is a good way in?", ["Wait until the end", "Interrupt loudly", "Wait for a pause and add a relevant point", "Change the topic"], 2, "A short, relevant contribution at a natural pause is welcomed."),
+    ],
+  },
+  {
+    module: "soft_skills", category: "group_discussion", position: 7, title: "Opening, building and closing a discussion", minutes: 15,
+    summary: "Know when to start, how to steer and how to summarise.",
+    content: [
+      text("A strong opening sets direction and a good close pulls the discussion together. Both are remembered by evaluators, but only if you are accurate and fair."),
+      example("Opening", "Start only if you understand the topic. Define it briefly, state your view, and invite others: \"Let me begin by defining the issue…\"."),
+      example("Closing", "Summarise the main views and where the group agreed: \"To sum up, we saw two views… and most of us agreed that…\"."),
+      tip("If the topic is unfamiliar, do not open. Listen for the first two speakers, then enter with a point that builds on them."),
+      practice("Which is the best way to close a group discussion?", ["Repeat your own point louder", "Summarise the views and the common ground", "Say that time is up", "Say that nothing was decided"], 1, "A fair summary shows leadership and listening."),
+      practice("You are unsure about the topic. What is the best plan?", ["Open anyway", "Stay silent throughout", "Listen first, then add a relevant point", "Leave early"], 2, "Entering after listening protects your credibility."),
+    ],
+  },
+  {
+    module: "soft_skills", category: "interview", position: 5, title: "Answering HR questions", minutes: 20,
+    summary: "A simple frame for the questions every interview asks.",
+    content: [
+      text("HR questions test fit and honesty. Use the same frame every time: a direct answer, a short reason, and a real example from your studies, projects or activities."),
+      example("\"Why should we hire you?\"", "\"I bring solid basics in programming and databases, and I have built two projects end to end. I learn quickly, as I showed when I picked up React in three weeks for my project.\""),
+      example("\"Tell me about a failure\"", "Choose a real, small failure. Say what went wrong, what you changed, and how it went better the next time. Never blame others."),
+      tip("Prepare five stories from your life: a project, a teamwork moment, a difficulty, a success and a mistake. Most HR questions can be answered with one of them."),
+      practice("What is the best approach to \"What is your biggest weakness?\"", ["I have none", "I am a perfectionist", "A real minor weakness and what you are doing about it", "I would rather not say"], 2, "Honest and improving beats evasive."),
+      practice("An interviewer asks, \"Where do you see yourself in five years?\" Best answer?", ["Running this company", "I have not thought about it", "Growing into a stronger engineer, taking on more responsibility", "Somewhere abroad"], 2, "A realistic direction tied to learning shows commitment."),
+    ],
+  },
+  {
+    module: "verbal", category: "interview", position: 6, title: "Explaining your project in interviews", minutes: 20,
+    summary: "Present a project so a non-expert understands it, and an expert wants to ask more.",
+    content: [
+      text("Interviewers ask about projects to see what you personally did and how well you understand it. Lead with the problem, then your part, then the result."),
+      example("The four-part answer", "1. The problem and who it was for. 2. What you built and the tools used. 3. Your specific part. 4. The result, or what you would improve."),
+      example("Before and after", "Before: \"It is a web application using many technologies.\" After: \"It helps hostel students book laundry slots. I built the booking API in Node and SQL and reduced double bookings to zero in testing.\""),
+      tip("Know one hard thing about your project in depth: a bug, a trade-off or a design choice. Interviewers love to probe it."),
+      practice("An interviewer asks you to explain your project. What do you say first?", ["The list of technologies used", "The problem it solves and for whom", "That it was a group project", "Where you studied"], 1, "Purpose first; detail later."),
+      practice("It was a team project. How do you describe your role?", ["Say you did everything", "Say the team did it all", "Describe specifically what you built or decided", "Avoid the question"], 2, "Specific and honest ownership is credible."),
+    ],
+  },
+  {
+    module: "soft_skills", category: "workplace", position: 6, title: "Meetings, chat and professional etiquette", minutes: 20,
+    summary: "How to behave in the places where most work communication happens.",
+    content: [
+      text("Most workplace communication happens in meetings and chat. A few habits make you easy to work with: be prepared, be brief, be clear about what you need, and close the loop."),
+      example("A good chat message", "\"Hi Neha, could you review my pull request for the login fix by 4 pm? The test cases are in the description.\" It has a person, an ask, a time and context."),
+      example("In a meeting", "Join on time, mute when not speaking, take notes, and at the end repeat your action items: \"I will send the report by Thursday.\""),
+      tip("Reply to a request within a few hours, even if only to say when you will answer properly. Silence causes more problems than delay."),
+      practice("You cannot finish a task by the promised time. What is the best action?", ["Say nothing and finish late", "Tell the person early and give a new time", "Send incomplete work without saying so", "Wait until they ask"], 1, "Early notice lets others adjust."),
+      practice("Which chat message is best for asking a colleague for help?", ["Help!", "Anyone free?", "Hi Ravi, could you check why the build fails on step 3? Logs are attached. No rush before noon.", "Fix this."], 2, "Specific, with context and a time frame."),
     ],
   },
 ];

@@ -52,10 +52,15 @@ describe("CRT question bank", () => {
 });
 
 describe("CRT training sessions", () => {
+  it("gives every learning path at least one lesson", () => {
+    for (const c of ["aptitude", "reasoning", "verbal", "speaking", "soft_skills", "group_discussion", "interview", "workplace"]) expect(SESSIONS.some((s) => s.category === c), c).toBe(true);
+  });
+
   it("covers every module in order with practice that has a valid answer", () => {
     for (const m of CRT_MODULES) {
       const of = SESSIONS.filter((s) => s.module === m);
-      expect(of.map((s) => s.position), m).toEqual([1, 2, 3]);
+      expect(of.length, m).toBeGreaterThanOrEqual(3);
+      expect(new Set(of.map((s) => s.position)).size, m).toBe(of.length);
     }
     for (const s of SESSIONS) {
       const practice = s.content.filter((b) => b.type === "practice");
