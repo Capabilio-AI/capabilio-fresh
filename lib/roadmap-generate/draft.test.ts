@@ -55,6 +55,6 @@ describe("draftRoadmap", () => {
   it("rejects a roadmap that is too small", async () => {
     const out = await draftRoadmap(input(vi.fn().mockResolvedValue({ answer: good({ skills: SKILLS.slice(0, 5) }), model: "m" })));
     expect(out.ok).toBe(false);
-    if (!out.ok) expect(out.errors.join(" ")).toMatch(/at least 20/);
+    if (!out.ok) expect(out.errors.join(" ")).toMatch(/at least 12/);
   });
 });

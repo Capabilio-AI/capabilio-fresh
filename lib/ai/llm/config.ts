@@ -41,3 +41,20 @@ export function routeFor(task: LlmTask, env: Env = process.env): { primary: Mode
   const fallback = fbProvider && fbModel && (fbProvider !== provider || fbModel !== model) ? { provider: fbProvider, model: fbModel } : null;
   return { primary, fallback };
 }
+
+/** Used when the second fallback is Gemini and no model is named. Name one explicitly (GEMINI_MODEL or LLM_FALLBACK2_MODEL) to choose another. */
+export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+
+/**
+ * Every route to try for a task, in order: the primary, the fallback, then an optional second fallback (<TASK>_FALLBACK2_* or LLM_FALLBACK2_*).
+ * A route that repeats an earlier one is dropped, so the same model is never tried twice.
+ */
+export function routesFor(task: LlmTask, env: Env = process.env): ModelRoute[] {
+  const { primary, fallback } = routeFor(task, env);
+  const p = TASK_PREFIX[task];
+  const provider = (env[`${p}_FALLBACK2_PROVIDER`] || env.LLM_FALLBACK2_PROVIDER || "").trim().toLowerCase();
+  const model = (env[`${p}_FALLBACK2_MODEL`] || env.LLM_FALLBACK2_MODEL || (provider === "gemini" ? env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL : "")).trim();
+  const routes: ModelRoute[] = [primary, ...(fallback ? [fallback] : [])];
+  if (provider && model && !routes.some((r) => r.provider === provider && r.model === model)) routes.push({ provider, model });
+  return routes;
+}

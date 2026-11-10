@@ -158,10 +158,12 @@ export function planNext(
   targets: readonly Target[],
   plan: Plan,
   total: number,
-  opts: { sequential?: boolean; exclude?: ReadonlySet<string>; fixedDifficulty?: (indexInSection: number, sectionQuestions: number) => Difficulty } = {}
+  opts: { sequential?: boolean; exclude?: ReadonlySet<string>; fixedDifficulty?: (indexInSection: number, sectionQuestions: number) => Difficulty; level?: Difficulty } = {}
 ): { target: Target; difficulty: Difficulty } | null {
   const target = chooseSkill(targets, plan, total, opts);
   if (!target) return null;
+  // one level for every question (the career assessment): no adaptation
+  if (opts.level) return { target, difficulty: opts.level };
   if (opts.sequential) {
     // common assessment: a fixed difficulty path, identical for everyone (no adaptation)
     return { target, difficulty: opts.fixedDifficulty?.(plan.taken.filter((t) => t.id === target.id).length, target.max) ?? "MEDIUM" };

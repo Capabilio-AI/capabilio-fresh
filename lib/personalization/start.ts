@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { inBackground } from "@/lib/assess/background";
 import { executeRun, requestGeneration, type StartResult } from "@/lib/roadmap-generate/runs";
+import { ensureStarterRoadmap } from "@/lib/roadmap-generate/starter";
 
 type Service = SupabaseClient<Database>;
 
@@ -18,6 +19,8 @@ export interface StartDeps {
  */
 export async function startPathway(service: Service, careerId: string, deps: StartDeps = {}): Promise<StartResult> {
   const { request = requestGeneration, run = executeRun, schedule = inBackground } = deps;
+  // The student has a roadmap from this moment, built from the role's skill profile with no AI; the full one replaces it when ready.
+  await ensureStarterRoadmap(service, careerId).catch((e) => console.error("[pathway] starter roadmap failed:", e instanceof Error ? e.message : e));
   const started = await request(service, careerId);
   if (started.state === "STARTED") schedule(() => run(service, started.runId, careerId));
   return started;

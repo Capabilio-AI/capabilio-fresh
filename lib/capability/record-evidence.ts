@@ -34,6 +34,20 @@ export async function recordCapabilityEvidence(
   serviceClient: SupabaseClient<Database>,
   input: EvidenceInput
 ): Promise<{ capabilityScore: number; confidence: Confidence; shouldPromptReassessment: boolean }> {
+  const { capabilityScore, confidence } = await writeCapabilityScore(serviceClient, input);
+  await regenerateGuidePaths(supabase, serviceClient, input.userId);
+  return {
+    capabilityScore,
+    confidence,
+    shouldPromptReassessment: MAJOR_EVIDENCE_SOURCES.includes(input.source),
+  };
+}
+
+/** The first half of recording evidence: the history row and the current capability score. Callers recording several skills at once write each, then regenerate once. */
+export async function writeCapabilityScore(
+  serviceClient: SupabaseClient<Database>,
+  input: EvidenceInput
+): Promise<{ capabilityScore: number; confidence: Confidence }> {
   const { data: existing } = await serviceClient
     .from("capabilities")
     .select("data_points")
@@ -65,24 +79,16 @@ export async function recordCapabilityEvidence(
     source: input.source,
   });
   if (historyError) throw historyError;
+  return { capabilityScore: input.newScore, confidence };
+}
 
+/** Closes the loop: any existing guide path (primary and Plan B) is regenerated so it reflects the new capability immediately. */
+export async function regenerateGuidePaths(supabase: SupabaseClient<Database>, serviceClient: SupabaseClient<Database>, userId: string): Promise<void> {
   const { data: guidePaths } = await serviceClient
     .from("guide_paths")
     .select("target_career, is_primary")
-    .eq("user_id", input.userId);
+    .eq("user_id", userId);
   for (const path of guidePaths ?? []) {
-    await generateGuidePathForCareer(
-      supabase,
-      serviceClient,
-      input.userId,
-      path.target_career,
-      path.is_primary
-    );
+    await generateGuidePathForCareer(supabase, serviceClient, userId, path.target_career, path.is_primary);
   }
-
-  return {
-    capabilityScore: input.newScore,
-    confidence,
-    shouldPromptReassessment: MAJOR_EVIDENCE_SOURCES.includes(input.source),
-  };
 }

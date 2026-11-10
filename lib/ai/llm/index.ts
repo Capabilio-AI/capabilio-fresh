@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { routeFor } from "./config";
+import { routesFor } from "./config";
 import { Limiter, backoffDelay, type Backoff } from "./limiter";
 import { adapterFor } from "./registry";
-import { LlmError, type StructuredRequest, type StructuredResult, type ModelRoute } from "./types";
+import { LlmError, type StructuredRequest, type StructuredResult } from "./types";
 
 export * from "./types";
 export { registerAdapter, setAdapterForTest } from "./registry";
-export { routeFor } from "./config";
+export { routeFor, routesFor } from "./config";
 export { mockAdapter } from "./adapters/mock";
 
 const sharedLimiter = new Limiter(Math.max(1, Number(process.env.LLM_MAX_CONCURRENCY ?? process.env.GROQ_MAX_CONCURRENCY) || 1));
@@ -34,11 +34,11 @@ export async function generateStructured<T>(req: StructuredRequest<T>, deps: Gen
   const limiter = deps.limiter ?? sharedLimiter;
   const attempts = deps.attempts ?? 4;
   const backoff: Backoff = { random: deps.random ?? Math.random, baseDelayMs: 1500, maxDelayMs: 30_000, ...deps.backoff };
-  const { primary, fallback } = routeFor(req.task, env);
+  const routes = routesFor(req.task, env);
   const jsonSchema = z.toJSONSchema(req.schema) as Record<string, unknown>;
 
   let last: LlmError | null = null;
-  for (const route of [primary, ...(fallback ? [fallback] : [])] as ModelRoute[]) {
+  for (const route of routes) {
     let user = req.user;
     let repairsLeft = deps.repairs ?? 2;
     for (let attempt = 0; attempt < attempts; attempt++) {

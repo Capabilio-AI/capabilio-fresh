@@ -50,7 +50,9 @@ export function toTemplateSpec(answer: RoadmapAnswer, ctx: { careerKey: string; 
   };
 }
 
-export const MIN_TOPICS = 20;
+/** A narrow role may need only a dozen skills; padding it to a round number is worse than a short honest list. */
+export const MIN_TOPICS = 12;
+export const MAX_TOPICS = 80;
 export const MIN_STAGES = 3;
 
 /** Pure. Quality gates beyond structural validity: a roadmap with a handful of topics is not a roadmap. */
@@ -58,6 +60,7 @@ export function qualityErrors(spec: TemplateSpec): string[] {
   const topics = spec.nodes.filter((n) => n.type === "TOPIC");
   const errors: string[] = [];
   if (topics.length < MIN_TOPICS) errors.push(`Only ${topics.length} topics: a career roadmap needs at least ${MIN_TOPICS}.`);
+  if (topics.length > MAX_TOPICS) errors.push(`${topics.length} topics: keep the roadmap to the ${MAX_TOPICS} that matter most for getting hired.`);
   const stages = new Set(spec.nodes.filter((n) => n.type === "SPINE").map((n) => n.stage));
   if (stages.size < MIN_STAGES) errors.push(`Only ${stages.size} stage(s) used: spread the roadmap across at least ${MIN_STAGES} of FOUNDATION, CORE, SPECIALIZATION, JOB_READY.`);
   return errors;

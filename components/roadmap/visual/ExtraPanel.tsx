@@ -5,6 +5,7 @@ import type { Resource } from "@/lib/roadmap-visual/graph-types";
 import type { ProjectGuideView } from "@/lib/roadmap-visual/project-guide";
 import { send } from "@/components/roadmap/v2/api";
 import { StationMark } from "./StationMark";
+import { ProjectSubmit } from "./ProjectSubmit";
 import { generateTables, seedOf, toCsv, type DatasetSpec } from "@/lib/roadmap-visual/dataset";
 
 type Guide = { state: "loading"; seconds: number } | { state: "ready"; guide: ProjectGuideView } | { state: "error"; message: string };
@@ -161,13 +162,6 @@ export function ExtraPanel({ resource: r, career, onClose }: { resource: Resourc
           </section>
         )}
 
-        {isProject && guide.state === "ready" && guide.guide.checklist.length > 0 && (
-          <section aria-labelledby="chk-h">
-            <h3 id="chk-h" className={H}>You&apos;re done when</h3>
-            <ul className="mt-1.5 space-y-1.5">{guide.guide.checklist.map((c) => <li key={c} className="flex gap-2"><span aria-hidden className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-2 border-[var(--m-ink)]" />{c}</li>)}</ul>
-          </section>
-        )}
-
         {(guide.state === "ready" ? guide.guide.showcase : r.evidence).length > 0 && (
           <section aria-labelledby="show-h">
             <h3 id="show-h" className={H}>What to show when you&apos;re done</h3>
@@ -184,13 +178,7 @@ export function ExtraPanel({ resource: r, career, onClose }: { resource: Resourc
 
         {!isProject && (r.cost || r.note) && <p className="text-app-muted">{[r.cost && `Cost: ${r.cost}`, r.note && `Duration: ${r.note}`].filter(Boolean).join(" · ")}</p>}
         {r.url && r.url.startsWith("https://") && <a href={r.url} target="_blank" rel="noopener noreferrer" className="inline-block rounded-md bg-[var(--m-ink)] px-4 py-2 text-[13px] font-bold text-white">Open the official page<span className="sr-only"> (opens in a new tab)</span></a>}
-        {isProject && (
-          <div className="rounded-xl bg-[var(--m-ground)] p-4">
-            <p className="font-bold">Finished it? Make it count.</p>
-            <p className="mt-1 text-[13px] text-app-muted">Add it to your portfolio with the repository or demo link. It then counts as evidence for the skills above.</p>
-            <a href="/dashboard/portfolio" className="mt-3 inline-block rounded-md bg-[var(--m-ink)] px-4 py-2 text-[13px] font-bold text-white">Add it to my portfolio</a>
-          </div>
-        )}
+        {isProject && <ProjectSubmit resourceId={r.id} career={career} checklist={guide.state === "ready" ? guide.guide.checklist : []} />}
       </div>
     </aside>
   );

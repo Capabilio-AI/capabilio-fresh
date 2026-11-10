@@ -23,3 +23,12 @@ describe("pickDue", () => {
     expect(pickDue(["a"], [{ career_id: "a", source: "AI_GENERATED", published_at: daysAgo(1) }], NOW)).toBeNull();
   });
 });
+
+describe("pickDue with a starter roadmap", () => {
+  it("rebuilds a starter before refreshing anything stale", () => {
+    const now = new Date("2026-11-10T00:00:00Z");
+    const old = "2026-01-01T00:00:00Z";
+    const due = pickDue(["a", "b"], [{ career_id: "a", source: "AI_GENERATED", published_at: old }, { career_id: "b", source: "AI_GENERATED", published_at: "2026-11-09T00:00:00Z", starter: true }], now);
+    expect(due).toEqual({ careerId: "b", reason: "MISSING" });
+  });
+});

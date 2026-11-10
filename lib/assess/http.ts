@@ -39,12 +39,23 @@ export function assessRoute<P = unknown>(bucket: string, maxPerMinute: number, r
       const body = await run(req, { userId: auth.userId, db: createServiceClient() as unknown as Db, params: await route.params });
       return NextResponse.json(body ?? { ok: true });
     } catch (e) {
-      if (e instanceof AssessError) return NextResponse.json({ error: e.message, code: e.code, retryable: e.code === "POOL_UNAVAILABLE" }, { status: e.status });
-      if (e instanceof z.ZodError) return NextResponse.json({ error: "Invalid request.", code: "INVALID_REQUEST" }, { status: 400 });
-      console.error(`[assess:${bucket}]`, e);
-      return NextResponse.json({ error: "Something went wrong. Your progress is saved, please try again.", code: "INTERNAL", retryable: true }, { status: 500 });
+      return failureResponse(e, bucket);
     }
   };
+}
+
+/** The JSON a route answers with when it fails: AssessError keeps its own message and status, a schema error is a 400, anything else is a retryable 500. */
+export function failureResponse(e: unknown, bucket: string): Response {
+  if (e instanceof AssessError) return NextResponse.json({ error: e.message, code: e.code, retryable: e.code === "POOL_UNAVAILABLE" }, { status: e.status });
+  if (e instanceof z.ZodError) return NextResponse.json({ error: "Invalid request.", code: "INVALID_REQUEST" }, { status: 400 });
+  console.error(`[assess:${bucket}]`, e);
+  return NextResponse.json({ error: "Something went wrong. Your progress is saved, please try again.", code: "INTERNAL", retryable: true }, { status: 500 });
+}
+
+/** A rate-limit response when this student has used up the bucket this minute, otherwise null. */
+export async function overLimit(userId: string, bucket: string, maxPerMinute: number): Promise<Response | null> {
+  const limit = await checkRateLimit(userId, { bucket, maxRequests: maxPerMinute, windowSeconds: 60 });
+  return limit.allowed ? null : rateLimitedResponse(limit.remaining);
 }
 
 export async function readJson<T extends z.ZodType>(req: Request, schema: T): Promise<z.infer<T>> {

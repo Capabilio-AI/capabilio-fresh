@@ -100,3 +100,12 @@ describe("difficulty", () => {
     expect(difficultyFallbacks("MEDIUM")[0]).toBe("MEDIUM");
   });
 });
+
+describe("planNext with a fixed level (the career assessment)", () => {
+  it("asks every question at that level whatever the student has answered", () => {
+    const targets = [{ id: "a", name: "A", weight: 1, min: 1, max: 4 }];
+    const strong = { taken: [], answered: { a: [{ difficulty: "HARD" as const, correct: true }, { difficulty: "HARD" as const, correct: true }] } };
+    expect(planNext(targets, strong, 10, { level: "EASY" })?.difficulty).toBe("EASY");
+    expect(planNext(targets, { taken: [], answered: {} }, 10, { level: "EASY" })?.difficulty).toBe("EASY");
+  });
+});
