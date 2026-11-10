@@ -6,7 +6,7 @@ import { GlassTabs } from "@/components/metro/GlassTabs";
 
 export type PulseTab = "for-you" | "following" | "trending" | "communities" | "mentors" | "mine" | "followers";
 export const PULSE_TABS: { key: PulseTab; label: string; icon: typeof Home; soon?: boolean }[] = [
-  { key: "for-you", label: "For You", icon: Home },
+  { key: "for-you", label: "My feed", icon: Home },
   { key: "following", label: "Following", icon: UserCheck },
   { key: "trending", label: "Trending", icon: Flame },
   { key: "communities", label: "Communities", icon: Users },

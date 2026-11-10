@@ -103,7 +103,7 @@ export function ProfileStats({ userId, name, counts, inline = false }: { userId:
 
 export type RailTab = "mine" | "following" | "followers";
 const RAIL: { tab: RailTab; label: string; count: (c: { posts: number; followers: number; following: number }) => number }[] = [
-  { tab: "mine", label: "My feed", count: (c) => c.posts },
+  { tab: "mine", label: "My Posts", count: (c) => c.posts },
   { tab: "following", label: "I Follow", count: (c) => c.following },
   { tab: "followers", label: "They follow", count: (c) => c.followers },
 ];
