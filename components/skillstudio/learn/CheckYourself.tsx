@@ -10,8 +10,13 @@ import type { CheckQuestion } from "@/lib/skillstudio/lesson-content";
  * Questions to answer from memory right after learning. Watching or reading feels like knowing; answering shows what actually stuck,
  * so this sits under every lesson. It is practice only: it never changes a score.
  */
-export function CheckYourself({ questions, id }: { questions: CheckQuestion[]; id: string }) {
+export function CheckYourself({ questions, id, onDone }: { questions: CheckQuestion[]; id: string; onDone?: (right: number, total: number) => void }) {
   const [picked, setPicked] = useState<Record<number, number>>({});
+  const choose = (qi: number, oi: number) => {
+    const next = { ...picked, [qi]: oi };
+    setPicked(next);
+    if (onDone && Object.keys(next).length === questions.length) onDone(questions.filter((q, i) => next[i] === q.answerIndex).length, questions.length);
+  };
   const answered = Object.keys(picked).length;
   const right = questions.filter((q, i) => picked[i] === q.answerIndex).length;
   const done = answered === questions.length;
@@ -29,7 +34,7 @@ export function CheckYourself({ questions, id }: { questions: CheckQuestion[]; i
               <div className="mt-1 flex flex-col gap-1.5">
                 {q.options.map((o, oi) => (
                   <label key={oi} className={clsx("flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2 text-[14.5px] transition-colors motion-reduce:transition-none", choice === oi ? "border-[var(--m-ink)] bg-[var(--m-ground)]" : "border-transparent hover:bg-[var(--m-ground)]")}>
-                    <input type="radio" name={`${id}-${qi}`} checked={choice === oi} disabled={choice !== undefined} onChange={() => setPicked((p) => ({ ...p, [qi]: oi }))} className="mt-1 accent-[var(--m-ink)]" />
+                    <input type="radio" name={`${id}-${qi}`} checked={choice === oi} disabled={choice !== undefined} onChange={() => choose(qi, oi)} className="mt-1 accent-[var(--m-ink)]" />
                     <span>{o}</span>
                   </label>
                 ))}

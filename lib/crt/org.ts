@@ -52,7 +52,7 @@ interface AttemptRow {
   module_scores: ModuleScores | null;
   total_pct: number | null;
 }
-interface Student {
+export interface Student {
   userId: string;
   branch: string | null;
   year: number | null;
@@ -60,7 +60,7 @@ interface Student {
 }
 
 /** Active, still-enrolled students of a college with the year of study worked out the way the student's own dashboard does. */
-async function collegeStudents(service: Service, institutionId: string): Promise<Student[]> {
+export async function collegeStudents(service: Service, institutionId: string): Promise<Student[]> {
   const { data: inst } = await untyped(service).from("institutions").select("academic_start_month").eq("id", institutionId).maybeSingle();
   const cycleStartMonth = (inst as { academic_start_month: number | null } | null)?.academic_start_month ?? undefined;
   const { data } = await onlyCurrentStudents(
