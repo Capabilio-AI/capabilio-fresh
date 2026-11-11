@@ -11,6 +11,7 @@ export const SKIPPED = "-";
 export function ResultReview({ questions, results }: { questions: QuizQuestion[]; results: AnswerResult[] }) {
   const byId = new Map(results.map((r) => [r.questionId, r]));
   return (
+    <>
     <ol className="flex flex-col gap-3">
       {questions.map((q, i) => {
         const r = byId.get(q.id);
@@ -30,5 +31,7 @@ export function ResultReview({ questions, results }: { questions: QuizQuestion[]
         );
       })}
     </ol>
+    <p className="mt-3 font-lp-body text-[11.5px] text-app-muted">Some aptitude questions are adapted from AQuA-RAT by DeepMind (Apache License 2.0). Others are written for Capabilio and checked before use.</p>
+    </>
   );
 }

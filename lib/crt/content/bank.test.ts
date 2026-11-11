@@ -69,3 +69,32 @@ describe("CRT training sessions", () => {
     }
   });
 });
+
+describe("reasoning generators (recomputed from the prompt)", () => {
+  const key = (re: RegExp) => bank.filter((q) => re.test(q.prompt)).map((q) => ({ q, ans: q.options.find((o) => o.points === 1)!.text }));
+  it("clock angle matches the standard formula", () => {
+    const rows = key(/smaller angle between the hour/);
+    expect(rows.length).toBeGreaterThan(5);
+    for (const { q, ans } of rows) {
+      const [, h, m] = q.prompt.match(/at (\d+):(\d+)\?/)!;
+      const raw = Math.abs(30 * +h - 5.5 * +m);
+      expect(ans, q.prompt).toBe(`${raw > 180 ? 360 - raw : raw}°`);
+    }
+  });
+  it("mirror time is 12:00 minus the time", () => {
+    for (const { q, ans } of key(/mirror image show/)) {
+      const [, h, m] = q.prompt.match(/is (\d+):(\d+)\./)!;
+      const t = 720 - (+h * 60 + +m), hh = Math.floor(t / 60) || 12;
+      expect(ans, q.prompt).toBe(`${hh}:${String(t % 60).padStart(2, "0")}`);
+    }
+  });
+  it("walking distance is the hypotenuse", () => {
+    for (const { q, ans } of key(/How far is .* from the starting point/)) {
+      const [, a, b] = q.prompt.match(/walks (\d+) km \w+, then turns and walks (\d+) km/)!;
+      expect(ans, q.prompt).toBe(`${Math.hypot(+a, +b)} km`);
+    }
+  });
+  it("adds a few hundred new reasoning questions", () => {
+    expect(bank.filter((q) => q.module === "reasoning").length).toBeGreaterThan(400);
+  });
+});

@@ -11,6 +11,8 @@ import { modulePct } from "./score";
 import { overallPct, promptByKey, SPEAKING_SYSTEM, SpeakingFeedbackSchema, type SpeakingFeedback } from "./speaking";
 import { accuracy, competency, gradeAnswer, pickPractice, streak, targetDifficulty, type Competency, type LogEntry } from "./studio";
 import { todayIst, type Outcome, type StudentCycle } from "./server";
+import { exhaustedMessage, freshOnly } from "./never-repeat";
+import { seenQuestionIds } from "./seen";
 
 type Service = SupabaseClient<Database>;
 
@@ -48,8 +50,9 @@ export interface AnswerResult {
 export interface TimedSet {
   title: string;
   questions: QuizQuestion[];
-  /** one minute per question */
   durationSeconds: number;
+  /** the limit for one question; a minute unless a company's pattern gives less or more */
+  secondsPerQuestion?: number;
 }
 
 const strip = (q: FullQuestion, section?: string): QuizQuestion => ({ id: q.id, module: q.module, topic: q.topic, difficulty: q.difficulty, prompt: q.prompt, options: q.options.map(({ key, text }) => ({ key, text })), section });
@@ -149,28 +152,40 @@ export async function loadStudio(service: Service, userId: string, cycles: reado
 
 // ---------------------------------------------------------------- the placement simulator
 
-/** Builds one test. Every question gets one minute, so the clock is the number of questions in minutes. */
+/** Builds a timed test from sections (a category and a count each), choosing questions the student has seen least. */
+export async function buildTimedSet(service: Service, userId: string, title: string, parts: readonly { category: Category; count: number }[], opts: { secondsPerQuestion?: number } = {}): Promise<Outcome<{ set: TimedSet }>> {
+  const per = opts.secondsPerQuestion ?? SECONDS_PER_QUESTION;
+  const questions: QuizQuestion[] = [];
+  // a question the student has been given is never given again, so each section draws only from what is new to them
+  const seen = await seenQuestionIds(service, userId);
+  const taken = new Set<string>();
+  for (const part of parts) {
+    const pool = await categoryPool(service, part.category);
+    if (pool.length < part.count) return fail(503, "There are not enough questions for this test yet.");
+    const fresh = freshOnly(pool, seen).filter((q) => !taken.has(q.id));
+    if (fresh.length < part.count) return fail(409, exhaustedMessage(CATEGORY_LABEL[part.category], part.count, fresh.length));
+    const entries = await logEntries(service, userId, part.category, 100);
+    const picked = pickPractice(fresh, entries, part.count);
+    picked.forEach((q) => taken.add(q.id));
+    questions.push(...picked.map((q) => strip(q, CATEGORY_LABEL[part.category])));
+  }
+  return { ok: true, set: { title, questions, durationSeconds: questions.length * per, secondsPerQuestion: per } };
+}
+
+/** Builds one simulator test. Every question gets one minute, so the clock is the number of questions in minutes. */
 export async function simulatorSet(service: Service, userId: string, key: SimTestKey): Promise<Outcome<{ set: TimedSet }>> {
   const def = SIM_TESTS.find((t) => t.key === key);
   if (!def) return fail(404, "Test not found.");
-  const questions: QuizQuestion[] = [];
-  for (const part of def.parts) {
-    const pool = await categoryPool(service, part.category);
-    if (pool.length < part.count) return fail(503, "There are not enough questions for this test yet.");
-    const entries = await logEntries(service, userId, part.category, 100);
-    questions.push(...pickPractice(pool, entries, part.count).map((q) => strip(q, CATEGORY_LABEL[part.category])));
-  }
-  return { ok: true, set: { title: def.label, questions, durationSeconds: questions.length * SECONDS_PER_QUESTION } };
+  return buildTimedSet(service, userId, def.label, def.parts);
 }
 
 const MAX_GRADE = 60;
 
-/** Grades a finished test: every answer is checked here, none were revealed during it, and each one is logged as evidence. */
-export async function gradeSet(service: Service, userId: string, input: { test: SimTestKey; answers: Record<string, string> }): Promise<Outcome<{ results: AnswerResult[]; pct: number; questions: QuizQuestion[] }>> {
-  const def = SIM_TESTS.find((t) => t.key === input.test);
-  if (!def) return fail(404, "Test not found.");
-  const allowed: readonly Category[] = def.parts.map((p) => p.category);
-  const ids = Object.keys(input.answers).slice(0, MAX_GRADE);
+export type Graded = { results: AnswerResult[]; pct: number; questions: QuizQuestion[] };
+
+/** Grades a finished test over the categories it was built from: every answer is checked here, none were revealed during it, and each one is logged as evidence. */
+export async function gradeParts(service: Service, userId: string, allowed: readonly Category[], answers: Record<string, string>, maxAnswers = MAX_GRADE): Promise<Outcome<Graded>> {
+  const ids = Object.keys(answers).slice(0, maxAnswers);
   const byId = await questionsByIds(service, ids);
   const results: AnswerResult[] = [];
   const shown: QuizQuestion[] = [];
@@ -179,8 +194,8 @@ export async function gradeSet(service: Service, userId: string, input: { test: 
     const q = byId.get(id);
     const category = q ? allowed.find((c) => inCategory(c, q.module, q.topic)) : undefined;
     if (!q || !category) continue;
-    const result = resultFor(q, input.answers[id]);
-    rows.push({ user_id: userId, question_id: q.id, category, mode: "simulator", chosen_key: input.answers[id], points: result.points, max_points: result.max, correct: result.correct });
+    const result = resultFor(q, answers[id]);
+    rows.push({ user_id: userId, question_id: q.id, category, mode: "simulator", chosen_key: answers[id], points: result.points, max_points: result.max, correct: result.correct });
     results.push(result);
     shown.push(strip(q, CATEGORY_LABEL[category]));
   }
@@ -189,6 +204,13 @@ export async function gradeSet(service: Service, userId: string, input: { test: 
   if (error) throw error;
   const max = results.reduce((s, r) => s + r.max, 0);
   return { ok: true, results, questions: shown, pct: Math.round((results.reduce((s, r) => s + r.points, 0) / max) * 100) };
+}
+
+/** Grades a finished simulator test. */
+export async function gradeSet(service: Service, userId: string, input: { test: SimTestKey; answers: Record<string, string> }): Promise<Outcome<Graded>> {
+  const def = SIM_TESTS.find((t) => t.key === input.test);
+  if (!def) return fail(404, "Test not found.");
+  return gradeParts(service, userId, def.parts.map((p) => p.category), input.answers);
 }
 
 // ---------------------------------------------------------------- AI coach and speaking
