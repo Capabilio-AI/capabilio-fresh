@@ -1,0 +1,23 @@
+{
+  "note": "Job titles to pre-build (profile, roadmap, projects, assessment questions) before students ask for them. A title that already matches a role is skipped. Add titles freely; anything not listed is still built the first time a student types it.",
+  "roles": [
+    "Data Analyst", "Machine Learning Engineer", "MLOps Engineer", "Data Architect", "Analytics Engineer", "Quantitative Analyst",
+    "Mobile App Developer (Android)", "iOS Developer", "Flutter Developer", "React Native Developer", "QA Automation Engineer", "Manual Test Engineer",
+    "Site Reliability Engineer", "Platform Engineer", "Network Engineer", "Systems Administrator", "Solutions Architect", "Technical Support Engineer",
+    "Penetration Tester", "Cloud Security Engineer", "Blockchain Developer", "Game Developer", "AR/VR Developer", "Technical Writer",
+    "UI Designer", "UX Researcher", "Graphic Designer", "Digital Marketing Executive", "SEO Specialist", "Content Strategist",
+    "Embedded Software Engineer", "VLSI Design Engineer", "FPGA Design Engineer", "RF Engineer", "PCB Design Engineer", "Telecom Network Engineer",
+    "Electrical Design Engineer", "Power Systems Engineer", "Electrical Maintenance Engineer", "Substation Engineer", "Solar PV Design Engineer", "Electric Vehicle Engineer",
+    "Control Systems Engineer", "SCADA Engineer", "Instrumentation Engineer", "Robotics Engineer", "Mechatronics Engineer", "Industrial Automation Engineer",
+    "CAD Design Engineer", "Manufacturing Engineer", "Production Engineer", "Quality Control Engineer", "Quality Assurance Engineer (Manufacturing)", "Maintenance Engineer",
+    "HVAC Design Engineer", "Thermal Engineer", "CNC Programmer", "Tool and Die Design Engineer", "Automotive Design Engineer", "Aerospace Design Engineer",
+    "Piping Design Engineer", "Process Engineer", "Supply Chain Analyst", "Logistics Coordinator", "Industrial Engineer", "Lean Six Sigma Specialist",
+    "Structural Design Engineer", "Quantity Surveyor", "Planning Engineer (Construction)", "BIM Engineer", "BIM Developer", "Highway Design Engineer",
+    "Geotechnical Engineer", "Environmental Engineer", "Water Resources Engineer", "Urban Planner", "Transportation Engineer", "Construction Project Manager",
+    "Estimation Engineer", "Surveyor (Geomatics)", "Safety Officer (EHS)", "Building Services Engineer", "Interior Designer", "Architectural Designer",
+    "Chemical Process Engineer", "Biomedical Engineer", "Biotechnology Research Associate", "Food Technologist", "Pharmaceutical Quality Analyst", "Clinical Research Associate",
+    "Financial Analyst", "Investment Banking Analyst", "Credit Risk Analyst", "Accountant", "Tax Consultant", "Auditor",
+    "Human Resources Executive", "Talent Acquisition Specialist", "Business Development Executive", "Sales Operations Analyst", "Operations Manager", "Customer Success Manager",
+    "Project Manager", "Scrum Master", "Technical Program Manager", "Management Consultant", "Market Research Analyst", "Brand Manager"
+  ]
+}

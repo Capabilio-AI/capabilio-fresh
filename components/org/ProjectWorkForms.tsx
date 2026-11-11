@@ -15,7 +15,7 @@ async function apiError(res: Response, fallback: string): Promise<string> {
 }
 
 /** Pick images or PDFs; each uploads straight away and shows as a removable chip. The parent holds the list that gets submitted. */
-function FileAttach({ groupId, files, onChange }: { groupId: string; files: ProjectFile[]; onChange: (next: ProjectFile[]) => void }) {
+export function FileAttach({ groupId, files, onChange, upload, help }: { groupId?: string; files: ProjectFile[]; onChange: (next: ProjectFile[]) => void; /** another upload endpoint and the form fields it needs; the default is a class project group's */ upload?: { url: string; fields: Record<string, string> }; help?: string }) {
   const input = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(0);
@@ -31,9 +31,9 @@ function FileAttach({ groupId, files, onChange }: { groupId: string; files: Proj
       setBusy((n) => n + 1);
       try {
         const form = new FormData();
-        form.set("groupId", groupId);
+        for (const [k, v] of Object.entries(upload?.fields ?? { groupId: groupId ?? "" })) form.set(k, v);
         form.set("file", file);
-        const res = await fetch("/api/classroom/project-files", { method: "POST", body: form });
+        const res = await fetch(upload?.url ?? "/api/classroom/project-files", { method: "POST", body: form });
         if (!res.ok) throw new Error(await apiError(res, "Upload failed."));
         const { file: saved } = (await res.json()) as { file: ProjectFile };
         if (file.type.startsWith("image/")) setPreviews((p) => ({ ...p, [saved.path]: URL.createObjectURL(file) }));
@@ -56,7 +56,7 @@ function FileAttach({ groupId, files, onChange }: { groupId: string; files: Proj
         {busy > 0 ? "Uploading…" : "Add images or a PDF"}
       </button>
       <input ref={input} type="file" accept={ACCEPT} multiple className="sr-only" tabIndex={-1} onChange={(e) => void pick(e.target.files)} aria-label="Choose images or PDF files" />
-      <p className={HELP}>PNG, JPG, WebP or PDF. Up to {MAX_FILES} files, {MAX_UPLOAD_MB} MB each. Your faculty can open them.</p>
+      <p className={HELP}>PNG, JPG, WebP or PDF. Up to {MAX_FILES} files, {MAX_UPLOAD_MB} MB each. {help ?? "Your faculty can open them."}</p>
       {error && <p role="alert" className="mt-1.5 font-lp-body text-[12.5px] font-medium text-app-rose">{error}</p>}
       {files.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-3">

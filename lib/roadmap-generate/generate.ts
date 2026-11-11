@@ -9,6 +9,9 @@ import { draftRoadmap } from "./draft";
 import { EXTRAS_TOOL_SCHEMA, ExtrasAnswer, ROADMAP_TOOL_SCHEMA, RoadmapAnswer } from "./model";
 import { EXTRAS_SYSTEM, ROADMAP_SYSTEM, extrasPrompt, roadmapPrompt } from "./prompts";
 import { publishGenerated } from "./publish";
+import { ensureRequirements } from "./requirements";
+import { refreshMarket } from "@/lib/market/store";
+import { generateJobPack } from "@/lib/market/job-pack";
 import { verifyCertification } from "./verify";
 
 type Service = SupabaseClient<Database>;
@@ -62,12 +65,15 @@ export async function generateCareerRoadmap(service: Service, careerId: string, 
   }
 
   const promptCareer = { name: career.name, description: career.description, category: career.category };
+  // What employers are asking for right now; without a job-data key or on any failure this is null and the roadmap is written from the model's own knowledge.
+  const market = await refreshMarket(service, { id: careerId, name: career.name });
+  const warningsEarly = market ? [] : ["No live market data was available for this role; the skills come from the model's knowledge."];
   let usedModel = "";
   const drafted = await draftRoadmap({
     careerKey: career.key, careerId, version, taxonomy: { existing: taxonomy.existing, aliases: taxonomy.aliases },
     ask: async (feedback) => {
       const r = await llm({
-        system: ROADMAP_SYSTEM, user: roadmapPrompt({ career: promptCareer, skills: active, keepTopics, feedback }),
+        system: ROADMAP_SYSTEM, user: roadmapPrompt({ career: promptCareer, skills: active, keepTopics, feedback, market }),
         toolName: "submit_roadmap", toolDescription: "Submit the finished career roadmap.", inputSchema: ROADMAP_TOOL_SCHEMA, schema: RoadmapAnswer, maxTokens: 16_000, temperature: 0.2,
       });
       usedModel = r.model;
@@ -85,12 +91,20 @@ export async function generateCareerRoadmap(service: Service, careerId: string, 
   const saved = await importTemplate(service, draft.spec);
   const published = await publishGenerated(service, saved.id, careerId, usedModel);
 
-  const warnings = [...draft.warnings];
+  const warnings = [...warningsEarly, ...draft.warnings];
   const topicSkills = draft.spec.nodes.flatMap((n) => (n.type === "TOPIC" && n.skill ? [n.skill] : []));
   const report: GenerationReport = {
     templateId: saved.id, version, model: usedModel, rounds: draft.rounds, topics: topicSkills.length, newSkills: draft.newSkills.length, marksCarried: published.marksCarried,
     projects: { proposed: 0, saved: 0 }, certifications: { proposed: 0, verified: 0, saved: 0 }, warnings,
   };
+
+  // A role needs a skill profile to be assessed, scored and matched to projects; a roadmap-only role would have none.
+  try {
+    const added = await ensureRequirements(service, careerId);
+    if (added > 0) warnings.push(`Skill profile created from the roadmap: ${added} skills.`);
+  } catch (error) {
+    warnings.push(`The skill profile was not created: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
 
   try {
     const extras = await llm({
@@ -114,6 +128,13 @@ export async function generateCareerRoadmap(service: Service, careerId: string, 
     if (certifications.length < proposedCerts.length) warnings.push(`${proposedCerts.length - certifications.length} proposed certification link(s) could not be verified and were dropped.`);
   } catch (error) {
     warnings.push(`Projects and certifications were not generated: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
+
+  // Interview prep and resume / portfolio checklists for the role. Optional: the roadmap is already useful without them.
+  try {
+    await generateJobPack(service, { id: careerId, name: career.name }, topicSkills, market);
+  } catch (error) {
+    warnings.push(`The job pack was not generated: ${error instanceof Error ? error.message : "unknown error"}`);
   }
   return report;
 }

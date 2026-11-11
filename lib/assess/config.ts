@@ -16,6 +16,12 @@ export const QUESTION_TYPES = [
 ] as const;
 export type QuestionType = (typeof QUESTION_TYPES)[number];
 
+/**
+ * The career assessment is a basics screen: every question is at this level, for every role, however the student answers. It shows where
+ * to start on the role's skills; harder work is proven by projects and practice, not by multiple choice. (The common assessment keeps its own path.)
+ */
+export const CAREER_LEVEL: Difficulty = "EASY";
+
 export const CAREER_QUESTIONS_MIN = 20;
 export const CAREER_QUESTIONS_MAX = 25;
 export const CAREER_QUESTIONS_DEFAULT = 22;
@@ -37,9 +43,9 @@ export const POOL_TARGET_PER_SECTION: Record<Difficulty, number> = { EASY: 4, ME
  * Once a career holds this many active questions, the AI is never called for it again: every student is served from the database.
  * Until then every assessment keeps growing the bank through the AI (per skill and difficulty, see careerPoolTarget).
  */
-export const CAREER_BANK_CAP = 1000;
-/** Share of a career's bank per difficulty. */
-export const CAREER_BANK_MIX: Record<Difficulty, number> = { EASY: 0.3, MEDIUM: 0.4, HARD: 0.3 };
+export const CAREER_BANK_CAP = 400;
+/** Share of a career's bank per difficulty: all basic (see CAREER_LEVEL). */
+export const CAREER_BANK_MIX: Record<Difficulty, number> = { EASY: 1, MEDIUM: 0, HARD: 0 };
 
 /** Questions requested from Groq per call. Small batches validate far more reliably than one big request. */
 export const GENERATION_BATCH_SIZE = 4;

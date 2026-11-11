@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { requireStage } from "@/lib/stage/guard";
@@ -25,6 +26,7 @@ export default async function RoadmapPage({ searchParams }: { searchParams: Prom
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Roadmap</h1>
+        <Link href={`/dashboard/roadmap/jobs${career === "plan-b" ? "?career=plan-b" : ""}`} className="rounded-md bg-[var(--m-ink)] px-4 py-2 font-lp-body text-[13px] font-bold text-white">Job pack: market, openings, interview prep</Link>
       </div>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">Your target career, your college syllabus and your verified skills on one map. It updates as any of them change.</p>
       <div className="mt-4"><DashboardSubNav /></div>

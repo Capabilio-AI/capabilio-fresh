@@ -38,23 +38,27 @@ export function evidenceIdFor(proofId: string, skillId: string): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }
 
-async function primaryCareer(db: Db, userId: string): Promise<string | null> {
+export async function primaryCareer(db: Db, userId: string): Promise<string | null> {
   return (await db.from("student_career_intent").select("primary_career_id").eq("student_id", userId).maybeSingle()).data?.primary_career_id ?? null;
 }
 
-/** Writes the evidence rows for a proof's skills and republishes the graph. Idempotent per (proof, skill). */
-async function applyEvidence(db: Db, proof: ProofRow, userId: string): Promise<void> {
-  if (proof.skill_ids.length === 0) return;
+/**
+ * Writes the evidence rows for a proof's skills and republishes the graph. Idempotent per (proof, skill). The graph is the student's primary
+ * career's unless the caller names another (a roadmap project opened from the Plan B roadmap). Returns the new readiness, or null when no graph was published.
+ */
+export async function applyEvidence(db: Db, proof: ProofRow, userId: string, opts: { careerId?: string; difficulty?: "EASY" | "MEDIUM" | "HARD" } = {}): Promise<{ readiness: number } | null> {
+  if (proof.skill_ids.length === 0) return null;
   const { data: skills } = await db.from("skills").select("id, name").in("id", proof.skill_ids);
-  const careerId = await primaryCareer(db, userId);
-  await db.from("student_skill_evidence").upsert(
+  const careerId = opts.careerId ?? (await primaryCareer(db, userId));
+  const written = await db.from("student_skill_evidence").upsert(
     (skills ?? []).map((s: { id: string; name: string }) => ({
       student_id: userId, career_id: careerId, skill_id: s.id, skill_label: s.name, source: "PROOF_OF_WORK",
-      source_id: evidenceIdFor(proof.id, s.id), correct: true, difficulty: "MEDIUM",
+      source_id: evidenceIdFor(proof.id, s.id), correct: true, difficulty: opts.difficulty ?? "MEDIUM",
     })),
     { onConflict: "source,source_id", ignoreDuplicates: true }
   );
-  if (careerId) await syncSkillGraph(db, userId, careerId, "PROOF_OF_WORK");
+  if (written.error) throw written.error;
+  return careerId ? syncSkillGraph(db, userId, careerId, "PROOF_OF_WORK") : null;
 }
 
 export async function addProofOfWork(db: Db, userId: string, raw: unknown): Promise<ProofRow> {

@@ -7,7 +7,7 @@
 //  * the buffer (QUEUED rows) is chosen ahead but never sent to the client, and is rebuilt when adaptation changes direction.
 
 import {
-  CAREER_QUESTIONS_DEFAULT, CAREER_QUESTIONS_MAX, CAREER_QUESTIONS_MIN, LIVE_GENERATION_TIMEOUT_MS, PREFETCH_BUFFER, ONBOARDING_STATUSES, QUESTION_SECONDS, ANSWER_GRACE_SECONDS,
+  CAREER_LEVEL, CAREER_QUESTIONS_DEFAULT, CAREER_QUESTIONS_MAX, CAREER_QUESTIONS_MIN, LIVE_GENERATION_TIMEOUT_MS, PREFETCH_BUFFER, ONBOARDING_STATUSES, QUESTION_SECONDS, ANSWER_GRACE_SECONDS,
   type Difficulty,
 } from "./config";
 import { getOnboardingStatus, startRating, loadCareer, loadCareerSkills, toTargets, track, type CareerRef, type CareerSkillRow, type Db } from "./db";
@@ -144,6 +144,7 @@ const filterFor = (ctx: Context, targetId: string): PoolFilter =>
 export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: boolean }, deps: SessionDeps = {}, attempt = 0): Promise<RowInfo[]> {
   const { session, targets } = ctx;
   const sequential = session.layer === "GENERAL";
+  const level = session.layer === "CAREER" ? CAREER_LEVEL : undefined; // the career assessment is basics only
   const served = ctx.rows.filter((r) => r.state === "SERVED");
   const queued = ctx.rows.filter((r) => r.state === "QUEUED");
   const want = Math.min(PREFETCH_BUFFER, session.total_questions - served.length);
@@ -151,7 +152,7 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
 
   const kept: RowInfo[] = [];
   for (const q of queued) {
-    const next = planNext(targets, planOf([...served, ...kept], ctx.rows), session.total_questions, { sequential, fixedDifficulty: commonDifficulty });
+    const next = planNext(targets, planOf([...served, ...kept], ctx.rows), session.total_questions, { sequential, fixedDifficulty: commonDifficulty, level });
     if (kept.length < want && next && next.target.id === q.targetId && next.difficulty === q.difficulty) kept.push(q);
     else break;
   }
@@ -178,7 +179,7 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
     const planned: NonNullable<ReturnType<typeof planNext>>[] = [];
     const hypothetical = [...served, ...kept].map((r) => ({ id: r.targetId, difficulty: r.difficulty }));
     for (let i = kept.length; i < want; i++) {
-      const next = planNext(targets, { taken: hypothetical, answered: planOf([], ctx.rows).answered }, session.total_questions, { sequential, fixedDifficulty: commonDifficulty });
+      const next = planNext(targets, { taken: hypothetical, answered: planOf([], ctx.rows).answered }, session.total_questions, { sequential, fixedDifficulty: commonDifficulty, level });
       if (!next) break;
       planned.push(next);
       hypothetical.push({ id: next.target.id, difficulty: next.difficulty });
@@ -187,7 +188,7 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
       const rows = await fetchCandidates(db, session.layer, ctx.career?.id ?? null, [...new Set(planned.map((p) => p.target.id))], [...used]);
       const taken = new Set<string>();
       for (const p of planned) {
-        const pick = chooseFrom(rows.filter((r) => !taken.has(r.id)), session.layer, p.target.id, p.difficulty, sequential);
+        const pick = chooseFrom(rows.filter((r) => !taken.has(r.id)), session.layer, p.target.id, p.difficulty, sequential, session.layer === "CAREER");
         if (!pick) break; // the rest is re-planned by the slow loop with live generation available
         taken.add(pick.id);
         used.add(pick.id);
@@ -201,9 +202,9 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
     let placed = false;
     for (;;) {
       const taken = [...served, ...kept, ...fresh.map((f) => ({ ...f.row, id: "" }))];
-      const next = planNext(targets, planOf(taken, ctx.rows), session.total_questions, { sequential, exclude, fixedDifficulty: commonDifficulty });
+      const next = planNext(targets, planOf(taken, ctx.rows), session.total_questions, { sequential, exclude, fixedDifficulty: commonDifficulty, level });
       if (!next) break;
-      let pick = await pickFromPool(db, filterFor(ctx, next.target.id), next.difficulty, [...used], sequential);
+      let pick = await pickFromPool(db, filterFor(ctx, next.target.id), next.difficulty, [...used], sequential, session.layer === "CAREER");
       if (!pick && live) {
         live = false; // one blocking attempt per call; it has a timeout and falls through to other skills if it yields nothing
         pick = await liveGenerate(db, ctx, next.target.id, next.difficulty, [...used], deps);
@@ -247,7 +248,7 @@ async function liveGenerate(db: Db, ctx: Context, targetId: string, difficulty: 
     : GENERAL_SECTIONS.find((g) => g.section === targetId) ?? null;
   if (!slot) return null;
   // a career with its full bank is served from the database only
-  if (ctx.session.layer === "CAREER" && ctx.career && (await careerBankFull(db, ctx.career.id))) return pickFromPool(db, filterFor(ctx, targetId), difficulty, used);
+  if (ctx.session.layer === "CAREER" && ctx.career && (await careerBankFull(db, ctx.career.id))) return pickFromPool(db, filterFor(ctx, targetId), difficulty, used, false, ctx.session.layer === "CAREER");
   try {
     await Promise.race([
       topUp(db, slot, difficulty, 2, { rounds: 1, deps: deps.retry }),
@@ -256,7 +257,7 @@ async function liveGenerate(db: Db, ctx: Context, targetId: string, difficulty: 
   } catch (e) {
     console.error("[assess] live generation failed, using stored pool:", (e as Error).message);
   }
-  return pickFromPool(db, filterFor(ctx, targetId), difficulty, used);
+  return pickFromPool(db, filterFor(ctx, targetId), difficulty, used, false, ctx.session.layer === "CAREER");
 }
 
 /** Background refill after an answer: rebuilds the buffer for the adapted level. Safe to run concurrently (conflicts retry). */

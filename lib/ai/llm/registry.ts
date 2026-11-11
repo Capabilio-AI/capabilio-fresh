@@ -7,6 +7,7 @@ type Env = Record<string, string | undefined>;
 type Factory = (env: Env) => LlmAdapter;
 
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
 const factories = new Map<string, Factory>();
 const overrides = new Map<string, LlmAdapter>();
 
@@ -27,6 +28,11 @@ registerAdapter("groq", (env) => {
     // gpt-oss models spend output tokens on hidden reasoning; "low" keeps room for the JSON itself (override with GROQ_REASONING_EFFORT)
     extraBody: (model) => (/gpt-oss/i.test(model) ? { reasoning_effort: env.GROQ_REASONING_EFFORT || "low" } : {}),
   });
+});
+// Google's OpenAI-compatible endpoint: the same wire as Groq, so Gemini is an adapter registration and an API key.
+registerAdapter("gemini", (env) => {
+  if (!env.GEMINI_API_KEY) throw new LlmError("config", "GEMINI_API_KEY is not set");
+  return openAiCompatible({ name: "gemini", baseUrl: env.GEMINI_BASE_URL || GEMINI_BASE_URL, apiKey: env.GEMINI_API_KEY, jsonMode: "json_object" });
 });
 registerAdapter("openai-compatible", (env) => {
   if (!env.OPENAI_COMPAT_BASE_URL || !env.OPENAI_COMPAT_API_KEY) throw new LlmError("config", "OPENAI_COMPAT_BASE_URL and OPENAI_COMPAT_API_KEY are required");

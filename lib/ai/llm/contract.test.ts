@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { LlmError, generateStructured, mockAdapter, setAdapterForTest } from "./index";
 import { openAiCompatible, type JsonMode } from "./adapters/openai-compatible";
-import { routeFor } from "./config";
+import { DEFAULT_GEMINI_MODEL, routeFor, routesFor } from "./config";
 
 const Schema = z.object({ answer: z.string().min(1) });
 const req = { task: "question" as const, system: "s", user: "u", schema: Schema, promptVersion: "test.v1" };
@@ -119,6 +119,25 @@ describe("routing and fallback by configuration only", () => {
     const out = await generateStructured(req, { ...fast, attempts: 2, env: { LLM_PROVIDER: "mock", LLM_MODEL: "a", LLM_FALLBACK_PROVIDER: "openai-compatible", LLM_FALLBACK_MODEL: "b" } });
     expect(out).toMatchObject({ provider: "openai-compatible", model: "b", value: { answer: "from fallback" } });
     expect(primary.calls).toHaveLength(2);
+  });
+
+  it("lists a second fallback after the first, and never the same model twice", () => {
+    const env = { LLM_PROVIDER: "anthropic", LLM_MODEL: "c", LLM_FALLBACK_PROVIDER: "groq", LLM_FALLBACK_MODEL: "g", LLM_FALLBACK2_PROVIDER: "gemini" };
+    expect(routesFor("general", env)).toEqual([{ provider: "anthropic", model: "c" }, { provider: "groq", model: "g" }, { provider: "gemini", model: DEFAULT_GEMINI_MODEL }]);
+    expect(routesFor("general", { ...env, GEMINI_MODEL: "gemini-x" }).at(-1)).toEqual({ provider: "gemini", model: "gemini-x" });
+    expect(routesFor("general", { ...env, LLM_FALLBACK2_MODEL: "m2" }).at(-1)).toEqual({ provider: "gemini", model: "m2" });
+    expect(routesFor("general", { ...env, LLM_FALLBACK2_PROVIDER: "groq", LLM_FALLBACK2_MODEL: "g" })).toHaveLength(2);
+    expect(routesFor("general", { LLM_PROVIDER: "groq", LLM_MODEL: "g" })).toEqual([{ provider: "groq", model: "g" }]);
+  });
+
+  it("tries the second fallback when the primary and the first fallback are both down", async () => {
+    const down = (name: string) => mockAdapter(() => { throw new LlmError("provider_down", `${name} down`); }, name);
+    setAdapterForTest("mock", down("mock"));
+    setAdapterForTest("openai-compatible", down("openai-compatible"));
+    const third = mockAdapter(() => ({ answer: "from gemini" }), "gemini");
+    setAdapterForTest("gemini", third);
+    const out = await generateStructured(req, { ...fast, attempts: 1, env: { LLM_PROVIDER: "mock", LLM_MODEL: "a", LLM_FALLBACK_PROVIDER: "openai-compatible", LLM_FALLBACK_MODEL: "b", LLM_FALLBACK2_PROVIDER: "gemini", LLM_FALLBACK2_MODEL: "c" } });
+    expect(out).toMatchObject({ provider: "gemini", model: "c", value: { answer: "from gemini" } });
   });
 
   it("swapping provider is an env change: the same code runs on the mock provider", async () => {

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { getCareerIntent } from "@/lib/careers/intent";
+import { ensureStarterRoadmap } from "@/lib/roadmap-generate/starter";
 import { chooseDomainCareer, type CareerChoice } from "@/lib/arena-challenges/career-state";
 import { loadStudentCapabilities } from "@/lib/capability/read-model";
 import { getStudentDirection, needsYearConfirmation } from "@/lib/career/direction";
@@ -56,7 +57,10 @@ export async function loadGraphContext(service: Service, userId: string, which: 
   if (chosen.state === "no_plan_b") return { ok: false, reason: { state: "NO_PLAN_B", primary: chosen.primary } };
 
   const db = untyped(service);
-  const { data: template } = await db.from("roadmap_templates").select("id, version, title, published_at").eq("career_id", chosen.career.id).eq("status", "PUBLISHED").maybeSingle();
+  const readTemplate = () => db.from("roadmap_templates").select("id, version, title, published_at").eq("career_id", chosen.career.id).eq("status", "PUBLISHED").maybeSingle();
+  let { data: template } = await readTemplate();
+  // A role must never leave the student without a roadmap: if none is published, build the starter now (no AI, instant) and read again.
+  if (!template && (await ensureStarterRoadmap(service, chosen.career.id))) ({ data: template } = await readTemplate());
   if (!template) return { ok: false, reason: { state: "NO_TEMPLATE", career: chosen.career } };
 
   const [{ data: nodeRows }, { data: edgeRows }, { data: requirements }] = await Promise.all([

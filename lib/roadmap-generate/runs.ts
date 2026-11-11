@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { generateCareerRoadmap, type GenerationReport } from "./generate";
+import { isStarterProvenance, starterPublished } from "./starter";
 
 type Service = SupabaseClient<Database>;
 
@@ -40,7 +41,8 @@ export type StartResult = { state: "READY" } | { state: "RUNNING" } | { state: "
 export async function requestGeneration(service: Service, careerId: string, opts: { force?: boolean; now?: Date } = {}): Promise<StartResult> {
   const now = opts.now ?? new Date();
   const db = untyped(service);
-  if (!opts.force && (await roadmapState(service, careerId, now)).state === "READY") return { state: "READY" };
+  // a starter roadmap shows the student something at once but is not the finished one, so it does not count as built
+  if (!opts.force && (await roadmapState(service, careerId, now)).state === "READY" && !(await starterPublished(service, careerId))) return { state: "READY" };
 
   // free a run that was cut off
   await db.from("roadmap_generation_runs").update({ status: "FAILED", finished_at: now.toISOString(), error: "The run did not finish in time." }).eq("career_id", careerId).eq("status", "RUNNING").lt("started_at", new Date(now.getTime() - STALE_RUN_MS).toISOString());
@@ -76,6 +78,8 @@ export interface PublishedRoadmap {
   career_id: string;
   source: string;
   published_at: string | null;
+  /** the published roadmap is a starter built from the skill profile, not the full one */
+  starter?: boolean;
 }
 
 /**
@@ -84,7 +88,7 @@ export interface PublishedRoadmap {
  */
 export function pickDue(careerIds: string[], published: PublishedRoadmap[], now: Date): { careerId: string; reason: "MISSING" | "STALE" } | null {
   const pub = new Map(published.map((p) => [p.career_id, p]));
-  const missing = careerIds.find((id) => !pub.has(id));
+  const missing = careerIds.find((id) => !pub.has(id) || pub.get(id)!.starter);
   if (missing) return { careerId: missing, reason: "MISSING" };
   const cutoff = now.getTime() - REFRESH_AFTER_DAYS * 86_400_000;
   const stale = published
@@ -97,7 +101,8 @@ export async function nextCareerDue(service: Service, now: Date = new Date()): P
   const db = untyped(service);
   const [{ data: careers }, { data: published }] = await Promise.all([
     service.from("careers").select("id").eq("is_active", true),
-    db.from("roadmap_templates").select("career_id, source, published_at").eq("status", "PUBLISHED"),
+    db.from("roadmap_templates").select("career_id, source, published_at, provenance").eq("status", "PUBLISHED"),
   ]);
-  return pickDue((careers ?? []).map((c) => c.id), (published ?? []) as PublishedRoadmap[], now);
+  const rows = ((published ?? []) as (PublishedRoadmap & { provenance?: unknown })[]).map((p) => ({ career_id: p.career_id, source: p.source, published_at: p.published_at, starter: isStarterProvenance(p.provenance) }));
+  return pickDue((careers ?? []).map((c) => c.id), rows, now);
 }

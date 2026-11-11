@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { CAREER_BANK_CAP, CAREER_BANK_MIX, POOL_TARGET_PER_SECTION, DIFFICULTIES, type Difficulty } from "./config";
+import { CAREER_BANK_CAP, CAREER_BANK_MIX, CAREER_LEVEL, POOL_TARGET_PER_SECTION, DIFFICULTIES, type Difficulty } from "./config";
 import type { Db, CareerSkillRow, CareerRef } from "./db";
 import { difficultyFallbacks } from "./engine";
 import { GENERAL_SECTIONS } from "./general";
@@ -28,7 +28,7 @@ export type PoolFilter = { layer: "CAREER"; careerId: string; skillId: string } 
  * A stored, validated Groq question for (skill/section, difficulty), preferring the wanted difficulty and then the nearest
  * one, never one this session already holds. Random among the candidates so students do not all see the same question.
  */
-export async function pickFromPool(db: Db, filter: PoolFilter, want: Difficulty, excludeIds: readonly string[], deterministic = false): Promise<PoolPick | null> {
+export async function pickFromPool(db: Db, filter: PoolFilter, want: Difficulty, excludeIds: readonly string[], deterministic = false, strict = false): Promise<PoolPick | null> {
   // one query for every difficulty, then prefer the wanted level and fall back outward in memory
   let q = db.from("assess_question_pool").select(PICK_COLUMNS).eq("is_active", true).limit(80);
   q = filter.layer === "CAREER" ? q.eq("layer", "CAREER").eq("career_id", filter.careerId).eq("skill_id", filter.skillId) : q.eq("layer", "GENERAL").eq("section", filter.section);
@@ -36,7 +36,7 @@ export async function pickFromPool(db: Db, filter: PoolFilter, want: Difficulty,
   const { data, error } = await q;
   if (error) throw error;
   const rows = (data ?? []) as unknown as PoolPick[];
-  for (const difficulty of difficultyFallbacks(want)) {
+  for (const difficulty of strict ? [want] : difficultyFallbacks(want)) {
     const at = rows.filter((r) => r.difficulty === difficulty);
     // deterministic (common assessment): the lowest content hash, so every student gets the same questions in the same order
     if (at.length > 0) return deterministic ? at.reduce((a, b) => (a.content_hash <= b.content_hash ? a : b)) : at[randomInt(at.length)];
@@ -56,9 +56,9 @@ export async function fetchCandidates(db: Db, layer: "CAREER" | "GENERAL", caree
 }
 
 /** The in-memory twin of pickFromPool: preferred difficulty first, then the nearest. Same rules, no database. */
-export function chooseFrom(rows: readonly PoolPick[], layer: "CAREER" | "GENERAL", targetId: string, want: Difficulty, deterministic: boolean): PoolPick | null {
+export function chooseFrom(rows: readonly PoolPick[], layer: "CAREER" | "GENERAL", targetId: string, want: Difficulty, deterministic: boolean, strict = false): PoolPick | null {
   const mine = rows.filter((r) => (layer === "CAREER" ? r.skill_id : r.section) === targetId);
-  for (const difficulty of difficultyFallbacks(want)) {
+  for (const difficulty of strict ? [want] : difficultyFallbacks(want)) {
     const at = mine.filter((r) => r.difficulty === difficulty);
     if (at.length > 0) return deterministic ? at.reduce((a, b) => (a.content_hash <= b.content_hash ? a : b)) : at[randomInt(at.length)];
   }
@@ -87,7 +87,7 @@ export function careerPoolTarget(skillCount: number, cap = CAREER_BANK_CAP): Rec
 
 /** True once this career has its full bank: from then on its questions come from the database and the AI is not called. */
 export async function careerBankFull(db: Db, careerId: string): Promise<boolean> {
-  const { count } = await db.from("assess_question_pool").select("id", { count: "exact", head: true }).eq("layer", "CAREER").eq("career_id", careerId).eq("is_active", true);
+  const { count } = await db.from("assess_question_pool").select("id", { count: "exact", head: true }).eq("layer", "CAREER").eq("career_id", careerId).eq("difficulty", CAREER_LEVEL).eq("is_active", true);
   return (count ?? 0) >= CAREER_BANK_CAP;
 }
 
@@ -125,7 +125,7 @@ export async function warmPool(db: Db, scope: { career: CareerRef; skills: reado
   let calls = 0;
   for (const cell of cells) {
     const have = await countByDifficulty(db, cell.filter);
-    for (const difficulty of DIFFICULTIES) {
+    for (const difficulty of "general" in scope ? DIFFICULTIES : [CAREER_LEVEL]) {
       const need = cell.target[difficulty] - have[difficulty];
       if (need <= 0) continue;
       if (calls++ >= maxCalls) return reports;
