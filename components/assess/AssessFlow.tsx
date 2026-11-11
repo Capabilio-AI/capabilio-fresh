@@ -12,6 +12,7 @@ import { AssessTopBar, type BackAction } from "./shell/AssessTopBar";
 import { RoleEntryStep } from "./steps/RoleEntryStep";
 import { ResumeStep } from "./steps/ResumeStep";
 import { StartFlow, type StartedSession } from "./steps/StartFlow";
+import { ExamLock } from "@/components/exam/ExamLock";
 import { QuestionRunner } from "./runner/QuestionRunner";
 import { ResultPopup } from "./result/ResultPopup";
 import { Button } from "./ui/Button";
@@ -64,8 +65,22 @@ export function AssessFlow({ snapshot }: { snapshot: FlowSnapshot }) {
   );
 }
 
+const ASSESSMENT_RULES = [
+  "The test opens in full screen and stays there until you finish it or end it.",
+  "Every question has its own timer. When it runs out, the question counts as unanswered.",
+  "Leaving full screen is recorded; three exits end your test. Switching tabs or windows is recorded too, and three switches also end it.",
+  "If the test is ended, only the questions you have answered count.",
+  "Copying, pasting, right-click, printing and developer tools are switched off, and you cannot go back to other pages until the test is done.",
+];
+
 function Screen({ snapshot, view, setView, onSubmitted, advance }: { snapshot: FlowSnapshot; view: View; setView: (v: View) => void; onSubmitted: (r: AssessmentResult) => void; advance: () => void }) {
-  if (view.kind === "run") return <QuestionRunner sessionId={view.session.sessionId} initial={view.session.state} onSubmitted={onSubmitted} />;
+  if (view.kind === "run") {
+    return (
+      <ExamLock area="assessment" title="Capabilio assessment" storageKey={view.session.sessionId} rules={ASSESSMENT_RULES}>
+        <QuestionRunner sessionId={view.session.sessionId} initial={view.session.state} onSubmitted={onSubmitted} />
+      </ExamLock>
+    );
+  }
   if (view.kind === "career-done" && view.result.elo && view.result.career) return <ResultPopup sessionId={view.sessionId} result={view.result} />;
   if (view.kind === "common-done") return <CommonDone result={view.result} onContinue={advance} />;
 

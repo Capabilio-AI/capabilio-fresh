@@ -52,6 +52,8 @@ export const assessApi = {
   feedback: (sessionId: string) => call<{ status: "PENDING" | "READY"; feedback: StoredFeedback[] }>(`/api/assess/session/${sessionId}/feedback`),
   event: (name: "assessment_popup_viewed" | "dashboard_opened_after_assessment") => fetch("/api/assess/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }).catch(() => {}),
   submit: (sessionId: string) => call<{ result: AssessmentResult }>(`/api/assess/session/${sessionId}/submit`, { method: "POST" }),
+  /** ends the test now: only what is answered counts */
+  end: (sessionId: string, reason: "student" | "integrity") => call<{ result: AssessmentResult }>(`/api/assess/session/${sessionId}/end`, { method: "POST", body: JSON.stringify({ reason }) }),
 };
 
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));

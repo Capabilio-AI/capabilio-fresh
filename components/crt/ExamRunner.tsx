@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Info, Loader2, X } from "lucide-react";
 import { SECONDS_PER_QUESTION } from "@/lib/crt/cycle";
+import { ExamLock, useExamLock } from "@/components/exam/ExamLock";
 import { formatClock } from "./api";
 
 export interface ExamQuestion {
@@ -67,7 +68,12 @@ function Tile({ status, n, current, onClick }: { status: Status; n: number; curr
  * question counts against its own minute, and once it is used up the question locks and the exam moves on. The clock shows the total
  * time left across all questions. Navigation is free, so a question you skipped can still use its minute later.
  */
-export function ExamRunner({ title, questions, initialAnswers = {}, deadlineAt, storageKey, onAnswersChange, onSubmit, onExit, error }: Props) {
+function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, storageKey, onAnswersChange, onSubmit, onExit, error }: Props) {
+  const lock = useExamLock();
+  const lockRef = useRef(lock);
+  useEffect(() => {
+    lockRef.current = lock;
+  });
   const [index, setIndex] = useState(() => Math.max(0, questions.findIndex((q) => !initialAnswers[q.id])));
   const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [visited, setVisited] = useState<Set<string>>(() => new Set([questions[0]?.id].filter(Boolean)));
@@ -99,6 +105,7 @@ export function ExamRunner({ title, questions, initialAnswers = {}, deadlineAt, 
     setBusy(true);
     try {
       await latest.current.submit(latest.current.answers);
+      lockRef.current?.release(); // submitted: the student is let out of full screen
     } catch {
       submitted.current = false; // the parent shows the error; the student can try again
     } finally {
@@ -106,6 +113,12 @@ export function ExamRunner({ title, questions, initialAnswers = {}, deadlineAt, 
       setPanel("none");
     }
   }, []);
+
+  // the lock ended the test (too many fullscreen exits or tab switches): what is answered is submitted now
+  const terminated = lock?.terminated ?? null;
+  useEffect(() => {
+    if (terminated) void finish();
+  }, [terminated, finish]);
 
   const goTo = useCallback((i: number) => {
     setIndex(i);
@@ -202,86 +215,87 @@ export function ExamRunner({ title, questions, initialAnswers = {}, deadlineAt, 
   const qLeft = SECONDS_PER_QUESTION - used(q.id);
   const isLocked = locked(q.id);
 
-  return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--m-ground)]" role="dialog" aria-modal="true" aria-label={title}>
-      <header className="flex shrink-0 items-center justify-between gap-3 bg-[var(--m-ink)] px-4 py-3 text-white sm:px-8">
-        <div className="min-w-0">
-          <p className="font-lp-body text-[11px] font-bold uppercase tracking-[0.14em] text-white/60">Capabilio CRT</p>
-          <p className="truncate font-lp-display text-[18px] font-bold leading-tight">{title}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setPanel("instructions")} className="hidden items-center gap-1.5 rounded-lg px-3 py-1.5 font-lp-body text-[13px] font-semibold text-white/80 hover:bg-white/10 sm:inline-flex"><Info size={15} aria-hidden /> Instructions</button>
-          <p role="timer" aria-label="Total time left" className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-lp-body text-[15px] font-bold tabular-nums ${totalLeft <= 120 ? "bg-app-warning text-white" : "bg-white/12 text-white"}`}><Clock size={15} aria-hidden /> {formatClock(totalLeft)}</p>
-          {onExit && <button type="button" onClick={() => setPanel("exit")} aria-label="Leave the test" className="rounded-lg p-2 text-white/80 hover:bg-white/10"><X size={18} /></button>}
-        </div>
-      </header>
+  const done = questions.filter((x) => answers[x.id]).length;
+  const pct = Math.round((done / questions.length) * 100);
+  const sectionNo = sections.indexOf(q.section) + 1;
 
-      <nav aria-label="Sections" className="shrink-0 overflow-x-auto border-b border-app-border bg-white px-4 sm:px-8">
-        <div className="flex gap-1 py-2">
-          {sections.map((s) => {
-            const ids = questions.filter((x) => x.section === s);
-            const done = ids.filter((x) => answers[x.id]).length;
-            const on = s === q.section;
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#f4f2ee] lg:flex-row" role="dialog" aria-modal="true" aria-label={title}>
+      {/* the question rail: where you are in this section, and what is done */}
+      <aside className="flex shrink-0 flex-col bg-black text-white lg:w-[300px]" aria-label="Questions">
+        <div className="px-5 pb-4 pt-5">
+          <p className="font-lp-body text-[15px] text-white/80">{sections.length > 1 ? `Section ${sectionNo} of ${sections.length}` : "Questions"}</p>
+          <h1 className="mt-0.5 font-lp-display text-[24px] font-bold leading-tight">{q.section}</h1>
+          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-label="Completed" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}><div className="h-full rounded-full bg-white" style={{ width: `${pct}%` }} /></div>
+          <p className="mt-1.5 font-lp-body text-[11.5px] text-white/70">{pct}% Completed</p>
+        </div>
+        {sections.length > 1 && (
+          <nav aria-label="Sections" className="flex gap-1 overflow-x-auto border-t border-white/15 px-3 py-2">
+            {sections.map((sec) => (
+              <button key={sec} type="button" aria-current={sec === q.section ? "true" : undefined} onClick={() => goTo(questions.findIndex((x) => x.section === sec))} className={`shrink-0 rounded-md px-3 py-1.5 font-lp-body text-[12.5px] font-semibold ${sec === q.section ? "bg-white text-black" : "text-white/75 hover:bg-white/10"}`}>{sec}</button>
+            ))}
+          </nav>
+        )}
+        {/* small screens: a strip of numbered tiles */}
+        <div className="flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden">{inSection.map(({ x, i }) => <Tile key={x.id} n={i + 1} status={statusOf(x.id)} current={i === index} onClick={() => goTo(i)} />)}</div>
+        <ol className="hidden min-h-0 flex-1 overflow-y-auto border-t border-white/15 lg:block">
+          {inSection.map(({ x, i }) => {
+            const st = statusOf(x.id);
+            const on = i === index;
             return (
-              <button key={s} type="button" aria-current={on ? "true" : undefined} onClick={() => goTo(questions.findIndex((x) => x.section === s))} className={`flex shrink-0 items-center gap-2 rounded-md px-3.5 py-2 font-lp-body text-[13px] font-semibold transition-colors motion-reduce:transition-none ${on ? "bg-[var(--m-ink)] text-white" : "bg-[var(--m-ground)] text-app-charcoal hover:bg-[var(--m-accent-soft)]"}`}>
-                {s}
-                <span className={`rounded-full px-1.5 py-0.5 text-[11px] tabular-nums ${on ? "bg-white/20" : "bg-white"}`}>{done}/{ids.length}</span>
-              </button>
+              <li key={x.id}>
+                <button type="button" onClick={() => goTo(i)} aria-current={on ? "true" : undefined} aria-label={`Question ${i + 1}, ${st === "notVisited" ? "not visited" : st === "answered" ? "answered" : st.startsWith("marked") ? "marked for review" : "not answered"}`}
+                  className={`flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left transition-colors motion-reduce:transition-none ${on ? "border-white bg-white/15" : "border-transparent hover:bg-white/10"}`}>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 font-lp-body text-[14px] font-bold tabular-nums ${on ? "border-white bg-white text-black" : "border-white/60 text-white"}`}>{i + 1}</span>
+                  <span className="min-w-0 flex-1"><span className="block truncate font-lp-body text-[14px] font-bold">{x.topic || "Question"}</span><span className="block font-lp-body text-[12px] text-white/60">{st === "answered" || st === "markedAnswered" ? "Answered" : st === "notVisited" ? "Not visited" : "Not answered"}</span></span>
+                  <span aria-hidden className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${st === "answered" || st === "markedAnswered" ? "border-white bg-white text-black" : "border-white/50"} ${st.startsWith("marked") ? "ring-2 ring-amber-300 ring-offset-1 ring-offset-black" : ""}`}>{st === "answered" || st === "markedAnswered" ? "✓" : ""}</span>
+                </button>
+              </li>
             );
           })}
-        </div>
-      </nav>
+        </ol>
+        <p className="hidden border-t border-white/15 px-5 py-3 font-lp-body text-[11.5px] text-white/60 lg:block">Pink ring: marked for review</p>
+      </aside>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-        <main className="flex min-h-0 flex-1 flex-col p-4 sm:p-6 lg:overflow-hidden">
-          <section className="flex min-h-0 flex-1 flex-col rounded-xl border border-app-border bg-white">
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-app-border px-5 py-3.5">
-              <h2 className="font-lp-display text-[19px] font-bold text-app-charcoal">Question No {index + 1}</h2>
-              <p role="timer" aria-label="Time for this question" className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-lp-body text-[13px] font-bold tabular-nums ${qLeft <= 10 ? "bg-app-warning/15 text-app-warning" : "bg-[var(--m-accent-soft)] text-[var(--m-ink)]"}`}><Clock size={13} aria-hidden /> {formatClock(qLeft)} for this question</p>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center justify-between gap-3 bg-black px-4 py-3 text-white sm:px-6">
+          <button type="button" onClick={() => setPanel("instructions")} className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 font-lp-body text-[14px] font-semibold text-white/85 hover:bg-white/10"><Info size={17} aria-hidden /> Help &amp; Resources</button>
+          <p role="timer" aria-label="Total time left" className={`inline-flex items-center gap-2 font-lp-body text-[22px] font-bold tabular-nums ${totalLeft <= 120 ? "text-amber-300" : "text-white"}`}><Clock size={20} aria-hidden /> {formatClock(totalLeft)}</p>
+          <button type="button" onClick={() => setPanel("confirm")} className="rounded-full bg-white px-5 py-2 font-lp-body text-[14px] font-bold text-black hover:bg-white/90">End Test</button>
+        </header>
+        <div className="h-1 shrink-0 bg-white/20" aria-hidden><div className="h-full bg-black/60" style={{ width: `${(index + 1) / questions.length * 100}%` }} /></div>
+
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
+          <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col rounded-2xl bg-white p-5 shadow-sm sm:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-lp-body text-[15px] font-semibold text-app-muted">Question {index + 1}{q.topic ? <span className="ml-2 text-[12.5px] font-semibold uppercase tracking-wide">{q.topic}</span> : null}</p>
+              <p role="timer" aria-label="Time for this question" className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-lp-body text-[13px] font-bold tabular-nums ${qLeft <= 10 ? "bg-red-50 text-red-700" : "bg-[#f4f2ee] text-black"}`}><Clock size={13} aria-hidden /> {formatClock(qLeft)} for this question</p>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
-              <p className="mb-1 font-lp-body text-[12px] font-semibold uppercase tracking-wide text-app-muted">{q.topic}</p>
-              <p className="whitespace-pre-line font-lp-display text-[19px] font-semibold leading-snug text-app-charcoal">{q.prompt}</p>
-              {isLocked && <p role="status" className="mt-4 rounded-lg bg-app-warning/10 px-3 py-2 font-lp-body text-[13px] font-semibold text-app-warning">Your minute for this question is over. Your answer is saved as it stands.</p>}
-              <div role="radiogroup" aria-label="Answer options" className="mt-5 flex flex-col gap-2.5">
-                {q.options.map((o) => {
-                  const on = answers[q.id] === o.key;
-                  return (
-                    <button key={o.key} type="button" role="radio" aria-checked={on} disabled={isLocked} onClick={() => setAnswer(o.key)}
-                      className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-left font-lp-body text-[15px] leading-snug text-app-charcoal transition-colors motion-reduce:transition-none disabled:cursor-not-allowed ${on ? "border-[var(--m-ink)] bg-[var(--m-accent-soft)]" : "border-app-border bg-white hover:bg-[var(--m-ground)]"} ${isLocked && !on ? "opacity-60" : ""}`}>
-                      <span aria-hidden className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold uppercase ${on ? "border-[var(--m-ink)] bg-[var(--m-ink)] text-white" : "border-app-border text-app-muted"}`}>{o.key}</span>
-                      <span>{o.text}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-app-border bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              <button type="button" onClick={mark} disabled={isLocked} className="rounded-lg bg-[var(--m-accent-soft)] px-4 py-2.5 font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)] hover:brightness-95 disabled:opacity-50">Mark for Review &amp; Next</button>
-              <button type="button" onClick={() => setAnswer(null)} disabled={isLocked || !answers[q.id]} className="rounded-lg border border-app-border px-4 py-2.5 font-lp-body text-[13.5px] font-semibold text-app-charcoal hover:bg-[var(--m-ground)] disabled:opacity-50">Clear Response</button>
-              <button type="button" onClick={save} className="ml-auto rounded-lg bg-[var(--m-ink)] px-6 py-2.5 font-lp-body text-[13.5px] font-semibold text-white">{index === questions.length - 1 ? "Save & Review" : "Save & Next"}</button>
+            <p className="mt-5 whitespace-pre-line font-lp-body text-[18px] leading-relaxed text-black">{q.prompt}</p>
+            {isLocked && <p role="status" className="mt-4 rounded-lg bg-amber-50 px-3 py-2 font-lp-body text-[13px] font-semibold text-amber-900">Your minute for this question is over. Your answer is saved as it stands.</p>}
+            <div role="radiogroup" aria-label="Answer options" className="mt-6 flex flex-col gap-3">
+              {q.options.map((o) => {
+                const on = answers[q.id] === o.key;
+                return (
+                  <button key={o.key} type="button" role="radio" aria-checked={on} disabled={isLocked} onClick={() => setAnswer(o.key)}
+                    className={`flex items-center gap-4 rounded-2xl border px-4 py-4 text-left font-lp-body text-[16px] text-black transition-colors motion-reduce:transition-none disabled:cursor-not-allowed ${on ? "border-black bg-[#f4f2ee]" : "border-black/20 bg-white hover:bg-[#faf9f6]"} ${isLocked && !on ? "opacity-60" : ""}`}>
+                    <span aria-hidden className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[15px] font-bold uppercase ${on ? "border-black bg-black text-white" : "border-black/50 text-black"}`}>{o.key}</span>
+                    <span className="min-w-0 flex-1">{o.text}</span>
+                    <span aria-hidden className={`h-6 w-6 shrink-0 rounded-full border-2 ${on ? "border-black bg-black ring-4 ring-inset ring-white" : "border-black/30"}`} />
+                  </button>
+                );
+              })}
             </div>
           </section>
         </main>
 
-        <aside className="shrink-0 border-t border-app-border bg-white p-4 sm:p-5 lg:w-[340px] lg:overflow-y-auto lg:border-l lg:border-t-0" aria-label="Question palette">
-          <p className="font-lp-body text-[12.5px] text-app-muted">You are viewing <strong className="text-app-charcoal">{q.section}</strong></p>
-          <p className="mt-0.5 font-lp-body text-[11px] font-bold uppercase tracking-wide text-app-muted">Question palette</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {inSection.map(({ x, i }) => <Tile key={x.id} n={i + 1} status={statusOf(x.id)} current={i === index} onClick={() => goTo(i)} />)}
-          </div>
-          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-2">
-            {LEGEND.map((l) => (
-              <li key={l.status} className="flex items-center gap-2 font-lp-body text-[12px] text-app-charcoal">
-                <span aria-hidden className={`inline-block h-4 w-4 shrink-0 rounded-[4px] ${TILE[l.status]} ${l.status === "marked" ? "!rounded-full" : ""}`} />
-                {l.label}
-              </li>
-            ))}
-          </ul>
-          <button type="button" onClick={() => setPanel("confirm")} className="mt-6 w-full rounded-lg bg-[var(--m-ink)] px-4 py-3 font-lp-body text-[14px] font-semibold text-white">Submit</button>
-          <button type="button" onClick={() => setPanel("instructions")} className="mt-2 w-full rounded-lg border border-app-border px-4 py-2.5 font-lp-body text-[13px] font-semibold text-app-charcoal hover:bg-[var(--m-ground)] sm:hidden">Instructions</button>
-          {error && <p role="alert" className="mt-3 font-lp-body text-[13px] text-app-warning">{error}</p>}
-        </aside>
+        <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-black/10 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+          <button type="button" onClick={() => goTo(Math.max(0, index - 1))} disabled={index === 0} className="inline-flex items-center gap-2 rounded-full border border-black/25 px-5 py-2.5 font-lp-body text-[14px] font-bold text-black hover:bg-[#f4f2ee] disabled:opacity-40">← Previous</button>
+          <button type="button" onClick={mark} disabled={isLocked} className="rounded-full bg-[#f4f2ee] px-4 py-2.5 font-lp-body text-[13.5px] font-semibold text-black hover:brightness-95 disabled:opacity-50">Mark for Review &amp; Next</button>
+          <button type="button" onClick={() => setAnswer(null)} disabled={isLocked || !answers[q.id]} className="rounded-full px-4 py-2.5 font-lp-body text-[13.5px] font-semibold text-app-muted hover:text-black disabled:opacity-40">Clear Response</button>
+          {error && <p role="alert" className="font-lp-body text-[13px] text-red-700">{error}</p>}
+          <button type="button" onClick={save} className="ml-auto inline-flex items-center gap-2 rounded-full bg-black px-7 py-2.5 font-lp-body text-[14px] font-bold text-white">{index === questions.length - 1 ? "Save & Review" : "Save & Next →"}</button>
+        </footer>
       </div>
 
       {panel !== "none" && (
@@ -322,7 +336,7 @@ export function ExamRunner({ title, questions, initialAnswers = {}, deadlineAt, 
                 <p className="mt-2 font-lp-body text-[14px] text-app-muted">Your answers will not be graded and this attempt will be lost.</p>
                 <div className="mt-5 flex justify-end gap-2">
                   <button type="button" onClick={() => setPanel("none")} className="rounded-lg px-4 py-2.5 font-lp-body text-[13.5px] font-semibold text-app-charcoal hover:bg-[var(--m-ground)]">Stay</button>
-                  <button type="button" onClick={onExit} className="rounded-lg bg-app-warning px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white">Leave</button>
+                  <button type="button" onClick={() => { lockRef.current?.release(); onExit?.(); }} className="rounded-lg bg-app-warning px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white">Leave</button>
                 </div>
               </>
             )}
@@ -330,5 +344,14 @@ export function ExamRunner({ title, questions, initialAnswers = {}, deadlineAt, 
         </div>
       )}
     </div>
+  );
+}
+
+/** The exam screen, locked: it opens in full screen after a rules screen, and leaving full screen or switching tabs is counted. */
+export function ExamRunner(props: Props) {
+  return (
+    <ExamLock area="crt" title={props.title} storageKey={props.storageKey ?? `sim-${props.title}`} onCancel={props.onExit}>
+      <ExamRunnerInner {...props} />
+    </ExamLock>
   );
 }

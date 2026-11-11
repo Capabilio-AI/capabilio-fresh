@@ -32,7 +32,7 @@ const chunks = <T,>(items: readonly T[], size = CHUNK): T[][] => Array.from({ le
 type Completion = { user_id: string; challenge_id: string; code_submitted: string | null; completed_at: string };
 
 export function integrityScore(counts: IntegrityCounts, rapid: number, similar: number): number {
-  return similar * 8 + rapid * 3 + (counts.paste ?? 0) + (counts.screenshot ?? 0) * 3 + (counts.print ?? 0) * 2 + Math.floor((counts.blur ?? 0) / 10);
+  return similar * 8 + rapid * 3 + (counts.paste ?? 0) + (counts.screenshot ?? 0) * 3 + (counts.print ?? 0) * 2 + Math.floor((counts.blur ?? 0) / 10) + (counts.fullscreen_exit ?? 0) * 2 + (counts.tab_switch ?? 0) * 2 + (counts.devtools ?? 0) * 2 + (counts.exam_ended ?? 0) * 5;
 }
 
 /** Every signal in the last REPORT_DAYS days for the active students of a college, strongest first. Signals are not proof: the page says so. */
