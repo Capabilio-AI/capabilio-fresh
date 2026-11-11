@@ -28,16 +28,23 @@ async function sessionObsBySection(db: Db, sessionId: string): Promise<Record<st
 }
 
 /** `onCompleted` fires only when THIS call finalised the session (not for an idempotent re-submit or a lost race). */
-export async function submitSession(db: Db, userId: string, sessionId: string, onCompleted?: (result: AssessmentResult) => void): Promise<AssessmentResult> {
+export type EndedEarly = "student" | "integrity";
+
+/**
+ * Finalises a session. By default every question must be answered. With `early`, the session is finished as it stands (by the student, or by the
+ * exam lock for too many strikes): only the questions answered count, the rest are simply not measured, and the result records why it ended.
+ */
+export async function submitSession(db: Db, userId: string, sessionId: string, onCompleted?: (result: AssessmentResult) => void, opts: { early?: EndedEarly } = {}): Promise<AssessmentResult> {
   const session = await loadSession(db, userId, sessionId);
   if (session.status === "COMPLETED" && session.result) return session.result as AssessmentResult;
 
   const { count } = await db.from("assess_responses").select("id", { count: "exact", head: true }).eq("session_id", sessionId);
-  if ((count ?? 0) < session.total_questions) {
+  if (!opts.early && (count ?? 0) < session.total_questions) {
     throw new AssessError("NOT_ALL_ANSWERED", `Answer all ${session.total_questions} questions before submitting.`, 409);
   }
 
-  const result = session.layer === "GENERAL" ? await buildGeneralResult(db, sessionId) : await buildCareerResult(db, userId, session);
+  const built = session.layer === "GENERAL" ? await buildGeneralResult(db, sessionId) : await buildCareerResult(db, userId, session);
+  const result: AssessmentResult = opts.early ? { ...built, endedEarly: opts.early } : built;
   // The snapshot and scores are written BEFORE the session is marked complete and are idempotent (one snapshot per
   // session), so a crash in between leaves a retryable submit rather than a "completed" session with no outcome.
   if (session.layer === "CAREER") await persistSnapshot(db, userId, sessionId, result);

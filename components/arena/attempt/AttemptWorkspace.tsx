@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, CircleX, Clock, Lig
 import type { AttemptResult, AttemptView } from "@/lib/arena-challenges/attempts";
 import { buildSubmission, isLiveCheck } from "@/lib/arena-runtime/client/builders";
 import { RUNTIMES } from "@/lib/arena-runtime/registry";
+import { ExamLock, useExamLock } from "@/components/exam/ExamLock";
 import { Countdown } from "../workstations/Countdown";
 import { Workstation } from "../runtime/Workstation";
 import type { Draft } from "../runtime/types";
@@ -17,7 +18,8 @@ const AUTOSAVE_MS = 1500;
 type Saved = "idle" | "saving" | "saved" | "error";
 
 /** One attempt: ticket brief and steps (left), the role's workstation (centre), checks and result (below). Pass/fail is decided by the server's deterministic checks. */
-export function AttemptWorkspace({ initial }: { initial: AttemptView }) {
+function AttemptWorkspaceInner({ initial }: { initial: AttemptView }) {
+  const lock = useExamLock();
   const router = useRouter();
   const runtimeType = initial.workstation?.runtimeType ?? "QUESTION_FLOW";
   const descriptor = RUNTIMES[runtimeType];
@@ -70,6 +72,17 @@ export function AttemptWorkspace({ initial }: { initial: AttemptView }) {
     }
   }, [submitting, finished, initial.attempt.id, initial.checks, runtimeType, reflection]);
 
+  // the exam lock ended the attempt (too many strikes): what is on screen is submitted now. Once graded, the student is let out of full screen.
+  const terminated = lock?.terminated ?? null;
+  useEffect(() => {
+    if (!terminated || finished) return;
+    const t = setTimeout(() => void submit(), 0);
+    return () => clearTimeout(t);
+  }, [terminated, finished, submit]);
+  useEffect(() => {
+    if (finished) lock?.release();
+  }, [finished, lock]);
+
   async function useHint() {
     const res = await fetch(`/api/arena/challenge-attempts/${initial.attempt.id}/hint`, { method: "POST" });
     const body = await res.json();
@@ -89,9 +102,12 @@ export function AttemptWorkspace({ initial }: { initial: AttemptView }) {
 
   return (
     <div>
-      <Link href={backHref} className="inline-flex items-center gap-1.5 font-lp-body text-[13px] text-app-muted hover:text-[var(--m-ink)]">
-        <ArrowLeft size={14} /> Back to challenges
-      </Link>
+      {/* during a locked attempt the student finishes it or submits it: there is no way out to other pages */}
+      {(!lock || finished) && (
+        <Link href={backHref} className="inline-flex items-center gap-1.5 font-lp-body text-[13px] text-app-muted hover:text-[var(--m-ink)]">
+          <ArrowLeft size={14} /> Back to challenges
+        </Link>
+      )}
       <header className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-lp-mono text-[11.5px] uppercase text-app-muted">{`>_ ${initial.challenge.difficulty} · ${descriptor.label}`}</p>
@@ -235,5 +251,22 @@ function ResultPanel({ result, steps, onRetry, backHref, aiHelp }: { result: Att
         <Link href={backHref} className="text-app-muted hover:text-[var(--m-ink)]">Back to challenges</Link>
       </div>
     </section>
+  );
+}
+
+const ARENA_RULES = [
+  "The challenge opens in full screen and stays there until you submit it or time runs out.",
+  "Leaving full screen is recorded; three exits end the attempt and submit what you have so far. Switching tabs or windows is recorded too, and three switches also end it.",
+  "Copying, pasting, right-click, printing and developer tools are switched off. Your own typing in the editor works as normal.",
+  "You cannot go to other pages during the attempt. Use Submit when you are done: your work is saved as you go.",
+];
+
+/** A challenge attempt. A live attempt runs in the locked exam mode; a finished one just shows its result. */
+export function AttemptWorkspace({ initial }: { initial: AttemptView }) {
+  if (initial.attempt.result !== null) return <AttemptWorkspaceInner initial={initial} />;
+  return (
+    <ExamLock area="arena" title={initial.challenge.title} storageKey={`arena-${initial.attempt.id}`} rules={ARENA_RULES}>
+      <AttemptWorkspaceInner initial={initial} />
+    </ExamLock>
   );
 }

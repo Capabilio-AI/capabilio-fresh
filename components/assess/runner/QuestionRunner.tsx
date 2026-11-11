@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CloudOff, Crosshair, Loader2, RefreshCw } from "lucide-react";
 import { QUESTION_SECONDS } from "@/lib/assess/config";
 import type { AssessmentResult, Feedback, HistoryItem, QuestionPayload, SessionState } from "@/lib/assess/types";
+import { useExamLock } from "@/components/exam/ExamLock";
 import { ApiError, NetworkError, assessApi, sleep } from "../api";
 import { Button } from "../ui/Button";
 import { RichText } from "../ui/CodeText";
@@ -142,6 +143,33 @@ export function QuestionRunner({ sessionId, initial, onSubmitted }: { sessionId:
     }
   }, [onSubmitted, sessionId]);
 
+  // Ending the test: the student chooses to (after a confirmation), or the exam lock ends it for too many strikes. Only what is answered counts.
+  const lock = useExamLock();
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const endedOnce = useRef(false);
+  const end = useCallback(async (reason: "student" | "integrity") => {
+    if (endedOnce.current) return;
+    endedOnce.current = true;
+    setEnding(true);
+    setConfirmEnd(false);
+    try {
+      const { result } = await assessApi.end(sessionId, reason);
+      lock?.release();
+      onSubmitted(result);
+    } catch (e) {
+      endedOnce.current = false;
+      setEnding(false);
+      dispatch({ t: "fail", message: friendly(e) });
+    }
+  }, [sessionId, onSubmitted, lock]);
+  const terminated = lock?.terminated ?? null;
+  useEffect(() => {
+    if (!terminated) return;
+    const t = setTimeout(() => void end("integrity"), 0);
+    return () => clearTimeout(t);
+  }, [terminated, end]);
+
   // keyboard: A-F or 1-6 picks, Enter moves on
   const stateRef = useRef({ s, choose, loadNext, submit });
   useEffect(() => { stateRef.current = { s, choose, loadNext, submit }; });
@@ -181,6 +209,7 @@ export function QuestionRunner({ sessionId, initial, onSubmitted }: { sessionId:
               <span aria-live="polite">Question {q.position} of {q.total}</span>
             </p>
             <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setConfirmEnd(true)} disabled={ending} className="rounded-full border border-[var(--m-rule)] bg-white px-3.5 py-1.5 text-[13px] font-bold text-[var(--m-ink)] hover:bg-[var(--m-ground)] disabled:opacity-60">End test</button>
               {!s.feedback && <QuestionTimer questionId={q.sessionQuestionId} secondsLeft={q.secondsLeft} total={QUESTION_SECONDS} running={s.phase === "answering"} onExpire={() => void choose(-1)} />}
               <DifficultyMeter difficulty={q.difficulty} />
             </div>
@@ -237,6 +266,19 @@ export function QuestionRunner({ sessionId, initial, onSubmitted }: { sessionId:
           </div>
           {s.phase === "retry" && <RetryPanel message={s.message} onRetry={s.feedback ? (s.feedback.isLast ? submit : loadNext) : loadNext} />}
         </div>
+        {confirmEnd && (
+          <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/55 p-4" role="alertdialog" aria-modal="true" aria-labelledby="end-h">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6">
+              <h3 id="end-h" className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">End the test now?</h3>
+              <p className="mt-2 text-[14.5px] text-[var(--m-ink)]">Only the questions you have answered will count, and you cannot come back to this attempt. Your result will show what was measured so far.</p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" autoFocus onClick={() => setConfirmEnd(false)} className="rounded-full px-5 py-2.5 text-[14px] font-bold text-[var(--m-ink)] hover:bg-[var(--m-ground)]">Keep going</button>
+                <button type="button" onClick={() => void end("student")} className="rounded-full bg-[var(--m-ink)] px-5 py-2.5 text-[14px] font-bold text-white">End test</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {ending && <p role="status" className="mt-3 flex items-center justify-center gap-2 text-[14px] font-bold text-[var(--m-muted)]"><Loader2 className="h-4 w-4 animate-spin" aria-hidden />Finishing your test…</p>}
         <p className="mt-3 px-2 text-center text-[12.5px] text-[var(--m-muted)]">Each question has {QUESTION_SECONDS} seconds · A–D to answer · Enter for {s.feedback?.isLast ? "Submit" : "Next"}</p>
       </div>
 

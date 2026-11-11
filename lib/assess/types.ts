@@ -89,6 +89,8 @@ export interface AssessmentResult {
   notYetMeasured: SkillResult[];
   nextBestAction: string | null;
   general: SectionBar[] | null;
+  /** set when the test was finished before every question was answered: by the student, or by the exam lock for too many strikes */
+  endedEarly?: "student" | "integrity";
 }
 
 export class AssessError extends Error {
