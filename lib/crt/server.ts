@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { getStudentDirection } from "@/lib/career/direction";
 import { appliesTo, attemptExpired, cycleStatusAt, SECONDS_PER_QUESTION, type CycleStatus } from "./cycle";
+import { seenQuestionIds } from "./seen";
 import { CRT_MODULES, QUESTIONS_PER_MODULE, type Band, type CrtModule, type CrtOption, type CrtQuestion, type ModuleScores } from "./model";
 import { bandFor, scoreAttempt } from "./score";
 
@@ -227,11 +228,12 @@ export async function startOrResume(service: Service, userId: string, cycleId: s
 
   if (cycleStatusAt({ opensAt: cycle.opens_at, closesAt: cycle.closes_at }, new Date()) !== "open") return fail(409, "This assessment is not open right now.");
 
-  const [{ data: pool }, { data: past }] = await Promise.all([
+  // the official assessment prefers questions this student has not met anywhere (practice, mocks or earlier cycles); it only reuses one if the bank is
+  // truly exhausted, because a placement cell's test must always be deliverable
+  const [{ data: pool }, seen] = await Promise.all([
     db.from("crt_questions").select("id, module").eq("status", "published").limit(5000),
-    db.from("crt_attempts").select("question_ids").eq("user_id", userId),
+    seenQuestionIds(service, userId),
   ]);
-  const seen = new Set(((past ?? []) as { question_ids: string[] }[]).flatMap((a) => a.question_ids));
   const ids = drawQuestionIds((pool ?? []) as { id: string; module: CrtModule }[], seen, QUESTIONS_PER_MODULE);
   if (ids.length === 0) return fail(503, "The question bank is not ready yet. Please try again later.");
 

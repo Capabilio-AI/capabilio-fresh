@@ -13,6 +13,11 @@ interface Graded {
   results: AnswerResult[];
   pct: number;
   questions: QuizQuestion[];
+  /** set for a company mock, which can take marks off wrong answers */
+  negativeMarking?: number;
+  wrong?: number;
+  unanswered?: number;
+  rawPct?: number;
 }
 
 function Frame({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
@@ -56,6 +61,7 @@ function Result({ graded, title, onClose }: { graded: Graded; title: string; onC
             ))}
           </ul>
         )}
+        {graded.negativeMarking ? <p className="mt-4 rounded-lg bg-[var(--m-ground)] px-3 py-2 font-lp-body text-[13px] text-app-charcoal">This paper takes {graded.negativeMarking} of a mark off each wrong answer: {graded.wrong ?? 0} wrong, {graded.unanswered ?? 0} left blank. Without negative marking your score would be {graded.rawPct ?? graded.pct}%.</p> : null}
         <p className="mt-5 font-lp-body text-[12.5px] text-app-muted">Every answer is now part of your readiness. Questions you missed are explained below.</p>
         <button type="button" onClick={onClose} className="mt-4 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white">Back to CRT</button>
       </div>
@@ -64,16 +70,16 @@ function Result({ graded, title, onClose }: { graded: Graded; title: string; onC
   );
 }
 
-/** One placement-simulator test in the exam screen, graded and explained at the end. */
-export function SimulatorExam({ test, onClose }: { test: SimTestKey; onClose: () => void }) {
-  const { data, error } = useLoad<{ set: TimedSet }>({ action: "simulator", test });
+/** A timed test in the exam screen, graded and explained at the end. `loadBody` and `gradeBody` say which test it is. */
+function ExamSession({ loadBody, gradeBody, fallbackTitle, onClose }: { loadBody: Record<string, unknown>; gradeBody: Record<string, unknown>; fallbackTitle: string; onClose: () => void }) {
+  const { data, error } = useLoad<{ set: TimedSet }>(loadBody);
   const [graded, setGraded] = useState<Graded | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  if (graded) return <Result graded={graded} title={data?.set.title ?? "Placement simulator"} onClose={onClose} />;
+  if (graded) return <Result graded={graded} title={data?.set.title ?? fallbackTitle} onClose={onClose} />;
   if (!data) {
     return (
-      <Frame title="Placement simulator" onClose={onClose}>
+      <Frame title={fallbackTitle} onClose={onClose}>
         {error ? <p role="alert" className="rounded-xl border border-app-warning/40 bg-app-warning/10 p-4 font-lp-body text-[13.5px] text-app-charcoal">{error}</p> : <p className="flex items-center gap-2 font-lp-body text-[13.5px] text-app-muted"><Loader2 size={15} className="animate-spin" aria-hidden /> Setting up your test…</p>}
       </Frame>
     );
@@ -85,11 +91,21 @@ export function SimulatorExam({ test, onClose }: { test: SimTestKey; onClose: ()
     try {
       // a question left blank is graded as zero, like in a real test
       const all = Object.fromEntries(set.questions.map((q) => [q.id, answers[q.id] ?? SKIPPED]));
-      setGraded(await crtPost<Graded>({ action: "grade", test, answers: all }));
+      setGraded(await crtPost<Graded>({ ...gradeBody, answers: all }));
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Could not grade your test. Please try again.");
       throw e;
     }
   }
-  return <ExamRunner title={set.title} questions={set.questions.map((q) => ({ id: q.id, section: q.section ?? "Questions", topic: q.topic, prompt: q.prompt, options: q.options }))} onSubmit={onSubmit} onExit={onClose} error={submitError} />;
+  return <ExamRunner title={set.title} secondsPerQuestion={set.secondsPerQuestion} questions={set.questions.map((q) => ({ id: q.id, section: q.section ?? "Questions", topic: q.topic, prompt: q.prompt, options: q.options }))} onSubmit={onSubmit} onExit={onClose} error={submitError} />;
+}
+
+/** One placement-simulator test in the exam screen, graded and explained at the end. */
+export function SimulatorExam({ test, onClose }: { test: SimTestKey; onClose: () => void }) {
+  return <ExamSession loadBody={{ action: "simulator", test }} gradeBody={{ action: "grade", test }} fallbackTitle="Placement simulator" onClose={onClose} />;
+}
+
+/** One company round as a timed mock, in the company's sections, time and negative marking. */
+export function CompanyExam({ roundId, onClose }: { roundId: string; onClose: () => void }) {
+  return <ExamSession loadBody={{ action: "company_mock", roundId }} gradeBody={{ action: "company_grade", roundId }} fallbackTitle="Company mock test" onClose={onClose} />;
 }

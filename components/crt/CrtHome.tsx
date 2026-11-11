@@ -9,6 +9,7 @@ import type { SimTestKey } from "@/lib/crt/categories";
 import type { RunnerPayload, StudentCycle } from "@/lib/crt/server";
 import type { StudioView } from "@/lib/crt/studio-server";
 import { MODULE_LABEL } from "@/lib/crt/model";
+import { CompanyHub } from "./CompanyHub";
 import { CrtRunner } from "./CrtRunner";
 import { ModuleBars } from "./ModuleBars";
 import { SimulatorExam } from "./SimulatorExam";
@@ -132,6 +133,7 @@ export function CrtHome({ cycles, view, autoStart }: { cycles: StudentCycle[]; v
       <Assessment cycle={current} onStart={start} busy={busy} error={error} />
       <Results cycles={cycles} />
       <Simulator view={view} onStart={setTest} onSpeaking={() => setSpeaking(true)} />
+      <CompanyHub />
       <ReadinessRadar view={view} />
       {test && <SimulatorExam test={test} onClose={() => { setTest(null); router.refresh(); }} />}
       {speaking && <SpeakingStudio recent={view.speaking.recent} onClose={() => { setSpeaking(false); router.refresh(); }} />}

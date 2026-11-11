@@ -1,3 +1,4 @@
+import { closedChallengeIds } from "./closed";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { currentStreamWeek, weekStartOf } from "./week";
@@ -35,7 +36,7 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
   const since = weekStartOf(new Date(Date.now() - RECENT_WEEKS * 7 * 24 * 60 * 60 * 1000));
   const [pool, { data: completions }, { data: stats }, { data: recentWeeks }] = await Promise.all([
     loadStreamPool(service, scope, userId),
-    service.from("arena_challenge_completions").select("challenge_id").eq("user_id", userId).eq("track", "stream").eq("is_correct", true),
+    closedChallengeIds(service, userId).then((ids) => ({ data: [...ids].map((challenge_id) => ({ challenge_id })) })),
     service.from("arena_stream_stats").select("points").eq("user_id", userId).maybeSingle(),
     service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).gte("week_start", since).lt("week_start", weekStart),
   ]);

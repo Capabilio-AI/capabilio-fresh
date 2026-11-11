@@ -18,6 +18,7 @@ import { boostTargets, focusSkillIdsFor, isGraduate } from "@/lib/graduate/focus
 import type { LlmDeps } from "./generate";
 import { careerBankFull, careerSlot, chooseFrom, fetchCandidates, pickFromPool, shuffledOrder, warmPool, type PoolFilter, type PoolPick } from "./pool";
 import { inBackground } from "./background";
+import { untyped } from "@/lib/org/db";
 import { AssessError, PoolUnavailableError, type Feedback, type Layer, type QuestionPayload, type SessionStart, type SessionState } from "./types";
 
 /** An assessment may end early (pool ran dry) only after this share of it has been answered. */
@@ -165,6 +166,9 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
   const used = new Set(ctx.rows.map((r) => r.poolId));
   drop.forEach((d) => used.delete(d.poolId));
   let live = opts.allowLive && kept.length === 0;
+  // a question given in an earlier session is never given again
+  const history = kept.length < want ? await seenByTarget(db, ctx) : new Map<string, string[]>();
+  const excluding = (...targets: string[]) => [...new Set([...used, ...targets.flatMap((t) => history.get(t) ?? [])])];
 
   const fresh: { row: Omit<RowInfo, "id">; pick: PoolPick }[] = [];
   const toRow = (pick: PoolPick, targetId: string, position: number): Omit<RowInfo, "id"> => ({
@@ -185,7 +189,7 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
       hypothetical.push({ id: next.target.id, difficulty: next.difficulty });
     }
     if (planned.length > 0) {
-      const rows = await fetchCandidates(db, session.layer, ctx.career?.id ?? null, [...new Set(planned.map((p) => p.target.id))], [...used]);
+      const rows = await fetchCandidates(db, session.layer, ctx.career?.id ?? null, [...new Set(planned.map((p) => p.target.id))], excluding(...planned.map((p) => p.target.id)));
       const taken = new Set<string>();
       for (const p of planned) {
         const pick = chooseFrom(rows.filter((r) => !taken.has(r.id)), session.layer, p.target.id, p.difficulty, sequential, session.layer === "CAREER");
@@ -204,10 +208,10 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
       const taken = [...served, ...kept, ...fresh.map((f) => ({ ...f.row, id: "" }))];
       const next = planNext(targets, planOf(taken, ctx.rows), session.total_questions, { sequential, exclude, fixedDifficulty: commonDifficulty, level });
       if (!next) break;
-      let pick = await pickFromPool(db, filterFor(ctx, next.target.id), next.difficulty, [...used], sequential, session.layer === "CAREER");
+      let pick = await pickFromPool(db, filterFor(ctx, next.target.id), next.difficulty, excluding(next.target.id), sequential, session.layer === "CAREER");
       if (!pick && live) {
         live = false; // one blocking attempt per call; it has a timeout and falls through to other skills if it yields nothing
-        pick = await liveGenerate(db, ctx, next.target.id, next.difficulty, [...used], deps);
+        pick = await liveGenerate(db, ctx, next.target.id, next.difficulty, excluding(next.target.id), deps);
       }
       if (!pick) {
         exclude.add(next.target.id);
@@ -242,13 +246,37 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
   return [...kept, ...fresh.map((f) => ({ ...f.row, id: idAt.get(f.row.position)! }))];
 }
 
+/**
+ * The pool questions this student has already been given in ANY earlier session (a retake, another role, Plan B), by skill or section, so none
+ * of them is offered again. Kept per target so each exclusion list stays short enough for a query.
+ */
+async function seenByTarget(db: Db, ctx: Context): Promise<Map<string, string[]>> {
+  const career = ctx.session.layer === "CAREER";
+  const { data, error } = await untyped(db as never)
+    .from("assess_session_questions")
+    .select("pool_question_id, assess_sessions!inner(student_id), assess_question_pool!inner(skill_id, section)")
+    .eq("assess_sessions.student_id", ctx.session.student_id)
+    .eq("state", "SERVED")
+    .limit(5000);
+  if (error) throw error;
+  const out = new Map<string, string[]>();
+  for (const r of (data ?? []) as unknown as { pool_question_id: string; assess_question_pool: { skill_id: string | null; section: string | null } }[]) {
+    const target = career ? r.assess_question_pool.skill_id : r.assess_question_pool.section;
+    if (target) out.set(target, [...(out.get(target) ?? []), r.pool_question_id]);
+  }
+  return out;
+}
+
 async function liveGenerate(db: Db, ctx: Context, targetId: string, difficulty: Difficulty, used: string[], deps: SessionDeps): Promise<PoolPick | null> {
   const slot = ctx.session.layer === "CAREER"
     ? (() => { const s = ctx.skills.find((k) => k.skillId === targetId); return s && ctx.career ? careerSlot(ctx.career, s) : null; })()
     : GENERAL_SECTIONS.find((g) => g.section === targetId) ?? null;
   if (!slot) return null;
   // a career with its full bank is served from the database only
-  if (ctx.session.layer === "CAREER" && ctx.career && (await careerBankFull(db, ctx.career.id))) return pickFromPool(db, filterFor(ctx, targetId), difficulty, used, false, ctx.session.layer === "CAREER");
+  if (ctx.session.layer === "CAREER" && ctx.career && (await careerBankFull(db, ctx.career.id))) {
+    const stored = await pickFromPool(db, filterFor(ctx, targetId), difficulty, used, false, true);
+    if (stored) return stored; // otherwise this student has used up what is stored for the skill, so a new question is written
+  }
   try {
     await Promise.race([
       topUp(db, slot, difficulty, 2, { rounds: 1, deps: deps.retry }),

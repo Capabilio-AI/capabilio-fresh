@@ -1,3 +1,4 @@
+import { closedChallengeIds } from "./closed";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
@@ -165,8 +166,8 @@ export async function startChallengeAttempt(service: Service, userId: string, ch
   const runtimeType = template.runtime_type as RuntimeType;
 
   await assertEligible(service, userId, challenge);
-  const { data: done } = await service.from("arena_challenge_completions").select("id").eq("user_id", userId).eq("challenge_id", challengeId).eq("is_correct", true).maybeSingle();
-  if (done) throw new ChallengeAttemptError("You've already passed this challenge.", 409);
+  // a challenge is given once: finishing it in any way retires it, and the next set has fresh ones
+  if ((await closedChallengeIds(service, userId)).has(challengeId)) throw new ChallengeAttemptError("You have already completed this challenge. Challenges are never repeated, so your next set has new ones.", 409);
 
   const { data: open } = await db.from("challenge_attempts").select(ATTEMPT_COLUMNS).eq("student_id", userId).eq("challenge_id", challengeId).eq("status", "IN_PROGRESS").maybeSingle();
   if (open) {

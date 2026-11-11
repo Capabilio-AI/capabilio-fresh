@@ -94,8 +94,9 @@ async function loadAttemptState(service: Service, userId: string) {
   const rows = (data ?? []) as { challenge_id: string; status: string; started_at: string; submitted_at: string | null }[];
   const latest = new Map<string, string>();
   for (const r of rows) if (!latest.has(r.challenge_id)) latest.set(r.challenge_id, r.status);
-  const passedEver = new Set(rows.filter((r) => r.status === "PASSED").map((r) => r.challenge_id));
-  return { rows, latest, passedEver };
+  // finished in any way (passed, failed, timed out, abandoned): never offered again
+  const closedEver = new Set(rows.filter((r) => r.status !== "IN_PROGRESS").map((r) => r.challenge_id));
+  return { rows, latest, closedEver };
 }
 
 const statusOf = (latest: string | undefined): ItemStatus => (latest === "IN_PROGRESS" || latest === "PASSED" || latest === "FAILED" || latest === "NEEDS_REVIEW" ? latest : "NOT_STARTED");
@@ -137,8 +138,8 @@ export async function loadDomainSet(service: Service, userId: string, which: Car
   });
 
   // rows are newest-first: a started-but-unpassed ticket is the one to finish before any other is offered
-  const openId = attempts.rows.find((r) => pool.rows.has(r.challenge_id) && !attempts.passedEver.has(r.challenge_id))?.challenge_id;
-  const picks = openId ? [{ id: openId, reason: null }] : selectDomainSet(pool.candidates, attempts.passedEver, gaps, 1);
+  const openId = attempts.rows.find((r) => pool.rows.has(r.challenge_id) && !attempts.closedEver.has(r.challenge_id))?.challenge_id;
+  const picks = openId ? [{ id: openId, reason: null }] : selectDomainSet(pool.candidates, attempts.closedEver, gaps, 1);
 
   const items = picks.flatMap((p): DomainSetItem[] => {
     const row = pool.rows.get(p.id);
@@ -170,7 +171,7 @@ export async function loadDomainSet(service: Service, userId: string, which: Car
 export async function recommendChallengesForSkill(service: Service, userId: string, skillId: string, careerId: string | null, limit = 5) {
   const [caps, pool, attempts] = await Promise.all([loadStudentCapabilities(service, userId), loadPublishedDomainPool(service, null), loadAttemptState(service, userId)]);
   const cap = caps.bySkill.get(skillId);
-  const ids = recommendForSkill({ pool: pool.candidates, solvedIds: attempts.passedEver, skillId, careerId, level: cap?.level ?? null, limit });
+  const ids = recommendForSkill({ pool: pool.candidates, solvedIds: attempts.closedEver, skillId, careerId, level: cap?.level ?? null, limit });
   return ids.flatMap((id) => {
     const row = pool.rows.get(id);
     return row ? [{ id, title: row.title, difficulty: row.difficulty, estMinutes: row.est_minutes ?? row.time_limit_minutes, runtimeType: pool.runtimeOf.get(id) ?? null }] : [];

@@ -90,13 +90,6 @@ function AttemptWorkspaceInner({ initial }: { initial: AttemptView }) {
     setHints((h) => ({ total: body.total, used: body.used, revealed: [...h.revealed, { order: body.order, body: body.body, penalty: body.penalty }] }));
   }
 
-  async function tryAgain() {
-    const res = await fetch("/api/arena/challenge-attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ challengeId: initial.challenge.id }) });
-    const body = await res.json();
-    if (res.ok) router.push(`/arena/challenges/attempt/${body.attemptId}`);
-    else setError(body.error ?? "Could not start a new attempt.");
-  }
-
   const liveResults = (draft.results ?? {}) as Record<string, boolean>;
   const backHref = initial.challenge.track === "domain" ? "/arena/challenges/domain" : "/arena/challenges/stream";
 
@@ -164,7 +157,7 @@ function AttemptWorkspaceInner({ initial }: { initial: AttemptView }) {
 
         <main className="min-w-0 rounded-2xl border border-[var(--m-rule)] bg-white p-4 md:p-5">
           {finished ? (
-            <ResultPanel result={result} steps={initial.steps} onRetry={tryAgain} backHref={backHref} aiHelp={result.status === "PASSED" ? null : { attemptId: initial.attempt.id, used: initial.aiHelp.used, max: initial.aiHelp.max, penalty: initial.aiHelp.penalty }} />
+            <ResultPanel result={result} steps={initial.steps} backHref={backHref} aiHelp={result.status === "PASSED" ? null : { attemptId: initial.attempt.id, used: initial.aiHelp.used, max: initial.aiHelp.max, penalty: initial.aiHelp.penalty }} />
           ) : (
             <>
               {descriptor.requiresDesktop && (
@@ -214,7 +207,7 @@ function AttemptWorkspaceInner({ initial }: { initial: AttemptView }) {
   );
 }
 
-function ResultPanel({ result, steps, onRetry, backHref, aiHelp }: { result: AttemptResult; steps: AttemptView["steps"]; onRetry: () => void; backHref: string; aiHelp: { attemptId: string; used: number; max: number; penalty: number } | null }) {
+function ResultPanel({ result, steps, backHref, aiHelp }: { result: AttemptResult; steps: AttemptView["steps"]; backHref: string; aiHelp: { attemptId: string; used: number; max: number; penalty: number } | null }) {
   const passed = result.status === "PASSED";
   const groups = [...steps.map((s) => ({ key: s.id, title: `${s.step_order}. ${s.title}` })), { key: "other", title: "Other checks" }]
     .map((g) => ({ ...g, items: result.results.filter((r) => (g.key === "other" ? !r.stepId || !steps.some((s) => s.id === r.stepId) : r.stepId === g.key)) }))
@@ -246,9 +239,9 @@ function ResultPanel({ result, steps, onRetry, backHref, aiHelp }: { result: Att
         ))}
       </div>
       {aiHelp && <div className="mt-5"><AiHelp attemptId={aiHelp.attemptId} initialUsed={aiHelp.used} max={aiHelp.max} penalty={aiHelp.penalty} finished /></div>}
+      {!passed && <p className="mt-5 font-lp-body text-[13px] text-app-muted">Each challenge is given once, so there is no retry. Read what the checks showed and take what you learned into the next one.</p>}
       <div className="mt-6 flex gap-4 font-lp-body text-[13px] font-semibold">
-        {!passed && <button type="button" onClick={onRetry} className="text-app-blue hover:underline">Try again</button>}
-        <Link href={backHref} className="text-app-muted hover:text-[var(--m-ink)]">Back to challenges</Link>
+        <Link href={backHref} className="text-app-blue hover:underline">Back to challenges for a fresh one</Link>
       </div>
     </section>
   );

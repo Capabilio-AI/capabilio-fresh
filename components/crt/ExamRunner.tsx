@@ -25,6 +25,8 @@ interface Props {
   onAnswersChange?: (answers: Record<string, string>) => void;
   onSubmit: (answers: Record<string, string>) => Promise<void>;
   onExit?: () => void;
+  /** the limit for one question; a minute unless a company's pattern gives another */
+  secondsPerQuestion?: number;
   /** shown when a submit failed */
   error?: string | null;
 }
@@ -68,7 +70,8 @@ function Tile({ status, n, current, onClick }: { status: Status; n: number; curr
  * question counts against its own minute, and once it is used up the question locks and the exam moves on. The clock shows the total
  * time left across all questions. Navigation is free, so a question you skipped can still use its minute later.
  */
-function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, storageKey, onAnswersChange, onSubmit, onExit, error }: Props) {
+function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, storageKey, onAnswersChange, onSubmit, onExit, secondsPerQuestion, error }: Props) {
+  const perQ = secondsPerQuestion ?? SECONDS_PER_QUESTION;
   const lock = useExamLock();
   const lockRef = useRef(lock);
   useEffect(() => {
@@ -92,12 +95,12 @@ function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, st
 
   const q = questions[index];
   const used = (id: string) => spent[id] ?? 0;
-  const locked = (id: string) => used(id) >= SECONDS_PER_QUESTION;
+  const locked = (id: string) => used(id) >= perQ;
   const totalLeft = useMemo(() => {
-    const byQuestions = questions.reduce((s, x) => s + Math.max(0, SECONDS_PER_QUESTION - used(x.id)), 0);
+    const byQuestions = questions.reduce((s, x) => s + Math.max(0, perQ - used(x.id)), 0);
     return deadlineAt ? Math.max(0, Math.min(byQuestions, (Date.parse(deadlineAt) - now) / 1000)) : byQuestions;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- used() reads spent
-  }, [questions, spent, deadlineAt, now]);
+  }, [questions, spent, deadlineAt, now, perQ]);
 
   const finish = useCallback(async () => {
     if (submitted.current) return;
@@ -137,22 +140,22 @@ function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, st
       if (submitted.current) return;
       const { spent: s0, index: i0 } = live.current;
       const cur = questions[i0];
-      const s1 = cur && (s0[cur.id] ?? 0) < SECONDS_PER_QUESTION ? { ...s0, [cur.id]: (s0[cur.id] ?? 0) + 1 } : s0;
+      const s1 = cur && (s0[cur.id] ?? 0) < perQ ? { ...s0, [cur.id]: (s0[cur.id] ?? 0) + 1 } : s0;
       live.current = { spent: s1, index: i0 };
       setSpent(s1);
       setNow(Date.now());
-      const left = questions.reduce((n, x) => n + Math.max(0, SECONDS_PER_QUESTION - (s1[x.id] ?? 0)), 0);
+      const left = questions.reduce((n, x) => n + Math.max(0, perQ - (s1[x.id] ?? 0)), 0);
       const pastDeadline = deadlineAt ? Date.now() >= Date.parse(deadlineAt) : false;
       if (left <= 0 || pastDeadline) {
         void finish();
-      } else if (cur && (s1[cur.id] ?? 0) >= SECONDS_PER_QUESTION) {
-        const open = (x: ExamQuestion) => (s1[x.id] ?? 0) < SECONDS_PER_QUESTION;
+      } else if (cur && (s1[cur.id] ?? 0) >= perQ) {
+        const open = (x: ExamQuestion) => (s1[x.id] ?? 0) < perQ;
         const next = questions.findIndex((x, i) => i > i0 && open(x));
         goTo(next >= 0 ? next : questions.findIndex(open));
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [panel, questions, deadlineAt, finish, goTo]);
+  }, [panel, questions, deadlineAt, finish, goTo, perQ]);
 
   useEffect(() => {
     if (!storageKey) return;
@@ -212,7 +215,7 @@ function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, st
     notVisited: questions.filter((x) => !visited.has(x.id)).length,
   };
   if (!q) return null;
-  const qLeft = SECONDS_PER_QUESTION - used(q.id);
+  const qLeft = perQ - used(q.id);
   const isLocked = locked(q.id);
 
   const done = questions.filter((x) => answers[x.id]).length;
@@ -272,7 +275,7 @@ function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, st
               <p role="timer" aria-label="Time for this question" className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-lp-body text-[13px] font-bold tabular-nums ${qLeft <= 10 ? "bg-red-50 text-red-700" : "bg-[#f4f2ee] text-black"}`}><Clock size={13} aria-hidden /> {formatClock(qLeft)} for this question</p>
             </div>
             <p className="mt-5 whitespace-pre-line font-lp-body text-[18px] leading-relaxed text-black">{q.prompt}</p>
-            {isLocked && <p role="status" className="mt-4 rounded-lg bg-amber-50 px-3 py-2 font-lp-body text-[13px] font-semibold text-amber-900">Your minute for this question is over. Your answer is saved as it stands.</p>}
+            {isLocked && <p role="status" className="mt-4 rounded-lg bg-amber-50 px-3 py-2 font-lp-body text-[13px] font-semibold text-amber-900">Your time for this question is over. Your answer is saved as it stands.</p>}
             <div role="radiogroup" aria-label="Answer options" className="mt-6 flex flex-col gap-3">
               {q.options.map((o) => {
                 const on = answers[q.id] === o.key;
@@ -305,7 +308,7 @@ function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, st
               <>
                 <h3 className="font-lp-display text-[22px] font-bold text-app-charcoal">Before you begin</h3>
                 <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 font-lp-body text-[14px] leading-relaxed text-app-charcoal">
-                  <li><strong>One minute per question.</strong> Each question has its own minute. When it is used up, the question locks and the exam moves on.</li>
+                  <li><strong>{perQ === 60 ? "One minute per question." : `${perQ} seconds per question.`}</strong> Each question has its own time. When it is used up, the question locks and the exam moves on.</li>
                   <li>The clock at the top is the total time left across all questions. It starts when you press Start.</li>
                   <li><strong>Save &amp; Next</strong> keeps your answer. <strong>Mark for Review</strong> flags a question to come back to. <strong>Clear Response</strong> removes your answer.</li>
                   <li>You can move between questions using the palette; a question you skipped can still use its minute.</li>
