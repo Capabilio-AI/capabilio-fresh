@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "arena:content": "node --env-file=.env.local --import tsx scripts/arena-content.mts",
     "roadmap:content": "node --env-file=.env.local --import tsx scripts/roadmap-content.mts",
+    "exercises:check": "node --env-file=.env.local --import tsx scripts/exercise-check.mts",
     "ai:check": "node --env-file=.env.local --import tsx scripts/check-bedrock.mts",
     "assess:recalibrate": "node --env-file=.env.local --import tsx scripts/assess-recalibrate.mts",
     "roles:requirements": "node --env-file=.env.local --import tsx scripts/role-requirements.mts",

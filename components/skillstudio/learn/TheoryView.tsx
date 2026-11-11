@@ -1,9 +1,20 @@
 import { AlertTriangle, Lightbulb } from "lucide-react";
 import type { TheoryLesson } from "@/lib/skillstudio/lesson-content";
+import { playgroundLanguage, type PlaygroundLanguage } from "@/lib/playground/playground";
 import { CheckYourself } from "./CheckYourself";
+import { Practice, type PracticeSource } from "./Practice";
+import { Playground } from "./Playground";
 
 /** The written lesson: scannable sections, a worked example each, then what to remember and what trips people up. */
-export function TheoryView({ lesson, onCheckDone }: { lesson: TheoryLesson; onCheckDone?: (right: number, total: number) => void }) {
+export function TheoryView({ lesson, onCheckDone, language, topicTitle, practice }: {
+  lesson: TheoryLesson;
+  onCheckDone?: (right: number, total: number) => void;
+  /** the language of the lesson's code when it is known (a language track); otherwise it is read from the topic name and the code */
+  language?: PlaygroundLanguage | null;
+  topicTitle?: string;
+  /** where to find this lesson's coding exercises, when it has any */
+  practice?: PracticeSource;
+}) {
   return (
     <article className="flex flex-col gap-6">
       <p className="max-w-[64ch] text-[17px] leading-relaxed text-[var(--m-ink)]">{lesson.summary}</p>
@@ -14,7 +25,12 @@ export function TheoryView({ lesson, onCheckDone }: { lesson: TheoryLesson; onCh
           {s.example && (
             <figure className="overflow-hidden rounded-xl border border-[var(--m-rule)] bg-[var(--m-ground)]">
               <figcaption className="px-4 pt-3 text-[14px] font-bold text-[var(--m-ink)]">{s.example.title}</figcaption>
-              {s.example.code && <pre className="ss-scroll mx-4 mt-2 overflow-x-auto rounded-lg bg-[var(--m-ink)] p-4 font-lp-mono text-[13px] leading-relaxed text-white"><code>{s.example.code}</code></pre>}
+              {s.example.code && (() => {
+                const lang = language ?? playgroundLanguage(topicTitle ?? "", s.example.code);
+                return lang
+                  ? <Playground code={s.example.code} language={lang} title={s.example.title} />
+                  : <pre className="ss-scroll mx-4 mt-2 overflow-x-auto rounded-lg bg-[var(--m-ink)] p-4 font-lp-mono text-[13px] leading-relaxed text-white"><code>{s.example.code}</code></pre>;
+              })()}
               <p className="px-4 pb-4 pt-2 text-[14.5px] leading-relaxed text-[var(--m-ink)]">{s.example.explanation}</p>
             </figure>
           )}
@@ -31,6 +47,7 @@ export function TheoryView({ lesson, onCheckDone }: { lesson: TheoryLesson; onCh
         </section>
       )}
       <CheckYourself id="theory-check" questions={lesson.check} onDone={onCheckDone} />
+      {practice && <Practice source={practice} />}
     </article>
   );
 }

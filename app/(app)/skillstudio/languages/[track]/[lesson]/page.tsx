@@ -6,12 +6,25 @@ import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { LanguageLesson } from "@/components/languages/LanguageLesson";
+import { LessonSidebar } from "@/components/languages/LessonSidebar";
 import { findTrack } from "@/lib/languages";
 import { loadProgress } from "@/lib/languages/progress";
 import { allLessons } from "@/lib/languages/types";
 import "@/components/skillstudio/learn/studio.css";
 
 export const metadata: Metadata = { title: "Lesson | SkillStudio | Capabilio AI" };
+
+type Step = { key: string; title: string } | null;
+/** Previous and Next, at the top and the bottom of every lesson. */
+function Steps({ track, prev, next }: { track: string; prev: Step; next: Step }) {
+  const base = "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[14.5px] font-bold";
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      {prev ? <Link href={`/skillstudio/languages/${track}/${prev.key}`} className={`${base} border border-[var(--m-rule)] bg-white text-[var(--m-ink)]`}><ArrowLeft size={15} aria-hidden />Previous</Link> : <span />}
+      {next && <Link href={`/skillstudio/languages/${track}/${next.key}`} className={`${base} bg-[var(--m-ink)] text-white`}>Next: {next.title}<ArrowRight size={15} aria-hidden /></Link>}
+    </div>
+  );
+}
 
 export default async function LanguageLessonPage({ params }: { params: Promise<{ track: string; lesson: string }> }) {
   const p = await params;
@@ -22,6 +35,7 @@ export default async function LanguageLessonPage({ params }: { params: Promise<{
   if (index === -1) notFound();
   const current = lessons[index];
   const unit = track.modules.find((m) => m.lessons.includes(current))!;
+  const prev = lessons[index - 1] ?? null;
   const next = lessons[index + 1] ?? null;
   const { user } = await requireAuthedUser();
   const progress = await loadProgress(createServiceClient(), user.id, track.key);
@@ -29,24 +43,24 @@ export default async function LanguageLessonPage({ params }: { params: Promise<{
   return (
     <div className="ss-studio">
       <SkillStudioSubNav />
-      <div className="mx-auto w-full max-w-[78ch]">
+      <div className="mx-auto w-full max-w-[1180px]">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-5 text-[13.5px] font-bold text-[var(--m-muted)]">
         <Link href="/skillstudio/languages" className="hover:text-[var(--m-ink)]">Languages</Link>
         <span aria-hidden>/</span>
         <Link href={`/skillstudio/languages/${track.key}`} className="inline-flex items-center gap-1.5 hover:text-[var(--m-ink)]"><ArrowLeft size={13} aria-hidden />{track.title}</Link>
       </nav>
-      <main className="mt-4 flex flex-col gap-5">
-        <header>
-          <p className="text-[13.5px] font-bold text-[var(--m-muted)]">{unit.title} · {current.minutes} min</p>
-          <h1 className="mt-1 text-balance font-lp-display text-[32px] font-bold leading-[1.06] tracking-tight text-[var(--m-ink)] sm:text-[44px]">{current.title}</h1>
-        </header>
-        <LanguageLesson track={track.key} lessonKey={current.key} lesson={current.lesson} alreadyDone={Boolean(progress[current.key])} />
-        {next && (
-          <Link href={`/skillstudio/languages/${track.key}/${next.key}`} className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--m-ink)] px-5 py-2.5 text-[14.5px] font-bold text-white">
-            Next: {next.title}<ArrowRight size={15} aria-hidden />
-          </Link>
-        )}
-      </main>
+      <div className="mt-4 grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
+        <LessonSidebar track={track} current={current.key} done={progress} />
+        <main className="flex min-w-0 flex-col gap-5">
+          <header>
+            <p className="text-[13.5px] font-bold text-[var(--m-muted)]">{unit.title} · {current.minutes} min</p>
+            <h1 className="mt-1 text-balance font-lp-display text-[32px] font-bold leading-[1.06] tracking-tight text-[var(--m-ink)] sm:text-[44px]">{current.title}</h1>
+          </header>
+          <Steps track={track.key} prev={prev} next={next} />
+          <LanguageLesson track={track.key} lessonKey={current.key} lesson={current.lesson} alreadyDone={Boolean(progress[current.key])} />
+          <Steps track={track.key} prev={prev} next={next} />
+        </main>
+      </div>
       </div>
     </div>
   );
