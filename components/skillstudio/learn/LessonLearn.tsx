@@ -86,7 +86,7 @@ function Learn({ nodeKey, title }: { nodeKey: string; title: string }) {
       </div>
 
       <div role="tabpanel" id={`learn-panel-${tab}`} aria-labelledby={`learn-tab-${tab}`} tabIndex={0}>
-        {tab === "read" && <Panel state={theory.state} retry={theory.retry} what="your written lesson">{(l) => <TheoryView lesson={l} />}</Panel>}
+        {tab === "read" && <Panel state={theory.state} retry={theory.retry} what="your written lesson">{(l) => <TheoryView lesson={l} topicTitle={title} practice={{ nodeKey }} />}</Panel>}
         {tab === "watch" && (
           <Panel state={video.state} retry={video.retry} what="your explainer video">
             {(l) => (

@@ -5,6 +5,9 @@ import { requireUser } from "@/lib/api/require-user";
 import { runCode, isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 
+// a busy shared runner can take a while, and a run is tried up to three times
+export const maxDuration = 120;
+
 const BodySchema = z.object({
   language: z.string(),
   code: z.string().min(1).max(10_000),
@@ -32,10 +35,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
   }
 
-  try {
-    const result = await runCode(parsed.data.language, parsed.data.code, parsed.data.stdin);
-    return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: "Code execution service is unavailable — try again." }, { status: 502 });
+  // The shared runner throws when it is busy or slow (the code never ran), so a run is tried a few times before giving up.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return NextResponse.json(await runCode(parsed.data.language, parsed.data.code, parsed.data.stdin));
+    } catch {
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+    }
   }
+  return NextResponse.json({ error: "The code runner is busy right now. Your code was not run; try again in a moment." }, { status: 503 });
 }
