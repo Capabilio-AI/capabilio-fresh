@@ -22,9 +22,9 @@ const GROUPS = [
 ] as const;
 
 /** Side rail on wide screens, a scrolling row on narrow ones. Every item is a real link, so each page is addressable. */
-export function OrgSettingsNav() {
+export function OrgSettingsNav({ base = "/org" }: { base?: "/org" | "/company" }) {
   const pathname = usePathname();
-  const isActive = (href: string) => (href === "/org/settings" ? pathname === href : pathname.startsWith(href));
+  const isActive = (href: string) => (href === `${base}/settings` ? pathname === href : pathname.startsWith(href));
 
   return (
     <nav aria-label="Settings" className="-mx-1 overflow-x-auto px-1 lg:sticky lg:top-[132px] lg:mx-0 lg:w-56 lg:shrink-0 lg:self-start lg:overflow-visible lg:px-0">
@@ -32,7 +32,8 @@ export function OrgSettingsNav() {
         {GROUPS.map((group) => (
           <div key={group.label} className="flex gap-1 lg:flex-col">
             <p className="hidden px-3 pb-1 text-[12px] font-bold text-[var(--m-off)] lg:block">{group.label}</p>
-            {group.items.map(({ href, label, icon: Icon }) => {
+            {group.items.map(({ href: h, label, icon: Icon }) => {
+              const href = base + h.slice(4);
               const active = isActive(href);
               return (
                 <Link
