@@ -10,6 +10,10 @@ import { EMBEDDED_CODE_PROBLEMS } from "@/lib/workplace/embedded/code-problems";
 import { IOT_CODE_PROBLEMS } from "@/lib/workplace/iot/code-problems";
 import { PLC_CODE_PROBLEMS } from "@/lib/workplace/plc/code-problems";
 import { APP_DEV_CODE_PROBLEMS } from "@/lib/workplace/application-developer/code-problems";
+import { CLOUD_SUPPORT_CODE_PROBLEMS } from "@/lib/workplace/cloud-platform-support/code-problems";
+import { DATA_APPS_CODE_PROBLEMS } from "@/lib/workplace/data-applications/code-problems";
+import { ML_ENGINEER_PYTHON_PROBLEMS } from "@/lib/workplace/ml-engineer/python-problems";
+import { TEST_AUTOMATION_CODE_PROBLEMS } from "@/lib/workplace/test-automation/code-problems";
 import { isTemplateOnlyArea } from "../template-only";
 import { logArenaEvent } from "../log";
 
@@ -39,7 +43,7 @@ const challenge = (ctx: GenerationContext, draft: CodeDraft, model: string, prov
 
 function fromTemplates(ctx: GenerationContext): GeneratedChallenge {
   const areaKey = ctx.areaKey ?? "fundamentals";
-  for (const tier of templateTiers([...CODE_PROBLEMS, ...APP_DEV_CODE_PROBLEMS, ...EMBEDDED_CODE_PROBLEMS, ...IOT_CODE_PROBLEMS, ...PLC_CODE_PROBLEMS], { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
+  for (const tier of templateTiers([...CODE_PROBLEMS, ...APP_DEV_CODE_PROBLEMS, ...DATA_APPS_CODE_PROBLEMS, ...CLOUD_SUPPORT_CODE_PROBLEMS, ...TEST_AUTOMATION_CODE_PROBLEMS, ...ML_ENGINEER_PYTHON_PROBLEMS, ...EMBEDDED_CODE_PROBLEMS, ...IOT_CODE_PROBLEMS, ...PLC_CODE_PROBLEMS], { difficulty: ctx.difficulty, level: ctx.level ?? "fresher", areaKey })) {
     const fresh = tier.filter((p) => !ctx.avoidTitles.some((t) => p.build(makeRng(0)).title === t));
     const pool = fresh.length ? fresh : tier;
     const rng = makeRng(ctx.ticketSeed ?? hashSeed("code"));

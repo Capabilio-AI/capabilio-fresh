@@ -1,6 +1,6 @@
 import type { RoleToolkit } from "./types";
 
-/** IT-07 AI/ML Engineer. One workstation, the ML notebook (W09/W07 in docs/arena-roles/workstation-design.md), serving all eight areas. */
+/** IT-07 AI/ML Engineer. The ML notebook (W09/W07 in docs/arena-roles/workstation-design.md) serves thirteen areas; the code editor, SQL console and config editor serve the plain-Python, data and ML-ops tickets. */
 export const TOOLKIT: RoleToolkit = {
   roleKey: "ai-ml-engineer",
   roleId: "IT-07",
@@ -15,10 +15,35 @@ export const TOOLKIT: RoleToolkit = {
       runsIn: "browser",
       summary: "Write Python against the ticket's CSV files, then submit predictions for the hidden test rows or the numbers the ticket asks for.",
     },
+    {
+      name: "Code Editor",
+      mirrors: ["VS Code", "PyCharm"],
+      toolType: "code_workspace",
+      tier: "R",
+      runsIn: "browser",
+      summary: "Write one plain-Python function to the ticket's spec (scaling, metrics, encoding, similarity search), run it on the cases in your browser, and submit what it returned.",
+    },
+    {
+      name: "SQL Console",
+      mirrors: ["DBeaver", "BigQuery console", "pgAdmin"],
+      toolType: "sql_workspace",
+      tier: "R",
+      runsIn: "server",
+      summary: "Write the SQL that builds a label table or a point-in-time feature table on your own copy of the BrightCart warehouse; the server runs it and checks the result.",
+    },
+    {
+      name: "MLOps Config Editor",
+      mirrors: ["VS Code", "Docker", "GitHub Actions", "kubectl (manifests)"],
+      toolType: "devops_workspace",
+      tier: "A",
+      runsIn: "server",
+      summary: "Fix the files around a model going to production: the serving image, the retraining workflow and the Kubernetes deployment; the server checks the text against the ticket's rules.",
+    },
   ],
   environment: [
     { label: "Python in the browser", detail: "Pyodide, started on first run. The first start downloads Python and its libraries, which can take a minute." },
     { label: "Libraries", detail: "numpy, pandas and scikit-learn (with scipy, which scikit-learn needs). Nothing else can be installed." },
+    { label: "Warehouse", detail: "BrightCart, a fictional shop: customers, orders and order items in SQLite, a fresh copy for every SQL ticket." },
     { label: "Data", detail: "Each ticket's files (train.csv, test.csv, results logs, request samples) are preloaded next to the notebook. All companies and people are fictional." },
   ],
   firstWeek: [
@@ -28,16 +53,30 @@ export const TOOLKIT: RoleToolkit = {
     "Find the store where an accurate-looking model fails",
     "Check a sample of requests against the serving contract",
     "Read a depth sweep and pick the depth to ship before the tree overfits",
+    "Turn order timestamps and city names into features without leaking the label",
+    "Pick the run to promote from the experiment log, and audit which runs can be reproduced",
+    "Find which inputs drifted and when the recall alert should have fired",
+    "Run a tiny neural network forward and take one backpropagation step by hand",
+    "Package the model for serving and write the retraining workflow",
+    "Build the churn label table and a leak-free feature table in SQL",
+    "Write precision, recall and F1, and a cosine-similarity search, in plain Python",
+    "Choose between five algorithms from cross-validation results, and pick the SVM settings from a grid",
   ],
   portfolioArtifacts: [
     "Graded prediction tickets, with the notebook code kept for the explain-your-work interview",
     "Graded deployment, error-analysis and training-hygiene decisions with per-check results",
+    "Graded feature-engineering, experiment-tracking and monitoring calculations with per-number results",
+    "Graded SQL and plain-Python tickets with per-case results, the code kept for the explain-your-work interview",
+    "Graded serving, retraining and Kubernetes config tickets with the per-requirement checks that passed",
   ],
   honestLimits: [
     "Your code runs only in your browser; the server checks what you submit, not how you wrote it.",
     "No GPU, no torch or TensorFlow, and no network from the notebook: deep learning and GPU training are not assessed.",
     "No plotting library is loaded (no matplotlib); print tables and numbers instead.",
     "Deployment is assessed through decisions on supplied data, not by running a real model server or cloud endpoint.",
-    "No experiment tracker or drift monitoring yet.",
+    "Experiment tracking and drift monitoring are calculations on supplied logs and distributions; there is no real tracker, registry or live dashboard.",
+    "Neural networks are hand calculations in NumPy; training deep networks with a framework or a GPU is not assessed.",
+    "ML-ops config files are checked as text: no image is built, no model is trained and nothing is deployed.",
+    "LLM and retrieval-augmented (RAG) application work is not assessed yet.",
   ],
 };

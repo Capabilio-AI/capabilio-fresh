@@ -12,7 +12,7 @@ const SUBMISSIONS = 8;
  * cleaning, request validation, UI state, a bug fix). The student's function runs in their browser; the server compares what it returned with the
  * answers below (lib/arena-workstations/tools/code.ts).
  */
-interface Spec {
+export interface Spec {
   id: string;
   area: string;
   difficulty: Difficulty;
@@ -36,12 +36,12 @@ const CAST = {
   qa: { name: "Joseph Thomas", title: "QA Lead" },
 };
 
-const starter = (fn: string, params: string[]): Record<Lang, string> => ({
+export const starter = (fn: string, params: string[]): Record<Lang, string> => ({
   python: `def ${fn}(${params.join(", ")}):\n    # write your solution here\n    pass\n`,
   javascript: `function ${fn}(${params.join(", ")}) {\n  // write your solution here\n}\n`,
 });
 
-function problem(s: Spec): CodeProblem & { solve: Spec["solve"] } {
+export function problem(s: Spec): CodeProblem & { solve: Spec["solve"] } {
   return {
     id: s.id, areas: [s.area], difficulty: s.difficulty, minLevel: s.minLevel, solve: s.solve,
     build(rng) {

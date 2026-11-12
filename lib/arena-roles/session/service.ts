@@ -1,6 +1,7 @@
 import type { ExperienceLevel } from "@/lib/workplace/level";
 import { DATA_ANALYST_STORY, type ProofSessionSpec, type SessionStage } from "../sessions/data-analyst-story";
 import { BACKEND_SERVICE } from "../sessions/backend-developer-service";
+import { AI_ML_PIPELINE } from "../sessions/ai-ml-engineer-pipeline";
 import { parseEvents } from "./events";
 import { buildReport, type SessionReport, type StageResult } from "./report";
 import { StoreConflict, type NewEvent, type SessionRow, type SessionStore, type StageRow } from "./store";
@@ -8,7 +9,7 @@ import { StoreConflict, type NewEvent, type SessionRow, type SessionStore, type 
 export const RUBRIC_VERSION = "signals.v1";
 
 /** The session spec each role runs. A role without an entry has no Proof Session: nothing is substituted. */
-export const SPECS: Readonly<Record<string, ProofSessionSpec>> = { "data-analyst": DATA_ANALYST_STORY, "backend-developer": BACKEND_SERVICE };
+export const SPECS: Readonly<Record<string, ProofSessionSpec>> = { "data-analyst": DATA_ANALYST_STORY, "backend-developer": BACKEND_SERVICE, "ai-ml-engineer": AI_ML_PIPELINE };
 
 export class SessionError extends Error {
   constructor(message: string, readonly status: number, readonly reason: string) {

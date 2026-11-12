@@ -6,7 +6,7 @@ import type { DevopsDraft, DevopsTemplate } from "../devops/tickets";
 const LEAD = { name: "Aditya Rao", title: "Tech Lead" };
 const SECURITY = { name: "Meenakshi Pillai", title: "Security Engineer" };
 
-const make = (title: string, requester: DevopsDraft["requester"], scenario: string, deliverable: string, tags: string[], files: FileContent["files"], checks: Check[]): DevopsDraft => ({
+export const make = (title: string, requester: DevopsDraft["requester"], scenario: string, deliverable: string, tags: string[], files: FileContent["files"], checks: Check[]): DevopsDraft => ({
   title, requester, scenario, skillTags: tags,
   content: { files, requirements: checks.map((c) => c.label), deliverable, maxSubmissions: MAX_SUBMISSIONS },
   key: { checks },

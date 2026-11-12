@@ -28,6 +28,17 @@ const TEMPLATE_ONLY_AREAS: ReadonlySet<string> = new Set([
   "plc-timers-counters",
   "plc-process-sequences",
   "plc-fault-handling",
+  "dda-data-layer-logic",
+  "cps-container-fixes",
+  "cps-kubernetes-manifests",
+  "cps-access-and-secrets",
+  "cps-log-triage",
+  "sta-test-data",
+  "sta-report-analysis",
+  "sta-flaky-tests",
+  "sta-ci-test-gates",
+  "mlops-config",
+  "mle-python",
 ]);
 
 export const isTemplateOnlyArea = (areaKey: string | undefined): boolean => !!areaKey && TEMPLATE_ONLY_AREAS.has(areaKey);

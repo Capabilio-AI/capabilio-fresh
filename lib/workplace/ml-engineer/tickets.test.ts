@@ -2,6 +2,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { mlTool } from "@/lib/arena-workstations/tools/ml";
+import { devopsTool } from "@/lib/arena-workstations/tools/devops";
+import { codeTool } from "@/lib/arena-workstations/tools/code";
+import { sqlTool } from "@/lib/arena-workstations/tools/sql";
 import { AI_ML_ENGINEER } from "@/lib/arena-roles/blueprints/ai-ml-engineer";
 import { TOOLKIT as AI_ML_ENGINEER_TOOLKIT } from "@/lib/arena-roles/toolkit/ai-ml-engineer";
 import { validateBlueprint } from "@/lib/arena-roles/blueprint";
@@ -29,8 +32,8 @@ const grade = (d: MlDraft, sub: Parameters<typeof mlTool.grade>[2]) => mlTool.gr
 
 /** Area keys the migrations give ai-ml-engineer, read from the SQL so the blueprint cannot drift from them. */
 function migrationAreas(): string[] {
-  const sql = ["108_ai_ml_role.sql", "135_ai_ml_engineer_areas.sql"].map((f) => readFileSync(join(process.cwd(), "supabase/migrations", f), "utf8")).join("\n");
-  return [...sql.matchAll(/\('ai-ml-engineer', '([a-z-]+)', '[^']+', '[^']+', 'ml_workspace', true/g)].map((m) => m[1]);
+  const sql = ["108_ai_ml_role.sql", "135_ai_ml_engineer_areas.sql", "191_ai_ml_lifecycle_areas.sql", "192_ai_ml_python_sql_selection.sql"].map((f) => readFileSync(join(process.cwd(), "supabase/migrations", f), "utf8")).join("\n");
+  return [...sql.matchAll(/\('ai-ml-engineer', '([a-z-]+)', '[^']+', '[^']+', '(?:ml|devops|code|sql)_workspace', true/g)].map((m) => m[1]);
 }
 
 // ---- independent solutions: each reads only what the learner is given ----
@@ -127,7 +130,7 @@ describe("AI/ML Engineer templates", () => {
   }, 60_000);
 
   it("give every enabled area of the role an easy ticket a fresher is served first, and at least 8 templates in all", () => {
-    const enabled = AI_ML_ENGINEER.areas.filter((a) => a.status === "enabled").map((a) => a.areaKey);
+    const enabled = AI_ML_ENGINEER.areas.filter((a) => a.status === "enabled" && a.toolType === "ml_workspace").map((a) => a.areaKey);
     expect(ALL.filter((x) => x.areas.some((a) => enabled.includes(a))).length).toBeGreaterThanOrEqual(8);
     for (const areaKey of enabled) {
       const [first] = templateTiers(ALL, { difficulty: "easy", level: "fresher", areaKey });
@@ -186,6 +189,9 @@ describe("AI/ML Engineer blueprint and toolkit", () => {
   it("mirror exactly the areas the migrations enable, at the ml tool's versions", () => {
     expect(AI_ML_ENGINEER.areas.filter((a) => a.status === "enabled").map((a) => a.areaKey).sort()).toEqual(migrationAreas().sort());
     expect(migrationAreas()).toEqual(expect.arrayContaining([...ML_ENGINEER_AREAS]));
-    for (const a of AI_ML_ENGINEER.areas) expect([a.toolType, a.generationVersion, a.gradingVersion]).toEqual(["ml_workspace", mlTool.generationVersion, mlTool.gradingVersion]);
+    for (const a of AI_ML_ENGINEER.areas) {
+      const tool = { devops_workspace: devopsTool, code_workspace: codeTool, sql_workspace: sqlTool, ml_workspace: mlTool }[a.toolType]!;
+      expect([a.toolType, a.generationVersion, a.gradingVersion]).toEqual([tool.toolType, tool.generationVersion, tool.gradingVersion]);
+    }
   });
 });

@@ -10,6 +10,9 @@ import { TOOLKIT as IOT } from "./iot-firmware-engineer";
 import { TOOLKIT as PLC } from "./plc-automation-engineer";
 import { TOOLKIT as MECH } from "./mechanical-design-engineer";
 import { TOOLKIT as SITE } from "./site-engineer";
+import { TOOLKIT as DATA_APPLICATIONS } from "./data-applications-engineer";
+import { TOOLKIT as CLOUD_SUPPORT } from "./cloud-platform-support-engineer";
+import { TOOLKIT as TEST_AUTOMATION } from "./test-automation-engineer";
 
 /** Keyed by arena_domain_roles.role_key. A role with no descriptor gets null: the page shows nothing rather than another role's toolkit. */
 const TOOLKITS: Record<string, RoleToolkit> = {
@@ -24,6 +27,9 @@ const TOOLKITS: Record<string, RoleToolkit> = {
   "plc-automation-engineer": PLC,
   "mechanical-design-engineer": MECH,
   "site-engineer": SITE,
+  "data-applications-engineer": DATA_APPLICATIONS,
+  "cloud-platform-support-engineer": CLOUD_SUPPORT,
+  "test-automation-engineer": TEST_AUTOMATION,
 };
 
 export function toolkitFor(roleKey: string): RoleToolkit | null {

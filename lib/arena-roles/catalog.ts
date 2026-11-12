@@ -78,9 +78,9 @@ const ORDERED: Omit<CatalogRole, "order">[] = [
 
   role("MCA", 1, "Application Developer", "application-developer"),
   role("MCA", 2, "Enterprise Software / ERP Developer"),
-  role("MCA", 3, "Database and Data Applications Engineer"),
-  role("MCA", 4, "Cloud and Platform Support Engineer"),
-  role("MCA", 5, "Software Test Automation Engineer"),
+  role("MCA", 3, "Database and Data Applications Engineer", "data-applications-engineer"),
+  role("MCA", 4, "Cloud and Platform Support Engineer", "cloud-platform-support-engineer"),
+  role("MCA", 5, "Software Test Automation Engineer", "test-automation-engineer"),
 ];
 
 export const ROLE_CATALOG: readonly CatalogRole[] = ORDERED.map((r, i) => ({ ...r, order: i + 1 }));

@@ -16,6 +16,9 @@ export function referenceSubmission(toolType: string, content: unknown, answerKe
     case "code_workspace":
       // the student's code runs in their browser and what they submit is what it returned; the reference is the answers the server holds
       return { language: "javascript", outputs: (key.expected as unknown[]).map((value) => ({ ok: true, value })) };
+    case "ml_workspace":
+      // a prediction ticket is answered with the hidden labels, a numbers ticket with the numbers the server computed
+      return key.kind === "predict" ? { predictions: key.yTest } : { answers: Object.fromEntries(Object.entries(key.expected as Record<string, number>).map(([k, v]) => [k, String(v)])) };
     case "cleaning_workspace":
       return { steps: key.steps };
     case "dashboard_workspace":

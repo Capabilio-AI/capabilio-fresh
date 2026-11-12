@@ -12,6 +12,8 @@ import type { InvestigationTemplate } from "../investigate/types";
 import type { Dialect } from "@/lib/arena-workstations/engines/seed-sql";
 import { KAVERI_WORLD } from "../business-docs/world";
 import { KAARYA_WORLD } from "../application-developer/world";
+import { DATA_APPS_SQL_TEMPLATES } from "../data-applications/sql-templates";
+import { ML_ENGINEER_WORLD } from "../ml-engineer/world";
 import { DATA_SCIENCE_WORLD } from "../data-science/world";
 import { BRIGHTCART_PG_TEMPLATES, PG_WORLD_SETUP } from "../tickets/pg-index";
 
@@ -50,6 +52,9 @@ const BRIGHTCART_POSTGRES: World = {
   office: { sheets: [], cleaning: [], dashboards: DASHBOARD_TEMPLATES, statistics: [] }, stories: BRIGHTCART_STORIES,
 };
 
+// the same Kaarya app database as the Application Developer, with the data-side role's own tickets
+const KAARYA_DATA: World = { ...KAARYA_WORLD, key: "kaarya-data", templates: DATA_APPS_SQL_TEMPLATES };
+
 const WORLDS: Record<string, World> = {
   "data-analyst": BRIGHTCART_SQLITE,
   "sql-developer": BRIGHTCART_POSTGRES,
@@ -57,7 +62,9 @@ const WORLDS: Record<string, World> = {
   "bi-developer": BRIGHTCART_POSTGRES,
   "data-engineer-sql": BRIGHTCART_POSTGRES,
   "application-developer": KAARYA_WORLD,
+  "data-applications-engineer": KAARYA_DATA,
   "data-scientist": DATA_SCIENCE_WORLD,
+  "ai-ml-engineer": ML_ENGINEER_WORLD,
   "business-analyst": KAVERI_WORLD,
 };
 
