@@ -12,7 +12,7 @@ on conflict (role_key, area_key) do nothing;
 -- link each new area to the canonical skill it proves (see 149_ai_ml_area_skill_links.sql); a skill key that does not exist simply links nothing
 update public.arena_skill_areas a set skill_id = s.id
 from (values
-  ('ml-feature-engineering', 'SKILL_MACHINE_LEARNING'),
+  ('ml-feature-engineering', 'SKILL_FEATURE_ENGINEERING'),
   ('experiment-tracking', 'SKILL_MODEL_EVALUATION_AND_METRICS'),
   ('drift-monitoring', 'SKILL_MONITORING_AND_OBSERVABILITY'),
   ('neural-networks', 'SKILL_DEEP_LEARNING'),
@@ -24,7 +24,7 @@ where a.role_key = 'ai-ml-engineer' and a.area_key = m.area_key and a.skill_id i
 insert into public.arena_area_extra_skills (role_key, area_key, skill_id)
 select 'ai-ml-engineer', m.area_key, s.id
 from (values
-  ('ml-feature-engineering', 'SKILL_PYTHON'),
+  ('ml-feature-engineering', 'SKILL_DATA_WRANGLING_WITH_PANDAS'),
   ('experiment-tracking', 'SKILL_STATISTICS'),
   ('drift-monitoring', 'SKILL_STATISTICS'),
   ('neural-networks', 'SKILL_PYTHON'),

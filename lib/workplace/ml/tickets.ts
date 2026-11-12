@@ -28,7 +28,7 @@ export interface MlContent {
 
 export type MlKey =
   | { kind: "predict"; metric: MlMetric; yTest: number[]; threshold: number; baseline: number }
-  | { kind: "numbers"; expected: Record<string, number>; tolerance: Record<string, number> };
+  | { kind: "numbers"; expected: Record<string, number>; tolerance: Record<string, number>; /** how the ticket is solved: revealed only after it closes */ method?: string };
 
 export interface MlDraft {
   title: string;

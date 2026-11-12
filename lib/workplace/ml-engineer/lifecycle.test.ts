@@ -320,3 +320,19 @@ describe("AI/ML plain-Python and SQL tickets", () => {
     expect(worldForRole("ai-ml-engineer")!.templates).toBe(ML_ENGINEER_SQL_TEMPLATES);
   });
 });
+
+describe("worked methods are revealed with the grade, for every numbers ticket", () => {
+  it("each numbers ticket carries a method, and the grade message shows it for a pass and for a miss", async () => {
+    for (const template of ML_ENGINEER_TEMPLATES) {
+      const d = template.build(makeRng(hashSeed("mle-method", template.id)));
+      if (d.key.kind !== "numbers") continue;
+      expect(d.key.method, template.id).toBeTruthy();
+      const miss = await grade(d, {});
+      expect(miss.message, template.id).toContain("How it is solved:");
+      const hit = await grade(d, Object.fromEntries(Object.entries(d.key.expected).map(([k, v]) => [k, String(v)])));
+      expect(hit.message, template.id).toContain(d.key.method!);
+      // the method is server-only: it is in the answer key, never in the content the student is given while working
+      expect(JSON.stringify(d.content), template.id).not.toContain(d.key.method!);
+    }
+  });
+});

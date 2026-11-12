@@ -8,6 +8,7 @@ import { buildDateFeatures, buildRareCategories, buildRatioFeatures, buildTarget
 import { buildPickByValidation, buildReproAudit, buildSeedVariance } from "./tracking";
 import { buildPsi, buildRollingAlert } from "./monitoring";
 import { buildBackpropStep, buildForwardPass } from "./neural";
+import { ML_METHODS } from "./methods";
 import { buildCvComparison, buildGridSearch, buildKmeansElbow, buildPcaVariance, buildRocAuc } from "./selection";
 
 /**
@@ -37,8 +38,15 @@ const persist = (build: (rng: Rng) => MlDraft) => (rng: Rng): MlDraft => {
   throw last;
 };
 
+/** Adds the worked method (methods.ts) to a numbers ticket's answer key, where only the server reads it. */
+const withMethod = (id: string, build: (rng: Rng) => MlDraft) => (rng: Rng): MlDraft => {
+  const draft = build(rng);
+  const method = ML_METHODS[id];
+  return method && draft.key.kind === "numbers" ? { ...draft, key: { ...draft.key, method } } : draft;
+};
+
 const t = (id: string, title: string, areas: string[], difficulty: MlTemplate["difficulty"], minLevel: MlTemplate["minLevel"], build: (rng: Rng, texts: Texts) => MlDraft, scenario: string, requester = ML_LEAD): MlTemplate => ({
-  id, title, areas, difficulty, minLevel, build: persist((rng) => build(rng, fixed(title, scenario, requester))),
+  id, title, areas, difficulty, minLevel, build: withMethod(id, persist((rng) => build(rng, fixed(title, scenario, requester)))),
 });
 
 export const ML_ENGINEER_TEMPLATES: MlTemplate[] = [

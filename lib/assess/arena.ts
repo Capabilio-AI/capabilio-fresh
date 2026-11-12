@@ -7,7 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { syncSkillGraph } from "./graph-sync";
 import { refreshRoadmap } from "./roadmap";
 import { track, type Db } from "./db";
-import { ARENA_DIFFICULTY_SCALE, crossedMilestone, scaleForElo } from "./arena-rules";
+import { ARENA_DIFFICULTY_SCALE, crossedMilestone, extraEvidenceId, scaleForElo } from "./arena-rules";
 
 export interface ArenaPass {
   attemptId: string;
@@ -27,7 +27,7 @@ async function writeArenaEvidence(db: Db, userId: string, careerId: string, t: {
   const skillName = new Map((skillRows ?? []).map((r) => [r.id, r.name]));
   for (const [i, skillId] of skillIds.entries()) {
     await db.from("student_skill_evidence").upsert(
-      { student_id: userId, career_id: careerId, skill_id: skillId, skill_label: skillName.get(skillId) ?? "Arena skill", source: "ARENA", source_id: i === 0 ? t.attemptId : `${t.attemptId}:${skillId}`, correct, difficulty: t.difficulty.toUpperCase() },
+      { student_id: userId, career_id: careerId, skill_id: skillId, skill_label: skillName.get(skillId) ?? "Arena skill", source: "ARENA", source_id: i === 0 ? t.attemptId : extraEvidenceId(t.attemptId, skillId), correct, difficulty: t.difficulty.toUpperCase() },
       { onConflict: "source,source_id", ignoreDuplicates: true }
     );
   }

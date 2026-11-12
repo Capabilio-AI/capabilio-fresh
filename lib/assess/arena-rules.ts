@@ -1,4 +1,5 @@
 // Pure Arena rules (kept apart from arena.ts so they can be tested without a database client).
+import { createHash } from "node:crypto";
 
 /** Harder challenges are worth more: base rule delta x this. Assessment answers always use 1. */
 export const ARENA_DIFFICULTY_SCALE = { easy: 1, medium: 2, hard: 3 } as const;
@@ -30,3 +31,13 @@ export function missChange(worth: number, checks: readonly { passed: boolean }[]
 
 /** What a pass raises the career ELO by: the ticket's own worth on the shared ladder (easy 4, medium 8, hard 12). */
 export const careerPassGain = (difficulty: keyof typeof ARENA_DIFFICULTY_SCALE): number => ARENA_BASE_DELTA * ARENA_DIFFICULTY_SCALE[difficulty];
+
+/**
+ * The evidence key for the 2nd, 3rd... skill a ticket proves. student_skill_evidence.source_id is a uuid, so the old "attemptId:skillId" text was refused by
+ * the database and those rows were silently never written. This derives a stable uuid (same attempt and skill, same key) so a replay still adds nothing.
+ */
+export function extraEvidenceId(attemptId: string, skillId: string): string {
+  const h = createHash("sha1").update(`${attemptId}:${skillId}`).digest("hex");
+  const variant = ((parseInt(h.slice(16, 18), 16) & 0x3f) | 0x80).toString(16);
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-${variant}${h.slice(18, 20)}-${h.slice(20, 32)}`;
+}

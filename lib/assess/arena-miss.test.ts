@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { extraEvidenceId } from "./arena-rules";
 
 // the modules under test import the database client, which reads its settings when loaded; no connection is ever made here
 vi.hoisted(() => {
@@ -101,7 +102,7 @@ describe("a miss is evidence too", () => {
     await recordArenaMiss("u1", withSkills, db);
     expect(upserts).toHaveLength(2);
     expect(upserts.every((r) => r.correct === false && r.source === "ARENA" && r.difficulty === "EASY")).toBe(true);
-    expect(upserts.map((r) => r.source_id)).toEqual(["a1", "a1:s2"]);
+    expect(upserts.map((r) => r.source_id)).toEqual(["a1", extraEvidenceId("a1", "s2")]);
     expect(syncSkillGraph).toHaveBeenCalledTimes(1);
   });
 

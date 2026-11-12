@@ -15,3 +15,22 @@ insert into public.arena_skill_areas (role_key, area_key, display_name, skill_no
   ('cloud-platform-support-engineer', 'cps-access-and-secrets', 'Access and secrets', 'cloudsupport.access_and_secrets', 'devops_workspace', true, 3, 'devops.gen.v1', 'devops.grade.v1'),
   ('cloud-platform-support-engineer', 'cps-log-triage', 'Log triage', 'cloudsupport.log_triage', 'code_workspace', true, 4, 'code.gen.v1', 'code.grade.v1')
 on conflict (role_key, area_key) do nothing;
+
+-- link each area to the canonical skill it proves, so a verified pass writes skill evidence (see 149_ai_ml_area_skill_links.sql)
+update public.arena_skill_areas a set skill_id = s.id
+from (values
+  ('cps-container-fixes', 'SKILL_CLOUD_COMPUTING'),
+  ('cps-kubernetes-manifests', 'SKILL_KUBERNETES_ORCHESTRATION'),
+  ('cps-access-and-secrets', 'SKILL_CLOUD_PLATFORMS'),
+  ('cps-log-triage', 'SKILL_MONITORING_AND_OBSERVABILITY')
+) m(area_key, skill_key)
+join public.skills s on s.key = m.skill_key
+where a.role_key = 'cloud-platform-support-engineer' and a.area_key = m.area_key and a.skill_id is null;
+
+insert into public.arena_area_extra_skills (role_key, area_key, skill_id)
+select 'cloud-platform-support-engineer', m.area_key, s.id
+from (values
+  ('cps-log-triage', 'SKILL_PYTHON')
+) m(area_key, skill_key)
+join public.skills s on s.key = m.skill_key
+on conflict do nothing;

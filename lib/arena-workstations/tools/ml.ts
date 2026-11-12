@@ -84,7 +84,8 @@ function gradeNumbers(content: MlContent, key: Extract<MlKey, { kind: "numbers" 
     return { label: f.label, passed: Number.isFinite(given) && (answers?.[f.key] ?? "").trim() !== "" && Math.abs(given - key.expected[f.key]) <= key.tolerance[f.key] };
   });
   const passed = checks.every((c) => c.passed);
-  return { passed, message: passed ? "Every number matches." : "Some numbers are off: check the method and the rounding for the failed items.", checks };
+  const method = key.method ? ` How it is solved: ${key.method}` : "";
+  return { passed, message: `${passed ? "Every number matches." : "Some numbers are off: check the method and the rounding for the failed items."}${method}`, checks };
 }
 
 export const mlTool: ToolDefinition<MlSubmission> = {
