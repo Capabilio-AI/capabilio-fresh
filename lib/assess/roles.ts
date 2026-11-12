@@ -211,7 +211,10 @@ async function attachSkills(db: Db, careerId: string, built: BuiltFramework): Pr
   if (error) throw error;
 }
 
-const UNAVAILABLE = "We couldn't build a reliable skill profile for that role just now. Please try again in a moment, or choose a role from the list.";
+/** The service behind skill profiles is down or out of quota. Say that, not that the role is wrong: the student did nothing wrong and nothing was saved. */
+const SERVICE_DOWN = "Our skill-profile service isn't available right now, so we can't build the profile for that role yet. Nothing is wrong with your role and nothing was saved. Please try again in a few minutes, or pick one of the listed roles to continue now.";
+/** The service answered, but what it produced did not pass our accuracy checks, so we will not show it as this role's skills. */
+const NOT_RELIABLE = "We couldn't build a skill list for that role that passes our accuracy checks, so we won't show you a guess. Try rewording the role (for example add the field), or pick the closest role from the list.";
 
 async function generate(db: Db, title: string, ctx: { industry: string; domain: string; specializationOf?: string }, identity: RoleIdentity | null, deps: GenerateDeps): Promise<ResolveOutcome> {
   try {
@@ -219,8 +222,8 @@ async function generate(db: Db, title: string, ctx: { industry: string; domain: 
     const primary = await persistFramework(db, built, identity, ctx.specializationOf ?? null);
     return { status: "GENERATED", primary, alternatives: [] };
   } catch (e) {
-    if (e instanceof FrameworkUnavailable) return { status: "UNAVAILABLE", message: UNAVAILABLE };
-    if ((e as { kind?: string }).kind) return { status: "UNAVAILABLE", message: UNAVAILABLE }; // a model outage: say so, never substitute generic skills
+    if (e instanceof FrameworkUnavailable) return { status: "UNAVAILABLE", message: NOT_RELIABLE };
+    if ((e as { kind?: string }).kind) return { status: "UNAVAILABLE", message: SERVICE_DOWN }; // a model outage: say so, never substitute generic skills
     throw e;
   }
 }
@@ -247,7 +250,7 @@ export async function resolveRole(db: Db, rawInput: string, deps: GenerateDeps =
     identified = await identifyRole(typed, found.filter((f) => sharesField(typed, f.name)).map((f) => f.name), deps);
   } catch (e) {
     if ((e as { kind?: string }).kind === "invalid_output") return { status: "REJECTED", message: "We couldn't turn that into a role. Try naming the job title." };
-    return { status: "UNAVAILABLE", message: UNAVAILABLE }; // an outage is not a reason to guess a role
+    return { status: "UNAVAILABLE", message: SERVICE_DOWN }; // an outage is not a reason to guess a role
   }
   const id = identified.identity;
   if (!id.isValidRole) return { status: "REJECTED", message: id.rejectReason || "That doesn't look like a career role. Try naming the job title." };
