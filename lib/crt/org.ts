@@ -9,6 +9,7 @@ import { notify } from "@/lib/notifications/notify";
 import { appliesTo, attemptExpired, cycleStatusAt, defaultTimes, suggestNextWindow, type CycleStatus } from "./cycle";
 import { summarizeCycle, type CycleSummary, type ResultRow } from "./aggregate";
 import { CRT_MODULES, MODULE_LABEL, QUESTIONS_PER_MODULE, type ModuleScores } from "./model";
+import { MOCK_KEYS, mockOf, mockQuestionCount } from "./mocks";
 import { finalizeAttempt, todayIst } from "./server";
 
 type Service = SupabaseClient<Database>;
@@ -22,8 +23,12 @@ export const CreateCycleSchema = z
     closesAt: instant,
     branches: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
     years: z.array(z.coerce.number().int().min(1).max(6)).max(6).optional(),
+    /** "assessment" (the college's official one, the default) or a scheduled "mock" of the kind named by mockKey */
+    kind: z.enum(["assessment", "mock"]).default("assessment"),
+    mockKey: z.enum(MOCK_KEYS).optional(),
   })
   .strict()
+  .refine((v) => (v.kind === "mock") === Boolean(v.mockKey), { message: "Choose which mock to schedule.", path: ["mockKey"] })
   .refine((v) => Date.parse(v.closesAt) > Date.parse(v.opensAt), { message: "The close time must be after the open time.", path: ["closesAt"] })
   .refine((v) => Date.parse(v.closesAt) > Date.now(), { message: "The close time must be in the future.", path: ["closesAt"] });
 export type CreateCycleInput = z.infer<typeof CreateCycleSchema>;
@@ -40,6 +45,8 @@ interface CycleRow {
   years: number[] | null;
   duration_minutes: number;
   report_sent_at: string | null;
+  kind?: "assessment" | "mock";
+  mock_key?: string | null;
 }
 interface AttemptRow {
   id: string;
@@ -100,6 +107,9 @@ export interface OrgCycle {
   status: CycleStatus;
   reportSent: boolean;
   summary: CycleSummary;
+  kind: "assessment" | "mock";
+  /** the mock's name, for a mock */
+  mockLabel: string | null;
 }
 
 export interface OrgCrtOverview {
@@ -142,6 +152,8 @@ export async function loadCrtOverview(service: Service, institutionId: string, s
     status: cycleStatusAt({ opensAt: c.opens_at, closesAt: c.closes_at }, new Date()),
     reportSent: Boolean(c.report_sent_at),
     summary: summarizeCycle(resultRows(c).rows, resultRows(c).eligible),
+    kind: c.kind ?? "assessment",
+    mockLabel: mockOf(c.mock_key)?.label ?? null,
   }));
 
   const pick = cycles.find((c) => c.id === selectedId) ?? cycles[0] ?? null;
@@ -159,7 +171,7 @@ export async function loadCrtOverview(service: Service, institutionId: string, s
   }
 
   const branchOptions = [...new Set(students.map((s) => s.branch?.trim()).filter((b): b is string => Boolean(b)))].sort().map((b) => ({ value: b, label: b }));
-  return { cycles, selected, suggested: defaultTimes(suggestNextWindow(rows[0]?.opens_on ?? null, today)), branchOptions };
+  return { cycles, selected, suggested: defaultTimes(suggestNextWindow(rows.find((c) => (c.kind ?? "assessment") === "assessment")?.opens_on ?? null, today)), branchOptions };
 }
 
 export async function createCycle(service: Service, institutionId: string, createdBy: string, input: CreateCycleInput): Promise<{ id: string }> {
@@ -176,8 +188,9 @@ export async function createCycle(service: Service, institutionId: string, creat
       branches: input.branches?.length ? input.branches : null,
       years: input.years?.length ? input.years : null,
       // one minute per question
-      duration_minutes: CRT_MODULES.length * QUESTIONS_PER_MODULE,
+      duration_minutes: mockOf(input.mockKey) ? mockQuestionCount(mockOf(input.mockKey)!) : CRT_MODULES.length * QUESTIONS_PER_MODULE,
       created_by: createdBy,
+      ...(input.kind === "mock" ? { kind: "mock", mock_key: input.mockKey } : {}),
     })
     .select("id")
     .single();
@@ -200,7 +213,7 @@ export async function announceOpen(service: Service, institutionId: string, cycl
     userIds: students.map((s) => s.userId),
     type: "crt_open",
     title: Date.parse(c.opens_at) > Date.now() ? `${c.title} opens ${when(c.opens_at)}` : `${c.title} is open`,
-    body: `Take your CRT assessment between ${when(c.opens_at)} and ${when(c.closes_at)}. It takes about ${c.duration_minutes} minutes, one minute per question.`,
+    body: c.kind === "mock" ? `Take the ${mockOf(c.mock_key)?.label ?? "mock assessment"} between ${when(c.opens_at)} and ${when(c.closes_at)}. It has ${c.duration_minutes} questions, one minute each, and it opens only in that window.` : `Take your CRT assessment between ${when(c.opens_at)} and ${when(c.closes_at)}. It takes about ${c.duration_minutes} minutes, one minute per question.`,
     href: "/skillstudio/crt",
     institutionId,
     dedupeKey: `crt-open:${c.id}`,

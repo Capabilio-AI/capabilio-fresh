@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Info, Loader2, X } from "lucide-react";
 import { SECONDS_PER_QUESTION } from "@/lib/crt/cycle";
-import { ExamLock, useExamLock } from "@/components/exam/ExamLock";
+import { DEFAULT_RULES, ExamLock, useExamLock } from "@/components/exam/ExamLock";
+import { negativeMarkingNote } from "@/lib/crt/marking";
 import { formatClock } from "./api";
 
 export interface ExamQuestion {
@@ -27,6 +28,8 @@ interface Props {
   onExit?: () => void;
   /** the limit for one question; a minute unless a company's pattern gives another */
   secondsPerQuestion?: number;
+  /** marks off each wrong answer, told on the rules screen; the standard unless a company's own pattern differs */
+  negativeMarking?: number;
   /** shown when a submit failed */
   error?: string | null;
 }
@@ -353,7 +356,7 @@ function ExamRunnerInner({ title, questions, initialAnswers = {}, deadlineAt, st
 /** The exam screen, locked: it opens in full screen after a rules screen, and leaving full screen or switching tabs is counted. */
 export function ExamRunner(props: Props) {
   return (
-    <ExamLock area="crt" title={props.title} storageKey={props.storageKey ?? `sim-${props.title}`} onCancel={props.onExit}>
+    <ExamLock area="crt" title={props.title} storageKey={props.storageKey ?? `sim-${props.title}`} onCancel={props.onExit} rules={[...DEFAULT_RULES, `Negative marking: ${negativeMarkingNote(props.negativeMarking)}`]}>
       <ExamRunnerInner {...props} />
     </ExamLock>
   );

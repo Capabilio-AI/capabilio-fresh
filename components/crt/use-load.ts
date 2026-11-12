@@ -9,7 +9,9 @@ export function useLoad<T>(body: Record<string, unknown>): { data: T | null; err
   const [state, setState] = useState<{ key: string; data: T | null; error: string | null }>({ key: "", data: null, error: null });
   useEffect(() => {
     let live = true;
-    crtPost<T>(JSON.parse(key) as Record<string, unknown>)
+    // the nonce only forces a reload; the server never sees it
+    const { nonce: _nonce, ...request } = JSON.parse(key) as Record<string, unknown>;
+    crtPost<T>(request)
       .then((data) => live && setState({ key, data, error: null }))
       .catch((e: Error) => live && setState({ key, data: null, error: e.message }));
     return () => {

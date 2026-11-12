@@ -2,14 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { buildTimedSet, gradeParts, type AnswerResult, type Graded, type TimedSet } from "./studio-server";
-import { MAX_ROUND_QUESTIONS, applyNegativeMarking, canPublish, paperOf, sectionsFrom, type CompanyHeader, type CompanyInput, type CompanyRound, type RoundKind, type Section } from "./companies";
+import { NEGATIVE_MARK } from "./marking";
+import { MAX_ROUND_QUESTIONS, canPublish, paperOf, sectionsFrom, type CompanyHeader, type CompanyInput, type CompanyRound, type RoundKind, type Section } from "./companies";
 import type { Outcome } from "./server";
 
 type Service = SupabaseClient<Database>;
 const fail = (status: number, error: string): { ok: false; status: number; error: string } => ({ ok: false, status, error });
-
-/** The mark the exam screen puts on a question the student left blank. */
-export const SKIPPED_KEY = "-";
 
 export interface RoundView {
   id: string;
@@ -84,30 +82,25 @@ async function loadRound(service: Service, roundId: string): Promise<{ company: 
 }
 
 /** A timed mock in a published company's pattern: its sections, its time and its negative marking, from Capabilio's own questions. */
-export async function companyMock(service: Service, userId: string, roundId: string): Promise<Outcome<{ set: TimedSet; negativeMarking: number }>> {
+export async function companyMock(service: Service, userId: string, roundId: string): Promise<Outcome<{ set: TimedSet }>> {
   const found = await loadRound(service, roundId);
   const paper = found ? paperOf(found.company.name, found.round) : null;
   if (!found || !paper) return fail(404, "That test isn't available.");
-  const built = await buildTimedSet(service, userId, paper.title, paper.parts, { secondsPerQuestion: paper.secondsPerQuestion });
-  return built.ok ? { ok: true, set: built.set, negativeMarking: paper.negativeMarking } : built;
+  const built = await buildTimedSet(service, userId, paper.title, paper.parts, { secondsPerQuestion: paper.secondsPerQuestion, negativeMarking: paper.negativeMarking || NEGATIVE_MARK });
+  return built;
 }
 
-export type CompanyGraded = Graded & { correct: number; wrong: number; unanswered: number; negativeMarking: number; rawPct: number };
-
-/** Grades a company mock. Negative marking is applied here, on the server, and the result is remembered so the hub can show Completed and the best score. */
-export async function companyGrade(service: Service, userId: string, input: { roundId: string; answers: Record<string, string> }): Promise<Outcome<CompanyGraded>> {
+/** Grades a company mock. Negative marking is applied on the server (see gradeParts), and the result is remembered so the hub can show Completed and the best score. */
+export async function companyGrade(service: Service, userId: string, input: { roundId: string; answers: Record<string, string> }): Promise<Outcome<Graded>> {
   const found = await loadRound(service, input.roundId);
   const paper = found ? paperOf(found.company.name, found.round) : null;
   if (!found || !paper) return fail(404, "That test isn't available.");
-  const graded = await gradeParts(service, userId, paper.parts.map((p) => p.category), input.answers, MAX_ROUND_QUESTIONS);
+  // a company that states its own penalty keeps it; otherwise the platform's standard applies
+  const graded = await gradeParts(service, userId, paper.parts.map((p) => p.category), input.answers, MAX_ROUND_QUESTIONS, paper.negativeMarking || NEGATIVE_MARK);
   if (!graded.ok) return graded;
-  const answered = (r: AnswerResult) => r.chosenKey !== SKIPPED_KEY;
-  const correct = graded.results.filter((r) => r.correct).length;
-  const wrong = graded.results.filter((r) => !r.correct && answered(r)).length;
-  const scored = applyNegativeMarking({ correct, wrong, total: paper.questions }, paper.negativeMarking);
-  const { error } = await untyped(service).from("crt_company_attempts").insert({ user_id: userId, round_id: input.roundId, pct: scored.pct });
+  const { error } = await untyped(service).from("crt_company_attempts").insert({ user_id: userId, round_id: input.roundId, pct: graded.pct });
   if (error) throw error;
-  return { ...graded, ok: true, pct: scored.pct, rawPct: graded.pct, correct, wrong, unanswered: graded.results.length - correct - wrong, negativeMarking: paper.negativeMarking };
+  return graded;
 }
 
 // ---------------------------------------------------------------- admin

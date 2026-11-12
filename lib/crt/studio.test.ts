@@ -77,6 +77,6 @@ describe("paths and the bank", () => {
       for (const part of t.parts) expect(bank.filter((q) => inCategory(part.category, q.module, q.topic)).length, `${t.key}/${part.category}`).toBeGreaterThanOrEqual(part.count);
       expect(testQuestionCount(t)).toBeGreaterThan(0);
     }
-    expect(testQuestionCount(SIM_TESTS[0])).toBe(44);
+    expect(SIM_TESTS.map((t) => t.key)).not.toContain("mock"); // full mocks are scheduled by the placement cell, not open practice
   });
 });

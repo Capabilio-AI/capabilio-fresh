@@ -71,12 +71,6 @@ export function paperOf(companyName: string, r: CompanyRound): Paper | null {
   return { title: `${companyName}: ${r.title}`, parts: r.sections, questions, secondsPerQuestion: secondsPerQuestion(r), negativeMarking: r.negativeMarking };
 }
 
-/** Pure. Score with negative marking: each wrong answer costs a fraction of a mark, an unanswered one costs nothing, and the score never drops below zero. */
-export function applyNegativeMarking(t: { correct: number; wrong: number; total: number }, negative: number): { points: number; pct: number } {
-  const points = Math.max(0, t.correct - negative * t.wrong);
-  return { points, pct: t.total === 0 ? 0 : Math.round((points / t.total) * 100) };
-}
-
 /** Pure. A company may reach students only with the source of its pattern, when it was checked, and at least one paper to take. */
 export function canPublish(c: CompanyHeader, rounds: CompanyRound[]): { ok: true } | { ok: false; reason: string } {
   if (!c.patternSourceUrl) return { ok: false, reason: "Add the link the pattern came from." };

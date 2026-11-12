@@ -4,6 +4,7 @@ import { untyped } from "@/lib/org/db";
 import { getStudentDirection } from "@/lib/career/direction";
 import { appliesTo, attemptExpired, cycleStatusAt, SECONDS_PER_QUESTION, type CycleStatus } from "./cycle";
 import { seenQuestionIds } from "./seen";
+import { mockOf, mockQuestionCount } from "./mocks";
 import { CRT_MODULES, QUESTIONS_PER_MODULE, type Band, type CrtModule, type CrtOption, type CrtQuestion, type ModuleScores } from "./model";
 import { bandFor, scoreAttempt } from "./score";
 
@@ -26,6 +27,9 @@ interface CycleRow {
   closes_at: string;
   branches: string[] | null;
   years: number[] | null;
+  /** absent on a database that has not had migration 187 yet: every cycle is then an assessment */
+  kind?: "assessment" | "mock";
+  mock_key?: string | null;
 }
 
 interface AttemptRow {
@@ -64,6 +68,10 @@ export interface StudentCycle {
   /** an attempt that is started and still has time on the clock */
   inProgress: boolean;
   canStart: boolean;
+  /** "mock" is a full-length mock the placement cell scheduled; it never counts as the college's official assessment */
+  kind: "assessment" | "mock";
+  mockKey: string | null;
+  questions: number;
 }
 
 export interface RunnerPayload {
@@ -134,15 +142,22 @@ async function loadCycles(service: Service, userId: string): Promise<{ ctx: Stud
     }
     const status = cycleStatusAt({ opensAt: c.opens_at, closesAt: c.closes_at }, now);
     const applies = appliesTo({ branches: c.branches, years: c.years }, ctx.branch, ctx.year);
-    // a student receives an assessment only once the placement cell has opened it
-    if ((!applies && !attempt) || (status === "upcoming" && !attempt)) continue;
+    const kind = c.kind ?? "assessment";
+    const mock = kind === "mock" ? mockOf(c.mock_key) : null;
+    if (kind === "mock" && !mock) continue;
+    const questions = mock ? mockQuestionCount(mock) : CRT_MODULES.length * QUESTIONS_PER_MODULE;
+    // an assessment reaches a student only once the placement cell has opened it; a mock is shown locked from the moment it is scheduled
+    if ((!applies && !attempt) || (status === "upcoming" && !attempt && kind === "assessment")) continue;
     const result = attempt ? toResult(attempt) : null;
     cycles.push({
       id: c.id,
       title: c.title,
       opensAt: c.opens_at,
       closesAt: c.closes_at,
-      durationMinutes: CRT_MODULES.length * QUESTIONS_PER_MODULE,
+      durationMinutes: questions,
+      kind,
+      mockKey: mock?.key ?? null,
+      questions,
       status,
       applies,
       result,
@@ -184,13 +199,13 @@ const shuffle = <T,>(xs: readonly T[]): T[] => {
   return out;
 };
 
-/** Pure. Up to `perModule` ids from each module, preferring ones the student has not seen; module order is kept. */
-export function drawQuestionIds(pool: readonly { id: string; module: CrtModule }[], seen: ReadonlySet<string>, perModule: number): string[] {
+/** Pure. Up to `perModule` ids from each module (one number for all, or a count per module), preferring ones the student has not seen; module order is kept. */
+export function drawQuestionIds(pool: readonly { id: string; module: CrtModule }[], seen: ReadonlySet<string>, perModule: number | Record<CrtModule, number>): string[] {
   return CRT_MODULES.flatMap((m) => {
     const ofModule = shuffle(pool.filter((q) => q.module === m));
     const fresh = ofModule.filter((q) => !seen.has(q.id));
     const used = ofModule.filter((q) => seen.has(q.id));
-    return [...fresh, ...used].slice(0, perModule).map((q) => q.id);
+    return [...fresh, ...used].slice(0, typeof perModule === "number" ? perModule : perModule[m]).map((q) => q.id);
   });
 }
 
@@ -234,7 +249,7 @@ export async function startOrResume(service: Service, userId: string, cycleId: s
     db.from("crt_questions").select("id, module").eq("status", "published").limit(5000),
     seenQuestionIds(service, userId),
   ]);
-  const ids = drawQuestionIds((pool ?? []) as { id: string; module: CrtModule }[], seen, QUESTIONS_PER_MODULE);
+  const ids = drawQuestionIds((pool ?? []) as { id: string; module: CrtModule }[], seen, mockOf(cycle.mock_key)?.counts ?? QUESTIONS_PER_MODULE);
   if (ids.length === 0) return fail(503, "The question bank is not ready yet. Please try again later.");
 
   // one minute per question: the whole test is as many minutes as it has questions

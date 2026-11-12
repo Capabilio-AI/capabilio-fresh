@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CompanyInput, MAX_ROUND_QUESTIONS, applyNegativeMarking, canPublish, paperOf, roundSeconds, secondsPerQuestion, sectionsFrom, type CompanyRound } from "./companies";
+import { CompanyInput, MAX_ROUND_QUESTIONS, canPublish, paperOf, roundSeconds, secondsPerQuestion, sectionsFrom, type CompanyRound } from "./companies";
 
 const online: CompanyRound = { position: 1, kind: "online_assessment", title: "Online assessment", minutes: 60, negativeMarking: 0.25, notes: null, sections: [{ category: "aptitude", count: 20 }, { category: "reasoning", count: 15 }, { category: "verbal", count: 15 }] };
 const interview: CompanyRound = { position: 2, kind: "technical_interview", title: "Technical interview", minutes: 30, negativeMarking: 0, notes: null, sections: [] };
@@ -37,20 +37,6 @@ describe("paperOf", () => {
   });
   it("caps a paper so one mock cannot ask for a thousand questions", () => {
     expect(paperOf("X", { ...online, sections: [{ category: "aptitude", count: MAX_ROUND_QUESTIONS + 1 }] })).toBeNull();
-  });
-});
-
-describe("applyNegativeMarking", () => {
-  it("takes a fraction of a mark off each wrong answer but nothing off an unanswered one", () => {
-    const r = applyNegativeMarking({ correct: 30, wrong: 8, total: 50 }, 0.25);
-    expect(r.points).toBe(28);
-    expect(r.pct).toBe(56);
-  });
-  it("never goes below zero", () => {
-    expect(applyNegativeMarking({ correct: 1, wrong: 40, total: 50 }, 0.5).pct).toBe(0);
-  });
-  it("is plain accuracy without negative marking", () => {
-    expect(applyNegativeMarking({ correct: 25, wrong: 25, total: 50 }, 0).pct).toBe(50);
   });
 });
 

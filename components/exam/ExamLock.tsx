@@ -18,7 +18,7 @@ const Ctx = createContext<ExamLockApi | null>(null);
 /** The lock around the current exam, or null on a page that is not locked. */
 export const useExamLock = (): ExamLockApi | null => useContext(Ctx);
 
-const DEFAULT_RULES = [
+export const DEFAULT_RULES = [
   "The test opens in full screen and stays there until you submit or end it.",
   "Leaving full screen is recorded. Three exits end your test and submit what you have answered.",
   "Switching to another tab or window is recorded too, and three switches end your test.",

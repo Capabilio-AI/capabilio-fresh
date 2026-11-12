@@ -13,11 +13,11 @@ interface Graded {
   results: AnswerResult[];
   pct: number;
   questions: QuizQuestion[];
-  /** set for a company mock, which can take marks off wrong answers */
-  negativeMarking?: number;
-  wrong?: number;
-  unanswered?: number;
-  rawPct?: number;
+  /** the score before negative marking, and what negative marking took off */
+  negativeMarking: number;
+  wrong: number;
+  unanswered: number;
+  rawPct: number;
 }
 
 function Frame({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
@@ -61,7 +61,7 @@ function Result({ graded, title, onClose }: { graded: Graded; title: string; onC
             ))}
           </ul>
         )}
-        {graded.negativeMarking ? <p className="mt-4 rounded-lg bg-[var(--m-ground)] px-3 py-2 font-lp-body text-[13px] text-app-charcoal">This paper takes {graded.negativeMarking} of a mark off each wrong answer: {graded.wrong ?? 0} wrong, {graded.unanswered ?? 0} left blank. Without negative marking your score would be {graded.rawPct ?? graded.pct}%.</p> : null}
+        <p className="mt-4 rounded-lg bg-[var(--m-ground)] px-3 py-2 font-lp-body text-[13px] text-app-charcoal">Negative marking: each wrong answer took {graded.negativeMarking} of a mark off. You had {graded.wrong} wrong and {graded.unanswered} left blank. Without it your score would be {graded.rawPct}%.</p>
         <p className="mt-5 font-lp-body text-[12.5px] text-app-muted">Every answer is now part of your readiness. Questions you missed are explained below.</p>
         <button type="button" onClick={onClose} className="mt-4 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white">Back to CRT</button>
       </div>
@@ -97,7 +97,7 @@ function ExamSession({ loadBody, gradeBody, fallbackTitle, onClose }: { loadBody
       throw e;
     }
   }
-  return <ExamRunner title={set.title} secondsPerQuestion={set.secondsPerQuestion} questions={set.questions.map((q) => ({ id: q.id, section: q.section ?? "Questions", topic: q.topic, prompt: q.prompt, options: q.options }))} onSubmit={onSubmit} onExit={onClose} error={submitError} />;
+  return <ExamRunner title={set.title} secondsPerQuestion={set.secondsPerQuestion} negativeMarking={set.negativeMarking} questions={set.questions.map((q) => ({ id: q.id, section: q.section ?? "Questions", topic: q.topic, prompt: q.prompt, options: q.options }))} onSubmit={onSubmit} onExit={onClose} error={submitError} />;
 }
 
 /** One placement-simulator test in the exam screen, graded and explained at the end. */

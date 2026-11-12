@@ -12,6 +12,7 @@ import { overallPct, promptByKey, SPEAKING_SYSTEM, SpeakingFeedbackSchema, type 
 import { accuracy, competency, gradeAnswer, pickPractice, streak, targetDifficulty, type Competency, type LogEntry } from "./studio";
 import { todayIst, type Outcome, type StudentCycle } from "./server";
 import { exhaustedMessage, freshOnly } from "./never-repeat";
+import { markFor, NEGATIVE_MARK, SKIPPED_KEY, totalMarks } from "./marking";
 import { seenQuestionIds } from "./seen";
 
 type Service = SupabaseClient<Database>;
@@ -53,6 +54,8 @@ export interface TimedSet {
   durationSeconds: number;
   /** the limit for one question; a minute unless a company's pattern gives less or more */
   secondsPerQuestion?: number;
+  /** marks off each wrong answer in this test, so the exam can say so before it starts */
+  negativeMarking: number;
 }
 
 const strip = (q: FullQuestion, section?: string): QuizQuestion => ({ id: q.id, module: q.module, topic: q.topic, difficulty: q.difficulty, prompt: q.prompt, options: q.options.map(({ key, text }) => ({ key, text })), section });
@@ -121,7 +124,8 @@ export async function loadStudio(service: Service, userId: string, cycles: reado
     untyped(service).from("crt_speaking_attempts").select("scores, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
   ]);
   const spoken = ((spokenRows ?? []) as { scores: Parameters<typeof overallPct>[0]; created_at: string }[]).map((r) => ({ at: r.created_at, pct: overallPct(r.scores) }));
-  const latest = cycles.find((c) => c.result)?.result?.moduleScores as ModuleScores | undefined;
+  // only the official assessment feeds readiness; a scheduled mock is practice
+  const latest = cycles.find((c) => c.kind === "assessment" && c.result)?.result?.moduleScores as ModuleScores | undefined;
 
   const areas: ReadinessArea[] = CATEGORIES.map((key) => {
     const mine = entries.filter((e) => e.category === key);
@@ -153,7 +157,7 @@ export async function loadStudio(service: Service, userId: string, cycles: reado
 // ---------------------------------------------------------------- the placement simulator
 
 /** Builds a timed test from sections (a category and a count each), choosing questions the student has seen least. */
-export async function buildTimedSet(service: Service, userId: string, title: string, parts: readonly { category: Category; count: number }[], opts: { secondsPerQuestion?: number } = {}): Promise<Outcome<{ set: TimedSet }>> {
+export async function buildTimedSet(service: Service, userId: string, title: string, parts: readonly { category: Category; count: number }[], opts: { secondsPerQuestion?: number; negativeMarking?: number } = {}): Promise<Outcome<{ set: TimedSet }>> {
   const per = opts.secondsPerQuestion ?? SECONDS_PER_QUESTION;
   const questions: QuizQuestion[] = [];
   // a question the student has been given is never given again, so each section draws only from what is new to them
@@ -169,7 +173,7 @@ export async function buildTimedSet(service: Service, userId: string, title: str
     picked.forEach((q) => taken.add(q.id));
     questions.push(...picked.map((q) => strip(q, CATEGORY_LABEL[part.category])));
   }
-  return { ok: true, set: { title, questions, durationSeconds: questions.length * per, secondsPerQuestion: per } };
+  return { ok: true, set: { title, questions, durationSeconds: questions.length * per, secondsPerQuestion: per, negativeMarking: opts.negativeMarking ?? NEGATIVE_MARK } };
 }
 
 /** Builds one simulator test. Every question gets one minute, so the clock is the number of questions in minutes. */
@@ -181,20 +185,28 @@ export async function simulatorSet(service: Service, userId: string, key: SimTes
 
 const MAX_GRADE = 60;
 
-export type Graded = { results: AnswerResult[]; pct: number; questions: QuizQuestion[] };
+/** `pct` is after negative marking; `rawPct` is what it would be without. Soft-skills answers are never counted as wrong. */
+export type Graded = { results: AnswerResult[]; pct: number; rawPct: number; correct: number; wrong: number; unanswered: number; negativeMarking: number; questions: QuizQuestion[] };
 
 /** Grades a finished test over the categories it was built from: every answer is checked here, none were revealed during it, and each one is logged as evidence. */
-export async function gradeParts(service: Service, userId: string, allowed: readonly Category[], answers: Record<string, string>, maxAnswers = MAX_GRADE): Promise<Outcome<Graded>> {
+export async function gradeParts(service: Service, userId: string, allowed: readonly Category[], answers: Record<string, string>, maxAnswers = MAX_GRADE, negative = NEGATIVE_MARK): Promise<Outcome<Graded>> {
   const ids = Object.keys(answers).slice(0, maxAnswers);
   const byId = await questionsByIds(service, ids);
   const results: AnswerResult[] = [];
   const shown: QuizQuestion[] = [];
   const rows: Record<string, unknown>[] = [];
+  const marks: number[] = [];
+  let wrong = 0;
+  let unanswered = 0;
   for (const id of ids) {
     const q = byId.get(id);
     const category = q ? allowed.find((c) => inCategory(c, q.module, q.topic)) : undefined;
     if (!q || !category) continue;
     const result = resultFor(q, answers[id]);
+    const answered = answers[id] !== SKIPPED_KEY;
+    marks.push(markFor(q.module, result.points, answered, negative));
+    if (!answered) unanswered++;
+    else if (q.module !== "soft_skills" && result.points === 0) wrong++;
     rows.push({ user_id: userId, question_id: q.id, category, mode: "simulator", chosen_key: answers[id], points: result.points, max_points: result.max, correct: result.correct });
     results.push(result);
     shown.push(strip(q, CATEGORY_LABEL[category]));
@@ -203,7 +215,8 @@ export async function gradeParts(service: Service, userId: string, allowed: read
   const { error } = await untyped(service).from("crt_practice_log").insert(rows);
   if (error) throw error;
   const max = results.reduce((s, r) => s + r.max, 0);
-  return { ok: true, results, questions: shown, pct: Math.round((results.reduce((s, r) => s + r.points, 0) / max) * 100) };
+  const pctOf = (points: number) => Math.round((points / max) * 100);
+  return { ok: true, results, questions: shown, pct: pctOf(totalMarks(marks)), rawPct: pctOf(results.reduce((s, r) => s + r.points, 0)), correct: results.filter((r) => r.correct).length, wrong, unanswered, negativeMarking: negative };
 }
 
 /** Grades a finished simulator test. */

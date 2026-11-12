@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { BAND_LABEL, MODULE_LABEL } from "@/lib/crt/model";
 import type { AttemptResult, RunnerPayload } from "@/lib/crt/server";
+import { negativeMarkingNote } from "@/lib/crt/marking";
 import { ExamRunner, type ExamQuestion } from "./ExamRunner";
 import { ModuleBars } from "./ModuleBars";
 import { crtPost } from "./api";
@@ -66,7 +67,7 @@ export function CrtRunner({ payload, onClose }: { payload: RunnerPayload; onClos
             <span className="mb-1.5 rounded-full bg-[var(--m-accent-soft)] px-3 py-1 font-lp-body text-[12.5px] font-bold text-[var(--m-ink)]">{BAND_LABEL[result.band]}</span>
           </div>
           <div className="mt-6"><ModuleBars scores={result.moduleScores} /></div>
-          <p className="mt-6 font-lp-body text-[13px] text-app-muted">Your placement cell can see this score. Practise the sections you found hard in the Placement Simulator.</p>
+          <p className="mt-6 font-lp-body text-[13px] text-app-muted">{negativeMarkingNote()} Your placement cell can see this score. Practise the sections you found hard in the Placement Simulator.</p>
           <button type="button" onClick={onClose} className="mt-5 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white">Back to CRT</button>
         </div>
       </div>
