@@ -9,7 +9,6 @@ import type { SimTestKey } from "@/lib/crt/categories";
 import type { RunnerPayload, StudentCycle } from "@/lib/crt/server";
 import type { StudioView } from "@/lib/crt/studio-server";
 import { MODULE_LABEL } from "@/lib/crt/model";
-import { CompanyHub } from "./CompanyHub";
 import { CrtRunner } from "./CrtRunner";
 import { ModuleBars } from "./ModuleBars";
 import { SimulatorExam } from "./SimulatorExam";
@@ -104,7 +103,10 @@ export function CrtHome({ cycles, view, autoStart }: { cycles: StudentCycle[]; v
   const [error, setError] = useState<string | null>(null);
   const auto = useRef(autoStart);
 
-  const current = cycles.find((c) => c.canStart || (c.inProgress && c.status === "open")) ?? cycles[0];
+  // the college's official assessment and its scheduled mocks are separate: mocks live in the Placement Simulator
+  const assessments = cycles.filter((c) => c.kind === "assessment");
+  const mocks = cycles.filter((c) => c.kind === "mock");
+  const current = assessments.find((c) => c.canStart || (c.inProgress && c.status === "open")) ?? assessments[0];
 
   async function start(cycleId: string) {
     setBusy(true);
@@ -131,9 +133,8 @@ export function CrtHome({ cycles, view, autoStart }: { cycles: StudentCycle[]; v
   return (
     <div className="flex flex-col gap-6">
       <Assessment cycle={current} onStart={start} busy={busy} error={error} />
-      <Results cycles={cycles} />
-      <Simulator view={view} onStart={setTest} onSpeaking={() => setSpeaking(true)} />
-      <CompanyHub />
+      <Results cycles={assessments} />
+      <Simulator view={view} mocks={mocks} onStart={setTest} onStartMock={start} mockBusy={busy} mockError={error} onSpeaking={() => setSpeaking(true)} />
       <ReadinessRadar view={view} />
       {test && <SimulatorExam test={test} onClose={() => { setTest(null); router.refresh(); }} />}
       {speaking && <SpeakingStudio recent={view.speaking.recent} onClose={() => { setSpeaking(false); router.refresh(); }} />}

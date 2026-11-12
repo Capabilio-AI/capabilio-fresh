@@ -53,12 +53,11 @@ interface SimTestDef {
 }
 
 /**
- * The placement simulator: a full mock with sections, like a company's online test, and one test per section. Every test gives one
+ * The placement simulator's practice tests: one per section, open any time. Full-length mocks are scheduled by the placement cell (see mocks.ts). Every test gives one
  * minute per question (SECONDS_PER_QUESTION in cycle.ts), so a test lasts as many minutes as it has questions. English speaking is
  * practised by voice in the Speaking Studio, not as a multiple-choice test.
  */
 export const SIM_TESTS = [
-  { key: "mock", label: "Full placement mock", blurb: "Seven sections in one sitting, the way a company's online round runs.", parts: [{ category: "aptitude", count: 10 }, { category: "reasoning", count: 10 }, { category: "verbal", count: 8 }, { category: "workplace", count: 4 }, { category: "soft_skills", count: 6 }, { category: "group_discussion", count: 3 }, { category: "interview", count: 3 }] },
   { key: "aptitude", label: "Quantitative aptitude", blurb: "Percentages, ratios, time and work, interest.", parts: [{ category: "aptitude", count: 10 }] },
   { key: "reasoning", label: "Logical reasoning", blurb: "Series, coding, directions, syllogisms.", parts: [{ category: "reasoning", count: 10 }] },
   { key: "verbal", label: "Verbal ability", blurb: "Grammar, vocabulary and sentence sense.", parts: [{ category: "verbal", count: 10 }] },

@@ -1,8 +1,10 @@
 "use client";
 
-import { ArrowRight, BookOpen, Brain, Briefcase, Calculator, HeartHandshake, Mail, Mic, Timer, Users, type LucideIcon } from "lucide-react";
+import { ArrowRight, BookOpen, Brain, Briefcase, Calculator, HeartHandshake, Mail, Mic, Users, type LucideIcon } from "lucide-react";
 import { CATEGORIES, CATEGORY_LABEL, SIM_TESTS, testQuestionCount, type Category, type SimTestKey } from "@/lib/crt/categories";
+import type { StudentCycle } from "@/lib/crt/server";
 import type { StudioView } from "@/lib/crt/studio-server";
+import { MockAssessments } from "./MockAssessments";
 import { MIN_EVIDENCE } from "@/lib/crt/studio";
 
 const CARD = "rounded-2xl border border-app-border bg-white p-5";
@@ -23,68 +25,49 @@ function Shown({ view, category }: { view: StudioView; category: Category }) {
   );
 }
 
-/** The placement simulator: a full mock in sections, and one timed test per section. English speaking is practised by voice. */
-export function Simulator({ view, onStart, onSpeaking }: { view: StudioView; onStart: (t: SimTestKey) => void; onSpeaking: () => void }) {
-  const mock = SIM_TESTS[0];
-  const total = testQuestionCount(mock);
-  const sections = SIM_TESTS.slice(1);
+/** The placement simulator: scheduled, locked mock assessments, then one open practice test per section. English speaking is practised by voice. */
+export function Simulator({ view, mocks, onStart, onStartMock, mockBusy, mockError, onSpeaking }: { view: StudioView; mocks: StudentCycle[]; onStart: (t: SimTestKey) => void; onStartMock: (cycleId: string) => void; mockBusy: boolean; mockError: string | null; onSpeaking: () => void }) {
   return (
-    <section aria-label="Placement simulator">
-      <h2 className={`${H2} mb-1`}>Placement simulator</h2>
-      <p className="mb-4 max-w-[70ch] font-lp-body text-[13.5px] text-app-muted">Timed tests in the exam format companies use. <strong className="text-app-charcoal">One minute per question</strong>, no hints, answers and reasoning at the end. Every answer adds to your readiness below.</p>
+    <section aria-label="Placement simulator" className="flex flex-col gap-6">
+      <div>
+        <h2 className={`${H2} mb-1`}>Placement simulator</h2>
+        <p className="max-w-[70ch] font-lp-body text-[13.5px] text-app-muted">Timed tests in the exam format companies use. <strong className="text-app-charcoal">One minute per question</strong>, wrong answers cost marks, no hints, answers and reasoning at the end. Every answer adds to your readiness below.</p>
+      </div>
 
-      <article className="overflow-hidden rounded-2xl bg-[var(--m-ink)] p-5 text-white sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-5">
-          <div className="min-w-0 max-w-[58ch]">
-            <p className="font-lp-body text-[11.5px] font-bold uppercase tracking-[0.14em] text-white/60">Start here</p>
-            <h3 className="mt-1 font-lp-display text-[26px] font-bold leading-tight">{mock.label}</h3>
-            <p className="mt-1.5 font-lp-body text-[14px] leading-relaxed text-white/75">{mock.blurb}</p>
-            <p className="mt-3 inline-flex items-center gap-1.5 font-lp-body text-[13px] font-semibold text-white/90"><Timer size={14} aria-hidden /> {total} questions · {total} minutes</p>
-          </div>
-          <button type="button" onClick={() => onStart(mock.key)} className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-3 font-lp-body text-[14px] font-semibold text-[var(--m-ink)] hover:bg-white/90">Start the mock <ArrowRight size={16} aria-hidden /></button>
-        </div>
-        <div className="mt-5" role="img" aria-label={`Sections of the mock: ${mock.parts.map((p) => `${CATEGORY_LABEL[p.category]} ${p.count} questions`).join(", ")}`}>
-          <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full">
-            {mock.parts.map((p, i) => <span key={p.category} className="h-full rounded-sm bg-white" style={{ flexGrow: p.count, opacity: 0.95 - i * 0.12 }} />)}
-          </div>
-          <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
-            {mock.parts.map((p) => <li key={p.category} className="font-lp-body text-[12px] text-white/70">{CATEGORY_LABEL[p.category]} <span className="tabular-nums text-white/90">{p.count}</span></li>)}
-          </ul>
-        </div>
-      </article>
+      <MockAssessments mocks={mocks} onStart={onStartMock} busy={mockBusy} error={mockError} />
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {sections.map((t) => {
-          const category = t.parts[0].category;
-          const Icon = ICON[category];
-          const n = testQuestionCount(t);
-          return (
-            <article key={t.key} className="group flex flex-col gap-3 rounded-2xl border border-app-border bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[var(--m-soft)] hover:shadow-sm motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-              <div className="flex items-start justify-between gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl text-[var(--m-ink)]" style={tint(category)}><Icon size={20} aria-hidden /></span>
-                <span className="text-right font-lp-body text-[12px] leading-tight text-app-muted"><strong className="block font-lp-display text-[22px] leading-none text-app-charcoal">{n}</strong>min</span>
-              </div>
-              <div>
-                <h3 className="font-lp-display text-[17px] font-bold leading-snug text-app-charcoal">{t.label}</h3>
-                <p className="mt-0.5 font-lp-body text-[12.5px] leading-relaxed text-app-muted">{t.blurb}</p>
-              </div>
-              <Shown view={view} category={category} />
-              <button type="button" onClick={() => onStart(t.key)} className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--m-ink)] px-3.5 py-2.5 font-lp-body text-[13px] font-semibold text-white">Take the {n}-minute test <ArrowRight size={14} aria-hidden /></button>
-            </article>
-          );
-        })}
-        <article className="flex flex-col gap-3 rounded-2xl border border-dashed border-[var(--m-soft)] bg-[var(--m-accent-soft)] p-4">
-          <div className="flex items-start justify-between gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[var(--m-ink)]"><Mic size={20} aria-hidden /></span>
-            <span className="rounded-full bg-white px-2.5 py-1 font-lp-body text-[11px] font-bold text-[var(--m-ink)]">Voice</span>
-          </div>
-          <div>
-            <h3 className="font-lp-display text-[17px] font-bold leading-snug text-[var(--m-ink)]">English speaking</h3>
-            <p className="mt-0.5 font-lp-body text-[12.5px] leading-relaxed text-[var(--m-muted)]">Answer interview and workplace prompts aloud and get feedback on grammar, vocabulary, clarity, flow, structure and relevance. Accents are never marked.</p>
-          </div>
-          <Shown view={view} category="speaking" />
-          <button type="button" onClick={onSpeaking} className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--m-ink)] px-3.5 py-2.5 font-lp-body text-[13px] font-semibold text-white"><Mic size={14} aria-hidden /> Open Speaking Studio</button>
-        </article>
+      <div>
+        <h3 className="font-lp-display text-[17px] font-bold text-app-charcoal">Practice tests</h3>
+        <p className="mb-3 mt-0.5 font-lp-body text-[13px] text-app-muted">One test per section, open any time. Questions you have answered are never asked again.</p>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {SIM_TESTS.map((t) => {
+            const category = t.parts[0].category;
+            const Icon = ICON[category];
+            const n = testQuestionCount(t);
+            return (
+              <article key={t.key} className="flex flex-col gap-2.5 rounded-xl border border-app-border bg-white p-3.5 transition-[border-color,box-shadow] duration-200 hover:border-[var(--m-soft)] hover:shadow-sm motion-reduce:transition-none">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--m-ink)]" style={tint(category)}><Icon size={18} aria-hidden /></span>
+                  <h4 className="min-w-0 flex-1 font-lp-display text-[15px] font-bold leading-snug text-app-charcoal">{t.label}</h4>
+                  <span className="shrink-0 rounded-full bg-[var(--m-ground)] px-2 py-0.5 font-lp-body text-[11.5px] font-semibold tabular-nums text-app-muted">{n} min</span>
+                </div>
+                <p className="font-lp-body text-[12.5px] leading-relaxed text-app-muted">{t.blurb}</p>
+                <Shown view={view} category={category} />
+                <button type="button" onClick={() => onStart(t.key)} className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--m-ink)] px-3 py-2 font-lp-body text-[13px] font-semibold text-white">Start <ArrowRight size={14} aria-hidden /></button>
+              </article>
+            );
+          })}
+          <article className="flex flex-col gap-2.5 rounded-xl border border-dashed border-[var(--m-soft)] bg-[var(--m-accent-soft)] p-3.5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[var(--m-ink)]"><Mic size={18} aria-hidden /></span>
+              <h4 className="min-w-0 flex-1 font-lp-display text-[15px] font-bold leading-snug text-[var(--m-ink)]">English speaking</h4>
+              <span className="shrink-0 rounded-full bg-white px-2 py-0.5 font-lp-body text-[11px] font-bold text-[var(--m-ink)]">Voice</span>
+            </div>
+            <p className="font-lp-body text-[12.5px] leading-relaxed text-[var(--m-muted)]">Answer prompts aloud and get feedback on grammar, clarity and structure. Accents are never marked.</p>
+            <Shown view={view} category="speaking" />
+            <button type="button" onClick={onSpeaking} className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--m-ink)] px-3 py-2 font-lp-body text-[13px] font-semibold text-white"><Mic size={14} aria-hidden /> Open Speaking Studio</button>
+          </article>
+        </div>
       </div>
     </section>
   );

@@ -1,13 +1,20 @@
+import { markFor, totalMarks } from "./marking";
 import { CRT_MODULES, type Band, type CrtQuestion, type ModuleScores } from "./model";
 
-/** Pure. Scores a set of answers; a skipped or unknown answer earns 0. Every module's maximum is what the served questions could have earned. */
+/**
+ * Pure. Scores a set of answers with negative marking (see marking.ts): a wrong right/wrong answer costs marks, a skipped or unknown answer earns 0, and a
+ * module never scores below 0. Every module's maximum is what the served questions could have earned.
+ */
 export function scoreAttempt(questions: readonly CrtQuestion[], answers: Readonly<Record<string, string>>): { moduleScores: ModuleScores; totalPct: number } {
-  const moduleScores = Object.fromEntries(CRT_MODULES.map((m) => [m, { points: 0, max: 0 }])) as ModuleScores;
+  const marks = Object.fromEntries(CRT_MODULES.map((m) => [m, [] as number[]])) as Record<(typeof CRT_MODULES)[number], number[]>;
+  const max = Object.fromEntries(CRT_MODULES.map((m) => [m, 0])) as Record<(typeof CRT_MODULES)[number], number>;
   for (const q of questions) {
     const best = Math.max(0, ...q.options.map((o) => o.points));
     const chosen = q.options.find((o) => o.key === answers[q.id]);
-    moduleScores[q.module] = { points: moduleScores[q.module].points + (chosen?.points ?? 0), max: moduleScores[q.module].max + best };
+    marks[q.module].push(markFor(q.module, chosen?.points ?? 0, Boolean(chosen)));
+    max[q.module] += best;
   }
+  const moduleScores = Object.fromEntries(CRT_MODULES.map((m) => [m, { points: totalMarks(marks[m]), max: max[m] }])) as ModuleScores;
   return { moduleScores, totalPct: totalPct(moduleScores) };
 }
 

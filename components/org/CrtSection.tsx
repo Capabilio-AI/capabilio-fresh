@@ -3,6 +3,7 @@ import type { OrgCrtOverview, OrgCycle } from "@/lib/crt/org";
 import { BAND_LABEL, CRT_MODULES, MODULE_LABEL, type Band } from "@/lib/crt/model";
 import { bandFor } from "@/lib/crt/score";
 import { JsonForm } from "./JsonForm";
+import { MOCKS } from "@/lib/crt/mocks";
 import { Collapsible, EmptyState, Pill } from "./ui";
 import { Fact, GroupTitle, Initial, Meter, Segmented } from "./widgets";
 
@@ -25,15 +26,17 @@ export function CrtSection({ overview, canSchedule }: { overview: OrgCrtOverview
   return (
     <div className="flex flex-col gap-6">
       {canSchedule && (
-        <Collapsible title="Schedule a CRT cycle" defaultOpen={cycles.length === 0}>
+        <Collapsible title="Schedule an assessment or a mock" defaultOpen={cycles.length === 0}>
           <p className="mb-3 font-lp-body text-[12.5px] text-app-muted">
-            Students in scope receive the assessment only from the opening time you set. It has four modules and gives one minute per question. When it closes, the placement cell gets the results here and in notifications. Students are told before they start that you can see their score.
+            Students in scope can open it only between the opening and closing time you set, and take it once. The CRT assessment has four modules; a mock is a longer practice sitting in the Placement Simulator that stays locked for students until its slot. Both give one minute per question and take marks off wrong answers. The results come here and in notifications, and students are told before they start that you can see their score.
           </p>
           <JsonForm
             action="/api/org/crt"
-            submitLabel="Schedule cycle"
-            successMessage="Cycle scheduled."
+            submitLabel="Schedule"
+            successMessage="Scheduled."
             fields={[
+              { name: "kind", label: "What to schedule", type: "select", required: true, defaultValue: "assessment", options: [{ value: "assessment", label: "CRT assessment (the college's official one)" }, { value: "mock", label: "Mock assessment (practice in the Placement Simulator)" }] },
+              { name: "mockKey", label: "Which mock", type: "select", options: MOCKS.map((m) => ({ value: m.key, label: m.label })), help: "Only for a mock." },
               { name: "title", label: "Name", required: true, defaultValue: `CRT ${new Date(`${suggested.opensAt.slice(0, 10)}T00:00:00`).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}` },
               { name: "opensAt", label: "Opens at", type: "datetime-local", required: true, defaultValue: suggested.opensAt, help: "Students receive the assessment from this exact time, and not before." },
               { name: "closesAt", label: "Closes at", type: "datetime-local", required: true, defaultValue: suggested.closesAt, help: "Anyone who has started has one minute per question, up to this time." },
@@ -48,7 +51,7 @@ export function CrtSection({ overview, canSchedule }: { overview: OrgCrtOverview
         <EmptyState title="No CRT cycle yet" body={canSchedule ? "Schedule the first cycle above. A good rhythm is one every six months, near the start of each half of the academic year." : "The placement cell has not scheduled a CRT cycle yet."} />
       ) : (
         <>
-          {cycles.length > 1 && <Segmented label="CRT cycles" tabs={cycles.map((c) => ({ label: c.title, href: `/org/outcomes?tab=crt&cycle=${c.id}`, active: c.id === cycle?.id }))} />}
+          {cycles.length > 1 && <Segmented label="CRT cycles" tabs={cycles.map((c) => ({ label: c.kind === "mock" ? `${c.title} (mock)` : c.title, href: `/org/outcomes?tab=crt&cycle=${c.id}`, active: c.id === cycle?.id }))} />}
 
           {cycle && s && (
             <>
@@ -56,6 +59,7 @@ export function CrtSection({ overview, canSchedule }: { overview: OrgCrtOverview
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-[18px] font-extrabold text-app-charcoal">{cycle.title}</h2>
                   <Pill tone={STATUS_PILL[cycle.status].tone}>{STATUS_PILL[cycle.status].label}</Pill>
+                  {cycle.kind === "mock" && <Pill tone="info">{cycle.mockLabel ?? "Mock"}</Pill>}
                   <span className="text-[12.5px] text-app-muted">{day(cycle.opensAt)} to {day(cycle.closesAt)} · {cycle.durationMinutes} min</span>
                 </div>
                 <div className="flex items-center gap-2">

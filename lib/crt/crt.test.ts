@@ -13,13 +13,13 @@ const sjt = (id: string): CrtQuestion => ({ id, module: "soft_skills", options: 
 describe("scoreAttempt", () => {
   const qs = [mcq("q1", "aptitude", "a"), mcq("q2", "aptitude", "b"), mcq("q3", "reasoning", "c"), sjt("q4")];
 
-  it("scores right answers, treats a skipped question as 0, and weights modules equally", () => {
+  it("scores right answers, takes 0.25 off a wrong one, treats a skipped question as 0, and weights modules equally", () => {
     const { moduleScores, totalPct } = scoreAttempt(qs, { q1: "a", q2: "c", q3: "c", q4: "b" });
-    expect(moduleScores.aptitude).toEqual({ points: 1, max: 2 });
+    expect(moduleScores.aptitude).toEqual({ points: 0.75, max: 2 }); // q1 right (+1), q2 wrong (−0.25)
     expect(moduleScores.reasoning).toEqual({ points: 1, max: 1 });
     expect(moduleScores.soft_skills).toEqual({ points: 1, max: 3 });
     expect(moduleScores.verbal).toEqual({ points: 0, max: 0 });
-    expect(totalPct).toBe(61.1); // (50 + 100 + 33.3) / 3; verbal was not served so it does not drag the total down
+    expect(totalPct).toBe(56.9); // (37.5 + 100 + 33.3) / 3; verbal was not served so it does not drag the total down
   });
 
   it("ignores an answer key that is not an option", () => {

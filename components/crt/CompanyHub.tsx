@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Building2, CheckCircle2, ChevronRight, ExternalLink, Search } from "lucide-react";
+import { Building2, CheckCircle2, ChevronRight, ExternalLink, Search, X } from "lucide-react";
+import { NEGATIVE_MARK } from "@/lib/crt/marking";
 import { ROUND_LABEL, SECTORS } from "@/lib/crt/companies";
 import type { CompanyView, RoundView } from "@/lib/crt/company-server";
 import { CompanyExam } from "./SimulatorExam";
 import { useLoad } from "./use-load";
 
 const CARD = "rounded-2xl border border-app-border bg-white p-5 sm:p-6";
+/** companies shown before "Show more", so the page stays short however many are published */
+const PAGE = 8;
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 const checkedOn = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "");
 
@@ -20,7 +23,7 @@ const PRACTICE_LINK: Partial<Record<RoundView["kind"], { href: string; label: st
 };
 
 function meta(r: RoundView): string {
-  const parts = [r.minutes ? `${r.minutes} min` : null, r.questions ? `${r.questions} questions` : null, r.sections.length > 1 ? `${r.sections.length} sections` : null, r.negativeMarking ? `−${r.negativeMarking} per wrong answer` : null];
+  const parts = [r.minutes ? `${r.minutes} min` : null, r.questions ? `${r.questions} questions` : null, r.sections.length > 1 ? `${r.sections.length} sections` : null, `−${r.negativeMarking || NEGATIVE_MARK} per wrong answer`];
   return parts.filter(Boolean).join(" · ");
 }
 
@@ -50,7 +53,7 @@ function Round({ r, onStart }: { r: RoundView; onStart: (id: string) => void }) 
 
 function Detail({ c, onStart }: { c: CompanyView; onStart: (id: string) => void }) {
   return (
-    <div className="mt-5 border-t border-app-border pt-5">
+    <div>
       {c.about && <p className="max-w-[70ch] font-lp-body text-[14px] leading-relaxed text-app-charcoal">{c.about}</p>}
       {c.process.length > 0 && (
         <div className="mt-4">
@@ -67,6 +70,30 @@ function Detail({ c, onStart }: { c: CompanyView; onStart: (id: string) => void 
   );
 }
 
+/** One company's process and rounds in a dialog, so opening it never lengthens the CRT page. Escape or the backdrop closes it. */
+function CompanyDialog({ c, onStart, onClose }: { c: CompanyView; onStart: (id: string) => void; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label={c.name} onClick={(e) => e.stopPropagation()} className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl">
+        <header className="flex items-center gap-3 border-b border-app-border px-5 py-4">
+          <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--m-ink)] font-lp-display text-[15px] font-bold text-white">{initials(c.name) || <Building2 size={18} />}</span>
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate font-lp-display text-[19px] font-bold text-app-charcoal">{c.name}</h3>
+            <p className="font-lp-body text-[12.5px] text-app-muted">{c.sector} · {c.rounds.length} {c.rounds.length === 1 ? "round" : "rounds"}</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-app-muted hover:bg-[var(--m-ground)]"><X size={18} aria-hidden /></button>
+        </header>
+        <div className="overflow-y-auto px-5 py-5"><Detail c={c} onStart={onStart} /></div>
+      </div>
+    </div>
+  );
+}
+
 /** "Prepare by company": each company's hiring process and rounds, with timed mocks in its pattern, taken in the locked exam screen. */
 export function CompanyHub() {
   const [nonce, setNonce] = useState(0);
@@ -75,6 +102,7 @@ export function CompanyHub() {
   const [sector, setSector] = useState<string>("All");
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [round, setRound] = useState<string | null>(null);
+  const [limit, setLimit] = useState(PAGE);
 
   const companies = useMemo(() => data?.companies ?? [], [data]);
   const sectors = useMemo(() => ["All", ...SECTORS.filter((s) => companies.some((c) => c.sector === s))], [companies]);
@@ -98,30 +126,35 @@ export function CompanyHub() {
             <label className="relative min-w-[220px] flex-1">
               <span className="sr-only">Search companies</span>
               <Search size={16} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-app-muted" />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search companies" className="w-full rounded-xl border border-app-border bg-white py-2.5 pl-9 pr-3 font-lp-body text-[14px] text-app-charcoal outline-none focus:border-[var(--m-ink)]" />
+              <input value={query} onChange={(e) => { setQuery(e.target.value); setLimit(PAGE); }} placeholder="Search companies" className="w-full rounded-xl border border-app-border bg-white py-2.5 pl-9 pr-3 font-lp-body text-[14px] text-app-charcoal outline-none focus:border-[var(--m-ink)]" />
             </label>
-            <div role="group" aria-label="Sector" className="flex flex-wrap gap-2">
-              {sectors.map((s) => <button key={s} type="button" aria-pressed={sector === s} onClick={() => setSector(s)} className={`rounded-full border px-4 py-2 font-lp-body text-[13px] font-semibold ${sector === s ? "border-[var(--m-ink)] bg-[var(--m-ink)] text-white" : "border-app-border bg-white text-app-charcoal hover:bg-[var(--m-ground)]"}`}>{s}</button>)}
+            <div role="group" aria-label="Sector" className="flex max-w-full gap-2 overflow-x-auto pb-1">
+              {sectors.map((s) => <button key={s} type="button" aria-pressed={sector === s} onClick={() => { setSector(s); setLimit(PAGE); }} className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 font-lp-body text-[13px] font-semibold ${sector === s ? "border-[var(--m-ink)] bg-[var(--m-ink)] text-white" : "border-app-border bg-white text-app-charcoal hover:bg-[var(--m-ground)]"}`}>{s}</button>)}
             </div>
           </div>
 
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((c) => {
+          <ul className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+            {shown.slice(0, limit).map((c) => {
               const done = c.rounds.filter((r) => r.status === "completed").length;
-              const on = c.slug === openSlug;
               return (
                 <li key={c.id}>
-                  <button type="button" aria-expanded={on} onClick={() => setOpenSlug(on ? null : c.slug)} className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left ${on ? "border-[var(--m-ink)] bg-[var(--m-ground)]" : "border-app-border hover:bg-[var(--m-ground)]"}`}>
-                    <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--m-ink)] font-lp-display text-[15px] font-bold text-white">{initials(c.name) || <Building2 size={18} />}</span>
-                    <span className="min-w-0 flex-1"><span className="block truncate font-lp-body text-[15px] font-bold text-app-charcoal">{c.name}</span><span className="block font-lp-body text-[12.5px] text-app-muted">{c.sector} · {c.rounds.length} {c.rounds.length === 1 ? "round" : "rounds"}{done ? ` · ${done} done` : ""}</span></span>
-                    <ChevronRight size={16} aria-hidden className={`shrink-0 text-app-muted transition-transform motion-reduce:transition-none ${on ? "rotate-90" : ""}`} />
+                  <button type="button" aria-haspopup="dialog" onClick={() => setOpenSlug(c.slug)} className="flex w-full items-center gap-2.5 rounded-xl border border-app-border p-3 text-left hover:bg-[var(--m-ground)]">
+                    <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--m-ink)] font-lp-display text-[13px] font-bold text-white">{initials(c.name) || <Building2 size={16} />}</span>
+                    <span className="min-w-0 flex-1"><span className="block truncate font-lp-body text-[14px] font-bold text-app-charcoal">{c.name}</span><span className="block truncate font-lp-body text-[12px] text-app-muted">{c.sector} · {c.rounds.length} {c.rounds.length === 1 ? "round" : "rounds"}{done ? ` · ${done} done` : ""}</span></span>
+                    <ChevronRight size={15} aria-hidden className="shrink-0 text-app-muted" />
                   </button>
                 </li>
               );
             })}
             {shown.length === 0 && <li className="font-lp-body text-[13.5px] text-app-muted">No company matches that search.</li>}
           </ul>
-          {open && <Detail c={open} onStart={setRound} />}
+          {shown.length > PAGE && (
+            <div className="mt-3 flex items-center justify-between gap-3 font-lp-body text-[13px] text-app-muted">
+              <span>Showing {Math.min(limit, shown.length)} of {shown.length}</span>
+              {limit < shown.length ? <button type="button" onClick={() => setLimit((n) => n + PAGE)} className="rounded-full border border-app-border px-4 py-1.5 font-semibold text-app-charcoal hover:bg-[var(--m-ground)]">Show more</button> : <button type="button" onClick={() => setLimit(PAGE)} className="font-semibold text-app-charcoal underline">Show fewer</button>}
+            </div>
+          )}
+          {open && <CompanyDialog c={open} onStart={setRound} onClose={() => setOpenSlug(null)} />}
         </>
       )}
       {round && <CompanyExam roundId={round} onClose={() => { setRound(null); setNonce((n) => n + 1); }} />}
