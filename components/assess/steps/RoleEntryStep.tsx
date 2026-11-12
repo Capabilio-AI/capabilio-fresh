@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, BarChart3, Check, ClipboardCheck, Compass, GitFork, RotateCcw, Search, Sparkles } from "lucide-react";
-import type { ResolveOutcome, RoleCandidate, RoleOption } from "@/lib/assess/roles";
+import type { ClarifyOption, ResolveChoice, ResolveOutcome, RoleCandidate, RoleOption } from "@/lib/assess/roles";
 import { filterRoles, roleBlurb } from "@/lib/assess/role-filter";
 import { ApiError, NetworkError, assessApi } from "../api";
 import { Button } from "../ui/Button";
@@ -28,7 +28,8 @@ const NEXT_GRADUATE = [
 type View =
   | { kind: "input" }
   | { kind: "resolving"; text: string }
-  | { kind: "review"; primary: RoleCandidate; alternatives: RoleCandidate[]; fresh: boolean }
+  | { kind: "review"; primary: RoleCandidate; alternatives: RoleCandidate[]; fresh: boolean; typedText?: string }
+  | { kind: "clarify"; typed: string; message: string; options: ClarifyOption[] }
   | { kind: "rejected"; message: string }
   | { kind: "error"; message: string };
 
@@ -64,13 +65,15 @@ export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles:
     setView({ kind: "review", primary: role, alternatives: hits.filter((h) => h.role.careerId !== role.careerId).slice(0, 3).map((h) => h.role), fresh: false });
   };
   /** Free text: the server matches it to a role or builds a profile for a new one. */
-  const resolveTyped = async (value = typed) => {
+  const resolveTyped = async (value = typed, choice?: ResolveChoice) => {
     const q = value.trim();
     if (q.length < 2) return input.current?.focus();
-    setView({ kind: "resolving", text: q });
+    setView({ kind: "resolving", text: choice && choice.kind !== "existing" ? choice.title : q });
     try {
-      const out: ResolveOutcome = await assessApi.resolveRole(q);
-      setView(out.status === "REJECTED" ? { kind: "rejected", message: out.message } : { kind: "review", primary: out.primary, alternatives: out.alternatives, fresh: out.status === "GENERATED" });
+      const out: ResolveOutcome = await assessApi.resolveRole(q, choice);
+      if (out.status === "REJECTED" || out.status === "UNAVAILABLE") setView({ kind: "rejected", message: out.message });
+      else if (out.status === "CLARIFY") setView({ kind: "clarify", typed: q, message: out.message, options: out.options });
+      else setView({ kind: "review", primary: out.primary, alternatives: out.alternatives, fresh: out.status === "GENERATED", typedText: q });
     } catch (e) {
       setView({ kind: "error", message: e instanceof NetworkError ? "We couldn't reach the server. Check your connection and try again." : e instanceof ApiError ? e.message : "Something went wrong. Please try again." });
     }
@@ -87,7 +90,7 @@ export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles:
   const confirm = async (careerId: string) => {
     setConfirming(true);
     try {
-      await assessApi.confirmRole(careerId);
+      await assessApi.confirmRole(careerId, view.kind === "review" ? view.typedText : undefined);
       onConfirmed();
     } catch (e) {
       setConfirming(false);
@@ -95,6 +98,9 @@ export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles:
     }
   };
 
+  if (view.kind === "clarify") {
+    return <Clarify view={view} onChoose={(choice) => void resolveTyped(view.typed, choice)} onRetry={() => setView({ kind: "input" })} />;
+  }
   if (view.kind === "review") {
     return <Review view={view} confirming={confirming} onPick={(c) => setView({ ...view, primary: c, alternatives: [view.primary, ...view.alternatives.filter((a) => a.careerId !== c.careerId)], fresh: false })} onConfirm={() => confirm(view.primary.careerId)} onRetry={() => setView({ kind: "input" })} />;
   }
@@ -204,6 +210,7 @@ function Review({ view, confirming, onPick, onConfirm, onRetry }: { view: Extrac
           {fresh && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--m-accent-soft)] px-2.5 py-0.5 text-[11.5px] font-bold text-[var(--m-accent-ink)]"><Sparkles className="h-3 w-3" aria-hidden /> New profile built for you</span>}
         </p>
         <h1 id="review-title" className="mt-1 text-balance font-lp-display text-[40px] font-bold leading-[1.05] tracking-tight text-[var(--m-ink)] sm:text-[56px]">{primary.name}</h1>
+        <Provisional validation={primary.validation} />
         <p className="mt-3 text-[15px] text-[var(--m-muted)]">{primary.skills.length} skills across this role. Your career assessment is 22 adaptive questions that cover them by importance.</p>
 
         <div className="mt-7 space-y-5">
@@ -235,6 +242,49 @@ function Review({ view, confirming, onPick, onConfirm, onRetry }: { view: Extrac
           <Button variant="accent" size="lg" onClick={onConfirm} loading={confirming} icon={<Check className="h-5 w-5" aria-hidden />} hint="Enter" autoFocus>Confirm &amp; continue</Button>
         </div>
       </motion.div>
+    </section>
+  );
+}
+
+const PROVISIONAL = new Set(["DRAFT", "AI_GENERATED", "UNDER_REVIEW", "NEEDS_REVISION"]);
+
+/** Says plainly when a skill profile has not been reviewed by a person, and how sure the checks were. Never shown for a published profile. */
+function Provisional({ validation }: { validation: RoleCandidate["validation"] }) {
+  if (!validation || !PROVISIONAL.has(validation.status)) return null;
+  const pct = validation.competencyConfidence === null ? null : Math.round(validation.competencyConfidence * 100);
+  return (
+    <p role="note" className="mt-3 rounded-xl bg-[var(--m-accent-soft)] px-3.5 py-2.5 text-[13px] leading-snug text-[var(--m-accent-ink)]">
+      <span className="font-bold">Provisional skill profile.</span>{" "}
+      {validation.status === "NEEDS_REVISION" ? "This profile was flagged for correction and is waiting for review." : "Built by AI and checked by a second AI pass; a person has not reviewed it yet."}
+      {pct !== null && <> Confidence in the skill list: {pct}%.</>} If a skill looks wrong for this role, choose “Use different words”.
+    </p>
+  );
+}
+
+/** The role was broad, or close to an existing one: the student decides. Nothing is picked for them. */
+function Clarify({ view, onChoose, onRetry }: { view: Extract<View, { kind: "clarify" }>; onChoose: (c: ResolveChoice) => void; onRetry: () => void }) {
+  return (
+    <section className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 sm:pt-12" aria-labelledby="clarify-title">
+      <div className="a-glass rounded-[2rem] p-6 sm:p-9">
+        <p className="text-[13px] font-bold text-[var(--m-muted)]">One quick question</p>
+        <h1 id="clarify-title" className="mt-1 text-balance font-lp-display text-[30px] font-bold leading-[1.1] tracking-tight text-[var(--m-ink)] sm:text-[38px]">{view.message}</h1>
+        <ul className="mt-6 space-y-2.5">
+          {view.options.map((o, i) => {
+            const choice: ResolveChoice = o.kind === "existing" ? { kind: "existing", careerId: o.candidate.careerId } : o.kind === "specialization" ? { kind: "specialization", title: o.title, parent: o.parent, industry: o.industry, domain: o.domain } : { kind: "as_typed", title: o.title, industry: o.industry, domain: o.domain };
+            const title = o.kind === "existing" ? o.candidate.name : o.title;
+            const body = o.kind === "existing" ? `An existing role with ${o.candidate.skills.length} skills.` : o.kind === "specialization" ? o.description : "Something else: we'll build a skill profile for exactly this title.";
+            return (
+              <li key={`${o.kind}-${title}-${i}`}>
+                <button type="button" onClick={() => onChoose(choice)} className="a-glass-soft a-tile flex w-full items-center justify-between gap-3 rounded-2xl px-5 py-4 text-left">
+                  <span className="min-w-0"><span className="block text-[16.5px] font-bold text-[var(--m-ink)]">{o.kind === "as_typed" ? `Use “${title}” exactly` : title}</span><span className="mt-0.5 block text-[13.5px] leading-snug text-[var(--m-muted)]">{body}</span></span>
+                  <ArrowRight className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-6"><Button variant="ghost" onClick={onRetry} icon={<RotateCcw className="h-4 w-4" aria-hidden />}>Use different words</Button></div>
+      </div>
     </section>
   );
 }

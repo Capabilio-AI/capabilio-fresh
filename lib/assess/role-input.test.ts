@@ -17,3 +17,27 @@ describe("checkRoleInput", () => {
     expect(skillKeyOf("Stakeholder Communication")).toBe("SKILL_STAKEHOLDER_COMMUNICATION");
   });
 });
+
+import { isSpellingVariant, levenshtein, sharesField } from "./role-input";
+
+describe("typo versus different title", () => {
+  it("treats a one-character slip as the same title", () => {
+    expect(isSpellingVariant("data analist", "data analyst")).toBe(true);
+    expect(isSpellingVariant("mechanical design enginer", "mechanical design engineer")).toBe(true);
+    expect(isSpellingVariant("mechnical design enginer", "mechanical design engineer")).toBe(true); // one slip in each of two words
+  });
+  it("never treats a different but similar-sounding title as a typo", () => {
+    expect(levenshtein("automobile engineer", "automotive engineer")).toBe(2);
+    expect(isSpellingVariant("automobile engineer", "automotive engineer")).toBe(false);
+    expect(isSpellingVariant("data analyst", "data scientist")).toBe(false);
+    expect(isSpellingVariant("automobile design engineer", "automotive design engineer")).toBe(false);
+    expect(isSpellingVariant("civil engineer", "civil engineers")).toBe(true);
+  });
+  it("relates roles by their field, not by the word engineer", () => {
+    expect(sharesField("automobile engineer", "AI/ML Engineer")).toBe(false);
+    expect(sharesField("automobile engineer", "Cloud Engineer")).toBe(false);
+    expect(sharesField("automobile engineer", "Automotive Engineer")).toBe(true);
+    expect(sharesField("embedded engineer", "Embedded Systems Engineer")).toBe(true);
+    expect(sharesField("gis analyst", "Data Analyst")).toBe(false);
+  });
+});

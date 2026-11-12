@@ -1,5 +1,5 @@
 import type { AssessmentResult, Feedback, QuestionPayload, SessionStart, SessionState } from "@/lib/assess/types";
-import type { ResolveOutcome } from "@/lib/assess/roles";
+import type { ResolveChoice, ResolveOutcome } from "@/lib/assess/roles";
 import type { StoredFeedback } from "@/lib/assess/feedback";
 import type { ResumeSummary } from "@/lib/graduate/summary";
 
@@ -47,8 +47,8 @@ export const assessApi = {
   next: (sessionId: string) => call<{ question: QuestionPayload | null; ended: boolean }>(`/api/assess/session/${sessionId}/next`, { method: "POST" }),
   answer: (input: { sessionQuestionId: string; attemptId: string; optionIndex: number; responseMs?: number }) =>
     call<Feedback & { sessionId: string }>("/api/assess/answer", { method: "POST", body: JSON.stringify(input) }),
-  resolveRole: (text: string) => call<ResolveOutcome>("/api/assess/role/resolve", { method: "POST", body: JSON.stringify({ text }) }),
-  confirmRole: (careerId: string) => call<{ ok: true }>("/api/assess/role/confirm", { method: "POST", body: JSON.stringify({ careerId }) }),
+  resolveRole: (text: string, choice?: ResolveChoice) => call<ResolveOutcome>("/api/assess/role/resolve", { method: "POST", body: JSON.stringify({ text, choice }) }),
+  confirmRole: (careerId: string, typed?: string) => call<{ ok: true }>("/api/assess/role/confirm", { method: "POST", body: JSON.stringify({ careerId, typed }) }),
   feedback: (sessionId: string) => call<{ status: "PENDING" | "READY"; feedback: StoredFeedback[] }>(`/api/assess/session/${sessionId}/feedback`),
   event: (name: "assessment_popup_viewed" | "dashboard_opened_after_assessment") => fetch("/api/assess/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }).catch(() => {}),
   submit: (sessionId: string) => call<{ result: AssessmentResult }>(`/api/assess/session/${sessionId}/submit`, { method: "POST" }),
