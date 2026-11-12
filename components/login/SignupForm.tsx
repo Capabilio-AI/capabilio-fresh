@@ -312,7 +312,7 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
             onChange={(e) => setAgreedToTerms(e.target.checked)}
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-lp-border-strong bg-lp-surface-card text-lp-accent-indigo accent-[var(--lp-accent-indigo)] focus:ring-2 focus:ring-lp-accent-indigo/25"
           />
-          I agree to the Terms of Service and Privacy Policy.
+          <span>I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Privacy Policy</a>.</span>
         </label>
 
         <button

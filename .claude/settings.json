@@ -1,0 +1,7 @@
+{
+  "enabledPlugins": {
+    "ruflo-core@ruflo": true,
+    "ruflo-rag-memory@ruflo": true,
+    "ruflo-swarm@ruflo": true
+  }
+}

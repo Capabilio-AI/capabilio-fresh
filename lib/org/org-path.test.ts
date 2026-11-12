@@ -82,9 +82,14 @@ describe("role mapping and permission sets", () => {
   });
   it("nav only offers pages the member's permissions allow", () => {
     const labels = (role: string, custom: string[] | null = null) => orgNavFor(effectivePermissions(role, custom)).map((n) => n.label);
-    expect(labels("tpo")).toEqual(["Home", "College page", "Company visits", "Career intent", "Insights", "Outcomes", "Team chat"]);
+    expect(labels("tpo")).toEqual(["Home", "College page", "Companies", "Career intent", "Insights", "Outcomes", "Team chat"]);
     expect(labels("faculty")).not.toContain("Career intent");
     expect(labels("faculty")).toEqual(["Home", "College page", "Students", "Materials", "Projects", "Integrity", "Team chat"]);
+    // Company visits and Integrity are tabs under Companies and Outcomes, so the header stays short for anyone who can open those
+    expect(labels("principal")).not.toContain("Company visits");
+    expect(labels("principal")).not.toContain("Integrity");
+    expect(labels("principal")).toContain("Companies");
+    expect(labels("principal")).toContain("Outcomes");
     expect(labels("principal")).toContain("Team & access");
     expect(labels("principal")).toContain("Curriculum");
     expect(labels("faculty")).not.toContain("Team & access");

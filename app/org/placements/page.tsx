@@ -4,6 +4,8 @@ import { orgPageContext } from "@/lib/org/page";
 import { untyped } from "@/lib/org/db";
 import { VISIT_STATUS } from "@/lib/org/visits";
 import { istDate } from "@/lib/org/format";
+import { companyTabs } from "@/lib/org/section-tabs";
+import { SectionTabs } from "@/components/org/SectionTabs";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Pill } from "@/components/org/ui";
 import { GroupTitle, Initial } from "@/components/org/widgets";
@@ -53,6 +55,7 @@ export default async function PlacementsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <SectionTabs label="Company sections" active="/org/placements" tabs={companyTabs()} />
       <PageHeader
         title="Company visits"
         subtitle="Companies come to your campus to hire. Record each visit once the company has confirmed it, let eligible students register, then follow it through shortlisting, selection and offer letters."

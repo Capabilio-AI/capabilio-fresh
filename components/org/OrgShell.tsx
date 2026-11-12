@@ -4,7 +4,7 @@ import { Fragment, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, BarChart3, CalendarDays, BookOpen, Briefcase, Eye, FolderKanban, GraduationCap, LayoutDashboard, Megaphone, MessagesSquare, School, Settings, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
+import { Bell, Building2, BarChart3, CalendarDays, BookOpen, Briefcase, Eye, FolderKanban, GraduationCap, LayoutDashboard, Megaphone, MessagesSquare, School, Settings, Target, Trophy, UserCheck, Users, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import "@/components/metro/metro.css";
 import type { OrgNavGroup } from "@/lib/org/nav";
@@ -15,7 +15,8 @@ const ICONS: Record<string, LucideIcon> = {
   "/org": LayoutDashboard,
   "/company": LayoutDashboard,
   "/company/roles": Briefcase,
-  "/company/visits": CalendarDays,
+  "/company/requests": UserCheck,
+  "/company/messages": MessagesSquare,
   "/company/profile": School,
   "/company/posts": Megaphone,
   "/company/followers": Users,
@@ -26,6 +27,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/org/materials": BookOpen,
   "/org/projects": FolderKanban,
   "/org/placements": Briefcase,
+  "/org/companies": Building2,
   "/org/members": UserCheck,
   "/org/team": UserCheck,
   "/org/curriculum": GraduationCap,
@@ -85,6 +87,7 @@ export function OrgShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const base = variant === "company" ? "/company" : "/org";
   const hasCollege = groups.some((g) => g.items.some((i) => i.href === "/org/college"));
 
   return (
@@ -118,17 +121,13 @@ export function OrgShell({
                 <School size={18} strokeWidth={2.2} />
               </Dock>
             )}
-            {variant === "org" && (
-              <>
-                <Dock href="/org/notifications" label="Notifications" badge={<NotificationBadge className="absolute -right-2.5 -top-2 h-[18px]" />}>
-                  <Bell size={18} strokeWidth={2.2} />
-                </Dock>
-                <Dock href="/org/settings" label="Settings">
-                  <Settings size={18} strokeWidth={2.2} />
-                </Dock>
-                <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
-              </>
-            )}
+            <Dock href={`${base}/notifications`} label="Notifications" badge={<NotificationBadge className="absolute -right-2.5 -top-2 h-[18px]" />}>
+              <Bell size={18} strokeWidth={2.2} />
+            </Dock>
+            <Dock href={`${base}/settings`} label="Settings">
+              <Settings size={18} strokeWidth={2.2} />
+            </Dock>
+            <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
             <OrgAccountMenu approved={approved} institutionName={institutionName} roleLabel={roleLabel} publicHref={publicHref} initials={initialsOf(institutionName)} />
           </div>
         </div>

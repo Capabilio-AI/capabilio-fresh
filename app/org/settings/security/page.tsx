@@ -24,14 +24,14 @@ function Protection({ done, label, detail }: { done: boolean; label: string; det
 }
 
 export default async function OrgSecuritySettingsPage() {
-  const { supabase } = await orgPageContext();
+  const { ctx, supabase } = await orgPageContext();
   const [{ data: userData }, { data: factors }] = await Promise.all([supabase.auth.getUser(), supabase.auth.mfa.listFactors()]);
   const user = userData.user;
   const verifiedFactor = factors?.totp.find((f) => f.status === "verified") ?? null;
 
   return (
     <div className="flex flex-col gap-5">
-      <SettingsCard id="prot-h" title="Account protection" description="Staff accounts can see student records, so protect yours.">
+      <SettingsCard id="prot-h" title="Account protection" description={ctx.kind === "company" ? "Your account manages your company page, roles and applicants, so protect it." : "Staff accounts can see student records, so protect yours."}>
         <ul className="divide-y divide-[var(--m-rule)]!">
           <Protection done={Boolean(user?.email_confirmed_at)} label="Email verified" detail={user?.email_confirmed_at ? "your sign-in address is confirmed." : "your sign-in address isn't confirmed yet."} />
           <Protection done label="Password set" detail="change it any time below." />

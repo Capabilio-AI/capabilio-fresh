@@ -143,7 +143,7 @@ export function OrganisationSignupForm({ initialType = "institution" }: { initia
 
         <label className="flex items-start gap-2.5 font-lp-body text-lp-body-sm text-lp-on-surface-variant">
           <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--lp-accent-indigo)]" />
-          I agree to the Terms of Service and Privacy Policy.
+          <span>I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Privacy Policy</a>.</span>
         </label>
 
         <button

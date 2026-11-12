@@ -7,14 +7,22 @@ import { BTN_QUIET } from "@/components/settings/ui";
 export const metadata: Metadata = { title: "Privacy & data — Settings — Capabilio AI" };
 
 export default async function OrgPrivacySettingsPage() {
-  await orgPageContext();
+  const { ctx } = await orgPageContext();
   return (
     <div className="flex flex-col gap-5">
-      <SettingsCard
-        id="access-h"
-        title="Student data and your access"
-        description="You can open a student's records only through the pages your role is allowed to use, and only for students of your own organisation. An administrator decides what each person can open on the Team & access page."
-      />
+      {ctx.kind === "company" ? (
+        <SettingsCard
+          id="access-h"
+          title="What candidates share with you"
+          description="When a student applies to one of your roles, you see the Skill Passport and answers they chose to attach. Followers appear by name only, never by email. You may use this information only to assess that application. See the Privacy Policy and Terms."
+        />
+      ) : (
+        <SettingsCard
+          id="access-h"
+          title="Student data and your access"
+          description="You can open a student's records only through the pages your role is allowed to use, and only for students of your own organisation. An administrator decides what each person can open on the Team & access page."
+        />
+      )}
 
       <SettingsCard id="export-h" title="Download your data" description="A JSON file with your profile, memberships, posts, messages and the other records tied to your account.">
         <a href="/api/account/export" download className={BTN_QUIET}>
@@ -22,7 +30,7 @@ export default async function OrgPrivacySettingsPage() {
         </a>
       </SettingsCard>
 
-      <SettingsCard id="delete-h" title="Delete account or organisation" description="Deleting a staff account or an organisation also removes access for everyone who depends on it, so it isn't self-serve yet. Ask a Capabilio administrator." />
+      <SettingsCard id="delete-h" title="Delete account or organisation" description="Deleting an account or an organisation also removes access for everyone who depends on it, so it isn't self-serve yet. Email support and we will do it." />
     </div>
   );
 }

@@ -7,16 +7,12 @@ import { MIN_COHORT } from "@/lib/org/insights";
 import { JsonForm } from "@/components/org/JsonForm";
 import { Collapsible, EmptyState, PageHeader, Pill } from "@/components/org/ui";
 import { Fact, GroupTitle, Initial, Meter } from "@/components/org/widgets";
+import { outcomeTabs } from "@/lib/org/section-tabs";
 import { SectionTabs } from "@/components/org/SectionTabs";
 import { CrtSection } from "@/components/org/CrtSection";
 import { loadCrtOverview } from "@/lib/crt/org";
 
 export const metadata: Metadata = { title: "Outcomes — Capabilio AI" };
-
-const TABS = [
-  { label: "Placements", href: "/org/outcomes", show: true },
-  { label: "CRT", href: "/org/outcomes?tab=crt", show: true },
-];
 
 export default async function OutcomesPage({ searchParams }: { searchParams: Promise<{ pq?: string; tab?: string; cycle?: string }> }) {
   const { ctx, service } = await orgPageContext("viewOutcomes");
@@ -26,7 +22,7 @@ export default async function OutcomesPage({ searchParams }: { searchParams: Pro
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Outcomes" subtitle="Campus recruitment training: one timed assessment every cycle, with the results sent to your placement cell." />
-        <SectionTabs tabs={TABS} active="/org/outcomes?tab=crt" label="Outcomes sections" />
+        <SectionTabs tabs={outcomeTabs(true, can(ctx, "viewRoster"))} active="/org/outcomes?tab=crt" label="Outcomes sections" />
         <CrtSection overview={overview} canSchedule={can(ctx, "postPlacement")} />
       </div>
     );
@@ -59,7 +55,7 @@ export default async function OutcomesPage({ searchParams }: { searchParams: Pro
           )
         }
       />
-      <SectionTabs tabs={TABS} active="/org/outcomes" label="Outcomes sections" />
+      <SectionTabs tabs={outcomeTabs(true, can(ctx, "viewRoster"))} active="/org/outcomes" label="Outcomes sections" />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Fact label="Students placed" value={stats.placed} tone="text-app-success" />
