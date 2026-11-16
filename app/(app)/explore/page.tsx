@@ -7,7 +7,7 @@ import { studentHasRole } from "@/lib/careers/has-role";
 import { getStudentDirection } from "@/lib/career/direction";
 import { studentPhase } from "@/lib/student/phase";
 import { streamOf, STREAM_SUGGESTIONS } from "@/lib/explore/stream";
-import { loadStreamRoleIds } from "@/lib/explore/stream-roles";
+import { STREAM_ROLES_ENOUGH, loadStreamRoleIds } from "@/lib/explore/stream-roles";
 import { loadRoleOptions } from "@/lib/assess/roles";
 import type { Db } from "@/lib/assess/db";
 import { ExploreRoles } from "@/components/explore/ExploreRoles";
@@ -28,6 +28,7 @@ export default async function ExplorePage() {
   const byId = new Map(roles.map((r) => [r.careerId, r]));
   // The stream's own list comes from the database once it has been generated; until then the built-in suggestions stand in for it.
   const stored = (await loadStreamRoleIds(service, stream)).map((id) => byId.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
-  const suggested = stored.length > 0 ? stored : sug.roles.map((n) => byName.get(n.toLowerCase())).filter((r): r is NonNullable<typeof r> => !!r);
-  return <ExploreRoles roles={roles} required={phase === "choose"} stream={{ label: sug.label, branch: direction?.branch ?? null, known: stream !== "other", suggested, extra: stored.length > 0 ? [] : sug.extra }} />;
+  const useStored = stored.length >= STREAM_ROLES_ENOUGH; // a part-filled list is worse than the built-in one, so it waits until it is complete
+  const suggested = useStored ? stored : sug.roles.map((n) => byName.get(n.toLowerCase())).filter((r): r is NonNullable<typeof r> => !!r);
+  return <ExploreRoles roles={roles} required={phase === "choose"} stream={{ label: sug.label, branch: direction?.branch ?? null, known: stream !== "other", suggested, extra: useStored ? [] : sug.extra }} />;
 }
