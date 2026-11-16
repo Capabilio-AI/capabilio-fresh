@@ -12,7 +12,7 @@ import { Avatar } from "./Avatar";
 const BTN = "rounded-full px-4 py-1.5 font-lp-body text-[12.5px] font-semibold disabled:opacity-50";
 
 /** Capabilio admin: review mentor applications and handle reports. */
-export function PulseAdminPanel({ applications, reports }: { applications: MentorApplicationRow[]; reports: ReportItem[] }) {
+export function PulseAdminPanel({ applications, reports }: { applications: (MentorApplicationRow & { evidence?: string[] })[]; reports: ReportItem[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +47,12 @@ export function PulseAdminPanel({ applications, reports }: { applications: Mento
                 <p className="mt-3 font-lp-body text-[13.5px] font-medium text-[var(--m-ink)]">{a.application.headline}</p>
                 <p className="mt-1 whitespace-pre-wrap font-lp-body text-[13px] text-[var(--m-ink)]">{a.application.bio}</p>
                 <p className="mt-2 font-lp-body text-[12px] text-app-muted">{[a.application.roleTitle, a.application.company].filter(Boolean).join(" at ")}{a.application.yearsExperience != null ? ` · ${a.application.yearsExperience} years` : ""} · {a.application.expertise.join(", ")}</p>
+                {a.evidence && a.evidence.length > 0 && (
+                  <div className="mt-3 rounded-lg bg-app-background px-3 py-2.5" aria-label={`Professional record for ${a.name}`}>
+                    <p className="font-lp-body text-[12px] font-semibold text-[var(--m-ink)]">Professional record</p>
+                    <ul className="mt-1 list-disc pl-4 font-lp-body text-[12px] text-app-muted">{a.evidence.map((line) => <li key={line}>{line}</li>)}</ul>
+                  </div>
+                )}
                 <input value={notes[a.id] ?? ""} onChange={(e) => setNotes((n) => ({ ...n, [a.id]: e.target.value.slice(0, 500) }))} placeholder="Note to the applicant (shown if rejected)" aria-label={`Note for ${a.name}`} className="mt-3 w-full rounded-lg border border-[var(--m-rule)] bg-app-background px-3 py-2 font-lp-body text-[13px]" />
                 <div className="mt-3 flex gap-2">
                   <button type="button" disabled={busy !== null} onClick={() => call(a.id, `/api/pulse-admin/mentors/${a.id}`, { decision: "approve", note: notes[a.id] || undefined })} className={`${BTN} flex items-center gap-1.5 bg-app-charcoal text-white`}><Check size={13} aria-hidden="true" /> Approve</button>

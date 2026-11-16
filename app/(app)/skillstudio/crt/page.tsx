@@ -5,6 +5,7 @@ import { AreaHero, HeroStat } from "@/components/metro/AreaHero";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import { CrtHome } from "@/components/crt/CrtHome";
+import { ReadinessRadar } from "@/components/crt/StudioSections";
 import { loadStudentCrt } from "@/lib/crt/server";
 import { loadStudio } from "@/lib/crt/studio-server";
 
@@ -15,7 +16,8 @@ export default async function CrtPage({ searchParams }: { searchParams: Promise<
   const { take } = await searchParams;
   const service = createServiceClient();
   const base = await loadStudentCrt(service, user.id);
-  const view = base ? await loadStudio(service, user.id, base.cycles) : null;
+  // readiness does not need a college programme: the common assessment and practice answers feed it for every student
+  const view = await loadStudio(service, user.id, base?.cycles ?? []);
   const tone = "tint" as const;
   return (
     <div>
@@ -35,10 +37,13 @@ export default async function CrtPage({ searchParams }: { searchParams: Promise<
       />
       <div className="pt-6">
         <LiveRefresh />
-        {base && view ? (
+        {base ? (
           <CrtHome cycles={base.cycles} view={view} autoStart={take && /^[0-9a-f-]{36}$/i.test(take) ? take : null} />
         ) : (
-          <p className="rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center font-lp-body text-[13.5px] text-app-muted">Join your college on Capabilio to take part in its CRT cycles and training sessions.</p>
+          <div className="flex flex-col gap-6">
+            <ReadinessRadar view={view} />
+            <p className="rounded-xl border border-dashed border-app-border bg-white px-6 py-14 text-center font-lp-body text-[13.5px] text-app-muted">Join your college on Capabilio to take part in its CRT cycles and training sessions.</p>
+          </div>
         )}
       </div>
     </div>

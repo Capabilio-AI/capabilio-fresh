@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { untyped } from "@/lib/org/db";
 import type { PlanId } from "@/lib/plans/catalog";
 import { canMove, hasProgrammeEnded, toStage, type CareerStage } from "./stage";
+import { declaredJob } from "./declared";
+import { addProJob, ensureProfessional } from "@/lib/professional/server";
 
 // Untyped: the stage, plan and employment columns (migration 101) postdate the generated types.
 const db = () => untyped(createServiceClient());
@@ -89,6 +91,13 @@ export async function markEmployed(userId: string, job: JobDetails): Promise<Emp
       if (error) return "failed";
     }
   }
+  // A professional's jobs live in their own tables; student and graduate accounts keep theirs in employment_history.
+  const { data: now } = await db().from("profiles").select("student_status").eq("id", userId).maybeSingle();
+  if (toStage(now?.student_status) === "professional") {
+    await ensureProfessional(userId, { employerName: job.employerName, jobTitle: job.jobTitle, employedSince: job.employedSince });
+    const added = result === "moved" || (await addProJob(userId, { employerName: job.employerName, jobTitle: job.jobTitle, employedSince: job.employedSince, employedUntil: job.employedUntil }));
+    return added ? result : "failed";
+  }
   const { error } = await db().from("employment_history").insert({
     user_id: userId,
     employer_name: job.employerName,
@@ -97,6 +106,23 @@ export async function markEmployed(userId: string, job: JobDetails): Promise<Emp
     end_date: job.employedUntil ?? null,
   });
   return error ? "failed" : result;
+}
+
+/**
+ * A working-professional sign-up starts on the graduate path (the only value the database accepts at sign-up). This moves it across
+ * as soon as the account is authenticated, before any page chooses a path from the stage, so it never sees a graduate screen.
+ */
+export async function promoteDeclaredProfessional(userId: string, meta: Record<string, unknown> | null | undefined): Promise<void> {
+  const job = declaredJob(meta);
+  if (!job) return;
+  const { data } = await db().from("profiles").select("student_status").eq("id", userId).maybeSingle();
+  if (toStage(data?.student_status) === "professional") {
+    // created as a professional by the sign-up trigger: make sure its own rows exist (a missing row is repaired here, once)
+    const { data: own } = await db().from("pro_profiles").select("user_id").eq("user_id", userId).maybeSingle();
+    if (!own) await ensureProfessional(userId, job);
+    return;
+  }
+  await markEmployed(userId, job);
 }
 
 export interface EmploymentEntry {

@@ -12,7 +12,10 @@ import {
 } from "./config";
 import { getOnboardingStatus, startRating, loadCareer, loadCareerSkills, toTargets, track, type CareerRef, type CareerSkillRow, type Db } from "./db";
 import { fitTargets, planNext, type Obs, type Plan, type Target } from "./engine";
-import { GENERAL_SECTIONS, commonDifficulty, generalTargets, planFromAvailability } from "./general";
+import { GENERAL_SECTIONS, commonDifficulty, generalTargets, planFromAvailability, sectionsFor, slotsInPlan } from "./general";
+import { studentYear } from "./skip";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 import { topUp } from "./generate";
 import { boostTargets, focusSkillIdsFor, isGraduate } from "@/lib/graduate/focus";
 import type { LlmDeps } from "./generate";
@@ -364,7 +367,7 @@ async function stateOf(db: Db, ctx: Context): Promise<SessionState> {
   const latest = [...ctx.rows].reverse().find((r) => r.state === "SERVED") ?? null;
   const base = { sessionId: session.id, layer: session.layer, status: session.status, total: session.total_questions, answeredCount, careerName: ctx.career?.name ?? null };
   const history = ctx.rows.filter((r) => r.answered).map((r) => ({ position: r.position, skillName: r.shown.skill_name, group: session.layer === "CAREER" ? r.shown.skill_name : r.shown.category ?? r.shown.skill_name, difficulty: r.difficulty, correct: !!r.correct }));
-  const roleSkills = session.layer === "CAREER" ? ctx.skills.map((s) => ({ name: s.name, importance: s.importance })) : GENERAL_SECTIONS.map((g) => ({ name: g.label, importance: null }));
+  const roleSkills = session.layer === "CAREER" ? ctx.skills.map((s) => ({ name: s.name, importance: s.importance })) : slotsInPlan(session.section_plan).map((g) => ({ name: g.label, importance: null }));
   const elo = session.layer === "CAREER" && session.career_id
     ? { start: session.starting_elo ?? 400, now: (await db.from("student_career_elo").select("rating").eq("student_id", session.student_id).eq("career_id", session.career_id).maybeSingle()).data?.rating ?? session.starting_elo ?? 400 }
     : null;
@@ -566,10 +569,14 @@ export async function startSession(db: Db, userId: string, layer: Layer, opts: {
       const { data: have } = await db.from("assess_question_pool").select("section").eq("layer", "GENERAL").eq("is_active", true).in("section", GENERAL_SECTIONS.map((g) => g.section));
       const available: Record<string, number> = {};
       for (const r of (have ?? []) as { section: string }[]) available[r.section] = (available[r.section] ?? 0) + 1;
-      plan = planFromAvailability(available);
+      const year = await studentYear(db as unknown as SupabaseClient<Database>, userId);
+      plan = planFromAvailability(available, year);
       if (Object.values(plan).reduce((a, b) => a + b, 0) < 4) throw new PoolUnavailableError();
-      if (generalTargets().some((t) => (plan![t.id] ?? 0) < t.max)) console.warn("[assess] common question pool is thin, planning for:", plan);
-      inBackground(() => warmPool(db, { general: true }, deps.retry, 12));
+      // The common questions come from the stored pool; the AI only tops it up when a section is running thin.
+      if (sectionsFor(year).some((s) => (plan![s.section] ?? 0) < s.questions)) {
+        console.warn("[assess] common question pool is thin, planning for:", plan);
+        inBackground(() => warmPool(db, { general: true }, deps.retry, 12));
+      }
     }
     if (careerId) {
       const start = await startRating(db);
@@ -604,7 +611,7 @@ export async function startSession(db: Db, userId: string, layer: Layer, opts: {
   }
   return {
     sessionId: session.id, layer, total: session.total_questions, careerName: career?.name ?? null,
-    skills: layer === "CAREER" ? skills.map((s) => s.name) : GENERAL_SECTIONS.map((g) => g.label),
+    skills: layer === "CAREER" ? skills.map((s) => s.name) : slotsInPlan(session.section_plan).map((g) => g.label),
     resumed, startingElo: session.starting_elo, state,
   };
 }

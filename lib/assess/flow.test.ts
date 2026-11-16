@@ -19,6 +19,17 @@ describe("decideStage", () => {
   });
 });
 
+describe("decideStage when a 1st or 2nd year skips the role", () => {
+  const skipped = { primary: false, exploring: true };
+  it("takes the common assessment, then is done without a role", () => {
+    expect(decideStage("ASSESSMENT_REQUIRED", skipped, undefined, true)).toBe("general");
+    expect(decideStage("COMMON_ASSESSMENT_COMPLETE", skipped, undefined, true)).toBe("done");
+  });
+  it("still requires a role from anyone who may not skip", () => {
+    expect(decideStage("COMMON_ASSESSMENT_COMPLETE", skipped, undefined, false)).toBe("career-interest");
+  });
+});
+
 describe("decideStage for recently graduated accounts", () => {
   const grad = (hasResume: boolean) => ({ isGraduate: true, hasResume });
   it("asks for the resume first, then the role, then goes straight to the one role assessment (no general layer)", () => {

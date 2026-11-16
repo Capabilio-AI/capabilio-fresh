@@ -17,12 +17,14 @@ interface CommonSectionConfig {
   questions: number;
   /** student-facing name (the longer legacy label stays available as SECTION_LABEL) */
   label: string;
+  /** only students in this year of study or later are asked it; a student whose year is unknown is asked everything */
+  minYear?: number;
 }
 
 export const COMMON_SECTION_REGISTRY: readonly CommonSectionConfig[] = [
   { section: "verbal_communication", enabled: true, questions: 10, label: "Communication" },
-  { section: "programming_fundamentals", enabled: true, questions: 10, label: "Basic Programming" },
-  { section: "quantitative_aptitude", enabled: false, questions: 10, label: SECTION_LABEL.quantitative_aptitude },
+  { section: "programming_fundamentals", enabled: true, questions: 10, label: "Basic Programming", minYear: 2 },
+  { section: "quantitative_aptitude", enabled: true, questions: 10, label: "Quantitative Aptitude" },
   { section: "logical_reasoning", enabled: true, questions: 10, label: SECTION_LABEL.logical_reasoning },
   { section: "engineering_mathematics", enabled: false, questions: 10, label: SECTION_LABEL.engineering_mathematics },
   { section: "basic_sciences", enabled: false, questions: 10, label: SECTION_LABEL.basic_sciences },
@@ -40,15 +42,21 @@ export const GENERAL_SECTIONS: GeneralSlot[] = enabled.map((s) => ({
   guidance: SECTION_SPECS[s.section].guidance,
 }));
 
-export const GENERAL_TOTAL = enabled.reduce((a, s) => a + s.questions, 0);
+/** The sections this student is asked: a 1st year gets aptitude, reasoning and communication; programming joins from 2nd year. */
+export const sectionsFor = (year: number | null) => enabled.filter((s) => s.minYear == null || year == null || year >= s.minYear);
+export const generalTotalFor = (year: number | null) => sectionsFor(year).reduce((a, s) => a + s.questions, 0);
+
+/** The sections a started session covers, from the plan fixed when it started (all of them for a session that has none). */
+export const slotsInPlan = (plan?: Record<string, number> | null): GeneralSlot[] =>
+  GENERAL_SECTIONS.filter((g) => !plan || (plan[g.section] ?? 0) > 0);
 
 /** Per-section question counts for a session: the configured numbers, or the smaller plan fixed when the session started. */
 export const generalTargets = (plan?: Record<string, number> | null): Target[] =>
-  enabled.map((s) => { const n = Math.min(s.questions, plan?.[s.section] ?? s.questions); return { id: s.section, name: s.label, weight: 1, min: n, max: n }; });
+  enabled.filter((s) => !plan || s.section in plan).map((s) => { const n = Math.min(s.questions, plan?.[s.section] ?? s.questions); return { id: s.section, name: s.label, weight: 1, min: n, max: n }; });
 
 /** What the pool can actually serve per section, capped at the configured count. */
-export const planFromAvailability = (available: Record<string, number>): Record<string, number> =>
-  Object.fromEntries(enabled.map((s) => [s.section, Math.min(s.questions, available[s.section] ?? 0)]));
+export const planFromAvailability = (available: Record<string, number>, year: number | null = null): Record<string, number> =>
+  Object.fromEntries(sectionsFor(year).map((s) => [s.section, Math.min(s.questions, available[s.section] ?? 0)]));
 
 /**
  * The fixed difficulty path through a section: roughly 30% easy, 40% medium, 30% hard, easy first. A common assessment that adapted

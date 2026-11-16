@@ -6,13 +6,13 @@ import clsx from "clsx";
 import { useDirectionFlags } from "@/components/direction/DirectionContext";
 import type { CareerStage } from "@/lib/stage/stage";
 
-const TABS: { label: string; href: string; jobTrackOnly?: boolean; launchpadOnly?: boolean; stages: CareerStage[] }[] = [
+const TABS: { label: string; href: string; jobTrackOnly?: boolean; launchpadOnly?: boolean; roleOnly?: boolean; stages: CareerStage[] }[] = [
   { label: "Overview", href: "/dashboard", stages: ["student", "graduate", "professional"] },
   { label: "Portfolio", href: "/dashboard/portfolio", stages: ["student", "graduate", "professional"] },
-  { label: "Skill Passport", href: "/dashboard/passport", stages: ["student", "graduate", "professional"] },
-  { label: "Skills", href: "/dashboard/skills", stages: ["student", "graduate"] },
+  { label: "Skill Passport", href: "/dashboard/passport", roleOnly: true, stages: ["student", "graduate", "professional"] },
+  { label: "Skills", href: "/dashboard/skills", roleOnly: true, stages: ["student", "graduate"] },
   // The roadmap is a student's plan through their programme; graduates and professionals do not have one.
-  { label: "Roadmap", href: "/dashboard/roadmap", stages: ["student"] },
+  { label: "Roadmap", href: "/dashboard/roadmap", roleOnly: true, stages: ["student"] },
   { label: "Vault History", href: "/dashboard/vault", stages: ["student", "graduate", "professional"] },
   { label: "AI Interview", href: "/dashboard/interview", launchpadOnly: true, stages: ["student", "graduate", "professional"] },
 ];
@@ -20,10 +20,10 @@ const TABS: { label: string; href: string; jobTrackOnly?: boolean; launchpadOnly
 /** The dashboard's tabs as a frosted-glass segmented control; the current tab is the raised white thumb. */
 export function DashboardSubNav() {
   const pathname = usePathname();
-  const { isJobTrack, launchpadOpen, stage } = useDirectionFlags();
+  const { isJobTrack, launchpadOpen, stage, hasRole } = useDirectionFlags();
   // Interview practice is for anyone out of study years: final-year students, graduates and professionals.
   const interviewOpen = launchpadOpen || stage !== "student";
-  const tabs = TABS.filter((t) => t.stages.includes(stage) && (!t.jobTrackOnly || isJobTrack) && (!t.launchpadOnly || interviewOpen));
+  const tabs = TABS.filter((t) => t.stages.includes(stage) && (!t.jobTrackOnly || isJobTrack) && (!t.launchpadOnly || interviewOpen) && (!t.roleOnly || hasRole));
   return (
     <nav aria-label="Dashboard" className="sticky top-[118px] z-10 -mx-1 overflow-x-auto px-1 py-1">
       <div className="glass inline-flex min-w-max gap-0.5 rounded-full p-1">

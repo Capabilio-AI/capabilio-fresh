@@ -5,6 +5,7 @@ import { CATEGORIES, CATEGORY_LABEL, SIM_TESTS, testQuestionCount, type Category
 import type { StudentCycle } from "@/lib/crt/server";
 import type { StudioView } from "@/lib/crt/studio-server";
 import { MockAssessments } from "./MockAssessments";
+import { CommonAssessmentCard, ImproveList } from "./ReadinessGuidance";
 import { MIN_EVIDENCE } from "@/lib/crt/studio";
 
 const CARD = "rounded-2xl border border-app-border bg-white p-5";
@@ -93,6 +94,7 @@ export function ReadinessRadar({ view }: { view: StudioView }) {
     <section className={CARD} aria-label="Placement readiness">
       <h2 className={H2}>Placement readiness</h2>
       <p className="mt-1 font-lp-body text-[13px] text-app-muted">What you have demonstrated through answers and assessments across eight areas. Hollow points mean there is not enough evidence yet.</p>
+      <CommonAssessmentCard common={view.common} />
       <div className="mt-3 grid items-center gap-4 md:grid-cols-[minmax(0,340px)_1fr]">
         <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Readiness across ${n} areas: ${view.areas.map((p) => `${SHORT[p.key]} ${p.competency.pct ?? "no evidence"}`).join(", ")}`} className="mx-auto w-full max-w-[340px]">
           {[0.25, 0.5, 0.75, 1].map((f) => <polygon key={f} points={CATEGORIES.map((_, i) => at(i, f).join(",")).join(" ")} fill="none" stroke="var(--m-rule)" strokeWidth="1" />)}
@@ -125,6 +127,7 @@ export function ReadinessRadar({ view }: { view: StudioView }) {
           ))}
         </ul>
       </div>
+      <ImproveList view={view} />
       <p className="mt-3 font-lp-body text-[12.5px] text-app-muted">{weakest ? <>Weakest area so far: <strong className="text-app-charcoal">{CATEGORY_LABEL[weakest.key]}</strong> at {weakest.competency.pct}%. Take that section&apos;s test next.</> : "Take a section test to start building your picture."}</p>
     </section>
   );

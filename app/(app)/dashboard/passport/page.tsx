@@ -9,11 +9,15 @@ import { passportUrl } from "@/lib/passport/url";
 import type { Db } from "@/lib/assess/db";
 import { PageHead } from "@/components/dashboard/PageHead";
 import { PassportSection } from "@/components/profile/PassportSection";
+import { keepProfessionalOut, requireRoleChosen } from "@/lib/stage/guard";
 
 export const metadata: Metadata = { title: "Skill Passport — Capabilio AI" };
 
 /** The Skill Passport on the dashboard: verified badges, a QR and public link, and the proof reel. Same for every stage. */
 export default async function DashboardPassportPage() {
+  await keepProfessionalOut(); // not a professional's page
+  await requireRoleChosen(); // a student who skipped the role has none of this
+
   const { supabase, user } = await requireAuthedUser();
   const service = createServiceClient();
   const [viewer, { data: details }, passport, reel] = await Promise.all([

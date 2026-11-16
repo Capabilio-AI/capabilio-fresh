@@ -9,6 +9,7 @@ import { RecruiterShareCard } from "@/components/portfolio/RecruiterShareCard";
 import { createServiceClient } from "@/lib/supabase/service";
 import { listShares } from "@/lib/recruiter/shares";
 import { getPortfolioShareUrl } from "./actions";
+import { keepProfessionalOut } from "@/lib/stage/guard";
 
 export const metadata: Metadata = { title: "Portfolio — Capabilio AI" };
 
@@ -20,6 +21,8 @@ export const metadata: Metadata = { title: "Portfolio — Capabilio AI" };
  * badge, which mirrors capabilio-web's own ELO display.
  */
 export default async function PortfolioPage() {
+  await keepProfessionalOut(); // not a professional's page
+
   const { supabase, user } = await requireAuthedUser();
 
   const [data, { data: shareRow }] = await Promise.all([

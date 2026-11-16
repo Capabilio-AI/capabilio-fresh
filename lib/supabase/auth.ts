@@ -2,6 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { secondFactorPending } from "@/lib/supabase/aal";
+import { promoteDeclaredProfessional } from "@/lib/stage/server";
 
 /**
  * The (app) layout and every page under it each need the authed user — a
@@ -18,6 +19,8 @@ export const getAuthedUser = cache(async () => {
   const claims = data?.claims;
   const stepUpPending = claims?.sub ? await secondFactorPending(supabase, claims.aal) : false;
   const user = claims?.sub && !stepUpPending ? { id: claims.sub, email: claims.email ?? null } : null;
+  // Runs once per request, ahead of the layout and the page, so both see the right career stage.
+  if (user && claims?.user_metadata?.intent === "professional") await promoteDeclaredProfessional(user.id, claims.user_metadata);
   return { supabase, user };
 });
 

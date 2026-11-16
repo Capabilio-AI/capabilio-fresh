@@ -18,6 +18,7 @@
 [data-area="arena"] { --m-ink: #1d0b0e; --m-ground: #f8f0f0; --m-rule: #e8d4d6; --m-muted: #6a5558; --m-soft: #dcbcc0; --m-off: #a58b8f; --m-accent: #d4202c; --m-accent-ink: #b4141f; --m-accent-soft: #fde8ea; }
 [data-area="studio"] { --m-ink: #0a2417; --m-ground: #eef5f0; --m-rule: #cfe0d5; --m-muted: #4c6355; --m-soft: #acccba; --m-off: #86a090; --m-accent: #0d7a45; --m-accent-ink: #0d7a45; --m-accent-soft: #e2f4ea; }
 [data-area="pulse"] { --m-ink: #052a2e; --m-ground: #edf6f6; --m-rule: #cfe3e4; --m-muted: #476467; --m-soft: #a6cbce; --m-off: #84a3a6; --m-accent: #00929b; --m-accent-ink: #00727a; --m-accent-soft: #dff3f4; }
+[data-area="propulse"] { --m-ink: #15122e; --m-ground: #f1f0f8; --m-rule: #dad7ec; --m-muted: #57557a; --m-soft: #b7b3dc; --m-off: #8e8bb4; --m-accent: #5b4bdb; --m-accent-ink: #4636c0; --m-accent-soft: #e6e3fb; }
 [data-area="roadmap"] { --m-ink: #0b1b33; --m-ground: #eef2f7; --m-rule: #cfd7e3; --m-muted: #4d5d77; --m-soft: #a9b8d1; --m-off: #8795ab; --m-accent: #0b5cad; --m-accent-ink: #0b5cad; --m-accent-soft: #e3eefb; }
 
 /* Derived aliases: the older components read app-* and lp-*; point them at whichever palette is active on this element. */
@@ -89,6 +90,7 @@
 }
 @media (prefers-reduced-transparency: reduce) { .glass-dark { background: #2a2a2a; backdrop-filter: none; -webkit-backdrop-filter: none; } }
 /* Pulse: the selected item takes the area accent instead of a white thumb. */
+[data-area="propulse"] .glass-thumb { background: var(--m-accent-soft); box-shadow: inset 0 0 0 1.5px var(--m-accent); }
 [data-area="pulse"] .glass-thumb { background: var(--m-accent-soft); box-shadow: inset 0 0 0 1.5px var(--m-accent); }
 
 /* Plan cards rise in once, staggered by --i; the resting state is fully visible so reduced motion simply skips it. */

@@ -1,11 +1,14 @@
 import { ONBOARDING_STATUSES, type OnboardingStatus } from "./config";
 import { getOnboardingStatus, loadCareerSkills, loadCareer, type CareerRef, type Db } from "./db";
 import { careerSessionLength } from "./session";
-import { COMMON_SECTION_REGISTRY, GENERAL_SECTIONS, GENERAL_TOTAL } from "./general";
+import { generalTotalFor, sectionsFor } from "./general";
 import { latestResult } from "./finalize";
 import { loadRoleOptions, type RoleOption } from "./roles";
 import { matchFocusSkills } from "@/lib/graduate/focus";
 import { isPostStudy } from "@/lib/stage/stage";
+import { isRoleSkippableYear, studentYear } from "./skip";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 
 export type Stage = "resume" | "career-interest" | "general" | "career" | "done";
 
@@ -15,7 +18,7 @@ const reached = (status: OnboardingStatus, at: OnboardingStatus) => ONBOARDING_S
  * Flow: career interest -> general assessment -> career assessment. Career interest comes first, but a student who says
  * "I'm exploring" may take the general assessment before choosing; they must still confirm one career before the career assessment.
  */
-export function decideStage(status: OnboardingStatus, intent: { primary: boolean; exploring: boolean }, graduate?: { isGraduate: boolean; hasResume: boolean }): Stage {
+export function decideStage(status: OnboardingStatus, intent: { primary: boolean; exploring: boolean }, graduate?: { isGraduate: boolean; hasResume: boolean }, canSkip = false): Stage {
   // Recently graduated: resume, then the role, then ONE role assessment. No general layer.
   if (graduate?.isGraduate) {
     if (reached(status, "CAREER_ASSESSMENT_COMPLETE")) return "done";
@@ -24,6 +27,8 @@ export function decideStage(status: OnboardingStatus, intent: { primary: boolean
   }
   const generalDone = reached(status, "COMMON_ASSESSMENT_COMPLETE");
   const careerDone = reached(status, "CAREER_ASSESSMENT_COMPLETE");
+  // a 1st or 2nd year who skipped the role is finished once the common assessment is
+  if (!intent.primary && intent.exploring && generalDone && canSkip) return "done";
   if (!intent.primary && !(intent.exploring && !generalDone)) return "career-interest";
   if (!generalDone) return "general";
   if (!careerDone) return "career";
@@ -45,6 +50,10 @@ export interface FlowSnapshot {
   hasOpenCareerSession: boolean;
   hasCareerResult: boolean;
   afterGeneral: boolean;
+  /** a 1st or 2nd year with no role yet may skip the role step and take the common assessment only */
+  canSkipRole: boolean;
+  /** the student skipped the role: the common assessment is their whole assessment for now */
+  skippedRole: boolean;
   /** present for recently graduated accounts */
   graduate: { hasResume: boolean; skills: string[]; focus: string[] } | null;
 }
@@ -61,12 +70,14 @@ export async function getFlowSnapshot(db: Db, userId: string, opts: { plan?: "b"
     loadRoleOptions(db),
   ]);
   const isGraduate = isPostStudy(me?.student_status);
+  const year = await studentYear(db as unknown as SupabaseClient<Database>, userId);
+  const skippable = !isGraduate && isRoleSkippableYear(year);
   const list = (careers ?? []) as CareerRef[];
   const byId = new Map(list.map((c) => [c.id, c]));
   const primary = intent?.primary_career_id ? byId.get(intent.primary_career_id) ?? null : null;
   const secondary = intent?.secondary_career_id ? byId.get(intent.secondary_career_id) ?? null : null;
 
-  let stage = opts.changeRole && status !== "PROFILE_READY" ? "career-interest" : decideStage(status, { primary: !!primary, exploring: !!intent?.is_exploring }, { isGraduate, hasResume: !!resume });
+  let stage = opts.changeRole && status !== "PROFILE_READY" ? "career-interest" : decideStage(status, { primary: !!primary, exploring: !!intent?.is_exploring }, { isGraduate, hasResume: !!resume }, skippable);
   const target = opts.plan === "b" && secondary ? secondary : primary;
   // a finished (or grandfathered) student may take the career assessment on purpose: a retake, or their Plan B
   if (stage === "done" && target && (opts.retake || (opts.plan === "b" && secondary))) stage = "career";
@@ -86,10 +97,12 @@ export async function getFlowSnapshot(db: Db, userId: string, opts: { plan?: "b"
   const hasCareerResult = primary ? (await latestResult(db, userId, "CAREER", primary.id)) !== null : false;
   return {
     status, stage, careers: list, primary, secondary, hasCareerResult,
-    general: { skills: GENERAL_SECTIONS.map((g) => g.label), total: GENERAL_TOTAL },
+    general: { skills: sectionsFor(year).map((g) => g.label), total: generalTotalFor(year) },
     assess, afterGeneral: !!intent?.is_exploring && !primary,
+    canSkipRole: skippable && !primary,
+    skippedRole: skippable && !!intent?.is_exploring && !primary,
     roleOptions,
-    commonSections: COMMON_SECTION_REGISTRY.filter((s) => s.enabled).map((s) => ({ label: s.label, questions: s.questions })),
+    commonSections: sectionsFor(year).map((s) => ({ label: s.label, questions: s.questions })),
     hasOpenCareerSession: openCareer,
     graduate: isGraduate ? { hasResume: !!resume, skills: ((resume?.skill_names as string[] | undefined) ?? []).slice(0, 18), focus: graduateFocus } : null,
   };

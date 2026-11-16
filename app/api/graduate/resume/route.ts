@@ -19,7 +19,9 @@ export const maxDuration = 60; // reading the PDF and one model call
  * so the flow can move on. The role's questions start being prepared in the background as early as the role is known.
  */
 export const POST = assessRoute("graduate_resume", 5, async (req, { userId, db }) => {
-  if (!(await isGraduate(db, userId))) throw new AssessError("NOT_GRADUATE", "Resume upload is for recently graduated and working accounts.", 403);
+  if (!(await isGraduate(db, userId))) throw new AssessError("NOT_GRADUATE", "Resume upload is for recently graduated accounts.", 403);
+  const { data: who } = await db.from("profiles").select("student_status").eq("id", userId).maybeSingle();
+  if (who?.student_status === "professional") throw new AssessError("NOT_GRADUATE", "Working professionals add their resume from their own Overview page.", 403);
   const now = new Date().toISOString();
 
   if (new URL(req.url).searchParams.get("skip") === "1") {

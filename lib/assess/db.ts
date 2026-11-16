@@ -93,7 +93,7 @@ export const dashboardUnlocked = (s: OnboardingStatus) => s === "PROFILE_READY";
 // analytics
 // ------------------------------------------------------------------------------------------------------------------
 export const EVENT_NAMES = [
-  "assessment_banner_shown", "assessment_started", "career_role_entered", "career_role_confirmed", "common_section_started",
+  "assessment_banner_shown", "assessment_started", "career_role_entered", "career_role_confirmed", "career_role_skipped", "common_section_started",
   "common_section_completed", "common_question_answered", "career_assessment_started", "career_question_answered",
   "career_assessment_completed", "skill_estimated", "elo_updated", "feedback_generated", "assessment_popup_viewed",
   "dashboard_opened_after_assessment", "proof_of_work_added", "career_goal_selected", "career_goal_changed",

@@ -38,14 +38,15 @@ type View =
  * wait to see its skills). Only a role we have never seen goes to the server, which builds its profile once for everyone after.
  * Doing this FIRST lets the server warm the role's question pool while the student does the common assessment.
  */
-export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles: RoleOption[]; onConfirmed: () => void; graduate?: boolean }) {
+export function RoleEntryStep({ roles, onConfirmed, graduate = false, canSkip = false, initialText = "" }: { roles: RoleOption[]; onConfirmed: () => void; graduate?: boolean; canSkip?: boolean; initialText?: string }) {
   const reduce = useReducedMotion();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const [view, setView] = useState<View>({ kind: "input" });
   const [confirming, setConfirming] = useState(false);
   const [example, setExample] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [active, setActive] = useState(-1);
+  const [skipping, setSkipping] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
   const typed = text.trim();
@@ -98,6 +99,18 @@ export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles:
     }
   };
 
+  /** 1st and 2nd years may leave the role for later and take the common assessment alone. */
+  const skip = async () => {
+    setSkipping(true);
+    try {
+      await assessApi.skipRole();
+      onConfirmed();
+    } catch (e) {
+      setSkipping(false);
+      setView({ kind: "error", message: e instanceof ApiError ? e.message : "We couldn't save that. Please try again." });
+    }
+  };
+
   if (view.kind === "clarify") {
     return <Clarify view={view} onChoose={(choice) => void resolveTyped(view.typed, choice)} onRetry={() => setView({ kind: "input" })} />;
   }
@@ -127,6 +140,16 @@ export function RoleEntryStep({ roles, onConfirmed, graduate = false }: { roles:
           <Button type="button" variant="accent" size="lg" loading={busy} onClick={() => (hits[0] && typed && hits[0].role.name.toLowerCase() === typed.toLowerCase() ? choose(hits[0].role) : void resolveTyped())} iconAfter={<ArrowRight className="h-4 w-4" aria-hidden />}>{busy ? "Matching" : "Find my role"}</Button>
         </div>
       </form>
+
+      {canSkip && !busy && (
+        <div className="a-glass-soft a-rise mx-auto mt-5 flex max-w-[44rem] flex-col items-start gap-3 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between" style={{ animationDelay: "150ms" }}>
+          <div>
+            <p className="text-[15px] font-bold text-[var(--m-ink)]">Not sure about a role yet?</p>
+            <p className="mt-0.5 text-[13.5px] leading-snug text-[var(--m-muted)]">You can skip this step. You&apos;ll take the common assessment and we&apos;ll create your profile from it. Choose a role any time later to build your skill graph.</p>
+          </div>
+          <Button variant="secondary" size="lg" onClick={() => void skip()} loading={skipping} iconAfter={<ArrowRight className="h-4 w-4" aria-hidden />}>Skip for now</Button>
+        </div>
+      )}
 
       {busy && <Resolving text={(view as { text: string }).text} />}
       {(view.kind === "rejected" || view.kind === "error") && (

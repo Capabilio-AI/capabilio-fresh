@@ -226,7 +226,7 @@ export function QuestionRunner({ sessionId, initial, onSubmitted }: { sessionId:
               aria-labelledby="q-text"
               className="mt-6"
             >
-              <div className="inline-flex items-center gap-3 rounded-2xl bg-[var(--m-ink)] py-2 pl-2.5 pr-5 text-white shadow-[0_14px_24px_-14px_rgb(23_19_31/0.8)]">
+              <div className="a-chip-ink inline-flex items-center gap-3 rounded-2xl py-2 pl-2.5 pr-5 shadow-[0_14px_24px_-14px_rgb(23_19_31/0.8)]">
                 <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15"><Crosshair className="h-4 w-4" aria-hidden /></span>
                 <span className="leading-tight">
                   <span className="block text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/65">{isCareer ? "Skill being assessed" : q.category ?? "Section"}</span>

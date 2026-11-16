@@ -5,11 +5,13 @@ import { getViewerSummary } from "@/lib/dashboard/viewer";
 import { formatAcademicYear } from "@/lib/career/academic-year";
 import { goalLabel } from "@/lib/career/goal-copy";
 import { GoalStateOptions } from "@/components/direction/GoalStateOptions";
+import { keepProfessionalOut } from "@/lib/stage/guard";
 
 export const metadata: Metadata = { title: "Career direction — Capabilio AI" };
 
 /** Always-accessible: change goal state any time. Stream and program years are set by your college and shown read-only. */
 export default async function DirectionSettingsPage() {
+  await keepProfessionalOut(); // not a professional's page
   const { supabase, user } = await requireAuthedUser();
   const { direction } = await getViewerSummary(supabase, user.id);
 

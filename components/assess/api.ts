@@ -49,6 +49,8 @@ export const assessApi = {
     call<Feedback & { sessionId: string }>("/api/assess/answer", { method: "POST", body: JSON.stringify(input) }),
   resolveRole: (text: string, choice?: ResolveChoice) => call<ResolveOutcome>("/api/assess/role/resolve", { method: "POST", body: JSON.stringify({ text, choice }) }),
   confirmRole: (careerId: string, typed?: string) => call<{ ok: true }>("/api/assess/role/confirm", { method: "POST", body: JSON.stringify({ careerId, typed }) }),
+  /** 1st and 2nd years only: take the common assessment without choosing a role */
+  skipRole: () => call<{ ok: true }>("/api/assess/role/skip", { method: "POST" }),
   feedback: (sessionId: string) => call<{ status: "PENDING" | "READY"; feedback: StoredFeedback[] }>(`/api/assess/session/${sessionId}/feedback`),
   event: (name: "assessment_popup_viewed" | "dashboard_opened_after_assessment") => fetch("/api/assess/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }).catch(() => {}),
   submit: (sessionId: string) => call<{ result: AssessmentResult }>(`/api/assess/session/${sessionId}/submit`, { method: "POST" }),

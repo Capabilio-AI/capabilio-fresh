@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAuthedUser } from "@/lib/supabase/auth";
-import { requireStage } from "@/lib/stage/guard";
+import { requireRoleChosen, requireStage } from "@/lib/stage/guard";
 import { createServiceClient } from "@/lib/supabase/service";
 import { studentGate } from "@/lib/assess/gate";
 import type { Db } from "@/lib/assess/db";
@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: "Job pack — Capabilio AI" };
 
 export default async function JobPackPage({ searchParams }: { searchParams: Promise<{ career?: string }> }) {
   await requireStage(["student"]);
+  await requireRoleChosen(); // no role chosen, no roadmap
   const { user } = await requireAuthedUser();
   const gate = await studentGate(createServiceClient() as unknown as Db, user.id);
   if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="your job pack" />;

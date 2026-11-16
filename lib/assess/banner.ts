@@ -13,6 +13,7 @@ export interface BannerState {
  */
 export async function bannerState(db: Db, userId: string): Promise<BannerState> {
   const gate = await studentGate(db, userId);
+  if (gate.professional) return { show: false, cta: "Start Assessment" }; // professionals are verified through EPFO, not assessed
   const nudge = gate.graduate && gate.status !== null && !dashboardUnlocked(gate.status);
   if ((!gate.locked && !nudge) || !gate.status) return { show: false, cta: "Start Assessment" };
   const [{ count: open }, { data: intent }] = await Promise.all([

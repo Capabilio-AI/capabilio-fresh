@@ -7,6 +7,9 @@ import { Button } from "../ui/Button";
 import type { Stage } from "./AssessScope";
 import { Stepper } from "./Stepper";
 
+/** The wordmark. It links to the home page everywhere except during the two assessment parts, where leaving by accident would cost answered questions. */
+const LOGO = "ml-1 hidden font-lp-display text-[17px] font-bold tracking-tight text-[var(--m-ink)] lg:inline-block";
+
 export interface BackAction {
   label: string;
   onClick?: () => void;
@@ -34,7 +37,11 @@ export function AssessTopBar({ stage, back, trailing, graduate = false }: { stag
             ) : (
               <button type="button" onClick={back.onClick} className="group inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-bold text-[var(--m-ink)] transition-colors hover:bg-white/70">{inner}</button>
             ))}
-          <span className="ml-1 hidden font-lp-display text-[17px] font-bold tracking-tight text-[var(--m-ink)] lg:inline">Capabilio<span className="text-[var(--m-accent)]"> AI</span></span>
+          {stage === "common" || stage === "career" ? (
+            <span className={LOGO}>Capabilio<span className="text-[var(--m-accent)]"> AI</span></span>
+          ) : (
+            <Link href="/" aria-label="Capabilio AI, go to the home page" className={`${LOGO} rounded-full px-2 py-1 transition-colors hover:bg-white/70`}>Capabilio<span className="text-[var(--m-accent)]"> AI</span></Link>
+          )}
         </div>
         <Stepper current={stage} graduate={graduate} />
         <div className="flex min-w-[2.5rem] justify-end">{trailing}</div>

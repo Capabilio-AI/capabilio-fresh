@@ -14,10 +14,12 @@ import { AboutSection, AcademicSection, SettingsSection, StrengthCard } from "@/
 import { loadPassportSkills } from "@/lib/passport/data";
 import type { Db } from "@/lib/assess/db";
 import type { EditableProfile } from "@/components/profile/EditProfileDialog";
+import { keepProfessionalOut } from "@/lib/stage/guard";
 
 export const metadata: Metadata = { title: "Profile — Capabilio AI" };
 
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  await keepProfessionalOut(); // not a professional's page
   const [{ supabase, user }, { tab: rawTab }] = await Promise.all([requireAuthedUser(), searchParams]);
   // The Skill Passport now lives on the dashboard; old links and bookmarks land there.
   if (rawTab === "passport") redirect("/dashboard/passport");

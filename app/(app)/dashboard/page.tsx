@@ -12,6 +12,9 @@ import { CareerDirectionExplainerModal } from "@/components/dashboard/CareerDire
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { CareerDirectionCard } from "@/components/dashboard/CareerDirectionCard";
+import { YourPathCard } from "@/components/dashboard/YourPathCard";
+import { studentPhase } from "@/lib/student/phase";
+import { studentHasRole } from "@/lib/careers/has-role";
 import { CapabilityCard } from "@/components/dashboard/CapabilityCard";
 import { NextActionCard } from "@/components/dashboard/NextActionCard";
 import { AssessmentResults } from "@/components/dashboard/AssessmentResults";
@@ -31,9 +34,7 @@ import type { Db } from "@/lib/assess/db";
 import { getStageState } from "@/lib/stage/server";
 import { interviewUnlocked } from "@/lib/plans/catalog";
 import { loadGraduateHome } from "@/lib/graduate/home";
-import { loadProfessionalHome } from "@/lib/stage/professional";
 import { GraduateHome } from "@/components/graduate/GraduateHome";
-import { ProfessionalHome } from "@/components/graduate/ProfessionalHome";
 import { CrtDueCard } from "@/components/crt/CrtDueCard";
 import { loadCrtDue, type CrtDue } from "@/lib/crt/server";
 
@@ -51,15 +52,37 @@ export default async function DashboardPage() {
   const [state, gate] = await Promise.all([getStageState(user.id), studentGate(service as unknown as Db, user.id)]);
   if (state.stage !== "student") {
     const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
-    if (state.stage === "professional") {
-      return <ProfessionalHome data={await loadProfessionalHome(user.id, me?.full_name ?? null)} employerName={state.employerName} jobTitle={state.jobTitle} />;
-    }
+    if (state.stage === "professional") redirect("/professional"); // professionals have their own pages
     const canInterview = interviewUnlocked("graduate", state.planId, false);
     return <GraduateHome data={await loadGraduateHome(supabase, user.id, me?.full_name ?? null, canInterview)} interviewUnlocked={canInterview} />;
   }
 
   // A first-time student sees only the onboarding shell until the career assessment is analysed (never the full dashboard).
   if (gate.locked && gate.status) return <OnboardingGate status={gate.status} feature="your dashboard" />;
+
+  // No role chosen: show the assessment and nothing else. No recommendation, readiness, skills or next action is made up for a role they never picked.
+  if (!(await studentHasRole(service, user.id))) {
+    const year = (await getStudentDirection(service, user.id))?.academicYear?.year ?? null;
+    const phase = studentPhase(year, false) as Exclude<ReturnType<typeof studentPhase>, "role">;
+    let plain: Awaited<ReturnType<typeof getDashboardData>>;
+    try {
+      plain = await getDashboardData(supabase, user.id, { lenient: true });
+    } catch (error) {
+      if (error instanceof DashboardNotReadyError) redirect("/assessment");
+      throw error;
+    }
+    return (
+      <div>
+        <LiveRefresh />
+        <DashboardHeader data={plain} hideScore />
+        <DashboardSubNav />
+        <div className="flex flex-col gap-5 pt-6">
+          <YourPathCard phase={phase} />
+          <AssessmentResults data={plain} />
+        </div>
+      </div>
+    );
+  }
 
   let data: Awaited<ReturnType<typeof getDashboardData>>;
   let skills: Awaited<ReturnType<typeof getSkills>>;

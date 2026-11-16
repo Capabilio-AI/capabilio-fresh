@@ -22,9 +22,10 @@ describe("studentGate", () => {
     expect(await studentGate(fakeDb({ primary_role: "student", student_status: "student" }, "PROFILE_READY"), "u")).toMatchObject({ locked: false });
   });
   it("never locks a recently graduated account, but reports where they are so the banner can nudge", async () => {
-    expect(await studentGate(fakeDb({ primary_role: "student", student_status: "graduate" }, "ASSESSMENT_REQUIRED"), "u")).toEqual({ locked: false, status: "ASSESSMENT_REQUIRED", graduate: true });
+    expect(await studentGate(fakeDb({ primary_role: "student", student_status: "graduate" }, "ASSESSMENT_REQUIRED"), "u")).toEqual({ locked: false, status: "ASSESSMENT_REQUIRED", graduate: true, professional: false });
+    expect(await studentGate(fakeDb({ primary_role: "student", student_status: "professional" }, "ASSESSMENT_REQUIRED"), "u")).toEqual({ locked: false, status: "ASSESSMENT_REQUIRED", graduate: true, professional: true });
   });
   it("never gates other roles", async () => {
-    expect(await studentGate(fakeDb({ primary_role: "tpo", student_status: "student" }, null), "u")).toEqual({ locked: false, status: null, graduate: false });
+    expect(await studentGate(fakeDb({ primary_role: "tpo", student_status: "student" }, null), "u")).toEqual({ locked: false, status: null, graduate: false, professional: false });
   });
 });
