@@ -86,7 +86,7 @@ export async function listMentors(service: Service, viewerId: string, opts: { q?
   const q = opts.q?.trim().toLowerCase();
   return rows.flatMap((r) => {
     const p = people.get(r.user_id);
-    if (!p) return [];
+    if (!p || p.stage !== "professional") return []; // mentors are professionals; earlier student or graduate listings are not shown
     const hay = [p.name, r.headline, r.company, ...r.expertise].join(" ").toLowerCase();
     if (q && !hay.includes(q)) return [];
     return [{ ...p, mentorHeadline: r.headline, bio: r.bio, expertise: r.expertise, company: r.company, roleTitle: r.role_title, yearsExperience: r.years_experience, availability: r.availability, isAccepting: r.is_accepting, following: followed.has(r.user_id) }];

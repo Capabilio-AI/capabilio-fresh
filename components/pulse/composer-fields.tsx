@@ -24,7 +24,7 @@ export function TagInput({ id, value, onChange, max, placeholder }: { id: string
     setText("");
   };
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--m-rule)] bg-app-background px-2.5 py-2 focus-within:border-app-orange focus-within:ring-2 focus-within:ring-app-orange/20">
+    <div className="field-ring flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--m-rule)] bg-app-background px-2.5 py-2 focus-within:border-app-orange focus-within:ring-2 focus-within:ring-app-orange/20">
       {value.map((t) => (
         <span key={t} className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 font-lp-body text-[12px] text-[var(--m-ink)] ring-1 ring-app-border">
           {t}
