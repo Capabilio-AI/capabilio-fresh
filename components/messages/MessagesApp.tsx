@@ -11,7 +11,7 @@ import { Thread } from "./Thread";
 import { useMessaging } from "./MessagingProvider";
 
 /** Inbox on the left, the open conversation on the right; one pane at a time on a phone. The open conversation lives in the URL (?c=). */
-export function MessagesApp({ me, initialId, startWith }: { me: string; initialId: string | null; startWith: PersonSummary | null }) {
+export function MessagesApp({ me, initialId, startWith, base = "/pulse/messages" }: { me: string; initialId: string | null; startWith: PersonSummary | null; /** where this inbox lives: a professional's is under /professional/pulse */ base?: string }) {
   const router = useRouter();
   const { refresh } = useMessaging();
   const [items, setItems] = useState<ConversationItem[]>([]);
@@ -49,7 +49,7 @@ export function MessagesApp({ me, initialId, startWith }: { me: string; initialI
   const open = (id: string | null) => {
     setActiveId(id);
     setComposeWith(null);
-    router.replace(id ? `/pulse/messages?c=${id}` : "/pulse/messages", { scroll: false });
+    router.replace(id ? `${base}?c=${id}` : base, { scroll: false });
   };
   const hasThread = activeId !== null || composeWith !== null;
   const activeItem = items.find((c) => c.id === activeId);
