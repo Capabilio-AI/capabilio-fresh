@@ -221,6 +221,38 @@ export async function signUpGraduate(input: GraduateSignUpInput): Promise<SignUp
   return { status: "success" };
 }
 
+export interface ProfessionalSignUpInput extends GraduateSignUpInput {
+  employerName: string;
+  jobTitle: string;
+}
+
+/**
+ * A working professional: name, email, password and where they work now. `path` tells the sign-up trigger to create a professional account
+ * with its own rows. `student_status` stays "graduate" so a database without that trigger still creates a safe account, which the app then
+ * moves across on first sign-in (it reads `intent` and the job from these details).
+ */
+export async function signUpProfessional(input: ProfessionalSignUpInput): Promise<SignUpOutcome> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signUp({
+    email: input.email,
+    password: input.password,
+    options: {
+      data: {
+        full_name: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+        role: "student",
+        student_status: "graduate",
+        intent: "professional",
+        path: "professional",
+        employer_name: input.employerName.trim(),
+        job_title: input.jobTitle.trim(),
+      },
+      emailRedirectTo: `${window.location.origin}/auth/confirm?next=/verified`,
+    },
+  });
+  if (error) return { status: "error", message: error.message };
+  return { status: "success" };
+}
+
 export type PasswordResetResult = { ok: true } | { ok: false; message: string };
 
 export async function requestPasswordReset(email: string): Promise<PasswordResetResult> {

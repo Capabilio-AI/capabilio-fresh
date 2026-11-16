@@ -150,6 +150,21 @@ describe("routing and fallback by configuration only", () => {
   });
 });
 
+describe("out of credits", () => {
+  it("is a configuration problem, not a wait: no retries, a clear reason, and the fallback answers", async () => {
+    const sleep = vi.fn(async (_ms: number) => {});
+    const quota = { status: 429, body: { error: { type: "insufficient_quota", code: "credit_balance_exhausted", message: "You have no credits remaining." } } };
+    const dead = fakeFetch([quota]);
+    setAdapterForTest("openai-compatible", openAiCompatible({ name: "openai-compatible", baseUrl: "https://x.test/v1", apiKey: "k", jsonMode: "json_object", fetchImpl: dead.fn }));
+    await expect(generateStructured(req, { sleep, random: () => 0, env: { LLM_PROVIDER: "openai-compatible", LLM_MODEL: "m" } })).rejects.toMatchObject({ kind: "config", message: expect.stringMatching(/out of credits/) });
+    expect(sleep).not.toHaveBeenCalled();
+    setAdapterForTest("mock", mockAdapter(() => ({ answer: "elsewhere" })));
+    setAdapterForTest("openai-compatible", openAiCompatible({ name: "openai-compatible", baseUrl: "https://x.test/v1", apiKey: "k", jsonMode: "json_object", fetchImpl: fakeFetch([quota]).fn }));
+    const out = await generateStructured(req, { sleep, random: () => 0, env: { LLM_PROVIDER: "openai-compatible", LLM_MODEL: "m", LLM_FALLBACK_PROVIDER: "mock", LLM_FALLBACK_MODEL: "f" } });
+    expect(out).toMatchObject({ provider: "mock", model: "f" });
+  });
+});
+
 describe("long quota waits", () => {
   it("fails fast (no sleeping) when the provider says to come back in minutes, and fails over if a fallback exists", async () => {
     const sleep = vi.fn(async (_ms: number) => {});

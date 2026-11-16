@@ -1,12 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ArrowRight, BookOpen, CheckCircle2, GraduationCap, Loader2 } from "lucide-react";
+import { ArrowRight, BookOpen, Briefcase, CheckCircle2, GraduationCap, Loader2 } from "lucide-react";
 import { CardChrome } from "./CardChrome";
 import { CollegeAutocomplete, CollegeMatch } from "./CollegeAutocomplete";
 import { BranchAutocomplete } from "./BranchAutocomplete";
 import { PasswordField } from "./PasswordField";
-import { signUp, signUpGraduate } from "./auth";
+import { signUp, signUpGraduate, signUpProfessional } from "./auth";
 import { validateProgramYears } from "@/lib/career/years";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -23,11 +23,12 @@ export interface JoinLinkInfo {
   endYear: number | null;
 }
 
-type StudentStatus = "student" | "graduate";
+type StudentStatus = "student" | "graduate" | "professional";
 
 const STATUS_OPTIONS: { id: StudentStatus; title: string; hint: string; Icon: typeof BookOpen }[] = [
   { id: "student", title: "I'm a student", hint: "Currently studying", Icon: BookOpen },
   { id: "graduate", title: "Graduate seeking a job", hint: "Show your skills to recruiters", Icon: GraduationCap },
+  { id: "professional", title: "Working professional", hint: "Prove your experience", Icon: Briefcase },
 ];
 
 export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLinkInfo | null; initialStatus?: StudentStatus }) {
@@ -37,6 +38,8 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
   const [collegeName, setCollegeName] = useState(join?.collegeName ?? "");
   const [, setSelectedCollege] = useState<CollegeMatch | null>(null);
   const [branch, setBranch] = useState(join?.branch ?? "");
+  const [employerName, setEmployerName] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [rollNumber, setRollNumber] = useState("");
   const [startYear, setStartYear] = useState("");
   const [endYear, setEndYear] = useState(join?.endYear ? String(join.endYear) : "");
@@ -52,7 +55,12 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
     e.preventDefault();
     setError(undefined);
 
-    const graduate = status === "graduate";
+    const graduate = status !== "student";
+    const professional = status === "professional";
+    if (professional && (!employerName.trim() || !jobTitle.trim())) {
+      setError("Tell us where you work now and your job title.");
+      return;
+    }
     const years = graduate ? null : validateProgramYears(startYear, endYear);
     if (years && !years.ok) {
       setError(years.message);
@@ -73,7 +81,9 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
 
     setSubmitting(true);
     const outcome =
-      graduate || !years || !years.ok
+      professional
+        ? await signUpProfessional({ firstName, lastName, email, password, employerName, jobTitle })
+        : graduate || !years || !years.ok
         ? await signUpGraduate({ firstName, lastName, email, password })
         : await signUp({
             firstName,
@@ -129,12 +139,12 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
         Create your account
       </h1>
       <p className="mt-1.5 font-lp-body text-lp-body-sm text-lp-text-muted">
-        {status === "graduate" ? "Just your name, email and a password. You will upload your resume and choose your target role after you sign in." : "Start building your verified career profile."}
+        {status === "professional" ? "Your name, where you work now, and a password. You will upload your resume and choose your target role after you sign in." : status === "graduate" ? "Just your name, email and a password. You will upload your resume and choose your target role after you sign in." : "Start building your verified career profile."}
       </p>
 
       <fieldset className="mt-6">
         <legend className={FIELD_LABEL}>Which describes you?</legend>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {STATUS_OPTIONS.map(({ id, title, hint, Icon }) => {
             const on = status === id;
             return (
@@ -189,6 +199,19 @@ export function SignupForm({ join, initialStatus = "student" }: { join?: JoinLin
             />
           </div>
         </div>
+
+        {status === "professional" && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="employer-name" className={FIELD_LABEL}>Where do you work now?</label>
+              <input id="employer-name" type="text" required maxLength={120} value={employerName} onChange={(e) => setEmployerName(e.target.value)} placeholder="Company name" autoComplete="organization" className={FIELD_INPUT} />
+            </div>
+            <div>
+              <label htmlFor="job-title" className={FIELD_LABEL}>Your job title</label>
+              <input id="job-title" type="text" required maxLength={120} value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Senior Backend Engineer" autoComplete="organization-title" className={FIELD_INPUT} />
+            </div>
+          </div>
+        )}
 
         {status === "student" && (
           <>

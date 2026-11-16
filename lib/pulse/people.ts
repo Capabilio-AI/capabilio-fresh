@@ -22,6 +22,8 @@ export interface PersonSummary {
   role: "student" | "faculty" | "staff" | null;
   /** an approved Capabilio mentor */
   isMentor?: boolean;
+  /** a working professional: they have their own pages and are reached through session requests, not Pulse messages */
+  stage?: "professional";
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -60,6 +62,15 @@ async function loadElos(service: Service, ids: string[]): Promise<Map<string, nu
 /** Pure. "Aspiring AI/ML Engineer" from a career name. */
 export const taglineOf = (career: string | null | undefined): string | null => (career?.trim() ? `Aspiring ${career.trim()}` : null);
 
+interface ProfileRow {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  student_status: string | null;
+  employer_name: string | null;
+  job_title: string | null;
+}
+
 interface MembershipRow {
   user_id: string;
   role: string;
@@ -73,7 +84,7 @@ export async function loadPeople(service: Service, ids: string[]): Promise<Map<s
   const unique = [...new Set(ids)];
   if (unique.length === 0) return new Map();
   const [{ data: profiles }, { data: memberships }, { data: mentors }] = await Promise.all([
-    service.from("profiles").select("id, full_name, avatar_url").in("id", unique),
+    untyped(service).from("profiles").select("id, full_name, avatar_url, student_status, employer_name, job_title").in("id", unique),
     untyped(service).from("institution_memberships").select("user_id, role, branch, end_year, institutions ( name )").in("user_id", unique).eq("status", "active"),
     untyped(service).from("mentor_profiles").select("user_id").in("user_id", unique).eq("status", "approved"),
   ]);
@@ -82,9 +93,14 @@ export async function loadPeople(service: Service, ids: string[]): Promise<Map<s
   const membership = new Map<string, MembershipRow>();
   for (const m of (memberships ?? []) as unknown as MembershipRow[]) if (!membership.has(m.user_id) || m.role !== "student") membership.set(m.user_id, m);
   return new Map(
-    (profiles ?? []).map((p) => {
+    ((profiles ?? []) as ProfileRow[]).map((p) => {
       const m = membership.get(p.id) ?? null;
       const kind = m ? kindOf(m.role) : null;
+      // a working professional is shown by their job, never as a student: no goal line, no student ELO
+      if (p.student_status === "professional") {
+        const job = [p.job_title, p.employer_name].filter(Boolean).join(" at ");
+        return [p.id, { id: p.id, name: p.full_name, avatarUrl: p.avatar_url, headline: job || "Working professional", elo: null, tagline: null, detail: null, isMentor: mentorIds.has(p.id), role: null, stage: "professional" } satisfies PersonSummary];
+      }
       return [
         p.id,
         {

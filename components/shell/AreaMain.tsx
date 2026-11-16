@@ -4,9 +4,10 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 /** Which room of the app a path belongs to; each room has its own palette (see metro.css). The dashboard uses the universal one. */
-export function areaOf(pathname: string): "arena" | "studio" | "pulse" | "roadmap" | undefined {
+export function areaOf(pathname: string): "arena" | "studio" | "pulse" | "propulse" | "roadmap" | undefined {
   if (pathname.startsWith("/arena")) return "arena";
   if (pathname.startsWith("/skillstudio")) return "studio";
+  if (pathname.startsWith("/professional/pulse")) return "propulse"; // a working professional's own Pulse has its own palette
   if (pathname.startsWith("/pulse")) return "pulse";
   if (pathname.startsWith("/dashboard/roadmap")) return "roadmap";
   return undefined;

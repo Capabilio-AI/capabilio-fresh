@@ -25,12 +25,12 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <SettingsCard id="profile-h" title="Profile" description="How you appear across your dashboard and Vault." bare>
-        <SettingsRow icon={User} title="Full name" description="Shown across your dashboard and Vault.">
+      <SettingsCard id="profile-h" title="Profile" description={stage === "professional" ? "How you appear to other professionals." : "How you appear across your dashboard and Vault."} bare>
+        <SettingsRow icon={User} title="Full name" description={stage === "professional" ? "Shown on your profile and posts." : "Shown across your dashboard and Vault."}>
           <EditableNameForm initialName={viewer.fullName ?? ""} />
         </SettingsRow>
         <SettingsRow icon={User} title="Photo and headline" description="Manage how you appear to others.">
-          <Link href="/profile" className={LINK}>Go to profile →</Link>
+          <Link href={stage === "professional" ? "/professional/profile" : "/profile"} className={LINK}>Go to profile →</Link>
         </SettingsRow>
       </SettingsCard>
 
@@ -40,6 +40,7 @@ export default async function SettingsPage() {
         </SettingsRow>
       </SettingsCard>
 
+      {stage !== "professional" && (
       <SettingsCard id="acad-h" title="Academic" bare>
         <SettingsRow icon={School} title="Institution" description={viewer.collegeName ?? "Not set"} />
         <SettingsRow
@@ -55,8 +56,9 @@ export default async function SettingsPage() {
           <Link href="/settings/direction" className={LINK}>Open →</Link>
         </SettingsRow>
       </SettingsCard>
+      )}
 
-      <SettingsCard id="stage-h" title="Career stage" description="Your path follows your profile. It updates by itself when your programme ends or you accept an offer." bare>
+      <SettingsCard id="stage-h" title="Career stage" description={stage === "professional" ? "You are on the working professional path." : "Your path follows your profile. It updates by itself when your programme ends or you accept an offer."} bare>
         {stage === "student" && (
           <SettingsRow icon={GraduationCap} title="Current student" description="Finished early, or your college has not updated your dates? Move to the recently graduated path now.">
             <FinishStudiesCard />
@@ -79,7 +81,7 @@ export default async function SettingsPage() {
           </>
         )}
         {stage === "professional" && (
-          <SettingsRow icon={GraduationCap} title="Working professional" description={[jobTitle, employerName].filter(Boolean).join(" · ") || "Your evidence and portfolio came with you."} />
+          <SettingsRow icon={GraduationCap} title="Working professional" description={[jobTitle, employerName].filter(Boolean).join(" · ") || "Add your current job on your profile."} />
         )}
       </SettingsCard>
 

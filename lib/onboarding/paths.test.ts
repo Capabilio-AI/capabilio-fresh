@@ -43,6 +43,11 @@ describe("path selector", () => {
     expect(sql).not.toMatch(/create policy/i);
   });
 
+  it("the professional sign-up exists for testers but is not linked from the landing page", () => {
+    expect(read("components/login/SignupForm.tsx")).toContain("signUpProfessional");
+    expect(ONBOARDING_PATHS.find((p) => p.id === "professional")?.href).toBe("/get-started/professional");
+  });
+
   it("student signup form is untouched by this task (still student-only metadata)", () => {
     const src = read("components/login/auth.ts");
     expect(src).toContain('role: "student"');

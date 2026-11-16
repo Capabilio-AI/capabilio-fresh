@@ -5,7 +5,7 @@
 import { buildSectionBars, buildSkillResults, computeReadiness, highlights, nextBestAction, summariseElo, type RoleSkill, type SourcedObs } from "./scoring";
 import { advanceOnboarding, loadCareer, loadCareerSkills, track, type Db } from "./db";
 import type { Obs } from "./engine";
-import { GENERAL_SECTIONS } from "./general";
+import { slotsInPlan } from "./general";
 import { loadSession } from "./session";
 import { AssessError, type AssessmentResult } from "./types";
 
@@ -43,7 +43,7 @@ export async function submitSession(db: Db, userId: string, sessionId: string, o
     throw new AssessError("NOT_ALL_ANSWERED", `Answer all ${session.total_questions} questions before submitting.`, 409);
   }
 
-  const built = session.layer === "GENERAL" ? await buildGeneralResult(db, sessionId) : await buildCareerResult(db, userId, session);
+  const built = session.layer === "GENERAL" ? await buildGeneralResult(db, sessionId, session.section_plan) : await buildCareerResult(db, userId, session);
   const result: AssessmentResult = opts.early ? { ...built, endedEarly: opts.early } : built;
   // The snapshot and scores are written BEFORE the session is marked complete and are idempotent (one snapshot per
   // session), so a crash in between leaves a retryable submit rather than a "completed" session with no outcome.
@@ -71,8 +71,8 @@ export async function submitSession(db: Db, userId: string, sessionId: string, o
   return result;
 }
 
-async function buildGeneralResult(db: Db, sessionId: string): Promise<AssessmentResult> {
-  const bars = buildSectionBars(GENERAL_SECTIONS.map((g) => ({ key: g.section, label: g.label })), await sessionObsBySection(db, sessionId));
+async function buildGeneralResult(db: Db, sessionId: string, plan: Record<string, number> | null): Promise<AssessmentResult> {
+  const bars = buildSectionBars(slotsInPlan(plan).map((g) => ({ key: g.section, label: g.label })), await sessionObsBySection(db, sessionId));
   return {
     layer: "GENERAL", completedAt: new Date().toISOString(), career: null, elo: null, readiness: null, coverage: null,
     skills: [], strongest: [], focusAreas: [], notYetMeasured: [], nextBestAction: null, general: bars,

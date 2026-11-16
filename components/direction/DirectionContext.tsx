@@ -10,12 +10,16 @@ interface DirectionFlags {
   launchpadOpen: boolean;
   /** the profile's career stage: student, graduate or professional */
   stage: CareerStage;
+  /** a student who skipped the role has no skill passport, skills or roadmap tabs; everyone else has them */
+  hasRole: boolean;
+  /** year of study, null when unknown */
+  year: number | null;
 }
 
-const Ctx = createContext<DirectionFlags>({ isJobTrack: false, launchpadOpen: false, stage: "student" });
+const Ctx = createContext<DirectionFlags>({ isJobTrack: false, launchpadOpen: false, stage: "student", hasRole: true, year: null });
 
-export function DirectionProvider({ isJobTrack, launchpadOpen, stage, children }: DirectionFlags & { children: ReactNode }) {
-  return <Ctx.Provider value={{ isJobTrack, launchpadOpen, stage }}>{children}</Ctx.Provider>;
+export function DirectionProvider({ isJobTrack, launchpadOpen, stage, hasRole, year, children }: DirectionFlags & { children: ReactNode }) {
+  return <Ctx.Provider value={{ isJobTrack, launchpadOpen, stage, hasRole, year }}>{children}</Ctx.Provider>;
 }
 
 export const useDirectionFlags = () => useContext(Ctx);

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, Settings, UserCircle } from "lucide-react";
 import { signOut } from "@/components/login/auth";
 import { initialsOf, type ViewerSummary } from "@/lib/dashboard/viewer";
+import type { CareerStage } from "@/lib/stage/stage";
 
 /**
  * There was previously no sign-out affordance anywhere in the app — no
@@ -13,7 +14,8 @@ import { initialsOf, type ViewerSummary } from "@/lib/dashboard/viewer";
  * grepping the whole repo before writing this). This replaces the avatar's
  * former dead-end Link to /profile with a real menu.
  */
-export function AccountMenu({ viewer }: { viewer: ViewerSummary }) {
+export function AccountMenu({ viewer, stage }: { viewer: ViewerSummary; stage: CareerStage }) {
+  const pro = stage === "professional";
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,12 +82,12 @@ export function AccountMenu({ viewer }: { viewer: ViewerSummary }) {
             <span aria-hidden className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full border-[14px] border-[#ff5701]/60" />
             <span aria-hidden className="pointer-events-none absolute -bottom-3 right-6 h-3 w-3 rounded-full bg-[#ff5701]" />
             <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white font-lp-display text-[18px] font-bold text-[#141414]">{avatar}</span>
-            <p className="relative mt-3 truncate font-lp-display text-[20px] font-bold leading-tight">{viewer.fullName ?? "Student"}</p>
+            <p className="relative mt-3 truncate font-lp-display text-[20px] font-bold leading-tight">{viewer.fullName ?? (pro ? "Professional" : "Student")}</p>
             <p className="relative truncate text-[13px] text-white/70">{viewer.email}</p>
           </div>
           <div className="mt-2 flex flex-col gap-0.5">
-            <MenuLink href="/profile" icon={UserCircle} label="Your profile" hint="Education, branch and career goal" onDone={() => setOpen(false)} />
-            <MenuLink href="/settings" icon={Settings} label="Settings" hint="Account, direction and privacy" onDone={() => setOpen(false)} />
+            <MenuLink href={pro ? "/professional/profile" : "/profile"} icon={UserCircle} label="Your profile" hint={pro ? "Photo, about you and your jobs" : "Education, branch and career goal"} onDone={() => setOpen(false)} />
+            <MenuLink href="/settings" icon={Settings} label="Settings" hint={pro ? "Account, security and privacy" : "Account, direction and privacy"} onDone={() => setOpen(false)} />
             <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[#fff0e8] disabled:opacity-60">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fff0e8] text-[#c2410c]"><LogOut size={17} aria-hidden /></span>
               <span className="text-[14.5px] font-bold text-[#141414]">{signingOut ? "Signing out…" : "Sign out"}</span>

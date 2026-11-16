@@ -6,10 +6,13 @@ import { VaultTab } from "@/components/dashboard/VaultTab";
 import { EducationHistoryList } from "@/components/education/EducationHistoryList";
 import { EmploymentSection } from "@/components/vault/EmploymentSection";
 import { getStageState } from "@/lib/stage/server";
+import { keepProfessionalOut } from "@/lib/stage/guard";
 
 export const metadata: Metadata = { title: "Vault History — Capabilio AI" };
 
 export default async function VaultHistoryPage() {
+  await keepProfessionalOut(); // not a professional's page
+
   const { supabase, user } = await requireAuthedUser();
   const [entries, { stage }] = await Promise.all([getEducationEntries(supabase, user.id), getStageState(user.id)]);
 

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createPortal } from "react-dom";
 import { Loader2, Maximize, ShieldAlert, TriangleAlert } from "lucide-react";
 import { DEFAULT_POLICY, applyViolation, blockedKey, initialExamState, isDuplicateSwitch, noticeFor, parseStrikes, type ExamPolicy, type ExamState, type Violation, type ViolationNotice } from "@/lib/integrity/exam-rules";
+import { metroFontVars } from "@/components/metro/font";
 import type { IntegrityArea, IntegrityCounts, IntegrityKind } from "@/lib/integrity/kinds";
 
 export interface ExamLockApi {
@@ -25,6 +26,8 @@ export const DEFAULT_RULES = [
   "Copying, pasting, right-click, printing and developer tools are switched off.",
   "You cannot go back to other pages during the test. Close nothing: your answers are only saved as you go.",
 ];
+/** The palette each exam area paints with. The lock renders in a portal on <body>, outside the page's own palette scope, so it carries its own. */
+const PALETTE_OF: Record<IntegrityArea, string> = { assessment: "assess", arena: "arena", crt: "studio", skillstudio: "studio" };
 const FLUSH_MS = 15_000;
 const TOAST_MS = 2600;
 const FALLBACK_RELEASE_MS = 20_000;
@@ -172,6 +175,7 @@ export function ExamLock({ area, title, rules = DEFAULT_RULES, policy = DEFAULT_
   const ended = Boolean(exam.terminated);
   return createPortal(
     <Ctx.Provider value={api}>
+      <div className={`metro ${metroFontVars}`} data-area={PALETTE_OF[area] ?? "assess"}>
       <div className="fixed inset-0 z-[80] overflow-y-auto bg-[var(--m-ground)]">
         {phase === "gate" ? (
           <div className="mx-auto flex min-h-full max-w-xl items-center p-4">
@@ -216,6 +220,7 @@ export function ExamLock({ area, title, rules = DEFAULT_RULES, policy = DEFAULT_
         </div>
       )}
       {phase === "running" && toast && !notice && <p role="status" className="fixed bottom-6 left-1/2 z-[90] max-w-[90vw] -translate-x-1/2 rounded-full bg-[var(--m-ink)] px-5 py-2.5 text-center text-[14px] font-bold text-white shadow-lg">{toast}</p>}
+      </div>
     </Ctx.Provider>,
     document.body,
   );

@@ -30,7 +30,7 @@ const STAGE_OF: Record<FlowSnapshot["stage"], Stage> = { resume: "resume", "care
  * The assessment room. It owns three things only: which screen is showing, what the Back button means on it, and the leave-safely
  * dialog. Everything else lives in the step components, and everything the student sees as a number comes from the server.
  */
-export function AssessFlow({ snapshot }: { snapshot: FlowSnapshot }) {
+export function AssessFlow({ snapshot, initialRole }: { snapshot: FlowSnapshot; initialRole?: string }) {
   const router = useRouter();
   const [view, setView] = useState<View>({ kind: "start" });
   const [leaving, setLeaving] = useState(false);
@@ -57,7 +57,7 @@ export function AssessFlow({ snapshot }: { snapshot: FlowSnapshot }) {
     <AssessScope stage={stage}>
       <AssessTopBar stage={stage} back={back} graduate={!!snapshot.graduate} trailing={snapshot.graduate && snapshot.stage !== "done" && view.kind === "start" ? <Link href="/dashboard" className="rounded-full px-3.5 py-2 text-[14px] font-bold text-[var(--m-muted)] transition-colors hover:bg-white/70 hover:text-[var(--m-ink)]">Skip to dashboard</Link> : undefined} />
       <main id="main">
-        <Screen snapshot={snapshot} view={view} setView={setView} onSubmitted={onSubmitted} advance={advance} />
+        <Screen snapshot={snapshot} initialRole={initialRole} view={view} setView={setView} onSubmitted={onSubmitted} advance={advance} />
         {snapshot.primary && view.kind !== "career-done" && <PersonalizationStatus />}
       </main>
       {leaving && <LeaveDialog onStay={() => setLeaving(false)} onLeave={() => router.push("/dashboard")} />}
@@ -73,22 +73,24 @@ const ASSESSMENT_RULES = [
   "Copying, pasting, right-click, printing and developer tools are switched off, and you cannot go back to other pages until the test is done.",
 ];
 
-function Screen({ snapshot, view, setView, onSubmitted, advance }: { snapshot: FlowSnapshot; view: View; setView: (v: View) => void; onSubmitted: (r: AssessmentResult) => void; advance: () => void }) {
+function Screen({ snapshot, initialRole, view, setView, onSubmitted, advance }: { snapshot: FlowSnapshot; initialRole?: string; view: View; setView: (v: View) => void; onSubmitted: (r: AssessmentResult) => void; advance: () => void }) {
   if (view.kind === "run") {
     return (
       <ExamLock area="assessment" title="Capabilio assessment" storageKey={view.session.sessionId} rules={ASSESSMENT_RULES}>
-        <QuestionRunner sessionId={view.session.sessionId} initial={view.session.state} onSubmitted={onSubmitted} />
+        <AssessScope stage={view.session.layer === "CAREER" ? "career" : "common"}>
+          <QuestionRunner sessionId={view.session.sessionId} initial={view.session.state} onSubmitted={onSubmitted} />
+        </AssessScope>
       </ExamLock>
     );
   }
   if (view.kind === "career-done" && view.result.elo && view.result.career) return <ResultPopup sessionId={view.sessionId} result={view.result} />;
-  if (view.kind === "common-done") return <CommonDone result={view.result} onContinue={advance} />;
+  if (view.kind === "common-done") return <CommonDone result={view.result} onContinue={advance} skipped={snapshot.skippedRole} />;
 
   switch (snapshot.stage) {
     case "resume":
       return <ResumeStep onContinue={advance} hasRole={!!snapshot.primary} />;
     case "career-interest":
-      return <RoleEntryStep roles={snapshot.roleOptions} onConfirmed={advance} graduate={!!snapshot.graduate} />;
+      return <RoleEntryStep roles={snapshot.roleOptions} onConfirmed={advance} graduate={!!snapshot.graduate} canSkip={snapshot.canSkipRole} initialText={initialRole} />;
     case "general":
       return (
         <StartFlow
@@ -118,21 +120,21 @@ function Screen({ snapshot, view, setView, onSubmitted, advance }: { snapshot: F
       return (
         <Notice
           title="Your assessment is complete"
-          body={snapshot.hasCareerResult ? "Your rating, skill graph and roadmap are ready." : "You can take the career assessment whenever you like. It builds your skill graph and role rating."}
-          href={snapshot.hasCareerResult ? "/dashboard" : "/assessment?retake=1"}
-          cta={snapshot.hasCareerResult ? "Go to dashboard" : "Take the career assessment"}
+          body={snapshot.hasCareerResult ? "Your rating, skill graph and roadmap are ready." : snapshot.skippedRole ? "You skipped choosing a role. Choose one whenever you are ready to build your skill graph and role rating." : "You can take the career assessment whenever you like. It builds your skill graph and role rating."}
+          href={snapshot.hasCareerResult || snapshot.skippedRole ? "/dashboard" : "/assessment?retake=1"}
+          cta={snapshot.hasCareerResult || snapshot.skippedRole ? "Go to dashboard" : "Take the career assessment"}
         />
       );
   }
 }
 
-function CommonDone({ result, onContinue }: { result: AssessmentResult; onContinue: () => void }) {
+function CommonDone({ result, onContinue, skipped }: { result: AssessmentResult; onContinue: () => void; skipped: boolean }) {
   return (
     <section className="mx-auto w-full max-w-2xl px-4 pb-16 pt-8 sm:pt-14" aria-labelledby="common-done-title">
       <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="a-glass rounded-[2rem] p-7 text-center sm:p-10">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--ok)] text-white shadow-[0_16px_28px_-14px_var(--ok)]"><CheckCircle2 className="h-7 w-7" aria-hidden /></span>
         <h1 id="common-done-title" className="mt-4 font-lp-display text-[34px] font-bold leading-tight text-[var(--m-ink)]">Common assessment done</h1>
-        <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--m-muted)]">That was the baseline. Next is the part that builds your role rating and skill graph.</p>
+        <p className="mx-auto mt-2 max-w-md text-[15px] text-[var(--m-muted)]">{skipped ? "That was your baseline. Choose a role whenever you are ready and Capabilio will build your skill graph for it." : "That was the baseline. Next is the part that builds your role rating and skill graph."}</p>
         <ul className="mt-6 space-y-4 text-left">
           {(result.general ?? []).map((b) => (
             <li key={b.section}>
@@ -143,7 +145,8 @@ function CommonDone({ result, onContinue }: { result: AssessmentResult; onContin
             </li>
           ))}
         </ul>
-        <Button variant="accent" size="lg" onClick={onContinue} className="mt-8">Continue to career assessment</Button>
+        <p className="mt-6 text-[13.5px] leading-relaxed text-[var(--m-muted)]">These scores are now on your <strong className="text-[var(--m-ink)]">Placement readiness</strong> radar, with what to improve and how. Find it in SkillStudio, then CRT.</p>
+        <Button variant="accent" size="lg" onClick={onContinue} className="mt-8">{skipped ? "Continue" : "Continue to career assessment"}</Button>
       </motion.div>
     </section>
   );

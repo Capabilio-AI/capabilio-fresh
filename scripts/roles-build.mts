@@ -39,8 +39,10 @@ for (const title of titles) {
     continue;
   }
   try {
-    const out = await resolveRole(db, title);
-    if (out.status === "REJECTED") { report.push({ title, role: "-", result: `rejected: ${out.message}` }); continue; }
+    let out = await resolveRole(db, title);
+    // a bulk build has no student to ask: a broad title is built exactly as written
+    if (out.status === "CLARIFY") out = await resolveRole(db, title, {}, { kind: "as_typed", title: out.canonicalTitle, industry: "", domain: "" });
+    if (out.status !== "MATCHED" && out.status !== "GENERATED") { report.push({ title, role: "-", result: `${String(out.status).toLowerCase()}: ${"message" in out ? out.message : "needs clarification"}` }); continue; }
     const career = out.primary;
     const notes: string[] = [out.status === "GENERATED" ? "profile created" : "role exists"];
     let force = false;

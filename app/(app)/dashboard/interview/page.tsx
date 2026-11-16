@@ -7,12 +7,15 @@ import { getStageState } from "@/lib/stage/server";
 import { interviewUnlocked } from "@/lib/plans/catalog";
 import { PageHead } from "@/components/dashboard/PageHead";
 import { InterviewTabs } from "@/components/interview/InterviewTabs";
+import { keepProfessionalOut } from "@/lib/stage/guard";
 
 export const metadata: Metadata = { title: "AI Interview — Capabilio AI" };
 
 const CARD = "mx-auto flex max-w-xl flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--m-off)] bg-white px-8 py-16 text-center";
 
 export default async function InterviewPage() {
+  await keepProfessionalOut(); // not a professional's page
+
   const { supabase, user } = await requireAuthedUser();
 
   const [viewer, { stage, planId }] = await Promise.all([getViewerSummary(supabase, user.id), getStageState(user.id)]);

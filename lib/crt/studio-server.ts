@@ -14,6 +14,7 @@ import { todayIst, type Outcome, type StudentCycle } from "./server";
 import { exhaustedMessage, freshOnly } from "./never-repeat";
 import { markFor, NEGATIVE_MARK, SKIPPED_KEY, totalMarks } from "./marking";
 import { seenQuestionIds } from "./seen";
+import { areaScores, loadCommonAssessment, type CommonAssessment } from "./common-assessment";
 
 type Service = SupabaseClient<Database>;
 
@@ -112,6 +113,8 @@ export interface StudioView {
   areas: ReadinessArea[];
   stats: { answered: number; accuracyPct: number | null; hours: number; streak: number };
   speaking: { attempts: number; recent: { at: string; pct: number }[] };
+  /** the student's latest common assessment, which feeds the aptitude, reasoning and communication areas */
+  common: CommonAssessment | null;
 }
 
 const MODULE_CATEGORY: Partial<Record<CrtModule, Category>> = { aptitude: "aptitude", reasoning: "reasoning", verbal: "verbal", soft_skills: "soft_skills" };
@@ -119,18 +122,23 @@ const todayIstOf = (iso: string): string => todayIst(new Date(iso));
 
 /** Everything the readiness view and the hero show, from the student's own answers, speaking attempts and latest assessment. */
 export async function loadStudio(service: Service, userId: string, cycles: readonly StudentCycle[]): Promise<StudioView> {
-  const [entries, { data: spokenRows }] = await Promise.all([
+  const [entries, common, { data: spokenRows }] = await Promise.all([
     logEntries(service, userId),
+    loadCommonAssessment(service, userId),
     untyped(service).from("crt_speaking_attempts").select("scores, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
   ]);
   const spoken = ((spokenRows ?? []) as { scores: Parameters<typeof overallPct>[0]; created_at: string }[]).map((r) => ({ at: r.created_at, pct: overallPct(r.scores) }));
   // only the official assessment feeds readiness; a scheduled mock is practice
   const latest = cycles.find((c) => c.kind === "assessment" && c.result)?.result?.moduleScores as ModuleScores | undefined;
 
+  const commonByArea = areaScores(common);
   const areas: ReadinessArea[] = CATEGORIES.map((key) => {
     const mine = entries.filter((e) => e.category === key);
     const assessed = (Object.keys(MODULE_CATEGORY) as CrtModule[]).find((m) => MODULE_CATEGORY[m] === key);
-    const assessmentPct = latest && assessed && latest[assessed].max > 0 ? modulePct(latest[assessed]) : null;
+    const placementPct = latest && assessed && latest[assessed].max > 0 ? modulePct(latest[assessed]) : null;
+    // the common assessment is assessment evidence too: with both, the area takes their average, and retaking either moves it
+    const fromAssessments = [placementPct, commonByArea[key] ?? null].filter((x): x is number => x !== null);
+    const assessmentPct = fromAssessments.length ? fromAssessments.reduce((a, b) => a + b, 0) / fromAssessments.length : null;
     let comp = competency(mine, assessmentPct);
     if (key === "speaking") {
       const last = spoken.slice(0, 5);
@@ -151,6 +159,7 @@ export async function loadStudio(service: Service, userId: string, cycles: reado
       streak: streak(active, todayIst()),
     },
     speaking: { attempts: spoken.length, recent: spoken.slice(0, 6).reverse() },
+    common,
   };
 }
 

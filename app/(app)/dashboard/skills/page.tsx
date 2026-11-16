@@ -16,10 +16,14 @@ import { PageHead } from "@/components/dashboard/PageHead";
 import { SegmentedLinks } from "@/components/dashboard/SegmentedLinks";
 import { getSkillPracticeRecency } from "@/lib/career/skill-decay";
 import type { Db } from "@/lib/assess/db";
+import { keepProfessionalOut, requireRoleChosen } from "@/lib/stage/guard";
 
 export const metadata: Metadata = { title: "Skills — Capabilio AI" };
 
 export default async function SkillsPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  await keepProfessionalOut(); // not a professional's page
+  await requireRoleChosen(); // a student who skipped the role has none of this
+
   const showGaps = (await searchParams).view === "gaps";
   const { supabase, user } = await requireAuthedUser();
   const db = createServiceClient() as unknown as Db;

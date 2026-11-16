@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isPlatformAdmin } from "@/lib/arena-content/store";
 import { listApplications } from "@/lib/pulse/mentors";
 import { loadReports } from "@/lib/pulse/moderation";
+import { mentorEvidence } from "@/lib/mentorship/evidence";
 import { PulseAdminPanel } from "@/components/pulse/PulseAdminPanel";
 
 export const metadata: Metadata = { title: "Pulse moderation — Admin — Capabilio AI" };
@@ -14,7 +15,9 @@ export default async function PulseAdminPage() {
   const { user } = await requireAuthedUser();
   const service = createServiceClient();
   if (!(await isPlatformAdmin(service, user.id))) notFound();
-  const [applications, reports] = await Promise.all([listApplications(service, "pending"), loadReports(service, "open")]);
+  const [pending, reports] = await Promise.all([listApplications(service, "pending"), loadReports(service, "open")]);
+  const evidence = await mentorEvidence(pending.map((a) => a.id)).catch(() => new Map<string, string[]>());
+  const applications = pending.map((a) => ({ ...a, evidence: evidence.get(a.id) ?? [] }));
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="font-lp-display text-[30px] font-bold leading-[1.08] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Pulse moderation</h1>

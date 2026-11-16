@@ -25,7 +25,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   const join = await loadJoinLink(params.join);
   return (
     <AuthLayout>
-      <SignupForm join={join} initialStatus={params.as === "graduate" ? "graduate" : "student"} />
+      <SignupForm join={join} initialStatus={params.as === "graduate" ? "graduate" : params.as === "professional" ? "professional" : "student"} />
     </AuthLayout>
   );
 }

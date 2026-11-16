@@ -20,9 +20,9 @@ describe("answer feedback rendering", () => {
   it("a correct pick turns green with a check, 'Correct answer', and the +4 ELO chip", () => {
     const f = fb();
     const [a, b] = tiles(f, 1);
-    expect(b).toContain("--ok-soft");
+    expect(b).toContain("a-opt-correct");
     expect(b).toContain("Correct answer");
-    expect(a).not.toContain("--bad-soft");
+    expect(a).not.toContain("a-opt-wrong");
     const p = panel(f);
     expect(p).toContain("Correct");
     expect(p).not.toContain("Incorrect");
@@ -34,9 +34,9 @@ describe("answer feedback rendering", () => {
   it("a wrong pick turns red with an X and 'Your answer'; the correct option turns green; shows −2", () => {
     const f = fb({ isCorrect: false, chosenIndex: 0, correctIndex: 2, elo: { previous: 404, change: -2, newRating: 402 } });
     const t = tiles(f, 0);
-    expect(t[0]).toContain("--bad-soft");
+    expect(t[0]).toContain("a-opt-wrong");
     expect(t[0]).toContain("Your answer");
-    expect(t[2]).toContain("--ok-soft");
+    expect(t[2]).toContain("a-opt-correct");
     expect(t[2]).toContain("Correct answer");
     expect(t[1]).toContain("opacity-55");
     const p = panel(f);

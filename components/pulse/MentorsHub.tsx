@@ -11,6 +11,8 @@ import { FollowButton } from "./FollowButton";
 import { MentorApplyForm } from "./MentorApplyForm";
 import { MentorBadge } from "./MentorBadge";
 import { PulseFeed } from "./PulseFeed";
+import { MyRequests } from "@/components/mentorship/MyRequests";
+import { RequestSession } from "@/components/mentorship/RequestSession";
 
 type Section = "directory" | "posts";
 interface Directory {
@@ -42,7 +44,10 @@ function MentorTile({ m }: { m: MentorCard }) {
       {m.availability && <p className="flex items-center gap-1.5 font-lp-body text-[12px] text-app-muted"><Clock size={11} aria-hidden="true" /> {m.availability}</p>}
       <div className="mt-auto flex items-center gap-2 border-t border-[var(--m-rule)] pt-3">
         {m.isAccepting ? (
-          <Link href={`/pulse/messages?to=${m.id}`} className="flex items-center gap-1.5 rounded-full bg-app-orange px-4 py-2 font-lp-body text-[12.5px] font-semibold text-white"><MessageCircle size={13} aria-hidden="true" /> Message</Link>
+          <>
+            {m.stage !== "professional" && <Link href={`/pulse/messages?to=${m.id}`} className="flex items-center gap-1.5 rounded-full bg-app-orange px-4 py-2 font-lp-body text-[12.5px] font-semibold text-white"><MessageCircle size={13} aria-hidden="true" /> Message</Link>}
+            {m.stage === "professional" && <RequestSession mentorId={m.id} mentorName={m.name ?? "this mentor"} />}
+          </>
         ) : (
           <span className="rounded-full bg-app-background px-3 py-1.5 font-lp-body text-[11.5px] text-app-muted">Not taking new requests</span>
         )}
@@ -97,6 +102,7 @@ export function MentorsHub({ viewer }: { viewer: { id: string } & AvatarPerson }
         <PulseFeed view={{ mode: "mentors" }} viewer={viewer} />
       ) : (
         <>
+          <MyRequests />
           <section aria-label="Become a mentor" className="rounded-2xl border border-[var(--m-rule)] bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>

@@ -54,6 +54,9 @@ export function openAiCompatible(o: OpenAiCompatibleOptions): LlmAdapter {
         throw new LlmError(timedOut ? "timeout" : "provider_down", `${o.name}: ${timedOut ? "request timed out" : "could not be reached"}`, e);
       }
       if (res.status === 429) {
+        // "no credits left" arrives as a 429 too, but waiting never fixes it: fail over at once and say what is wrong
+        const detail = (await res.clone().text().catch(() => "")).slice(0, 600);
+        if (/insufficient_quota|credit_balance_exhausted|billing_hard_limit|exceeded your current quota/i.test(detail)) throw new LlmError("config", `${o.name}: out of credits (add billing credit to this account)`);
         const secs = Number(res.headers.get("retry-after"));
         throw new LlmError("rate_limit", `${o.name}: rate limited`, undefined, Number.isFinite(secs) && secs >= 0 ? secs * 1000 : undefined);
       }

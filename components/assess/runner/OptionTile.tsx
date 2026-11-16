@@ -18,9 +18,9 @@ export function optionState(i: number, selected: number | null, fb: FeedbackLite
 
 const SURFACE: Record<OptionState, string> = {
   idle: "a-glass-soft hover:border-white",
-  chosen: "a-glass border-[var(--m-accent-ink)] ring-2 ring-[var(--m-accent-ink)]/60",
-  correct: "border-[var(--ok)] bg-[var(--ok-soft)] text-[var(--ok-ink)] shadow-[0_16px_30px_-18px_var(--ok)]",
-  wrong: "a-shake border-[var(--bad)] bg-[var(--bad-soft)] text-[var(--bad-ink)] shadow-[0_16px_30px_-18px_var(--bad)]",
+  chosen: "a-opt-chosen",
+  correct: "a-opt-correct shadow-[0_16px_30px_-18px_#0f9d6b]",
+  wrong: "a-shake a-opt-wrong shadow-[0_16px_30px_-18px_#d6334a]",
   dim: "a-glass-soft opacity-55",
 };
 
@@ -40,7 +40,7 @@ export function OptionTile({ index, text, state, locked, onPick }: { index: numb
       aria-keyshortcuts={`${LETTERS[index]} ${index + 1}`}
       className={`a-tile group flex w-full items-start gap-4 rounded-2xl border border-transparent px-4 py-4 text-left disabled:cursor-default sm:px-5 ${SURFACE[state]}`}
     >
-      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-[13px] font-bold transition-colors ${state === "correct" ? "border-[var(--ok)] bg-[var(--ok)] text-white" : state === "wrong" ? "border-[var(--bad)] bg-[var(--bad)] text-white" : "border-[var(--m-soft)] bg-white/70 text-[var(--m-ink)] group-hover:border-[var(--m-ink)]"}`} aria-hidden>
+      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-[13px] font-bold transition-colors ${state === "correct" ? "a-badge-correct" : state === "wrong" ? "a-badge-wrong" : "border-[var(--m-soft)] bg-white/70 text-[var(--m-ink)] group-hover:border-[var(--m-ink)]"}`} aria-hidden>
         {state === "correct" ? <Check className="h-4 w-4" strokeWidth={3} /> : state === "wrong" ? <X className="h-4 w-4" strokeWidth={3} /> : LETTERS[index]}
       </span>
       <span className={`min-w-0 flex-1 whitespace-pre-wrap break-words text-[15.5px] leading-relaxed ${code ? "a-code" : ""} ${state === "idle" || state === "chosen" || state === "dim" ? "text-[var(--m-ink)]" : ""}`}>{text}</span>

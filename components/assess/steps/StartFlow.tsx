@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Braces, CheckCheck, Eye, Gauge, Languages, Lock, Play, RefreshCw, Shuffle, X } from "lucide-react";
+import { Braces, Calculator, CheckCheck, Brain, Eye, Gauge, Languages, Lock, Play, RefreshCw, Shuffle, X } from "lucide-react";
 import type { SessionStart, SessionState } from "@/lib/assess/types";
 import { ApiError, NetworkError, assessApi, sleep } from "../api";
 import { Button } from "../ui/Button";
@@ -30,7 +30,7 @@ interface Props {
 
 const STEPS = ["4", "3", "2", "1", "GO"];
 const STEP_MS = 850;
-const SECTION_ICON: Record<string, typeof Languages> = { Communication: Languages, "Basic Programming": Braces };
+const SECTION_ICON: Record<string, typeof Languages> = { Communication: Languages, "Basic Programming": Braces, "Quantitative Aptitude": Calculator, "Logical & Analytical Reasoning": Brain };
 
 /**
  * Stage intro, then the 4-3-2-1-GO countdown. The countdown is pure UX and never waits on the model: the real work (creating the session
