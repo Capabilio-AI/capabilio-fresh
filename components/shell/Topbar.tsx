@@ -9,7 +9,7 @@ import { UnreadBadge } from "@/components/messages/UnreadBadge";
 import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 import type { CareerStage } from "@/lib/stage/stage";
 
-export function Topbar({ viewer, stage, alerts = 0 }: { viewer: ViewerSummary; stage: CareerStage; alerts?: number }) {
+export function Topbar({ viewer, stage, alerts = 0, isAdmin = false }: { viewer: ViewerSummary; stage: CareerStage; alerts?: number; isAdmin?: boolean }) {
   // A working professional has their own pages: the student network's search and alerts are not shown to them; they have their own Messages and Alerts.
   const pro = stage === "professional";
   return (
@@ -31,7 +31,7 @@ export function Topbar({ viewer, stage, alerts = 0 }: { viewer: ViewerSummary; s
           {pro && <DockButton href="/professional/notifications" label={alerts > 0 ? `Alerts, ${alerts} unread` : "Alerts"} badge={alerts > 0 ? <span aria-hidden className="absolute -right-2.5 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--m-accent)] px-1 text-[11px] font-bold text-white">{alerts > 9 ? "9+" : alerts}</span> : undefined}><Bell size={18} strokeWidth={2.2} /></DockButton>}
           <DockButton href="/settings" label="Settings"><Settings size={18} strokeWidth={2.2} /></DockButton>
           <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
-          <AccountMenu viewer={viewer} stage={stage} />
+          <AccountMenu viewer={viewer} stage={stage} isAdmin={isAdmin} />
         </div>
       </div>
     </header>

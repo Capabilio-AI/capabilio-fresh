@@ -14,6 +14,7 @@ import { getStageState } from "@/lib/stage/server";
 import { PlanPicker } from "@/components/plans/PlanPicker";
 import { unreadAlerts } from "@/lib/professional/notifications";
 import { studentHasRole } from "@/lib/careers/has-role";
+import { isPlatformAdmin } from "@/lib/arena-content/store";
 import { getStudentDirection } from "@/lib/career/direction";
 import { ensureStudentMembership } from "@/lib/org/ensure-membership";
 
@@ -32,6 +33,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (stage === "student") await ensureStudentMembership(service, user.id).catch(() => false);
   const viewer = await getViewerSummary(supabase, user.id);
   // The year that decides what is open is read the way the page guards read it (service client), so a nav item is never shown that its page then refuses.
+  const isAdmin = await isPlatformAdmin(service, user.id).catch(() => false);
   const year = stage === "student" ? ((await getStudentDirection(service, user.id))?.academicYear?.year ?? null) : null;
   // Year and goal prompts are about study years, so only a current student is asked them.
   const direction = stage === "student" ? viewer.direction : null;
@@ -59,7 +61,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const needsPlan = stage === "graduate" && !planId;
 
   return (
-    <AppShell viewer={viewer} stage={stage} alerts={alerts} hasRole={stage !== "student" || hasRole} year={year} banner={needsPlan ? null : banners}>
+    <AppShell viewer={viewer} stage={stage} alerts={alerts} hasRole={stage !== "student" || hasRole} year={year} isAdmin={isAdmin} banner={needsPlan ? null : banners}>
       {!needsPlan && askGoal && direction && <GoalStatePrompt reflection={reflection} current={direction.goalState} />}
       {needsPlan ? <PlanPicker current={null} /> : children}
     </AppShell>

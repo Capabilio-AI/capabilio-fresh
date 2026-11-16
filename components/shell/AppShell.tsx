@@ -12,7 +12,7 @@ import { AreaMain } from "@/components/shell/AreaMain";
 import { DirectionProvider } from "@/components/direction/DirectionContext";
 import type { CareerStage } from "@/lib/stage/stage";
 
-export function AppShell({ viewer, stage, alerts = 0, hasRole = true, year = null, banner, children }: { viewer: ViewerSummary; stage: CareerStage; alerts?: number; hasRole?: boolean; year?: number | null; banner?: ReactNode; children: ReactNode }) {
+export function AppShell({ viewer, stage, alerts = 0, hasRole = true, year = null, isAdmin = false, banner, children }: { viewer: ViewerSummary; stage: CareerStage; alerts?: number; hasRole?: boolean; year?: number | null; isAdmin?: boolean; banner?: ReactNode; children: ReactNode }) {
   // A graduate is job-hunting now, so Launchpad is open for them whatever their old programme dates say.
   const launchpadOpen = stage === "graduate" || (viewer.direction?.launchpadOpen ?? false);
   return (
@@ -20,7 +20,7 @@ export function AppShell({ viewer, stage, alerts = 0, hasRole = true, year = nul
       <MessagingProvider userId={viewer.id}>
       <CallProvider>
       <div className={`metro ${metroFontVars} min-h-screen bg-[var(--m-ground)]`}>
-        <Topbar viewer={viewer} stage={stage} alerts={alerts} />
+        <Topbar viewer={viewer} stage={stage} alerts={alerts} isAdmin={isAdmin} />
         <HeaderNav stage={stage} launchpadOpen={launchpadOpen} hasRole={hasRole} year={year} />
         <AreaMain>
           {banner}

@@ -19,6 +19,7 @@
 [data-area="studio"] { --m-ink: #0a2417; --m-ground: #eef5f0; --m-rule: #cfe0d5; --m-muted: #4c6355; --m-soft: #acccba; --m-off: #86a090; --m-accent: #0d7a45; --m-accent-ink: #0d7a45; --m-accent-soft: #e2f4ea; }
 [data-area="pulse"] { --m-ink: #052a2e; --m-ground: #edf6f6; --m-rule: #cfe3e4; --m-muted: #476467; --m-soft: #a6cbce; --m-off: #84a3a6; --m-accent: #00929b; --m-accent-ink: #00727a; --m-accent-soft: #dff3f4; }
 [data-area="propulse"] { --m-ink: #15122e; --m-ground: #f1f0f8; --m-rule: #dad7ec; --m-muted: #57557a; --m-soft: #b7b3dc; --m-off: #8e8bb4; --m-accent: #5b4bdb; --m-accent-ink: #4636c0; --m-accent-soft: #e6e3fb; }
+[data-area="admin"] { --m-ink: #15110d; --m-ground: #f1eee8; --m-sheet: #ffffff; --m-rule: #e2dcd0; --m-muted: #5d564d; --m-soft: #c9c1b3; --m-off: #928a7d; --m-accent: #ff5701; --m-accent-ink: #b93c00; --m-accent-soft: #ffe9dc; }
 [data-area="roadmap"] { --m-ink: #0b1b33; --m-ground: #eef2f7; --m-rule: #cfd7e3; --m-muted: #4d5d77; --m-soft: #a9b8d1; --m-off: #8795ab; --m-accent: #0b5cad; --m-accent-ink: #0b5cad; --m-accent-soft: #e3eefb; }
 
 /* Derived aliases: the older components read app-* and lp-*; point them at whichever palette is active on this element. */

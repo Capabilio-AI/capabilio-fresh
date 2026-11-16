@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Settings, UserCircle } from "lucide-react";
+import { ChevronDown, LayoutGrid, LogOut, Settings, UserCircle } from "lucide-react";
 import { signOut } from "@/components/login/auth";
 import { initialsOf, type ViewerSummary } from "@/lib/dashboard/viewer";
 import type { CareerStage } from "@/lib/stage/stage";
@@ -14,7 +14,7 @@ import type { CareerStage } from "@/lib/stage/stage";
  * grepping the whole repo before writing this). This replaces the avatar's
  * former dead-end Link to /profile with a real menu.
  */
-export function AccountMenu({ viewer, stage }: { viewer: ViewerSummary; stage: CareerStage }) {
+export function AccountMenu({ viewer, stage, isAdmin = false }: { viewer: ViewerSummary; stage: CareerStage; isAdmin?: boolean }) {
   const pro = stage === "professional";
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -88,6 +88,7 @@ export function AccountMenu({ viewer, stage }: { viewer: ViewerSummary; stage: C
           <div className="mt-2 flex flex-col gap-0.5">
             <MenuLink href={pro ? "/professional/profile" : "/profile"} icon={UserCircle} label="Your profile" hint={pro ? "Photo, about you and your jobs" : "Education, branch and career goal"} onDone={() => setOpen(false)} />
             <MenuLink href="/settings" icon={Settings} label="Settings" hint={pro ? "Account, security and privacy" : "Account, direction and privacy"} onDone={() => setOpen(false)} />
+            {isAdmin && <MenuLink href="/admin" icon={LayoutGrid} label="Admin console" hint="Approvals, colleges, people and monitoring" onDone={() => setOpen(false)} />}
             <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[#fff0e8] disabled:opacity-60">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fff0e8] text-[#c2410c]"><LogOut size={17} aria-hidden /></span>
               <span className="text-[14.5px] font-bold text-[#141414]">{signingOut ? "Signing out…" : "Sign out"}</span>
