@@ -13,6 +13,7 @@ import { Avatar } from "@/components/pulse/Avatar";
 import { FollowButton } from "@/components/pulse/FollowButton";
 import { MentorBadge } from "@/components/pulse/MentorBadge";
 import { ProfileFeedTabs } from "@/components/pulse/ProfileFeedTabs";
+import { RequestSession } from "@/components/mentorship/RequestSession";
 import { ProfileStats } from "@/components/pulse/ProfileStats";
 import { ProfileMenu } from "@/components/pulse/ProfileMenu";
 
@@ -67,7 +68,7 @@ export default async function PulseProfilePage({ params }: { params: Promise<{ i
             {isMe ? (
               <Link href="/profile" className="rounded-full border border-[var(--m-rule)] px-4 py-2 font-lp-body text-[13px] font-semibold text-[var(--m-ink)] hover:bg-app-background">Edit profile</Link>
             ) : (
-              <div className="flex items-center gap-2"><Link href={`/pulse/messages?to=${id}`} className="flex items-center gap-1.5 rounded-full border border-[var(--m-rule)] px-4 py-2 font-lp-body text-[13px] font-semibold text-[var(--m-ink)] hover:bg-app-background"><MessageCircle size={14} aria-hidden="true" /> Message</Link><FollowButton userId={id} initialFollowing={follows} /><ProfileMenu userId={id} name={name.split(" ")[0]} /></div>
+              <div className="flex flex-wrap items-center gap-2">{person.isMentor && person.stage === "professional" ? <RequestSession mentorId={id} mentorName={name} /> : <Link href={`/pulse/messages?to=${id}`} className="flex items-center gap-1.5 rounded-full border border-[var(--m-rule)] px-4 py-2 font-lp-body text-[13px] font-semibold text-[var(--m-ink)] hover:bg-app-background"><MessageCircle size={14} aria-hidden="true" /> Message</Link>}<FollowButton userId={id} initialFollowing={follows} /><ProfileMenu userId={id} name={name.split(" ")[0]} /></div>
             )}
           </div>
 
@@ -101,6 +102,8 @@ export default async function PulseProfilePage({ params }: { params: Promise<{ i
             <p className="font-lp-body text-[13.5px] font-semibold text-[var(--m-ink)]">This profile is private</p>
             <p className="max-w-sm font-lp-body text-[12.5px] text-app-muted">Follow {name.split(" ")[0]} to see their posts and stories.</p>
           </div>
+        ) : counts.posts === 0 ? (
+          <p className="rounded-2xl border border-dashed border-[var(--m-rule)] bg-white px-6 py-10 text-center font-lp-body text-[13px] text-app-muted">{name.split(" ")[0]} has not posted yet.</p>
         ) : (
           <ProfileFeedTabs userId={id} viewer={viewer} />
         )}

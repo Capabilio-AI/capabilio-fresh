@@ -57,7 +57,7 @@ export default async function ProfessionalPulse({ searchParams }: { searchParams
               {/* eslint-disable-next-line @next/next/no-img-element -- storage-hosted cover, arbitrary origin */}
               {profile?.coverUrl && <img src={profile.coverUrl} alt="" className="size-full object-cover" />}
             </div>
-            <Link href="/professional/portfolio" className="-mt-9 flex flex-col items-center px-5 pb-1 text-center">
+            <Link href="/professional/portfolio" className="relative -mt-9 flex flex-col items-center px-5 pb-1 text-center">
               <span className="rounded-full border-4 border-white bg-white"><ProAvatar name={me.name} url={me.avatarUrl} size={68} /></span>
               <span className="mt-2.5 font-lp-display text-[16px] font-bold text-[var(--m-ink)]">{me.name}</span>
               <span className="mt-0.5 text-[12.5px] leading-snug text-[var(--m-muted)]">{me.line}</span>

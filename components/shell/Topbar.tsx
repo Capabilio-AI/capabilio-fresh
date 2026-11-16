@@ -10,7 +10,7 @@ import { NotificationBadge } from "@/components/notifications/NotificationBadge"
 import type { CareerStage } from "@/lib/stage/stage";
 
 export function Topbar({ viewer, stage, alerts = 0 }: { viewer: ViewerSummary; stage: CareerStage; alerts?: number }) {
-  // A working professional has their own pages: the student network's search, messages and alerts are not shown to them.
+  // A working professional has their own pages: the student network's search and alerts are not shown to them; they have their own Messages and Alerts.
   const pro = stage === "professional";
   return (
     <header className="sticky top-0 z-30 bg-[var(--m-ground)] print:hidden">
@@ -27,6 +27,7 @@ export function Topbar({ viewer, stage, alerts = 0 }: { viewer: ViewerSummary; s
         <div className="glass flex shrink-0 items-center gap-0.5 rounded-full p-1">
           {!pro && <DockButton href="/pulse/messages" label="Messages" badge={<UnreadBadge className="absolute -right-2.5 -top-2 h-[18px]" />}><MessageCircle size={18} strokeWidth={2.2} /></DockButton>}
           {!pro && <DockButton href="/notifications" label="Alerts" badge={<NotificationBadge className="absolute -right-2.5 -top-2 h-[18px]" />}><Bell size={18} strokeWidth={2.2} /></DockButton>}
+          {pro && <DockButton href="/professional/pulse/messages" label="Messages" badge={<UnreadBadge className="absolute -right-2.5 -top-2 h-[18px]" />}><MessageCircle size={18} strokeWidth={2.2} /></DockButton>}
           {pro && <DockButton href="/professional/notifications" label={alerts > 0 ? `Alerts, ${alerts} unread` : "Alerts"} badge={alerts > 0 ? <span aria-hidden className="absolute -right-2.5 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--m-accent)] px-1 text-[11px] font-bold text-white">{alerts > 9 ? "9+" : alerts}</span> : undefined}><Bell size={18} strokeWidth={2.2} /></DockButton>}
           <DockButton href="/settings" label="Settings"><Settings size={18} strokeWidth={2.2} /></DockButton>
           <span aria-hidden className="mx-1 h-6 w-px bg-[var(--m-rule)]" />
