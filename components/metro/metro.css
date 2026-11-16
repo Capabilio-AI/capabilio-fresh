@@ -53,6 +53,8 @@
 }
 .metro ::selection { background: var(--m-accent); color: #fff; }
 .metro :focus-visible { outline: 3px solid var(--m-accent-ink); outline-offset: 2px; }
+/* A field inside a rounded wrapper that draws its own focus ring (focus-within) must not also draw a square outline inside it. */
+.metro .field-ring :focus-visible { outline: none; }
 
 .metro-station { transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); }
 .metro-node:hover .metro-station { transform: scale(1.14); }
