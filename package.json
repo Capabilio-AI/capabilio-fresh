@@ -19,6 +19,7 @@
     "ai:check": "node --env-file=.env.local --import tsx scripts/check-bedrock.mts",
     "assess:recalibrate": "node --env-file=.env.local --import tsx scripts/assess-recalibrate.mts",
     "roles:requirements": "node --env-file=.env.local --import tsx scripts/role-requirements.mts",
+    "admin:access": "node --env-file=.env.local --import tsx scripts/admin-access.mts",
     "mentors:review": "node --env-file=.env.local --import tsx scripts/mentor-review.mts",
     "roles:streams": "node --env-file=.env.local --import tsx scripts/stream-roles.mts",
     "roles:build": "node --env-file=.env.local --import tsx scripts/roles-build.mts",
