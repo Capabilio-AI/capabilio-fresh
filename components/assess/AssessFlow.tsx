@@ -99,7 +99,7 @@ function Screen({ snapshot, initialRole, view, setView, onSubmitted, advance }: 
     case "resume":
       return <ResumeStep onContinue={advance} hasRole={!!snapshot.primary} />;
     case "career-interest":
-      return <RoleEntryStep roles={snapshot.roleOptions} onConfirmed={advance} graduate={!!snapshot.graduate} canSkip={snapshot.canSkipRole} initialText={initialRole} />;
+      return <RoleEntryStep roles={snapshot.roleOptions} featured={snapshot.featuredRoles} onConfirmed={advance} graduate={!!snapshot.graduate} canSkip={snapshot.canSkipRole} initialText={initialRole} />;
     case "general":
       return (
         <StartFlow

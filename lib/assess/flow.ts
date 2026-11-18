@@ -6,7 +6,9 @@ import { latestResult } from "./finalize";
 import { loadRoleOptions, type RoleOption } from "./roles";
 import { matchFocusSkills } from "@/lib/graduate/focus";
 import { isPostStudy } from "@/lib/stage/stage";
-import { isRoleSkippableYear, studentYear } from "./skip";
+import { isRoleSkippableYear } from "./skip";
+import { featuredForBranch } from "./role-filter";
+import { getStudentDirection } from "@/lib/career/direction";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
@@ -48,6 +50,8 @@ export interface FlowSnapshot {
   assess: { career: CareerRef; skills: { name: string; category: string | null; importance: string }[]; total: number } | null;
   /** every selectable role with its aliases, shipped with the page so the role picker filters instantly (no request per keystroke) */
   roleOptions: RoleOption[];
+  /** role names to list first in the picker: the student's own branch first, then the IT roles */
+  featuredRoles: string[];
   commonSections: { label: string; questions: number }[];
   hasOpenCareerSession: boolean;
   hasCareerResult: boolean;
@@ -72,7 +76,8 @@ export async function getFlowSnapshot(db: Db, userId: string, opts: { plan?: "b"
     loadRoleOptions(db),
   ]);
   const isGraduate = isPostStudy(me?.student_status);
-  const year = await studentYear(db as unknown as SupabaseClient<Database>, userId);
+  const direction = await getStudentDirection(db as unknown as SupabaseClient<Database>, userId);
+  const year = direction?.academicYear?.year ?? null;
   const skippable = !isGraduate && isRoleSkippableYear(year);
   const list = (careers ?? []) as CareerRef[];
   const byId = new Map(list.map((c) => [c.id, c]));
@@ -104,6 +109,7 @@ export async function getFlowSnapshot(db: Db, userId: string, opts: { plan?: "b"
     canSkipRole: skippable && !primary,
     skippedRole: skippable && !!intent?.is_exploring && !primary,
     roleOptions,
+    featuredRoles: featuredForBranch(direction?.branch ?? null),
     commonSections: sectionsFor(year).map((s) => ({ label: s.label, questions: s.questions })),
     hasOpenCareerSession: openCareer,
     graduate: isGraduate ? { hasResume: !!resume, skills: ((resume?.skill_names as string[] | undefined) ?? []).slice(0, 18), focus: graduateFocus } : null,
