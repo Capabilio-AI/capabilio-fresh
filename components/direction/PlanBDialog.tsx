@@ -32,7 +32,7 @@ const GROUPS: { label: string; options: Option[] }[] = [
 
 /** Where each answer leads next. "undecided" stays put. */
 const NEXT_STEP: Record<PlanBKind, string | null> = {
-  same_role: "/dashboard/roadmap",
+  same_role: "/assessment",
   higher_studies: "/dashboard/skills",
   entrepreneur: "/entrepreneur",
   change_role: "/dashboard/roadmap?career=plan-b",

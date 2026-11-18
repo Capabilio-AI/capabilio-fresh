@@ -31,6 +31,8 @@ export function decideStage(status: OnboardingStatus, intent: { primary: boolean
   if (!intent.primary && intent.exploring && generalDone && canSkip) return "done";
   if (!intent.primary && !(intent.exploring && !generalDone)) return "career-interest";
   if (!generalDone) return "general";
+  // a 1st or 2nd year with a role learns first: the role assessment comes with the 3rd-year Plan B question
+  if (!careerDone && canSkip) return "done";
   if (!careerDone) return "career";
   return "done";
 }

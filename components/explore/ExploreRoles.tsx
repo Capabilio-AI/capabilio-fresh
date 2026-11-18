@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import clsx from "clsx";
 import type { RoleOption } from "@/lib/assess/roles";
 import { filterRoles, roleBlurb } from "@/lib/assess/role-filter";
+import { ChooseRoleButton } from "./ChooseRoleButton";
 
 const SHOWN = 12;
 const IMPORTANCE_LABEL = { CRITICAL: "Must have", HIGH: "Important", MEDIUM: "Helpful", LOW: "Bonus" } as const;
@@ -70,6 +70,7 @@ export function ExploreRoles({ roles, required, stream }: { roles: RoleOption[];
                       <p className="mt-1 font-lp-body text-[13.5px] leading-snug text-app-muted">{x.blurb}</p>
                     </div>
                     <p className="font-lp-body text-[12px] text-[var(--m-muted)]">Choose it and Capabilio builds your skill plan for this role.</p>
+                    <ChooseRoleButton name={x.name} />
                     <Link href={`/assessment?step=role&role=${encodeURIComponent(x.name)}`} className="self-start rounded-full border border-[var(--m-ink)] px-4 py-2 text-[13.5px] font-bold text-[var(--m-ink)]">Choose {x.name}</Link>
                   </li>
                 ))}
@@ -118,9 +119,7 @@ function RoleCard({ role, open, setOpen }: { role: RoleOption; open: string | nu
                     ))}
                   </ul>
                   <p className="mt-3 font-lp-body text-[13px] leading-relaxed text-app-muted">You do not need to know these today. Capabilio tests where you stand and then teaches the gaps.</p>
-                  <Link href={`/assessment?step=role&role=${encodeURIComponent(role.name)}`} className="mt-4 inline-flex rounded-full bg-[var(--m-ink)] px-5 py-2.5 text-[14px] font-bold text-white transition-transform hover:-translate-y-0.5 active:scale-[0.97]">
-                    Choose {role.name}
-                  </Link>
+                  <ChooseRoleButton name={role.name} careerId={role.careerId} solid />
                 </div>
               )}
               {!isOpen && top.length > 0 && <p className="px-4 pb-4 font-lp-body text-[12.5px] text-[var(--m-muted)]">{top.map((s) => s.name).join(" · ")}</p>}
