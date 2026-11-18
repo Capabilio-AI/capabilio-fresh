@@ -1,4 +1,5 @@
 import { normalizeRole } from "./role-input";
+import { STREAM_SUGGESTIONS, streamOf } from "@/lib/explore/stream";
 
 export interface FilterableRole {
   careerId: string;
@@ -15,15 +16,25 @@ export interface RoleHit<T extends FilterableRole> {
 export const FEATURED = ["Data Analyst", "Software Engineer", "AI/ML Engineer", "Generative AI Engineer", "Full Stack Developer", "Cloud Engineer", "Cybersecurity Analyst", "Data Engineer", "Product Manager", "Data Scientist"];
 
 /**
+ * The roles to show first for a student's branch. IT branches keep the in-demand IT list. Every other branch sees its own core roles first
+ * (mechanical, civil, electrical, electronics...) and the IT roles after them, so they can choose either.
+ */
+export function featuredForBranch(branch: string | null): string[] {
+  const stream = streamOf(branch);
+  if (stream === "it") return FEATURED;
+  return [...new Set([...STREAM_SUGGESTIONS[stream].roles, ...FEATURED])];
+}
+
+/**
  * Instant, local filtering over the role list that ships with the page. Ranking: name starts with the text, an alias starts with it,
  * a word of the name/alias starts with it, then anything that contains it. When the text is several words, the keywords match one by
  * one across the name and aliases (all of them first, then roles sharing some of them), so "embedded engineer" still finds
  * "Embedded Systems Engineer". Pure, so it is unit-tested and costs no request.
  */
-export function filterRoles<T extends FilterableRole>(roles: readonly T[], text: string): RoleHit<T>[] {
+export function filterRoles<T extends FilterableRole>(roles: readonly T[], text: string, featured: readonly string[] = FEATURED): RoleHit<T>[] {
   const q = normalizeRole(text);
   if (!q) {
-    const rank = (r: T) => { const i = FEATURED.indexOf(r.name); return i < 0 ? FEATURED.length : i; };
+    const rank = (r: T) => { const i = featured.indexOf(r.name); return i < 0 ? featured.length : i; };
     return [...roles].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name)).map((role) => ({ role, matched: null }));
   }
   const qWords = q.split(" ");

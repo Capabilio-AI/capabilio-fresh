@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterRoles, roleBlurb, FEATURED } from "./role-filter";
+import { filterRoles, roleBlurb, featuredForBranch, FEATURED } from "./role-filter";
 
 const roles = [
   { careerId: "1", name: "Cloud Engineer", aliases: ["cloud engineer", "devops", "devops engineer", "sre"] },
@@ -70,5 +70,21 @@ describe("roleBlurb", () => {
     expect(roleBlurb("AI-proposed profile for Financial Analyst")).toBeNull();
     expect(roleBlurb(null)).toBeNull();
     expect(roleBlurb("  ")).toBeNull();
+  });
+});
+
+describe("featuredForBranch", () => {
+  it("keeps the IT list for IT branches", () => {
+    expect(featuredForBranch("Computer Science and Engineering (CSE)")).toEqual(FEATURED);
+  });
+  it("lists a core branch's own roles first, then the IT roles, without repeats", () => {
+    const out = featuredForBranch("Mechanical Engineering");
+    expect(out.slice(0, 3)).toEqual(["Mechanical Design Engineer", "Automotive Engineer", "PLC Automation Engineer"]);
+    expect(out).toContain("Software Engineer");
+    expect(new Set(out).size).toBe(out.length);
+  });
+  it("orders the roles of a branch before the IT ones when nothing is typed", () => {
+    const roles = [{ careerId: "1", name: "Data Analyst", aliases: [] }, { careerId: "2", name: "Site Engineer", aliases: [] }];
+    expect(filterRoles(roles, "", featuredForBranch("Civil Engineering"))[0].role.name).toBe("Site Engineer");
   });
 });

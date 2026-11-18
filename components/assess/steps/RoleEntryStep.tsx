@@ -38,7 +38,7 @@ type View =
  * wait to see its skills). Only a role we have never seen goes to the server, which builds its profile once for everyone after.
  * Doing this FIRST lets the server warm the role's question pool while the student does the common assessment.
  */
-export function RoleEntryStep({ roles, onConfirmed, graduate = false, canSkip = false, initialText = "" }: { roles: RoleOption[]; onConfirmed: () => void; graduate?: boolean; canSkip?: boolean; initialText?: string }) {
+export function RoleEntryStep({ roles, featured, onConfirmed, graduate = false, canSkip = false, initialText = "" }: { roles: RoleOption[]; featured?: readonly string[]; onConfirmed: () => void; graduate?: boolean; canSkip?: boolean; initialText?: string }) {
   const reduce = useReducedMotion();
   const [text, setText] = useState(initialText);
   const [view, setView] = useState<View>({ kind: "input" });
@@ -50,7 +50,7 @@ export function RoleEntryStep({ roles, onConfirmed, graduate = false, canSkip = 
   const input = useRef<HTMLInputElement>(null);
 
   const typed = text.trim();
-  const hits = useMemo(() => filterRoles(roles, text), [roles, text]);
+  const hits = useMemo(() => filterRoles(roles, text, featured), [roles, text, featured]);
   const visible = typed || showAll ? hits.slice(0, typed ? 8 : hits.length) : hits.slice(0, SHOWN);
   const asTyped = typed.length >= 2 && !hits.some((h) => h.role.name.toLowerCase() === typed.toLowerCase());
   const rows = visible.length + (asTyped ? 1 : 0);
