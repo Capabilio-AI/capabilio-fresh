@@ -27,7 +27,7 @@ export const POST = assessRoute("assess_role_confirm", 20, async (req, { userId,
   // the student confirmed this role for these words, so the registry may now learn them (never before: it must not learn an equivalence nobody agreed to)
   if (typed) await rememberStudentAlias(db, careerId, typed).catch(() => undefined);
   after(() => warmPrimaryCareerPool(userId));
-  // a failure to start the pathway must never undo the confirmed role; the status panel shows it and offers a retry
-  await startPathway(createServiceClient(), careerId).catch((e) => console.error("[assess] could not start the pathway:", e));
+  // the roadmap setup runs after the response so "Confirm" is not held up by it; a failure must never undo the confirmed role, the status panel shows it and offers a retry
+  after(() => startPathway(createServiceClient(), careerId).catch((e) => console.error("[assess] could not start the pathway:", e)));
   return { ok: true };
 });

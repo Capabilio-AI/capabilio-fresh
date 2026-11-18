@@ -42,7 +42,7 @@ export const assessApi = {
     return callForm<{ summary: ResumeSummary }>("/api/graduate/resume", form);
   },
   skipResume: () => callForm<{ summary: ResumeSummary }>("/api/graduate/resume?skip=1"),
-  start: (layer: "GENERAL" | "CAREER", careerId?: string) => call<SessionStart & { state: SessionState }>("/api/assess/start", { method: "POST", body: JSON.stringify({ layer, careerId }) }),
+  start: (layer: "GENERAL" | "CAREER", careerId?: string) => startWithRetry(layer, careerId),
   state: (sessionId: string) => call<SessionState>(`/api/assess/session/${sessionId}`),
   next: (sessionId: string) => call<{ question: QuestionPayload | null; ended: boolean }>(`/api/assess/session/${sessionId}/next`, { method: "POST" }),
   answer: (input: { sessionQuestionId: string; attemptId: string; optionIndex: number; responseMs?: number }) =>
@@ -57,5 +57,19 @@ export const assessApi = {
   /** ends the test now: only what is answered counts */
   end: (sessionId: string, reason: "student" | "integrity") => call<{ result: AssessmentResult }>(`/api/assess/session/${sessionId}/end`, { method: "POST", body: JSON.stringify({ reason }) }),
 };
+
+const START_ATTEMPT_MS = 25_000;
+const START_ATTEMPTS = 3;
+
+/** A cold question pool can make the server take over a minute and get killed. Starting is idempotent (it resumes the open session), so give up on a slow attempt and ask again. */
+async function startWithRetry(layer: "GENERAL" | "CAREER", careerId?: string): Promise<SessionStart & { state: SessionState }> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await call<SessionStart & { state: SessionState }>("/api/assess/start", { method: "POST", body: JSON.stringify({ layer, careerId }), signal: AbortSignal.timeout(START_ATTEMPT_MS) });
+    } catch (e) {
+      if (attempt >= START_ATTEMPTS || !(e instanceof NetworkError)) throw e;
+    }
+  }
+}
 
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
