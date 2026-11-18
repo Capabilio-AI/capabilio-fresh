@@ -60,8 +60,12 @@ export async function loadResourcePool(service: Service, ctx: { skillIds: string
       if (res) add(bySkill, r.skill_id, res);
     }
   };
-  const { data: skillRows } = await service.from("skills").select("id, name").in("id", ctx.skillIds);
+  const { data: skillRows } = await service.from("skills").select("id, name, category").in("id", ctx.skillIds);
   const skillName = new Map((skillRows ?? []).map((x) => [x.id, x.name]));
+  // A certification is tied to a role only through the role's own technical skills. Communication skills (Teamwork, Technical Communication) are on
+  // almost every role, so a link through them would offer a Kubernetes or AWS certification to a mechanical design role.
+  const generic = new Set((skillRows ?? []).filter((x) => x.category === "Communication").map((x) => x.id));
+  const certLinks = (cs ?? []).filter((r) => !generic.has(r.skill_id));
   const learnSkill = (rows: { [k: string]: string }[] | null, kind: Resource["kind"], resourceKey: string) => {
     for (const r of rows ?? []) {
       const res = make.get(`${kind}:${r[resourceKey]}`);
@@ -69,9 +73,9 @@ export async function loadResourcePool(service: Service, ctx: { skillIds: string
       if (res && n && !res.skills.includes(n)) res.skills.push(n);
     }
   };
-  for (const [rows, kind, key] of [[ls, "LEARNING", "item_id"], [cs, "CERTIFICATION", "certification_id"], [ps, "PROJECT", "project_id"], [as, "ARENA", "challenge_id"]] as const) learnSkill(rows, kind, key);
+  for (const [rows, kind, key] of [[ls, "LEARNING", "item_id"], [certLinks, "CERTIFICATION", "certification_id"], [ps, "PROJECT", "project_id"], [as, "ARENA", "challenge_id"]] as const) learnSkill(rows, kind, key);
   link(ls, "LEARNING", "item_id");
-  link(cs, "CERTIFICATION", "certification_id");
+  link(certLinks, "CERTIFICATION", "certification_id");
   link(ps, "PROJECT", "project_id");
   link(as, "ARENA", "challenge_id");
   const keyOfNode = new Map([...ctx.nodeIds].map(([key, id]) => [id, key]));

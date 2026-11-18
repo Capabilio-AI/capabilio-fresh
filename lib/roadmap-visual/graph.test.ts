@@ -51,7 +51,8 @@ describe("projects and certifications on the map", () => {
   it("adds a final stage with the projects and certifications that build this career's skills, most relevant first", () => {
     const proj = resource({ id: "p1", kind: "PROJECT", title: "Build a dashboard", difficulty: "BEGINNER" });
     const cert = resource({ id: "c1", kind: "CERTIFICATION", title: "Data cert", tier: "PREMIUM" });
-    const resources = { bySkill: new Map([["s-sql", [proj, cert]], ["s-joins", [proj]]]), byNode: new Map() };
+    // the certification builds two of the career's skills: a certification tied to a single skill is not shown (see MIN_CERT_SKILLS)
+    const resources = { bySkill: new Map([["s-sql", [proj, cert]], ["s-joins", [proj, cert]]]), byNode: new Map() };
     const g = buildGraph(makeContext({ resources }));
     const last = g.nodes.filter((n) => n.type === "SPINE").at(-1)!;
     expect(last).toMatchObject({ key: "x-prove", title: "Build and prove it" });

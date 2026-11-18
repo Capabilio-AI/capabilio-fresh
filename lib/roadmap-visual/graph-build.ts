@@ -41,6 +41,8 @@ const headline = (c: NonNullable<ReturnType<typeof classifyCoverage>>): string |
 
 export const MAX_PROJECTS = 6;
 export const MAX_CERTIFICATIONS = 5;
+/** A certification is shown for a role only when it builds at least this many of the role's own skills; one shared skill is a coincidence, not a fit. */
+export const MIN_CERT_SKILLS = 2;
 const WEIGHT = { CORE: 3, RECOMMENDED: 2, OPTIONAL: 1 } as const;
 
 /**
@@ -48,16 +50,17 @@ const WEIGHT = { CORE: 3, RECOMMENDED: 2, OPTIONAL: 1 } as const;
  * (importance-weighted topics) it touches. Nothing is invented: an item appears only when the catalog links it to the tree's skills.
  */
 export function careerExtras(ctx: GraphContext): { projects: Resource[]; certifications: Resource[] } {
-  const score = new Map<string, { r: Resource; w: number }>();
+  const score = new Map<string, { r: Resource; w: number; skills: Set<string> }>();
   for (const n of ctx.nodes) {
     if (n.type !== "TOPIC" || !n.skillId) continue;
     for (const r of ctx.resources.bySkill.get(n.skillId) ?? []) {
       if (r.kind !== "PROJECT" && r.kind !== "CERTIFICATION") continue;
       const k = `${r.kind}:${r.id}`;
-      score.set(k, { r, w: (score.get(k)?.w ?? 0) + WEIGHT[n.importance] });
+      const seen = score.get(k);
+      score.set(k, { r, w: (seen?.w ?? 0) + WEIGHT[n.importance], skills: new Set([...(seen?.skills ?? []), n.skillId]) });
     }
   }
-  const top = (kind: Resource["kind"], max: number) => [...score.values()].filter((x) => x.r.kind === kind).sort((a, b) => b.w - a.w || a.r.title.localeCompare(b.r.title)).slice(0, max).map((x) => x.r);
+  const top = (kind: Resource["kind"], max: number) => [...score.values()].filter((x) => x.r.kind === kind && (kind !== "CERTIFICATION" || x.skills.size >= MIN_CERT_SKILLS)).sort((a, b) => b.w - a.w || a.r.title.localeCompare(b.r.title)).slice(0, max).map((x) => x.r);
   return { projects: top("PROJECT", MAX_PROJECTS), certifications: top("CERTIFICATION", MAX_CERTIFICATIONS) };
 }
 
