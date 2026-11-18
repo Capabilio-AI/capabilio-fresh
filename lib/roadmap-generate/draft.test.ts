@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { RoadmapAnswer } from "./model";
-import { draftRoadmap, type Taxonomy } from "./draft";
+import { MAX_ROUNDS, draftRoadmap, type Taxonomy } from "./draft";
 
 const SKILLS = Array.from({ length: 24 }, (_, i) => `Skill ${i + 1}`);
 const taxonomy: Taxonomy = { existing: [...SKILLS, "Cloud"].map((name) => ({ key: null, name, status: "active" as const, category: "Cloud" })), aliases: new Set() };
@@ -21,6 +21,21 @@ function good(over: { skills?: string[]; newSkills?: unknown[] } = {}) {
 }
 
 const input = (ask: Parameters<typeof draftRoadmap>[0]["ask"]) => ({ careerKey: "cloud-engineer", careerId: "c1", version: 1, taxonomy, ask });
+
+describe("draftRoadmap relevance review", () => {
+  it("sends an off-domain skill back, then accepts the corrected roadmap", async () => {
+    const ask = vi.fn().mockResolvedValue({ answer: good(), model: "m" });
+    const review = vi.fn().mockResolvedValueOnce(['Remove "Skill 1": off-domain']).mockResolvedValueOnce([]);
+    const out = await draftRoadmap({ ...input(ask), review });
+    expect(out.ok && out.draft.rounds).toBe(2);
+    expect(ask.mock.calls[1][0].join(" ")).toMatch(/Remove "Skill 1"/);
+  });
+  it("stores nothing when the review still rejects after the last round", async () => {
+    const review = vi.fn().mockResolvedValue(['Remove "Skill 1": off-domain']);
+    const out = await draftRoadmap({ ...input(vi.fn().mockResolvedValue({ answer: good(), model: "m" })), review });
+    expect(out.ok).toBe(false);
+  });
+});
 
 describe("draftRoadmap", () => {
   it("accepts a valid answer first time and keys topics by skill", async () => {
@@ -44,12 +59,12 @@ describe("draftRoadmap", () => {
     const out = await draftRoadmap(input(vi.fn().mockResolvedValue({ answer, model: "m" })));
     expect(out.ok && out.draft.newSkills.map((s) => s.key)).toEqual(["SKILL_KUBERNETES_NETWORKING"]);
   });
-  it("rejects a new skill whose parent is not an existing skill, and gives up after three rounds", async () => {
+  it("rejects a new skill whose parent is not an existing skill, and gives up after the last round", async () => {
     const answer = good({ skills: [...SKILLS.slice(0, 23), "Edge Mesh"], newSkills: [{ name: "Edge Mesh", parent: "No Such Parent", description: "A skill with an invented parent skill." }] });
     const ask = vi.fn().mockResolvedValue({ answer, model: "m" });
     const out = await draftRoadmap(input(ask));
     expect(out.ok).toBe(false);
-    expect(ask).toHaveBeenCalledTimes(3);
+    expect(ask).toHaveBeenCalledTimes(MAX_ROUNDS);
     if (!out.ok) expect(out.errors.join(" ")).toMatch(/not an existing active skill/);
   });
   it("rejects a roadmap that is too small", async () => {

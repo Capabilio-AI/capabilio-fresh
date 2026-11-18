@@ -6,10 +6,11 @@ import { activateSkills, importChildSkillsAsCandidates, loadTaxonomy } from "@/l
 import { importTemplate } from "@/lib/roadmap-visual/template-store";
 import { importCareerExtras } from "@/lib/roadmap-visual/resource-import";
 import { draftRoadmap } from "./draft";
-import { EXTRAS_TOOL_SCHEMA, ExtrasAnswer, ROADMAP_TOOL_SCHEMA, RoadmapAnswer } from "./model";
-import { EXTRAS_SYSTEM, ROADMAP_SYSTEM, extrasPrompt, roadmapPrompt } from "./prompts";
+import { isDomainOnly, profileIsNonIt, skillsForPrompt } from "./domain";
+import { EXTRAS_TOOL_SCHEMA, ExtrasAnswer, REVIEW_TOOL_SCHEMA, ROADMAP_TOOL_SCHEMA, ReviewAnswer, RoadmapAnswer } from "./model";
+import { EXTRAS_SYSTEM, REVIEW_SYSTEM, ROADMAP_SYSTEM, extrasPrompt, reviewPrompt, roadmapPrompt } from "./prompts";
 import { publishGenerated } from "./publish";
-import { ensureRequirements } from "./requirements";
+import { ensureRequirements, replaceRequirements } from "./requirements";
 import { refreshMarket } from "@/lib/market/store";
 import { generateJobPack } from "@/lib/market/job-pack";
 import { verifyCertification } from "./verify";
@@ -52,12 +53,16 @@ export async function generateCareerRoadmap(service: Service, careerId: string, 
   const taxonomy = await loadTaxonomy(service);
   const active = taxonomy.existing.filter((s) => s.status === "active");
 
+  const { data: profile } = await db.from("career_skill_requirements").select("skills!inner(category)").eq("career_id", careerId);
+  const nonIt = isDomainOnly(career.key) || profileIsNonIt(((profile ?? []) as unknown as { skills: { category: string | null } }[]).map((r) => r.skills.category));
+
   const { data: versions } = await db.from("roadmap_templates").select("id, version, status").eq("career_id", careerId).order("version", { ascending: false });
   const rows = (versions ?? []) as { id: string; version: number; status: string }[];
   const version = (rows[0]?.version ?? 0) + 1;
   const current = rows.find((r) => r.status === "PUBLISHED");
   let keepTopics: string[] = [];
-  if (current) {
+  // a domain-only role's current roadmap may be the polluted one: it is not offered back to the model as a starting point
+  if (current && !nonIt) {
     const { data: nodes } = await db.from("roadmap_nodes").select("skill_id").eq("template_id", current.id).eq("type", "TOPIC");
     const ids = ((nodes ?? []) as { skill_id: string | null }[]).flatMap((n) => (n.skill_id ? [n.skill_id] : []));
     const { data: skills } = ids.length ? await service.from("skills").select("name").in("id", ids) : { data: [] };
@@ -73,11 +78,21 @@ export async function generateCareerRoadmap(service: Service, careerId: string, 
     careerKey: career.key, careerId, version, taxonomy: { existing: taxonomy.existing, aliases: taxonomy.aliases },
     ask: async (feedback) => {
       const r = await llm({
-        system: ROADMAP_SYSTEM, user: roadmapPrompt({ career: promptCareer, skills: active, keepTopics, feedback, market }),
+        system: ROADMAP_SYSTEM, user: roadmapPrompt({ career: promptCareer, skills: skillsForPrompt(career.key, active, nonIt), keepTopics, feedback, market }),
         toolName: "submit_roadmap", toolDescription: "Submit the finished career roadmap.", inputSchema: ROADMAP_TOOL_SCHEMA, schema: RoadmapAnswer, maxTokens: 16_000, temperature: 0.2,
       });
       usedModel = r.model;
       return { answer: r.value, model: r.model };
+    },
+    // A structurally valid roadmap still has to be right for the role: off-domain skills (Git on a mechanical roadmap) send it back for a rewrite.
+    review: async (spec) => {
+      const skills = spec.nodes.flatMap((n) => (n.type === "TOPIC" && n.skill ? [n.skill] : []));
+      const r = await llm({
+        system: REVIEW_SYSTEM, user: reviewPrompt({ career: promptCareer, skills }),
+        toolName: "submit_review", toolDescription: "Submit the skills that do not belong on this role's roadmap.", inputSchema: REVIEW_TOOL_SCHEMA, schema: ReviewAnswer, maxTokens: 4_000, temperature: 0,
+      });
+      const known = new Set(skills);
+      return r.value.offDomain.filter((o) => known.has(o.skill)).map((o) => `Remove "${o.skill}": it does not belong on a ${career.name} roadmap (${o.reason || "off-domain"}). Replace it with a skill this role genuinely uses, or leave it out.`);
     },
   });
   if (!drafted.ok) throw new Error(`The roadmap did not pass validation: ${drafted.errors.slice(0, 6).join(" | ")}`);
@@ -100,8 +115,9 @@ export async function generateCareerRoadmap(service: Service, careerId: string, 
 
   // A role needs a skill profile to be assessed, scored and matched to projects; a roadmap-only role would have none.
   try {
-    const added = await ensureRequirements(service, careerId);
-    if (added > 0) warnings.push(`Skill profile created from the roadmap: ${added} skills.`);
+    // a domain-only role's old profile was derived from the polluted roadmap, so it is replaced with the new one; any other role keeps a profile it already has
+    const added = isDomainOnly(career.key) ? await replaceRequirements(service, careerId) : await ensureRequirements(service, careerId);
+    if (added > 0) warnings.push(`Skill profile set from the roadmap: ${added} skills.`);
   } catch (error) {
     warnings.push(`The skill profile was not created: ${error instanceof Error ? error.message : "unknown error"}`);
   }

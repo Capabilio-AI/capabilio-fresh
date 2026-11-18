@@ -14,6 +14,15 @@ export type RoadmapAnswer = z.infer<typeof RoadmapAnswer>;
 
 export const ExtrasAnswer = ExtrasSpec;
 
+/** The relevance review: the skills a working person in the role would NOT genuinely need, each with the reason. */
+export const ReviewAnswer = z.object({ offDomain: z.array(z.object({ skill: z.string().min(1), reason: z.string().max(300).default("") })).max(220).default([]) });
+export type ReviewAnswer = z.infer<typeof ReviewAnswer>;
+export const REVIEW_TOOL_SCHEMA = {
+  type: "object",
+  required: ["offDomain"],
+  properties: { offDomain: { type: "array", items: { type: "object", required: ["skill", "reason"], properties: { skill: { type: "string" }, reason: { type: "string" } } } } },
+} as const;
+
 const str = { type: "string" };
 const int = { type: "integer" };
 

@@ -10,6 +10,7 @@ import { explainNode } from "@/lib/roadmap-visual/explain-node";
 import { LESSON_KINDS, TheoryLesson, VideoScript } from "@/lib/skillstudio/lesson-content";
 import { LESSON_SYSTEM, buildLessonPrompt } from "@/lib/skillstudio/lesson-prompts";
 import { cached } from "@/lib/skillstudio/lesson-cache";
+import { promptHash, storedOrWritten } from "@/lib/skillstudio/lesson-store";
 
 export const maxDuration = 60;
 
@@ -36,8 +37,14 @@ export async function POST(request: Request) {
     const { kind } = body.data;
     const prompt = buildLessonPrompt(e, kind, loaded.ctx.career.name);
     const ctx = { feature: `skillstudio_${kind}`, userId: auth.userId, meta: { node: body.data.nodeKey } };
-    const lesson = await cached<TheoryLesson | VideoScript>(`${loaded.ctx.career.id}:${body.data.nodeKey}:${kind}`, () =>
-      kind === "theory" ? loggedCompleteJson(service, ctx, prompt, LESSON_SYSTEM, TheoryLesson) : loggedCompleteJson(service, ctx, prompt, LESSON_SYSTEM, VideoScript)
+    // database first (shared by every student of this role), then the in-memory cache that collapses simultaneous first requests into one AI call
+    const careerId = loaded.ctx.career.id;
+    const hash = promptHash(LESSON_SYSTEM, prompt);
+    const lesson = await cached<TheoryLesson | VideoScript>(`${careerId}:${body.data.nodeKey}:${kind}:${hash}`, async () =>
+      (kind === "theory"
+        ? await storedOrWritten<TheoryLesson | VideoScript>(service, { careerId, nodeKey: body.data.nodeKey, kind }, hash, TheoryLesson, () => loggedCompleteJson(service, ctx, prompt, LESSON_SYSTEM, TheoryLesson, { task: "lesson" }))
+        : await storedOrWritten<TheoryLesson | VideoScript>(service, { careerId, nodeKey: body.data.nodeKey, kind }, hash, VideoScript, () => loggedCompleteJson(service, ctx, prompt, LESSON_SYSTEM, VideoScript, { task: "lesson" }))
+      ).lesson
     );
     return NextResponse.json({ kind, lesson }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {

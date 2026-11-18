@@ -3,7 +3,7 @@ import { validateTemplateSpec, type TemplateSpec } from "@/lib/roadmap-visual/te
 import type { RoadmapAnswer } from "./model";
 import { childSkillsFrom, qualityErrors, toTemplateSpec } from "./normalize";
 
-export const MAX_ROUNDS = 3;
+export const MAX_ROUNDS = 4;
 const MAX_FEEDBACK = 14;
 
 export interface Taxonomy {
@@ -43,14 +43,18 @@ export async function draftRoadmap(input: {
   version: number;
   taxonomy: Taxonomy;
   ask: (feedback: string[]) => Promise<{ answer: RoadmapAnswer; model: string }>;
+  /** Optional relevance check on a structurally valid answer: the problems found (empty = every topic belongs to the role). */
+  review?: (spec: TemplateSpec) => Promise<string[]>;
 }): Promise<{ ok: true; draft: Draft } | { ok: false; errors: string[] }> {
   let feedback: string[] = [];
   for (let round = 1; round <= MAX_ROUNDS; round++) {
     const { answer, model } = await input.ask(feedback);
     const verdict = judgeAnswer(answer, { careerKey: input.careerKey, careerId: input.careerId, version: input.version, model, taxonomy: input.taxonomy });
-    if (verdict.errors.length === 0) return { ok: true, draft: { spec: verdict.spec, newSkills: verdict.newSkills, model, rounds: round, warnings: verdict.warnings } };
-    feedback = verdict.errors.slice(0, MAX_FEEDBACK);
-    if (round === MAX_ROUNDS) return { ok: false, errors: verdict.errors.slice(0, 40) };
+    const problems = verdict.errors.length === 0 && input.review ? await input.review(verdict.spec) : [];
+    if (verdict.errors.length === 0 && problems.length === 0) return { ok: true, draft: { spec: verdict.spec, newSkills: verdict.newSkills, model, rounds: round, warnings: verdict.warnings } };
+    const all = [...verdict.errors, ...problems];
+    feedback = all.slice(0, MAX_FEEDBACK);
+    if (round === MAX_ROUNDS) return { ok: false, errors: all.slice(0, 40) };
   }
   return { ok: false, errors: ["No answer."] };
 }

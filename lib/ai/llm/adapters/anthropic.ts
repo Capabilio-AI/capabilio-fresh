@@ -25,9 +25,8 @@ export function anthropicAdapter(o: AnthropicOptions): LlmAdapter {
   return {
     name: "anthropic",
     async complete(req: RawRequest): Promise<RawResult> {
-      let res: Response;
-      try {
-        res = await doFetch(o.baseUrl || ANTHROPIC_URL, {
+      const send = (toolChoice: { type: "tool"; name: string } | { type: "auto" }) =>
+        doFetch(o.baseUrl || ANTHROPIC_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": o.apiKey, "anthropic-version": "2023-06-01" },
           body: JSON.stringify({
@@ -37,10 +36,15 @@ export function anthropicAdapter(o: AnthropicOptions): LlmAdapter {
             system: req.system,
             messages: [{ role: "user", content: req.user }],
             tools: [{ name: "answer", description: "Return the structured answer.", input_schema: req.jsonSchema }],
-            tool_choice: { type: "tool", name: "answer" },
+            tool_choice: toolChoice,
           }),
           signal: AbortSignal.timeout(TIMEOUT_MS),
         });
+      let res: Response;
+      try {
+        res = await send({ type: "tool", name: "answer" });
+        // Opus 5.5 and Sonnet 5.5 refuse a forced tool call (400 "tool_choice ... not supported"); with only one tool, automatic choice still answers through it
+        if (res.status === 400 && /tool_choice/.test(await res.clone().text().catch(() => ""))) res = await send({ type: "auto" });
       } catch (e) {
         const timedOut = (e as Error)?.name === "TimeoutError" || (e as Error)?.name === "AbortError";
         throw new LlmError(timedOut ? "timeout" : "provider_down", `anthropic: ${timedOut ? "request timed out" : "could not be reached"}`, e);
