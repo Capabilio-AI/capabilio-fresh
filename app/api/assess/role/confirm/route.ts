@@ -27,7 +27,9 @@ export const POST = assessRoute("assess_role_confirm", 20, async (req, { userId,
   // the student confirmed this role for these words, so the registry may now learn them (never before: it must not learn an equivalence nobody agreed to)
   if (typed) await rememberStudentAlias(db, careerId, typed).catch(() => undefined);
   if (explore) {
-    // Chosen from Explore, so the student goes to SkillStudio, not an assessment: the role's roadmap is built before replying (its modules must be there on arrival) and no question pool is warmed.
+    // Chosen from Explore, so the student goes to SkillStudio: the role's roadmap is built before replying (its modules must be there on arrival).
+    // The role's questions are written now, in the background, so the role assessment never waits on the model when it is taken later.
+    after(() => warmPrimaryCareerPool(userId));
     await startPathway(createServiceClient(), careerId).catch((e) => console.error("[assess] could not start the pathway:", e));
     return { ok: true };
   }
