@@ -195,7 +195,7 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
       const rows = await fetchCandidates(db, session.layer, ctx.career?.id ?? null, [...new Set(planned.map((p) => p.target.id))], excluding(...planned.map((p) => p.target.id)));
       const taken = new Set<string>();
       for (const p of planned) {
-        const pick = chooseFrom(rows.filter((r) => !taken.has(r.id)), session.layer, p.target.id, p.difficulty, sequential, session.layer === "CAREER");
+        const pick = chooseFrom(rows.filter((r) => !taken.has(r.id)), session.layer, p.target.id, p.difficulty, false, session.layer === "CAREER");
         if (!pick) break; // the rest is re-planned by the slow loop with live generation available
         taken.add(pick.id);
         used.add(pick.id);
@@ -211,7 +211,7 @@ export async function reconcileBuffer(db: Db, ctx: Context, opts: { allowLive: b
       const taken = [...served, ...kept, ...fresh.map((f) => ({ ...f.row, id: "" }))];
       const next = planNext(targets, planOf(taken, ctx.rows), session.total_questions, { sequential, exclude, fixedDifficulty: commonDifficulty, level });
       if (!next) break;
-      let pick = await pickFromPool(db, filterFor(ctx, next.target.id), next.difficulty, excluding(next.target.id), sequential, session.layer === "CAREER");
+      let pick = await pickFromPool(db, filterFor(ctx, next.target.id), next.difficulty, excluding(next.target.id), false, session.layer === "CAREER");
       if (!pick && live) {
         live = false; // one blocking attempt per call; it has a timeout and falls through to other skills if it yields nothing
         pick = await liveGenerate(db, ctx, next.target.id, next.difficulty, excluding(next.target.id), deps);
