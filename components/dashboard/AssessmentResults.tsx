@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import type { DashboardData, SectionScore } from "@/lib/dashboard/data";
 import { SECTION_ICON } from "@/components/section-icons";
 import { scoreTier, TIER_LABEL } from "@/components/dashboard/tier";
@@ -15,9 +14,6 @@ export function AssessmentResults({ data }: { data: DashboardData }) {
           <h2 id="diag-h" className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">Diagnostic assessment</h2>
           <p className="font-lp-body text-[13px] text-app-muted">A one-time baseline, not a verified skill. Your Vault and Arena results carry more weight over time.</p>
         </div>
-        <Link href="/assessment" className="hidden shrink-0 items-center gap-1 text-[13px] font-bold text-[var(--m-accent-ink)] hover:underline sm:flex">
-          Retake assessment <ArrowUpRight size={14} aria-hidden />
-        </Link>
       </div>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((score) => <li key={score.section}><SectionScoreCard score={score} /></li>)}
