@@ -26,6 +26,8 @@ type View =
 
 const STAGE_OF: Record<FlowSnapshot["stage"], Stage> = { resume: "resume", "career-interest": "role", general: "common", career: "career", done: "results" };
 
+const REFRESH_PATIENCE_MS = 10_000;
+
 /**
  * The assessment room. It owns three things only: which screen is showing, what the Back button means on it, and the leave-safely
  * dialog. Everything else lives in the step components, and everything the student sees as a number comes from the server.
@@ -35,9 +37,16 @@ export function AssessFlow({ snapshot, initialRole }: { snapshot: FlowSnapshot; 
   const [view, setView] = useState<View>({ kind: "start" });
   const [leaving, setLeaving] = useState(false);
 
+  // The page moves on only when the refreshed snapshot arrives. If that never lands (a dropped or stalled request), reload instead of leaving the student on a spinner.
+  const reloadTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (reloadTimer.current !== null) { window.clearTimeout(reloadTimer.current); reloadTimer.current = null; }
+  }, [snapshot]);
   const advance = useCallback(() => {
     setView({ kind: "start" });
     router.refresh();
+    if (reloadTimer.current !== null) window.clearTimeout(reloadTimer.current);
+    reloadTimer.current = window.setTimeout(() => window.location.reload(), REFRESH_PATIENCE_MS);
   }, [router]);
   const onSubmitted = useCallback((result: AssessmentResult) => {
     setView((v) => (v.kind === "run" ? (result.layer === "GENERAL" ? { kind: "common-done", result } : { kind: "career-done", sessionId: v.session.sessionId, result }) : v));
