@@ -3,7 +3,7 @@ import { LiveRefresh } from "@/components/live/LiveRefresh";
 import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { getDashboardData, getSkills, DashboardNotReadyError } from "@/lib/dashboard/data";
-import { matchCareersForStudent } from "@/lib/career/match";
+import { matchCareersForStudent, normalizeRole } from "@/lib/career/match";
 import { getVaultItems } from "@/lib/vault/data";
 import { computeNextAction } from "@/lib/dashboard/next-action";
 import { getStatedCareerInterest } from "@/lib/career/interest-statement";
@@ -14,7 +14,7 @@ import { DashboardSubNav } from "@/components/dashboard/DashboardSubNav";
 import { CareerDirectionCard } from "@/components/dashboard/CareerDirectionCard";
 import { YourPathCard } from "@/components/dashboard/YourPathCard";
 import { studentPhase } from "@/lib/student/phase";
-import { studentHasRole } from "@/lib/careers/has-role";
+import { chosenRoleName, studentHasRole } from "@/lib/careers/has-role";
 import { CapabilityCard } from "@/components/dashboard/CapabilityCard";
 import { NextActionCard } from "@/components/dashboard/NextActionCard";
 import { AssessmentResults } from "@/components/dashboard/AssessmentResults";
@@ -128,7 +128,9 @@ export default async function DashboardPage() {
   // Plan B is asked from 3rd year onward, and never again once a real choice is saved.
   const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;
   const askPlanB = planBAsk && !planBAsk.intent.planBKind ? planBAsk : null;
-  const topMatch = careerMatches[0] ?? null;
+  // Direction and next action are about the role the student chose, never another role that happens to score highest: with no skill data every role scores the same.
+  const chosenRole = await chosenRoleName(service, user.id);
+  const topMatch = chosenRole ? careerMatches.find((m) => normalizeRole(m.careerRole) === normalizeRole(chosenRole)) ?? null : null;
   const nextAction = computeNextAction(topMatch);
   const showCareerDirectionIntro = !hasSeenIntro && topMatch !== null && Boolean(statedInterest);
 
@@ -166,10 +168,10 @@ export default async function DashboardPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1fr]">
-              <CareerDirectionCard match={topMatch} />
+              <CareerDirectionCard match={topMatch} chosenRole={chosenRole} />
               <CapabilityCard skills={skills} />
             </div>
-            <NextActionCard action={nextAction} />
+            <NextActionCard action={nextAction} chosenRole={chosenRole} />
             <AssessmentResults data={data} />
           </>
         )}
