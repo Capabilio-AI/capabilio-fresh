@@ -13,6 +13,7 @@ import { ResumeBand } from "@/components/skillstudio/learn/ResumeBand";
 import { CourseShelf } from "@/components/skillstudio/learn/CourseShelf";
 import { UpNextList } from "@/components/skillstudio/learn/UpNextList";
 import { Unavailable } from "@/components/skillstudio/learn/Unavailable";
+import { RoleWelcome } from "@/components/skillstudio/RoleWelcome";
 import "@/components/skillstudio/learn/studio.css";
 
 export const metadata: Metadata = { title: "SkillStudio — Capabilio AI" };
@@ -20,8 +21,9 @@ export const metadata: Metadata = { title: "SkillStudio — Capabilio AI" };
 const MORE = 4;
 
 /** SkillStudio for everyone: a student, a recent graduate or a professional sees the courses their own target role needs. */
-export default async function SkillStudioPage() {
+export default async function SkillStudioPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const { supabase, user } = await requireAuthedUser();
+  const welcome = (await searchParams).welcome === "role";
   const load = await loadLearning(createServiceClient(), user.id);
 
   const hero = <AreaHero tone="tint" title="SkillStudio" intro="Learn what your role asks for, one lesson at a time, then prove it in Arena." nav={<SkillStudioSubNav />} />;
@@ -34,6 +36,7 @@ export default async function SkillStudioPage() {
     return (
       <div className="ss-studio">
         {hero}
+        {welcome && "career" in load.reason && <RoleWelcome role={load.reason.career.name} />}
         <div className="flex flex-col gap-6 pt-6">
           <Unavailable reason={load.reason} />
           {top && guide && <GuidePathPanel careerRole={top.careerRole} initial={guide.primary} />}
@@ -50,6 +53,7 @@ export default async function SkillStudioPage() {
   return (
     <div className="ss-studio">
       {hero}
+      {welcome && <RoleWelcome role={view.careerName} />}
       <div className="flex flex-col gap-6 pt-6">
         <LiveRefresh />
         <ResumeBand pick={pick} careerName={view.careerName} summary={summary} />

@@ -46,3 +46,14 @@ describe("decideStage for recently graduated accounts", () => {
   });
 });
 
+
+describe("decideStage for a 1st or 2nd year who has chosen a role", () => {
+  const chosen = { primary: true, exploring: false };
+  it("takes the common assessment, then is done: the role assessment waits for 3rd year", () => {
+    expect(decideStage("ASSESSMENT_REQUIRED", chosen, undefined, true)).toBe("general");
+    expect(decideStage("COMMON_ASSESSMENT_COMPLETE", chosen, undefined, true)).toBe("done");
+  });
+  it("still sends a 3rd or 4th year to the role assessment", () => {
+    expect(decideStage("COMMON_ASSESSMENT_COMPLETE", chosen, undefined, false)).toBe("career");
+  });
+});
