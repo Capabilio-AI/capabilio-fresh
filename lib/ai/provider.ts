@@ -8,7 +8,7 @@ import type { JsonRequest, JsonResult } from "./bedrock";
  */
 export async function completeStructured<T>(req: JsonRequest<T>): Promise<JsonResult<T>> {
   const out = await generateStructured({
-    task: "general",
+    task: "roadmap",
     system: req.system,
     user: req.user,
     schema: req.schema,

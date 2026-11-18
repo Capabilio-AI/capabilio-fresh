@@ -56,10 +56,10 @@ export async function logAiCall(service: Service, rec: AiCallRecord): Promise<vo
 }
 
 /** The one way new AI features call the model: same behaviour as completeJson, plus a log row (ok or error) with latency, tokens and cost. */
-export async function loggedCompleteJson<T>(service: Service, ctx: { feature: string; userId: string | null; meta?: Meta }, prompt: string, system: string, schema: z.ZodType<T>): Promise<T> {
+export async function loggedCompleteJson<T>(service: Service, ctx: { feature: string; userId: string | null; meta?: Meta }, prompt: string, system: string, schema: z.ZodType<T>, opts: { task?: "lesson" } = {}): Promise<T> {
   const startedAt = Date.now();
   try {
-    const out = await completeJsonDetailed(prompt, system, schema);
+    const out = await completeJsonDetailed(prompt, system, schema, opts);
     await logAiCall(service, { ...ctx, status: "ok", model: out.model, latencyMs: out.latencyMs, usage: out.usage, meta: { ...ctx.meta, attempts: out.attempts } });
     return out.value;
   } catch (error) {

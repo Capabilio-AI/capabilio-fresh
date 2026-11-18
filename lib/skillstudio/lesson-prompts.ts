@@ -27,6 +27,7 @@ export function buildLessonPrompt(e: Pick<NodeExplanation, "title" | "descriptio
     `Career: ${careerName}`,
     `Topic: ${e.title}. ${e.description}`,
     `Why it is here: a ${e.importance.toLowerCase()} topic for this career at the ${e.stage.toLowerCase().replace("_", "-")} stage.`,
+    `Teach it the way a working ${careerName} uses it: real units, standards, tools and situations from that field, not generic or software examples unless the career is a software one.`,
     `Task: ${TASK[kind](e.title)}`,
   ].join("\n\n");
 }

@@ -17,6 +17,19 @@ describe("anthropicAdapter", () => {
     expect(sent!.tool_choice).toEqual({ type: "tool", name: "answer" });
   });
 
+  it("retries with automatic tool choice when the model refuses a forced tool call", async () => {
+    const choices: unknown[] = [];
+    const f = (async (_u: unknown, init: RequestInit) => {
+      const body = JSON.parse(init.body as string);
+      choices.push(body.tool_choice);
+      if (body.tool_choice.type === "tool") return new Response(JSON.stringify({ error: { message: 'tool_choice: type "tool" and "any" are not supported for this model.' } }), { status: 400 });
+      return new Response(JSON.stringify({ content: [{ type: "thinking" }, { type: "tool_use", input: { a: 2 } }], usage: {} }));
+    }) as unknown as typeof fetch;
+    const out = await anthropicAdapter({ apiKey: "k", fetchImpl: f }).complete({ ...req, model: "claude-opus-5-5" });
+    expect(JSON.parse(out.text)).toEqual({ a: 2 });
+    expect(choices).toEqual([{ type: "tool", name: "answer" }, { type: "auto" }]);
+  });
+
   it("maps 429 to a retryable rate_limit, 529 to provider_down, 401 to config, and no tool call to invalid_output", async () => {
     const kind = async (f: typeof fetch) => (await anthropicAdapter({ apiKey: "k", fetchImpl: f }).complete(req).catch((e: LlmError) => e) as LlmError).kind;
     expect(await kind(reply(429, {}, { "retry-after": "3" }))).toBe("rate_limit");

@@ -50,6 +50,7 @@ export function roadmapPrompt(input: { career: PromptCareer; skills: { name: str
     "",
     "RULES",
     `- Base the skills on what employers in India actually ask for in job postings for this exact role today, not on a generic syllabus. Include EVERY skill a person genuinely needs to be hired into it, and nothing as filler: the number of TOPIC nodes is set by the role itself (between ${MIN_TOPICS} and ${MAX_TOPICS}; a focused role may need about ${MIN_TOPICS + 6}, a broad one 40 or more). Do not pad to a round number and do not cut real requirements to stay short.`,
+    `- DOMAIN FIT: every topic must be something a working "${career.name}" really uses or is screened on in their own field. Do NOT borrow skills from other fields just because they are on the list: software, coding, Git, code review, databases, data science, statistics, machine learning, embedded firmware and cloud skills belong ONLY to roles that actually work in those areas. A mechanical, civil or electrical role gets its own engineering skills (add them through newSkills when the list has none), not IT skills. A shorter, fully relevant roadmap is correct; a padded one is wrong.`,
     '- Group them under GROUP nodes (as many as the role has distinct areas, normally 5-12), across 3-4 SPINE stages (FOUNDATION, CORE, SPECIALIZATION, JOB_READY), ordered by "order" starting at 1.',
     "- importance reflects demand: CORE for skills that postings for this role require most, RECOMMENDED for ones many postings list or that clearly lift a candidate, OPTIONAL for occasional or differentiating ones. Include the tools and technologies postings name (for example the specific software), not just topics, and the soft skills the role really screens for.",
     "- SPINE: parent null, side CENTER. GROUP: parent is a SPINE, side LEFT or RIGHT (alternate). TOPIC: parent is a GROUP, same side as its group, never under another topic.",
@@ -69,7 +70,21 @@ export function roadmapPrompt(input: { career: PromptCareer; skills: { name: str
   ].join("\n");
 }
 
-export const EXTRAS_SYSTEM = `You recommend portfolio projects and professional certifications for engineering students in India. You answer only by calling the provided tool.
+export const REVIEW_SYSTEM = `You are a strict hiring manager and curriculum reviewer for engineering careers in India. You answer only by calling the provided tool.`;
+
+/** Pure. The relevance review prompt: the roadmap's skills, and which of them this role would not genuinely need. */
+export function reviewPrompt(input: { career: PromptCareer; skills: string[] }): string {
+  return [
+    `Role: "${input.career.name}"${input.career.description ? `: ${input.career.description}` : ""}.`,
+    "",
+    "Below are the skills on a proposed learning roadmap for this role. Return in `offDomain` every skill that a working person in THIS role would NOT genuinely use or be screened on in their normal job, with a short reason. Typical mistakes: software, coding, Git, code review, databases, statistics, machine learning, embedded or cloud skills on a role outside those fields; generic filler; a skill from a different engineering branch. Flag only clear mismatches: skills from a field this role does not work in. Do NOT flag common supporting skills that people in this role normally use (for example Git or testing for a developer, teamwork or documentation for any engineer). If every skill genuinely belongs, return an empty list.",
+    "",
+    "SKILLS",
+    input.skills.join("\n"),
+  ].join("\n");
+}
+
+export const EXTRAS_SYSTEM =`You recommend portfolio projects and professional certifications for engineering students in India. You answer only by calling the provided tool.
 Only recommend certifications you are certain exist, from the real provider, with the provider's real official URL. If you are not certain, leave it out: every link is machine-checked and unverifiable ones are dropped.`;
 
 /** Pure. How many projects and certifications a roadmap of this size deserves: more skills, more to build and more to earn. */
