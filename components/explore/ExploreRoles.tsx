@@ -71,6 +71,7 @@ export function ExploreRoles({ roles, required, stream }: { roles: RoleOption[];
                     </div>
                     <p className="font-lp-body text-[12px] text-[var(--m-muted)]">Choose it and Capabilio builds your skill plan for this role.</p>
                     <ChooseRoleButton name={x.name} />
+                    <Link href={`/assessment?step=role&role=${encodeURIComponent(x.name)}`} className="self-start rounded-full border border-[var(--m-ink)] px-4 py-2 text-[13.5px] font-bold text-[var(--m-ink)]">Choose {x.name}</Link>
                   </li>
                 ))}
               </ul>
