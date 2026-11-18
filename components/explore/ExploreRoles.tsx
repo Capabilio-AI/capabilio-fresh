@@ -61,15 +61,15 @@ export function ExploreRoles({ roles, required, stream }: { roles: RoleOption[];
           </ul>
           {stream.extra.length > 0 && (
             <>
-              <p className="mt-2 font-lp-body text-[13px] font-bold uppercase tracking-wide text-[var(--m-muted)]">More for {stream.label}, not in our list yet</p>
+              <p className="mt-2 font-lp-body text-[13px] font-bold uppercase tracking-wide text-[var(--m-muted)]">More {stream.label} roles to explore</p>
               <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {stream.extra.map((x) => (
-                  <li key={x.name} className="flex flex-col justify-between gap-3 rounded-2xl border border-dashed border-[var(--m-rule)] bg-white p-4">
+                  <li key={x.name} className="flex flex-col justify-between gap-3 rounded-2xl border border-[var(--m-rule)] bg-white p-4">
                     <div>
                       <p className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">{x.name}</p>
                       <p className="mt-1 font-lp-body text-[13.5px] leading-snug text-app-muted">{x.blurb}</p>
                     </div>
-                    <p className="font-lp-body text-[12px] text-[var(--m-muted)]">When you choose it, Capabilio builds its skill list for you.</p>
+                    <p className="font-lp-body text-[12px] text-[var(--m-muted)]">Choose it and Capabilio builds your skill plan for this role.</p>
                     <Link href={`/assessment?step=role&role=${encodeURIComponent(x.name)}`} className="self-start rounded-full border border-[var(--m-ink)] px-4 py-2 text-[13.5px] font-bold text-[var(--m-ink)]">Choose {x.name}</Link>
                   </li>
                 ))}
