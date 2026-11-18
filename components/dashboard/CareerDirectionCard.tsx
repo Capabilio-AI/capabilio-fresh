@@ -8,7 +8,17 @@ const RECOMMENDATION_COPY: Record<CareerMatch["recommendation"], string> = {
   "Long-term pathway": "Early stage. This is a direction worth exploring over the next few years.",
 };
 
-export function CareerDirectionCard({ match }: { match: CareerMatch | null }) {
+export function CareerDirectionCard({ match, chosenRole = null }: { match: CareerMatch | null; chosenRole?: string | null }) {
+  if (!match && chosenRole) {
+    return (
+      <div className="flex h-full flex-col rounded-xl border border-[var(--m-rule)] bg-white p-5">
+        <p className="flex items-center gap-2 text-[13px] font-bold text-[var(--m-muted)]"><Compass size={15} aria-hidden />Your role</p>
+        <h3 className="mt-2 font-lp-display text-[26px] font-bold leading-tight text-[var(--m-ink)]">{chosenRole}</h3>
+        <p className="mt-1 font-lp-body text-[13.5px] leading-relaxed text-app-muted">Your {chosenRole} modules and courses are in SkillStudio. Your readiness for this role appears once you take the role assessment.</p>
+        <Link href="/skillstudio" className="mt-5 inline-flex self-start rounded-full bg-[var(--m-ink)] px-5 py-2.5 text-[14px] font-bold text-white">Open my courses</Link>
+      </div>
+    );
+  }
   if (!match) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--m-off)] bg-white p-6 text-center">
@@ -21,7 +31,7 @@ export function CareerDirectionCard({ match }: { match: CareerMatch | null }) {
   const needsWork = match.skillGaps.filter((g) => g.gap > 0).length;
   return (
     <div className="flex h-full flex-col rounded-xl border border-[var(--m-rule)] bg-white p-5">
-      <p className="flex items-center gap-2 text-[13px] font-bold text-[var(--m-muted)]"><Compass size={15} aria-hidden />Recommended career direction</p>
+      <p className="flex items-center gap-2 text-[13px] font-bold text-[var(--m-muted)]"><Compass size={15} aria-hidden />{chosenRole ? "Your role" : "Recommended career direction"}</p>
       <h3 className="mt-2 font-lp-display text-[26px] font-bold leading-tight text-[var(--m-ink)]">{match.careerRole}</h3>
       <p className="mt-1 font-lp-body text-[13.5px] leading-relaxed text-app-muted">{RECOMMENDATION_COPY[match.recommendation]}</p>
 

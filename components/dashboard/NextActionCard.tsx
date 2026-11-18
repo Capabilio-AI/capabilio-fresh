@@ -2,7 +2,21 @@ import Link from "next/link";
 import { ArrowRight, Target } from "lucide-react";
 import type { NextAction } from "@/lib/dashboard/next-action";
 
-export function NextActionCard({ action }: { action: NextAction | null }) {
+export function NextActionCard({ action, chosenRole = null }: { action: NextAction | null; chosenRole?: string | null }) {
+  if (!action && chosenRole) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-app-charcoal bg-app-charcoal p-6 text-white sm:p-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 font-lp-mono text-[11px] font-semibold uppercase tracking-wide text-[var(--m-soft)]"><Target size={14} />Next best action</div>
+            <h2 className="mt-2 font-lp-display text-[22px] font-semibold sm:text-[26px]">Start your {chosenRole} courses</h2>
+            <p className="mt-2 max-w-xl font-lp-body text-[13.5px] leading-relaxed text-white/70">Learn the role one lesson at a time. You can change your mind in 3rd year.</p>
+          </div>
+          <Link href="/skillstudio" className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 font-lp-body text-[13.5px] font-bold text-[var(--m-ink)] transition-transform hover:-translate-y-0.5">Start learning<ArrowRight size={15} /></Link>
+        </div>
+      </div>
+    );
+  }
   if (!action) {
     return (
       <div className="rounded-2xl border border-app-border bg-white p-6 text-center">
