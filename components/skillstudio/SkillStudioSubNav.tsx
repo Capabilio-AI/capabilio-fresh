@@ -4,9 +4,9 @@ import { usePathname } from "next/navigation";
 import { UnderlineTabs } from "@/components/metro/UnderlineTabs";
 
 const TABS = [
-  { label: "Courses", href: "/skillstudio" },
-  { label: "Materials", href: "/skillstudio/materials" },
   { label: "Languages", href: "/skillstudio/languages" },
+  { label: "Materials", href: "/skillstudio/materials" },
+  { label: "Role Modules", href: "/skillstudio" },
   { label: "Certifications", href: "/skillstudio/certifications" },
   { label: "CRT", href: "/skillstudio/crt" },
 ];

@@ -20,10 +20,13 @@ export async function studentGate(db: Db, userId: string): Promise<{ locked: boo
   return { locked: !(await skippedRoleDone(db, userId, status)), status, graduate: false, professional: false };
 }
 
-/** A 1st or 2nd year who skipped the role and finished the common assessment has nothing more to unlock: the app opens for them. */
+/**
+ * A 1st or 2nd year who finished the common assessment has nothing more to unlock: the app opens for them, with a role chosen or still being explored.
+ * The role assessment is optional for them until the 3rd-year Plan B question.
+ */
 async function skippedRoleDone(db: Db, userId: string, status: OnboardingStatus): Promise<boolean> {
   if (status !== "COMMON_ASSESSMENT_COMPLETE") return false;
   const { data: intent } = await db.from("student_career_intent").select("primary_career_id, is_exploring").eq("student_id", userId).maybeSingle();
-  if (!intent?.is_exploring || intent.primary_career_id) return false;
+  if (!intent?.is_exploring && !intent?.primary_career_id) return false;
   return canSkipRole(db as unknown as SupabaseClient<Database>, userId);
 }

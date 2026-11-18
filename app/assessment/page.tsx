@@ -20,7 +20,9 @@ export default async function AssessmentPage({ searchParams }: { searchParams: P
   // Professionals are verified through EPFO and are not assessed: login lands every student-kind account here, so they are sent on to their own dashboard.
   if ((await getStageState(userId)).stage === "professional") redirect("/dashboard");
   const snapshot = await getFlowSnapshot(createServiceClient() as unknown as Db, userId, { plan: sp.plan === "b" ? "b" : null, retake: sp.retake === "1", changeRole: sp.step === "role" });
-  // students who finished (or were grandfathered) go straight to the app; the page only stays for a deliberate retake / Plan B
-  if (snapshot.stage === "done" && snapshot.hasCareerResult) redirect("/dashboard");
+  // Students who are finished go straight to the app, whether or not they have a role result yet (a 1st or 2nd year who skipped or deferred the role
+  // has none): the page only stays for a deliberate retake, Plan B or role change. The optional role assessment is offered from the dashboard profile.
+  const deliberate = sp.retake === "1" || sp.plan === "b" || sp.step === "role";
+  if (snapshot.stage === "done" && (snapshot.hasCareerResult || !deliberate)) redirect("/dashboard");
   return <AssessFlow snapshot={snapshot} initialRole={sp.role?.slice(0, 80)} />;
 }
