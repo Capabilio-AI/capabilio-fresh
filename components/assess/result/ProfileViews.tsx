@@ -35,7 +35,7 @@ function Locked({ what, unlocked = false }: { what: string; unlocked?: boolean }
   ) : (
     <div className="glass flex items-center gap-3 rounded-2xl p-5 text-[14px] text-[var(--m-muted)]">
       <Lock className="h-4 w-4 shrink-0" aria-hidden />
-      <span>{what} will appear after you finish your assessment. <Link href="/assessment" className="font-bold text-[var(--m-ink)] underline underline-offset-4">Continue Assessment</Link></span>
+      <span>{what} will appear after your role assessment in 3rd year. Until then, learn the skills of your role in SkillStudio. <Link href="/skillstudio" className="font-bold text-[var(--m-ink)] underline underline-offset-4">Open SkillStudio</Link></span>
     </div>
   );
 }

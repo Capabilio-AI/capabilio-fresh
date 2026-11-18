@@ -61,7 +61,7 @@ export function PassportSection({ holderName, college, passportNo, qrSvg, url, s
         <h2 id="badges-h" className={H2}>Skill badges</h2>
         <p className={`mt-1 mb-5 max-w-[68ch] ${MUTED} text-[13.5px] leading-relaxed`}>A badge is earned by doing the work: a verified Arena task, a project, your GitHub or a mentor&apos;s review. Your assessment shows where you start, but it never earns a badge. Tap a badge to hold it, flip it, and see the evidence behind it.</p>
         {unlocked ? <BadgeWall skills={skills} audience="owner" /> : (
-          <p className={MUTED}>Your skills appear once your career assessment is analysed. <Link href="/assessment" className={`${LINK} inline-flex items-center gap-1`}>Go to assessment <ArrowRight size={13} aria-hidden /></Link></p>
+          <p className={MUTED}>Your badges and skills appear after your role assessment in 3rd year. Until then, learn the skills of your role in SkillStudio. <Link href="/skillstudio" className={`${LINK} inline-flex items-center gap-1`}>Open SkillStudio <ArrowRight size={13} aria-hidden /></Link></p>
         )}
       </section>
     </div>

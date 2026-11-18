@@ -11,7 +11,8 @@ import { ProfileEloCard } from "@/components/assess/result/ProfileViews";
 import { SkillGapsTab } from "@/components/dashboard/SkillGapsTab";
 import { SkillGapAnalysis } from "@/components/dashboard/SkillGapAnalysis";
 import { loadGapSkills } from "@/lib/dashboard/skill-groups";
-import { EmptyState } from "@/components/dashboard/SkillsTab";
+import { RoleAssessmentPending } from "@/components/dashboard/RoleAssessmentPending";
+import { chosenRoleName } from "@/lib/careers/has-role";
 import { PageHead } from "@/components/dashboard/PageHead";
 import { SegmentedLinks } from "@/components/dashboard/SegmentedLinks";
 import { getSkillPracticeRecency } from "@/lib/career/skill-decay";
@@ -46,8 +47,12 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
             { label: "Skill gap analysis", href: "/dashboard/skills?view=gaps", detail: critical > 0 ? `${critical} critical` : undefined, active: showGaps },
           ]}
         />
-        {!showGaps && <ProfileEloCard initial={profile} />}
-        {match && showGaps ? <SkillGapAnalysis roleName={match.careerRole} readiness={profile.readiness} skills={gapSkills} /> : match ? <SkillGapsTab matches={[match]} practiceRecency={practiceRecency} section="graph" /> : <EmptyState message="Choose a career direction and finish the assessment to see your skills." />}
+        {!match ? <RoleAssessmentPending roleName={await chosenRoleName(db as never, user.id)} /> : (
+          <>
+            {!showGaps && <ProfileEloCard initial={profile} />}
+            {showGaps ? <SkillGapAnalysis roleName={match.careerRole} readiness={profile.readiness} skills={gapSkills} /> : <SkillGapsTab matches={[match]} practiceRecency={practiceRecency} section="graph" />}
+          </>
+        )}
         {!showGaps && profile.common && <CommonProgress bars={profile.common} />}
       </div>
     </div>

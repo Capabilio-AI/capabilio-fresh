@@ -14,7 +14,7 @@ const CHUNK = 3180;
 const ACCOUNTS = [
   "student.y1", "student.y1.role", "student.y2", "student.y2.role", "student.y3", "student.y3.pending", "student.y3.switched", "student.y4",
 ].map((n) => `${n}@capabilio.test`);
-const PAGES = ["/dashboard", "/assessment", "/skillstudio", "/explore", "/dashboard/roadmap", "/arena"];
+const PAGES = ["/dashboard", "/assessment", "/skillstudio", "/explore", "/dashboard/roadmap", "/arena", "/dashboard/passport", "/dashboard/skills", "/dashboard/skills?view=gaps", "/skillstudio/certifications"];
 const MAX_HOPS = 6;
 
 
@@ -22,6 +22,10 @@ const MAX_HOPS = 6;
 const NO_ROLE = new Set(["student.y1@capabilio.test", "student.y2@capabilio.test"]);
 const PATH_HEADINGS = ["You are at the start", "Keep practising", "Time to choose your role"];
 function rules(email: string, path: string, body: string): string | null {
+  // No page may push a finished student to an assessment they are not meant to take yet (the role assessment comes with 3rd-year Plan B).
+  if (path.startsWith("/dashboard/passport") || path.startsWith("/dashboard/skills")) {
+    if (body.includes("Go to assessment") || body.includes("Continue Assessment")) return `${path} links to the assessment`;
+  }
   if (path === "/dashboard") {
     if (body.includes("Finish your assessment to unlock")) return "dashboard is locked (a finished student must not see the unlock screen)";
     if (body.includes("Retake assessment")) return "dashboard still offers Retake assessment";
