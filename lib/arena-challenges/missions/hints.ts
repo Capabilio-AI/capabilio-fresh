@@ -1,7 +1,7 @@
 import { activeControls, nearestSolution } from "./grid";
 import type { AnyLab, Control, Outcome, Settings } from "./types";
 
-const valueLabel = (c: Control, v: string | number): string => (c.kind === "choice" ? c.options.find((o) => o.value === String(v))?.label ?? String(v) : `${v}${c.unit ? ` ${c.unit}` : ""}`);
+const valueLabel = (c: Control, v: string | number): string => (c.kind === "design" ? "the design that meets every requirement" : c.kind === "choice" ? c.options.find((o) => o.value === String(v))?.label ?? String(v) : `${v}${c.unit ? ` ${c.unit}` : ""}`);
 
 /**
  * Three hints, each more direct: (1) a thought about the first objective that fails, (2) which control to look at, (3) the setting to change.

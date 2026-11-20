@@ -29,7 +29,19 @@ export interface NumberControl extends ControlBase {
   /** values the validator must always try, besides an even sample (for example the exact duty cycle a target needs) */
   focus?: number[];
 }
-export type Control = ChoiceControl | NumberControl;
+/**
+ * A free-form design the student builds on a canvas (placed parts, truss members). It travels as one JSON string, so the server grades it
+ * exactly like any other setting. The lab's own evaluate() reads it defensively: a design is untrusted input.
+ */
+export interface DesignControl extends ControlBase {
+  kind: "design";
+  default: string;
+  /** the longest design string the server accepts */
+  maxLen: number;
+}
+export type Control = ChoiceControl | NumberControl | DesignControl;
+/** The screen a lab is worked on. Each surface is its own layout (a PCB board, a truss canvas, a single-line diagram, a pipe network). */
+export type Surface = "pcb" | "truss" | "sld" | "network" | "chain" | "gears" | "feeder" | "beam";
 
 export interface Reading {
   id: string;
@@ -67,6 +79,8 @@ export interface Table {
 }
 
 export interface Outcome {
+  /** extra facts a surface draws on the canvas after a test (member forces, node pressures); information only */
+  overlay?: Record<string, unknown>;
   readings: Reading[];
   objectives: Objective[];
   passed: boolean;
@@ -115,6 +129,12 @@ export interface Lab<S = unknown> {
   controls(s: S): Control[];
   /** pure and deterministic */
   evaluate(s: S, settings: Settings): Outcome;
+  /** the screen this lab is worked on; absent = the standard controls bench */
+  surface?: Surface;
+  /** the facts the surface draws (board, joints, network); pure data, never a verdict */
+  surfaceData?(s: S): unknown;
+  /** a settings set that wins, for labs whose settings cannot be enumerated (free-form designs); used to prove a scenario is winnable */
+  reference?(s: S): Settings | null;
   /** shown after the mission: why it behaves this way, with this run's numbers */
   explain(s: S, settings: Settings, o: Outcome): string;
   /** a story to use when the AI writes none (or writes something unsafe) */

@@ -38,8 +38,16 @@ import concreteMix from "./labs/concrete-mix";
 import retainingWall from "./labs/retaining-wall";
 import openChannel from "./labs/open-channel";
 import reservoir from "./labs/reservoir";
+import trussBuilder from "./labs/truss-builder";
+import waterNetwork from "./labs/water-network";
+import protectionSld from "./labs/protection-sld";
+import pcbLayout from "./labs/pcb-layout";
+import rfChain from "./labs/rf-chain";
+import gearTrain from "./labs/gear-train";
+import feederVoltage from "./labs/feeder-voltage";
+import rcBeam from "./labs/rc-beam";
 
-export const LABS: AnyLab[] = [rectifier, led, rcFilter, logicGate, buck, pid, voltageRegulation, beam, otto, pipe, rccColumn, foundation, construction, amplifier, dcMotor, solarFarm, crane, heatExchanger, levelling, signalTiming, sampling, firFilter, digitalLink, amModulation, tlineMatch, mcuPwm, rlcStep, transformer, inductionMotor, relayCoordination, evRange, vibrationIsolation, refrigeration, hydraulicCylinder, finHeatSink, concreteMix, retainingWall, openChannel, reservoir];
+export const LABS: AnyLab[] = [rectifier, led, rcFilter, logicGate, buck, pid, voltageRegulation, beam, otto, pipe, rccColumn, foundation, construction, amplifier, dcMotor, solarFarm, crane, heatExchanger, levelling, signalTiming, sampling, firFilter, digitalLink, amModulation, tlineMatch, mcuPwm, rlcStep, transformer, inductionMotor, relayCoordination, evRange, vibrationIsolation, refrigeration, hydraulicCylinder, finHeatSink, concreteMix, retainingWall, openChannel, reservoir, trussBuilder, waterNetwork, protectionSld, pcbLayout, rfChain, gearTrain, feederVoltage, rcBeam];
 const BY_KEY = new Map(LABS.map((l) => [l.key, l]));
 
 export const labByKey = (key: string): AnyLab | undefined => BY_KEY.get(key);

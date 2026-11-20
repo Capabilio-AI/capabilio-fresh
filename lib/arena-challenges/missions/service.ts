@@ -9,7 +9,7 @@ import { MAX_HINTS, missionScore, type MissionScore } from "./score";
 import { hashSeed } from "@/lib/workplace/rng";
 import { assumptionsFor } from "./notes";
 import { sceneFor } from "./scenes";
-import type { AnyLab, Control, Difficulty, HistoryEntry, MissionFormat, Outcome, Scene, Settings } from "./types";
+import type { AnyLab, Control, Difficulty, HistoryEntry, MissionFormat, Outcome, Scene, Settings, Surface } from "./types";
 
 const MAX_TRIED = 60;
 const MAX_HISTORY = 12;
@@ -38,7 +38,7 @@ interface AttemptRow {
 
 export interface MissionView {
   challengeId: string;
-  lab: { name: string; topic: string; format: MissionFormat; tools: string[]; assumptions: string };
+  lab: { name: string; topic: string; format: MissionFormat; tools: string[]; assumptions: string; surface: Surface | null; surfaceData: unknown };
   /** a drawing of the set-up as currently configured (the last tested settings), or null for labs without one */
   scene: Scene | null;
   /** the student's recent experiments, oldest first */
@@ -101,7 +101,7 @@ function view(m: Loaded, a: AttemptRow, score: MissionScore | null): MissionView
   const outcome = a.runs > 0 ? m.lab.evaluate(m.scenario, settings) : null;
   return {
     challengeId: m.id,
-    lab: { name: m.lab.name, topic: m.lab.topic, format: m.lab.format, tools: m.lab.tools, assumptions: assumptionsFor(m.lab.key, m.lab.family) },
+    lab: { name: m.lab.name, topic: m.lab.topic, format: m.lab.format, tools: m.lab.tools, assumptions: assumptionsFor(m.lab.key, m.lab.family), surface: m.lab.surface ?? null, surfaceData: m.lab.surfaceData?.(m.scenario) ?? null },
     scene: sceneFor(m.lab.key, m.scenario, settings),
     history: (a.history ?? []).slice(-MAX_HISTORY),
     given: m.lab.given(m.scenario),
@@ -121,7 +121,7 @@ function view(m: Loaded, a: AttemptRow, score: MissionScore | null): MissionView
   };
 }
 
-const savedScore = (m: Loaded, a: AttemptRow): MissionScore | null => (a.passed ? missionScore(m.difficulty, a.hints, a.tried.length) : null);
+const savedScore = (m: Loaded, a: AttemptRow): MissionScore | null => (a.passed ? missionScore(m.difficulty) : null);
 
 export async function getMissionState(service: SupabaseClient, userId: string, challengeId: string): Promise<MissionView | MissionError> {
   const m = await loadMission(service, userId, challengeId);
@@ -154,7 +154,7 @@ export async function runMissionTest(service: SupabaseClient, userId: string, ch
   if (!outcome.passed) return view(m, next, null);
 
   // the guard `passed = false` means a double click or a second tab can only complete the mission once
-  const score = missionScore(m.difficulty, a.hints, tried.length);
+  const score = missionScore(m.difficulty);
   const nowIso = new Date().toISOString();
   const { data: won } = await db.from("arena_mission_attempts").update({ passed: true, points: score.total, completed_at: nowIso }).eq("user_id", userId).eq("challenge_id", challengeId).eq("passed", false).select("user_id");
   if (!won || won.length === 0) return fail("You have already completed this mission.", 409);
