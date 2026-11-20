@@ -580,7 +580,8 @@ export async function startSession(db: Db, userId: string, layer: Layer, opts: {
     }
     if (careerId) {
       const start = await startRating(db);
-      await db.from("student_career_elo").upsert({ student_id: userId, career_id: careerId, rating: start }, { onConflict: "student_id,career_id", ignoreDuplicates: true });
+      // Every new role assessment starts at the start rating (400), whatever the student was rated in this role before: a role they move to starts fresh.
+      await db.from("student_career_elo").upsert({ student_id: userId, career_id: careerId, rating: start }, { onConflict: "student_id,career_id" });
       const { data: elo } = await db.from("student_career_elo").select("rating").eq("student_id", userId).eq("career_id", careerId).single();
       startingElo = elo?.rating ?? start;
     }
