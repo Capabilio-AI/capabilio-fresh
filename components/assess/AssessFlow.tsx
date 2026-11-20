@@ -54,12 +54,14 @@ export function AssessFlow({ snapshot, initialRole }: { snapshot: FlowSnapshot; 
 
   const stage: Stage = view.kind === "career-done" ? "results" : view.kind === "run" ? (view.session.layer === "CAREER" ? "career" : "common") : view.kind === "common-done" ? "common" : STAGE_OF[snapshot.stage];
 
+  // Plan B role switch: the student is assessed for the new role while the current one is still their main role, so "Change role" would be wrong here.
+  const switching = snapshot.stage === "career" && !!snapshot.assess && snapshot.assess.career.id === snapshot.secondary?.id;
   let back: BackAction | null;
   if (view.kind === "run") back = { label: "Back", onClick: () => setLeaving(true) };
   else if (view.kind === "career-done") back = null;
   // Until the assessment is finished the dashboard is locked, so there is nowhere useful to go "back" to on the first steps.
   else if (view.kind === "common-done" || snapshot.stage === "career-interest" || snapshot.stage === "resume") back = null;
-  else if (snapshot.stage === "done") back = { label: "Back to dashboard", href: "/dashboard" };
+  else if (snapshot.stage === "done" || switching) back = { label: "Back to dashboard", href: "/dashboard" };
   else back = { label: "Change role", href: "/assessment?step=role" };
 
   return (

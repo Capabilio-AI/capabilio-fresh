@@ -9,16 +9,11 @@ import { storyIsSafe, writeStory } from "./story";
 import { slotKind } from "../stream-ai/plan";
 
 describe("missionScore", () => {
-  it("gives full points for a clean finish and charges 15% a hint, never below 55%", () => {
-    expect(missionScore("medium", 0, 1).total).toBe(60);
-    expect(missionScore("medium", 1, 1).total).toBe(51);
-    expect(missionScore("hard", 3, 1).total).toBe(Math.round(75 * 0.55));
-    expect(missionScore("easy", 9, 1).hintFactor).toBe(0.55);
-  });
-  it("adds the experimenter bonus only for three different settings", () => {
-    expect(missionScore("easy", 0, 2).bonus).toBe(0);
-    expect(missionScore("easy", 0, 3)).toEqual({ base: 45, hintFactor: 1, bonus: 9, total: 54 });
-    expect(missionScore("hard", 0, 5).total).toBe(MISSION_POINTS.hard + 15);
+  it("pays the same fixed points as every other Stream challenge: 15 easy, 20 medium, 25 hard", () => {
+    expect(missionScore("easy")).toEqual({ base: 15, total: 15 });
+    expect(missionScore("medium").total).toBe(20);
+    expect(missionScore("hard").total).toBe(25);
+    expect(MISSION_POINTS).toEqual({ easy: 15, medium: 20, hard: 25 });
   });
 });
 
@@ -108,7 +103,7 @@ describe("buildMission", () => {
   it("prefers the lab that matches the course and the one used least", () => {
     const ece = labsFor("ece");
     expect(orderLabs(ece, "Digital Logic Design", new Map(), 1)[0].key).toBe("logic-gate");
-    const usage = new Map([["rectifier", 3], ["led-string", 2], ["rc-filter", 2], ["amplifier", 1], ...["sampling", "fir-filter", "digital-link", "am-modulation", "tline-match", "mcu-pwm", "rlc-step"].map((k): [string, number] => [k, 5])]);
+    const usage = new Map([["rectifier", 3], ["led-string", 2], ["rc-filter", 2], ["amplifier", 1], ...["pcb-layout", "rf-chain", "sampling", "fir-filter", "digital-link", "am-modulation", "tline-match", "mcu-pwm", "rlc-step"].map((k): [string, number] => [k, 5])]);
     expect(orderLabs(ece, null, usage, 1)[0].key).toBe("logic-gate");
   });
 });

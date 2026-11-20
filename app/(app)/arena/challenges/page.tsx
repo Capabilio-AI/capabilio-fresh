@@ -26,9 +26,9 @@ export default async function ArenaChallengesPage() {
   const [scope, { intent }, { stage }] = await Promise.all([resolveStreamScope(supabase, user.id), getCareerIntent(createServiceClient(), user.id), getStageState(user.id)]);
   const isStudent = stage === "student";
   const streamOpen = !isStudent || (await loadStreamGate(createServiceClient(), user.id)).open;
-  // Domain follows the Plan B answer: same role keeps the onboarding role, change role uses the new one, anything else has no Domain yet.
+  // Domain follows the Plan B answer: same role keeps the onboarding role, change role makes the new one the main role, anything else has no Domain yet.
   // A graduate has no Plan B: their target role from the assessment drives Domain straight away.
-  const target = !isStudent ? intent.primary?.name ?? null : intent.planBKind === "same_role" ? intent.primary?.name ?? null : intent.planBKind === "change_role" ? intent.secondary?.name ?? null : null;
+  const target = !isStudent ? intent.primary?.name ?? null : intent.planBKind === "same_role" || intent.planBKind === "change_role" ? intent.primary?.name ?? null : null;
 
   return (
     <div>

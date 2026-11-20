@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { LiveRefresh } from "@/components/live/LiveRefresh";
 import type { Metadata } from "next";
 import { requireAuthedUser } from "@/lib/supabase/auth";
@@ -25,6 +26,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getStudentDirection } from "@/lib/career/direction";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { PlanBDialog } from "@/components/direction/PlanBDialog";
+import { ChangeRoleDialog } from "@/components/dashboard/ChangeRoleDialog";
+import { roleChangeState } from "@/lib/careers/role-change";
 import { OverviewHub } from "@/components/dashboard/OverviewHub";
 import { buildOverview } from "@/lib/dashboard/overview";
 import { getCareerProfile } from "@/lib/assess/career-profile";
@@ -125,6 +128,11 @@ export default async function DashboardPage() {
   }
 
   const overview = buildOverview(careerProfile);
+  // "Change role" is offered only while the student has changes left; null means role changes are not set up yet, so nothing is offered.
+  const [changeState, { data: roleIds }] = await Promise.all([
+    roleChangeState(service, user.id),
+    service.from("student_career_intent").select("primary_career_id, secondary_career_id").eq("student_id", user.id).maybeSingle(),
+  ]);
   // Plan B is asked from 3rd year onward, and never again once a real choice is saved.
   const planBAsk = direction?.planBOpen ? await getCareerIntent(service, user.id) : null;
   const askPlanB = planBAsk && !planBAsk.intent.planBKind ? planBAsk : null;
@@ -148,13 +156,39 @@ export default async function DashboardPage() {
       <DashboardHeader data={data} hideScore={Boolean(overview)} />
       {rollNotice && <div className="pb-2"><RollNumberBanner notice={rollNotice} /></div>}
       {crtDue && <CrtDueCard due={crtDue} />}
+      {planBAsk?.intent.planBSwitchPending && planBAsk.intent.secondary && (
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white p-4">
+          <div className="max-w-[60ch]">
+            <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">Finish moving to {planBAsk.intent.secondary.name}</p>
+            <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">{planBAsk.intent.primary?.name ?? "Your current role"} stays your main role until you complete the {planBAsk.intent.secondary.name} assessment. Then everything switches over.</p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/assessment/switch" className="min-h-10 rounded-lg border border-app-border px-4 py-2.5 font-lp-body text-[13px] font-medium text-app-charcoal">Pick a different role</Link>
+            <Link href="/assessment?plan=b" className="min-h-10 rounded-lg bg-app-charcoal px-4 py-2.5 font-lp-body text-[13px] font-medium text-white">Take the assessment</Link>
+          </div>
+        </div>
+      )}
       {askPlanB && (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white p-4">
           <div className="max-w-[60ch]">
             <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">Choose your Plan B</p>
             <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">You&apos;re in 3rd year. Tell us what you would do if your main plan changes. You are asked once.</p>
           </div>
-          <PlanBDialog autoOpen mainCareer={askPlanB.intent.primary?.name ?? null} careers={askPlanB.careers.filter((c) => c.id !== askPlanB.intent.primary?.id)} />
+          <PlanBDialog autoOpen mainCareer={askPlanB.intent.primary?.name ?? null} />
+        </div>
+      )}
+      {changeState && roleIds?.primary_career_id && (
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-app-border bg-white px-4 py-3">
+          <p className="font-lp-body text-[13px] text-app-muted">Your role: <span className="font-semibold text-app-charcoal">{chosenRole}</span> · {changeState.left} of {changeState.limit} role changes left</p>
+          {changeState.left > 0 && (
+            <ChangeRoleDialog
+              standing={{ roleName: chosenRole ?? "your role", elo: overview?.elo ?? null, tier: overview?.tier.label ?? null, proven: overview?.proven ?? null, total: overview?.total ?? null, activity: careerProfile.elo?.events ?? null }}
+              currentRoleId={roleIds.primary_career_id}
+              planBRoleId={roleIds.secondary_career_id}
+              left={changeState.left}
+              limit={changeState.limit}
+            />
+          )}
         </div>
       )}
       <div className="empty:hidden pb-2">

@@ -7,8 +7,9 @@ import { Countdown } from "../workstations/Countdown";
 import { DIFFICULTY_CLASS, type ChallengeDetail } from "../ChallengeSolvePanel";
 import { MissionChart } from "./MissionChart";
 import { MissionDiagram } from "./MissionDiagram";
+import { SurfaceHost } from "./surfaces/SurfaceHost";
 import { ReadingBar, ResultTable } from "./MissionReadings";
-import { EXPERIMENTS_FOR_BONUS, MISSION_POINTS } from "@/lib/arena-challenges/missions/score";
+import { MISSION_POINTS } from "@/lib/arena-challenges/missions/score";
 import type { Control, HistoryEntry, MissionFormat, Settings } from "@/lib/arena-challenges/missions/types";
 import type { MissionView } from "@/lib/arena-challenges/missions/service";
 
@@ -20,7 +21,7 @@ const defaults = (controls: Control[]): Settings => Object.fromEntries(controls.
 function describe(controls: Control[], settings: Settings): string {
   return controls
     .filter((c) => isActive(c, settings))
-    .map((c) => (c.kind === "choice" ? (c.options.find((o) => o.value === String(settings[c.id]))?.label ?? String(settings[c.id])) : `${settings[c.id]}${c.unit ? ` ${c.unit}` : ""}`))
+    .map((c) => (c.kind === "design" ? (settings[c.id] ? "your design" : "empty") : c.kind === "choice" ? (c.options.find((o) => o.value === String(settings[c.id]))?.label ?? String(settings[c.id])) : `${settings[c.id]}${c.unit ? ` ${c.unit}` : ""}`))
     .join(" · ");
 }
 
@@ -108,7 +109,7 @@ export function MissionScreen({ challenge, onDone }: { challenge: ChallengeDetai
         <span className={`rounded-full px-2.5 py-0.5 font-lp-mono text-[10.5px] font-semibold ${DIFFICULTY_CLASS[challenge.difficulty]}`}>{challenge.difficulty}</span>
         <span className="rounded-full bg-app-blue-container px-2.5 py-0.5 font-lp-mono text-[10.5px] font-semibold text-app-blue">{FORMAT_LABEL[view.lab.format]}</span>
         <span className="font-lp-mono text-[10.5px] text-app-muted">{view.lab.topic}</span>
-        {!done && <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px] font-semibold text-[var(--m-ink)]"><Countdown target={expiresAt} onDone={onDone} /><span className="rounded-full bg-white px-2.5 py-0.5 text-app-orange">up to +{maxPoints + Math.round(maxPoints * 0.2)} pts</span></span>}
+        {!done && <span className="ml-auto flex items-center gap-3 font-lp-mono text-[11.5px] font-semibold text-[var(--m-ink)]"><Countdown target={expiresAt} onDone={onDone} /><span className="rounded-full bg-white px-2.5 py-0.5 text-app-orange">+{maxPoints} pts</span></span>}
       </div>
 
       <h2 className="mt-3 font-lp-display text-[24px] font-bold leading-tight text-[var(--m-ink)]">{challenge.title}</h2>
@@ -127,28 +128,34 @@ export function MissionScreen({ challenge, onDone }: { challenge: ChallengeDetai
         <section aria-label={view.lab.name} className="space-y-4">
           <div className="rounded-xl border border-[var(--m-rule)] bg-white p-5">
             <div className="flex items-center gap-2"><FlaskConical size={16} className="text-app-orange" aria-hidden /><h3 className="font-lp-display text-[16px] font-bold text-[var(--m-ink)]">{view.lab.name}</h3></div>
-            {view.scene && <div className="mt-3"><MissionDiagram scene={view.scene} /></div>}
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {view.controls.filter((c) => isActive(c, settings)).map((c) => (
-                <div key={c.id}>
-                  <label htmlFor={`ctl-${c.id}`} className="flex items-baseline justify-between font-lp-body text-[12.5px] font-semibold text-app-muted">
-                    {c.label}
-                    {c.kind === "number" && <output htmlFor={`ctl-${c.id}`} className="font-lp-mono text-[13px] text-[var(--m-ink)]">{String(settings[c.id])}{c.unit ? ` ${c.unit}` : ""}</output>}
-                  </label>
-                  {c.kind === "choice" ? (
-                    <select id={`ctl-${c.id}`} value={String(settings[c.id])} disabled={done} onChange={(e) => setSettings({ ...settings, [c.id]: e.target.value })} className="mt-1.5 w-full rounded-lg border border-[var(--m-rule)] bg-white px-3 py-2 font-lp-body text-[13.5px] text-[var(--m-ink)] focus:outline-none focus:ring-2 focus:ring-app-charcoal/20 disabled:opacity-60">
-                      {c.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  ) : (
-                    <input id={`ctl-${c.id}`} type="range" min={c.min} max={c.max} step={c.step} value={Number(settings[c.id])} disabled={done} onChange={(e) => setSettings({ ...settings, [c.id]: Number(e.target.value) })} className="mt-2.5 w-full accent-app-orange disabled:opacity-60" />
-                  )}
-                </div>
-              ))}
-            </div>
+            {view.lab.surface ? (
+              <div className="mt-4"><SurfaceHost surface={view.lab.surface} data={view.lab.surfaceData} settings={settings} setSettings={setSettings} disabled={done} outcome={view.outcome} /></div>
+            ) : (
+              <>
+              {view.scene && <div className="mt-3"><MissionDiagram scene={view.scene} /></div>}
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {view.controls.filter((c): c is Exclude<Control, { kind: "design" }> => c.kind !== "design" && isActive(c, settings)).map((c) => (
+                  <div key={c.id}>
+                    <label htmlFor={`ctl-${c.id}`} className="flex items-baseline justify-between font-lp-body text-[12.5px] font-semibold text-app-muted">
+                      {c.label}
+                      {c.kind === "number" && <output htmlFor={`ctl-${c.id}`} className="font-lp-mono text-[13px] text-[var(--m-ink)]">{String(settings[c.id])}{c.unit ? ` ${c.unit}` : ""}</output>}
+                    </label>
+                    {c.kind === "choice" ? (
+                      <select id={`ctl-${c.id}`} value={String(settings[c.id])} disabled={done} onChange={(e) => setSettings({ ...settings, [c.id]: e.target.value })} className="mt-1.5 w-full rounded-lg border border-[var(--m-rule)] bg-white px-3 py-2 font-lp-body text-[13.5px] text-[var(--m-ink)] focus:outline-none focus:ring-2 focus:ring-app-charcoal/20 disabled:opacity-60">
+                        {c.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    ) : (
+                      <input id={`ctl-${c.id}`} type="range" min={c.min} max={c.max} step={c.step} value={Number(settings[c.id])} disabled={done} onChange={(e) => setSettings({ ...settings, [c.id]: Number(e.target.value) })} className="mt-2.5 w-full accent-app-orange disabled:opacity-60" />
+                    )}
+                  </div>
+                ))}
+              </div>
+              </>
+            )}
             {!done && (
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={() => act("test")} disabled={busy !== null} className="rounded-lg bg-app-charcoal px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white disabled:opacity-60">{busy === "test" ? "Testing…" : "Run test"}</button>
-                <button type="button" onClick={() => act("hint")} disabled={busy !== null || view.hintsUsed >= view.maxHints} className="flex items-center gap-1.5 rounded-lg border border-[var(--m-rule)] px-4 py-2.5 font-lp-body text-[13px] font-semibold text-[var(--m-ink)] disabled:opacity-50"><Lightbulb size={14} aria-hidden />{view.hintsUsed >= view.maxHints ? "No hints left" : `Hint (${view.hintsUsed}/${view.maxHints}, −15% points)`}</button>
+                <button type="button" onClick={() => act("hint")} disabled={busy !== null || view.hintsUsed >= view.maxHints} className="flex items-center gap-1.5 rounded-lg border border-[var(--m-rule)] px-4 py-2.5 font-lp-body text-[13px] font-semibold text-[var(--m-ink)] disabled:opacity-50"><Lightbulb size={14} aria-hidden />{view.hintsUsed >= view.maxHints ? "No hints left" : `Hint (${view.hintsUsed}/${view.maxHints})`}</button>
                 <button type="button" onClick={() => setSettings(defaults(view.controls))} disabled={busy !== null} className="flex items-center gap-1.5 px-2 py-2.5 font-lp-body text-[12.5px] text-app-muted hover:text-[var(--m-ink)]"><RotateCcw size={13} aria-hidden />Reset</button>
               </div>
             )}
@@ -172,11 +179,6 @@ export function MissionScreen({ challenge, onDone }: { challenge: ChallengeDetai
           {done && (
             <div className="rounded-xl border border-app-success/40 bg-app-success-container p-5">
               <p className="flex items-center gap-2 font-lp-display text-[18px] font-bold text-[var(--m-ink)]"><Trophy size={18} className="text-app-success" aria-hidden />Mission complete{view.score ? ` · +${view.score.total} points` : ""}</p>
-              {view.score && (
-                <p className="mt-1 font-lp-mono text-[11.5px] text-app-muted">
-                  {view.score.base} base{view.hintsUsed > 0 ? ` × ${Math.round(view.score.hintFactor * 100)}% (${view.hintsUsed} hint${view.hintsUsed > 1 ? "s" : ""})` : ""}{view.score.bonus > 0 ? ` + ${view.score.bonus} for testing ${view.distinctRuns} different settings` : ""}
-                </p>
-              )}
               {view.explanation && (<><h4 className="mt-4 font-lp-body text-[13px] font-bold text-[var(--m-ink)]">What you discovered</h4><p className="mt-1 font-lp-body text-[13.5px] leading-relaxed text-[var(--m-ink)]">{view.explanation}</p></>)}
               <button type="button" onClick={onDone} className="mt-4 rounded-lg bg-app-charcoal px-5 py-2.5 font-lp-body text-[13.5px] font-semibold text-white">Back to challenges</button>
             </div>
@@ -209,7 +211,7 @@ export function MissionScreen({ challenge, onDone }: { challenge: ChallengeDetai
               ))}
             </dl>
             <p className="mt-3 font-lp-body text-[11.5px] leading-relaxed text-app-muted"><span className="font-semibold">Educational model.</span> {view.lab.assumptions}</p>
-            {!done && <p className="mt-3 font-lp-body text-[11.5px] leading-relaxed text-app-muted">Try at least {EXPERIMENTS_FOR_BONUS} different settings for a 20% experimenter bonus. Points go to your Stream score only.</p>}
+            {!done && <p className="mt-3 font-lp-body text-[11.5px] leading-relaxed text-app-muted">Every Stream challenge pays fixed points by difficulty: 15 easy, 20 medium, 25 hard. Points go to your Stream score only.</p>}
           </div>
 
           {view.hintLog.length > 0 && (

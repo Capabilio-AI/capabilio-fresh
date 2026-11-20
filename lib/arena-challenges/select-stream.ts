@@ -38,6 +38,8 @@ export interface StreamSelectionInput {
   size?: number;
   /** the student's current year of study, when known and confirmed: it sets the difficulty mix */
   year?: number | null;
+  /** concepts (challenge categories) the student was served in earlier weeks: a concept they have not met yet ranks before one they have */
+  seenConcepts?: ReadonlySet<string>;
   /** at most this many of a kind in the batch (IT boards keep SQL to a third); lifted only when nothing else is left to serve */
   kindCaps?: Record<string, number>;
 }
@@ -127,7 +129,9 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
     .map((c) => {
       const tier = tierFor(c, input.courses, input.currentYear);
       tiers[c.id] = tier;
-      return { c, bucket: (c.shared ? SHARED_PENALTY : 0) + TIER_RANK[tier] * 2 + (input.recentIds.has(c.id) || c.stale ? 1 : 0), tie: stableHash(`${input.seed}:${c.id}`) };
+      // one step of rank for "a concept they have already met", on top of the existing tiers: new ideas first, then repeats of an idea (never of the same challenge unless nothing else is left)
+      const base = (c.shared ? SHARED_PENALTY : 0) + TIER_RANK[tier] * 2 + (input.recentIds.has(c.id) || c.stale ? 1 : 0);
+      return { c, bucket: base * 2 + (input.seenConcepts?.has(c.category) ? 1 : 0), tie: stableHash(`${input.seed}:${c.id}`) };
     })
     .sort((a, b) => a.bucket - b.bucket || a.tie - b.tie);
   const bucketOf = new Map(ranked.map((r) => [r.c.id, r.bucket]));
@@ -137,7 +141,8 @@ export function selectStreamBatch(input: StreamSelectionInput): StreamSelection 
   const perCategory = new Map<string, number>();
   const perKind = new Map<string, number>();
   let capsOn = true;
-  const capped = (c: StreamCandidate) => capsOn && c.kind !== undefined && input.kindCaps?.[c.kind] !== undefined && (perKind.get(c.kind) ?? 0) >= input.kindCaps[c.kind];
+  // a simulator concept appears once a week; it comes back only if the board would otherwise be short
+  const capped = (c: StreamCandidate) => capsOn && ((c.kind === "mission" && (perCategory.get(c.category) ?? 0) >= 1) || (c.kind !== undefined && input.kindCaps?.[c.kind] !== undefined && (perKind.get(c.kind) ?? 0) >= input.kindCaps[c.kind]));
   const take = (c: StreamCandidate) => {
     picked.push(c);
     perCategory.set(c.category, (perCategory.get(c.category) ?? 0) + 1);

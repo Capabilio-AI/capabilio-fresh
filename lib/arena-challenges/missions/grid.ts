@@ -1,4 +1,5 @@
 // Settings handling shared by every lab: validate what a client sent, walk the space of possible settings, and find the closest working one.
+import { hashSeed, makeRng } from "@/lib/workplace/rng";
 import type { AnyLab, Control, Difficulty, Settings } from "./types";
 
 const MAX_PER_CONTROL = 24;
@@ -34,7 +35,15 @@ export function normalizeSettings(controls: Control[], input: unknown): { ok: tr
       settings[c.id] = c.default;
       continue;
     }
-    if (c.kind === "choice") {
+    if (c.kind === "design") {
+      if (typeof v !== "string" || v.length > c.maxLen) return { ok: false, error: `"${c.label}" is too large or not a design.` };
+      try {
+        if (v !== "") JSON.parse(v);
+      } catch {
+        return { ok: false, error: `"${c.label}" is not a valid design.` };
+      }
+      settings[c.id] = v;
+    } else if (c.kind === "choice") {
       if (typeof v !== "string" || !c.options.some((o) => o.value === v)) return { ok: false, error: `"${c.label}" has an invalid choice.` };
       settings[c.id] = v;
     } else {
@@ -55,7 +64,7 @@ export function* gridSettings(controls: Control[], cap = MAX_PER_CONTROL): Gener
       return;
     }
     const c = controls[i];
-    if (!isActive(c, current)) {
+    if (!isActive(c, current) || c.kind === "design") {
       yield* walk(i + 1, { ...current, [c.id]: c.default });
       return;
     }
@@ -83,8 +92,36 @@ export interface Validation {
 /** a mission is only worth playing if it can be won, is not already won, and is not won by most random settings */
 const MAX_PASS_SHARE: Record<Difficulty, number> = { easy: 0.4, medium: 0.25, hard: 0.15 };
 
+const RANDOM_TRIES = 400;
+const hasDesign = (controls: Control[]) => controls.some((c) => c.kind === "design");
+
+/** For a lab whose settings cannot be enumerated: the reference must win, the starting settings must not, and random settings almost never do. */
+function validateByReference(lab: AnyLab, scenario: unknown, controls: Control[], difficulty: Difficulty): Validation {
+  const ref = lab.reference?.(scenario) ?? null;
+  if (!ref) return { ok: false, reason: "no reference solution", total: 0, passing: 0 };
+  const refOutcome = lab.evaluate(scenario, ref);
+  if (!refOutcome.passed) return { ok: false, reason: "the reference solution does not win", total: 1, passing: 0 };
+  if (lab.evaluate(scenario, defaultSettings(controls)).passed) return { ok: false, reason: "the starting settings already win", total: 1, passing: 1 };
+  // random sampling over the non-design controls, with the design left as the reference's: guards against a mission that is won by almost anything.
+  // A lab with only a design has nothing to sample.
+  if (!controls.some((c) => c.kind !== "design")) return { ok: true, total: 1, passing: 1 };
+  const rng = makeRng(hashSeed("validate", JSON.stringify(scenario)));
+  let passing = 1;
+  for (let i = 0; i < RANDOM_TRIES; i++) {
+    const settings: Settings = { ...ref };
+    for (const c of controls) {
+      if (c.kind === "choice") settings[c.id] = rng.pick(c.options).value;
+      else if (c.kind === "number") settings[c.id] = numberValues(c, 200)[rng.int(0, numberValues(c, 200).length - 1)];
+    }
+    if (lab.evaluate(scenario, settings).passed) passing++;
+  }
+  const total = RANDOM_TRIES + 1;
+  return passing / total > MAX_PASS_SHARE[difficulty] ? { ok: false, reason: "too many settings win", total, passing } : { ok: true, total, passing };
+}
+
 export function validateScenario(lab: AnyLab, scenario: unknown, difficulty: Difficulty): Validation {
   const controls = lab.controls(scenario);
+  if (lab.reference || hasDesign(controls)) return validateByReference(lab, scenario, controls, difficulty);
   let cap = MAX_PER_CONTROL;
   while (gridSize(controls, cap) > MAX_COMBOS && cap > 3) cap = Math.floor(cap * 0.7);
   let total = 0;
@@ -102,6 +139,7 @@ export function validateScenario(lab: AnyLab, scenario: unknown, difficulty: Dif
 /** The winning settings closest to `current`: fewest controls changed first, then smallest numeric move. Null when nothing wins. */
 export function nearestSolution(lab: AnyLab, scenario: unknown, current: Settings): Settings | null {
   const controls = lab.controls(scenario);
+  if (lab.reference) return lab.reference(scenario);
   let cap = MAX_PER_CONTROL;
   while (gridSize(controls, cap) > MAX_COMBOS && cap > 3) cap = Math.floor(cap * 0.7);
   let best: Settings | null = null;

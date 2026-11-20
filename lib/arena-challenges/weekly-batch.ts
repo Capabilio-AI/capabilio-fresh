@@ -1,11 +1,21 @@
 import { closedChallengeIds } from "./closed";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { currentStreamWeek, weekStartOf } from "./week";
+import { currentStreamWeek } from "./week";
 import type { StreamScope } from "./resolve-scope";
 import { BATCH_SIZE, IT_KIND_CAPS, selectStreamBatch } from "./select-stream";
 import { IT_CLUSTER_SCOPE_KEY } from "./branch-clusters";
 import { loadStreamPool, type StreamStudentContext } from "./stream-context";
+
+/** The concepts (categories) of challenges the student was served before; ids are read in chunks to keep the request small. */
+async function conceptsOf(service: SupabaseClient<Database>, ids: string[]): Promise<Set<string>> {
+  const out = new Set<string>();
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const { data } = await service.from("arena_challenges").select("category").in("id", ids.slice(i, i + ID_CHUNK));
+    for (const r of data ?? []) out.add(r.category);
+  }
+  return out;
+}
 
 export interface WeeklyBatch {
   weekStart: string;
@@ -14,7 +24,7 @@ export interface WeeklyBatch {
   shortfall: number;
 }
 
-const RECENT_WEEKS = 2;
+const ID_CHUNK = 100;
 
 /**
  * One batch of up to `size` (the student's wheel number) challenges per (user, Sunday-IST week), chosen by selectStreamBatch from PUBLISHED content only and then fixed
@@ -33,18 +43,21 @@ export async function getOrAssignWeeklyBatch(service: SupabaseClient<Database>, 
   }
   if (existing) await service.from("arena_stream_weeks").delete().eq("user_id", userId).eq("week_start", weekStart);
 
-  const since = weekStartOf(new Date(Date.now() - RECENT_WEEKS * 7 * 24 * 60 * 60 * 1000));
-  const [pool, { data: completions }, { data: stats }, { data: recentWeeks }] = await Promise.all([
+  const [pool, { data: completions }, { data: stats }, { data: pastWeeks }] = await Promise.all([
     loadStreamPool(service, scope, userId),
     closedChallengeIds(service, userId).then((ids) => ({ data: [...ids].map((challenge_id) => ({ challenge_id })) })),
     service.from("arena_stream_stats").select("points").eq("user_id", userId).maybeSingle(),
-    service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).gte("week_start", since).lt("week_start", weekStart),
+    // every earlier week, not just the last two: a challenge the student was ever served ranks behind everything new
+    service.from("arena_stream_weeks").select("challenge_ids").eq("user_id", userId).lt("week_start", weekStart),
   ]);
+  const servedIds = [...new Set((pastWeeks ?? []).flatMap((w) => w.challenge_ids))];
+  const seenConcepts = await conceptsOf(service, servedIds);
 
   const selection = selectStreamBatch({
     pool,
     solvedIds: new Set((completions ?? []).map((c) => c.challenge_id)),
-    recentIds: new Set((recentWeeks ?? []).flatMap((w) => w.challenge_ids)),
+    recentIds: new Set(servedIds),
+    seenConcepts,
     courses: student.courses,
     currentYear: student.currentYear,
     points: stats?.points ?? 0,

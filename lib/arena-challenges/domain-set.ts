@@ -112,7 +112,7 @@ export async function loadDomainSet(service: Service, userId: string, which: Car
   // Domain starts only after the Plan B answer: "same role" practises the main career, "change role" the new one. Anything else stays on Stream.
   const kind = intent.planBKind;
   // Graduates and professionals have no Plan B (it is a 3rd-year question), so their main career is the target.
-  const career = opts.skipPlanB ? intent.primary : kind === "same_role" ? intent.primary : kind === "change_role" ? intent.secondary : null;
+  const career = opts.skipPlanB ? intent.primary : kind === "same_role" || kind === "change_role" ? intent.primary : null;
   if (!career) return { state: "no_plan_b", primary: base.primary };
   const target = { ...base, career };
 

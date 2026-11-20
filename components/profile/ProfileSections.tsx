@@ -34,7 +34,7 @@ export function AboutSection({ profile, aspiringFor, location, email }: { profil
         <h2 id="goal-h" className={H2}>Career goal</h2>
         <dl className="mt-1 divide-y divide-[var(--m-rule)]!">
           <Row label="Aspiring for">
-            <span className="flex items-center gap-3">{aspiringFor ?? <Unset text="Not chosen yet" />}<ChooseCareerDialog label={aspiringFor ? "Change" : "Choose"} triggerClassName={LINK} /></span>
+            <span className="flex items-center gap-3">{aspiringFor ?? <Unset text="Not chosen yet" />}{aspiringFor ? <Link href="/dashboard" className={LINK}>Change on dashboard</Link> : <ChooseCareerDialog label="Choose" triggerClassName={LINK} />}</span>
           </Row>
           <Row label="Location">{location ?? <Unset />}</Row>
           <Row label="Email"><span className="inline-flex items-center gap-1.5"><Mail size={14} aria-hidden className="text-[var(--m-muted)]" />{email}</span></Row>

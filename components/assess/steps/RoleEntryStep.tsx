@@ -25,6 +25,12 @@ const NEXT_GRADUATE = [
   { icon: GitFork, title: "Everything unlocked", body: "Dashboard, Arena, SkillStudio, Pulse and Launchpad are open to you from the start." },
 ];
 
+const NEXT_SWITCH = [
+  { icon: BarChart3, title: "Review your current profile", body: "You see your rating, readiness and skills for your current role, and confirm you want to move." },
+  { icon: ClipboardCheck, title: "Take the new role's assessment", body: "A skill test for the new role. Your current role stays your main role until you finish it." },
+  { icon: GitFork, title: "Everything follows the new role", body: "Roadmap, SkillStudio, Arena domain tickets and your dashboard switch once the assessment is done." },
+];
+
 type View =
   | { kind: "input" }
   | { kind: "resolving"; text: string }
@@ -38,7 +44,13 @@ type View =
  * wait to see its skills). Only a role we have never seen goes to the server, which builds its profile once for everyone after.
  * Doing this FIRST lets the server warm the role's question pool while the student does the common assessment.
  */
-export function RoleEntryStep({ roles, featured, onConfirmed, graduate = false, canSkip = false, initialText = "" }: { roles: RoleOption[]; featured?: readonly string[]; onConfirmed: () => void; graduate?: boolean; canSkip?: boolean; initialText?: string }) {
+export function RoleEntryStep({ roles, featured, onConfirmed, graduate = false, canSkip = false, initialText = "", switchingFrom, onPicked }: {
+  roles: RoleOption[]; featured?: readonly string[]; onConfirmed: () => void; graduate?: boolean; canSkip?: boolean; initialText?: string;
+  /** Plan B role switch: the name of the current main role. Changes the wording and hides the sign-up-only notes. */
+  switchingFrom?: string;
+  /** Plan B role switch: receives the confirmed role instead of saving it as the main role (nothing is saved at this step). */
+  onPicked?: (picked: { careerId: string; name: string; typed?: string }) => void;
+}) {
   const reduce = useReducedMotion();
   const [text, setText] = useState(initialText);
   const [view, setView] = useState<View>({ kind: "input" });
@@ -89,6 +101,7 @@ export function RoleEntryStep({ roles, featured, onConfirmed, graduate = false, 
   };
 
   const confirm = async (careerId: string) => {
+    if (onPicked && view.kind === "review") return onPicked({ careerId, name: view.primary.name, typed: view.typedText });
     setConfirming(true);
     try {
       await assessApi.confirmRole(careerId, view.kind === "review" ? view.typedText : undefined);
@@ -122,9 +135,9 @@ export function RoleEntryStep({ roles, featured, onConfirmed, graduate = false, 
   return (
     <section className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 sm:pt-12" aria-labelledby="role-title">
       <div className="a-rise text-center">
-        <span className="a-glass-soft mx-auto inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-bold text-[var(--m-ink)]"><Compass className="h-4 w-4 text-[var(--m-accent)]" aria-hidden /> Start with your goal</span>
-        <h1 id="role-title" className="mx-auto mt-5 max-w-2xl text-balance font-lp-display text-[40px] font-bold leading-[1.05] tracking-tight text-[var(--m-ink)] sm:text-[56px]">Which role are you building toward?</h1>
-        <p className="mx-auto mt-4 max-w-xl text-pretty text-[16px] leading-relaxed text-[var(--m-muted)]">Pick your target role. Capabilio tests your basic skills for it, then builds your skill graph.</p>
+        <span className="a-glass-soft mx-auto inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-bold text-[var(--m-ink)]"><Compass className="h-4 w-4 text-[var(--m-accent)]" aria-hidden /> {switchingFrom ? "Plan B: change your role" : "Start with your goal"}</span>
+        <h1 id="role-title" className="mx-auto mt-5 max-w-2xl text-balance font-lp-display text-[40px] font-bold leading-[1.05] tracking-tight text-[var(--m-ink)] sm:text-[56px]">{switchingFrom ? "Which role do you want to move to?" : "Which role are you building toward?"}</h1>
+        <p className="mx-auto mt-4 max-w-xl text-pretty text-[16px] leading-relaxed text-[var(--m-muted)]">{switchingFrom ? `Type a few keywords for the new role. Before anything changes, you will review your ${switchingFrom} profile and confirm.` : "Pick your target role. Capabilio tests your basic skills for it, then builds your skill graph."}</p>
       </div>
 
       <form className="a-rise mt-8" style={{ animationDelay: "100ms" }} onSubmit={(e) => { e.preventDefault(); }} aria-busy={busy}>
@@ -141,7 +154,7 @@ export function RoleEntryStep({ roles, featured, onConfirmed, graduate = false, 
         </div>
       </form>
 
-      {canSkip && !busy && (
+      {canSkip && !switchingFrom && !busy && (
         <div className="a-glass-soft a-rise mx-auto mt-5 flex max-w-[44rem] flex-col items-start gap-3 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between" style={{ animationDelay: "150ms" }}>
           <div>
             <p className="text-[15px] font-bold text-[var(--m-ink)]">Not sure about a role yet?</p>
@@ -188,7 +201,7 @@ export function RoleEntryStep({ roles, featured, onConfirmed, graduate = false, 
       )}
 
       <ol className="a-rise mt-10 grid gap-3 sm:grid-cols-3" style={{ animationDelay: "200ms" }} aria-label="What happens next">
-        {(graduate ? NEXT_GRADUATE : NEXT).map((n) => (
+        {(switchingFrom ? NEXT_SWITCH : graduate ? NEXT_GRADUATE : NEXT).map((n) => (
           <li key={n.title} className="flex gap-3 px-1">
             <span className="a-glass-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[var(--m-accent-ink)]"><n.icon className="h-4 w-4" aria-hidden /></span>
             <span><span className="block text-[14px] font-bold text-[var(--m-ink)]">{n.title}</span><span className="block text-[13px] leading-snug text-[var(--m-muted)]">{n.body}</span></span>

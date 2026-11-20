@@ -8,7 +8,6 @@ import type { PlanBKind } from "@/lib/careers/plan-b-rules";
 import { PlanBRouteMap } from "./PlanBRouteMap";
 import "./plan-b.css";
 
-interface Career { id: string; name: string }
 interface Option { kind: PlanBKind; title: string; icon: LucideIcon; needsMain?: boolean }
 
 /** Two groups so the choice reads as a decision: keep working in tech, or take another route. "Not yet decided" is a quiet third. */
@@ -35,14 +34,14 @@ const NEXT_STEP: Record<PlanBKind, string | null> = {
   same_role: "/assessment",
   higher_studies: "/dashboard/skills",
   entrepreneur: "/entrepreneur",
-  change_role: "/dashboard/roadmap?career=plan-b",
+  change_role: "/assessment/switch",
   undecided: null,
 };
 
 /** What the answer changes in Arena, stated plainly. Only the two career answers unlock Domain tickets. */
 const EFFECT: Record<PlanBKind, string> = {
   same_role: "Unlocks one Domain ticket at a time for your main role.",
-  change_role: "Unlocks one Domain ticket at a time for the new role.",
+  change_role: "You review your current profile, then take the new role's assessment. It becomes your main role once you finish.",
   higher_studies: "Stream challenges continue. Opens your skills plan.",
   entrepreneur: "Stream challenges continue. Opens startup resources.",
   undecided: "Stream challenges continue. You can answer later.",
@@ -64,18 +63,17 @@ function describe(kind: PlanBKind, mainCareer: string | null): string {
     case "same_role": return mainCareer ? `Stay on ${mainCareer}. Your roadmap and skill plan keep pointing at it.` : "Stay on your main career.";
     case "higher_studies": return "Prepare for a master's, an MBA or a research path.";
     case "entrepreneur": return "Build your own product or company, with startup resources.";
-    case "change_role": return "Move to a different career and get a roadmap for it.";
+    case "change_role": return "Type the new role, review your current profile, and take a fresh assessment. Every page follows once it is done.";
     case "undecided": return "Keep your options open. You can decide any time from 3rd year onward.";
   }
 }
 
 /** The one-time Plan B question: a button that opens five option cards. The server enforces 3rd year onward and "asked once". */
-export function PlanBDialog({ mainCareer, careers, triggerLabel = "Choose Plan B", triggerClassName, autoOpen = false }: { mainCareer: string | null; careers: Career[]; triggerLabel?: string; triggerClassName?: string; autoOpen?: boolean }) {
+export function PlanBDialog({ mainCareer, triggerLabel = "Choose Plan B", triggerClassName, autoOpen = false }: { mainCareer: string | null; triggerLabel?: string; triggerClassName?: string; autoOpen?: boolean }) {
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const groupId = useId();
   const [kind, setKind] = useState<PlanBKind | null>(null);
-  const [careerId, setCareerId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,15 +89,21 @@ export function PlanBDialog({ mainCareer, careers, triggerLabel = "Choose Plan B
     if (dialog.current && !dialog.current.open) dialog.current.showModal();
   }, [autoOpen]);
 
-  const ready = kind !== null && (kind !== "change_role" || careerId !== "");
+  const ready = kind !== null;
   const close = () => dialog.current?.close();
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ready || !kind) return;
+    // Changing role is a multi-step flow (keywords, review of the current role, new assessment): nothing is saved until it is confirmed there.
+    if (kind === "change_role") {
+      close();
+      router.push(NEXT_STEP.change_role ?? "/assessment/switch");
+      return;
+    }
     setBusy(true);
     setError(null);
-    const r = await send("PUT", "/api/career-intent/plan-b", kind === "change_role" ? { kind, careerId } : { kind });
+    const r = await send("PUT", "/api/career-intent/plan-b", { kind });
     setBusy(false);
     if (!r.ok) return setError(r.error ?? "Something went wrong. Please try again.");
     close();
@@ -146,7 +150,7 @@ export function PlanBDialog({ mainCareer, careers, triggerLabel = "Choose Plan B
                         const slim = group.options.length === 1;
                         const i = tileIndex++;
                         return (
-                          <div key={value} className={`pb-tile ${value === "change_role" && kind === "change_role" ? "sm:col-span-2" : ""}`} style={{ ["--i" as string]: i }}>
+                          <div key={value} className="pb-tile" style={{ ["--i" as string]: i }}>
                             <label className={`group relative flex h-full cursor-pointer gap-3.5 rounded-2xl border border-app-border bg-app-card p-4 transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:border-app-charcoal/30 hover:shadow-[0_14px_30px_-18px_rgb(18_14_24/0.35)] has-[:checked]:translate-y-0 has-[:checked]:border-app-charcoal has-[:checked]:bg-app-charcoal has-[:checked]:text-white has-[:checked]:shadow-[0_18px_36px_-16px_rgb(18_14_24/0.6)] has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-app-orange has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-55 has-[:disabled]:hover:translate-y-0 has-[:disabled]:hover:shadow-none ${slim ? "items-center" : "flex-col"}`}>
                               <input type="radio" name={groupId} value={value} checked={kind === value} disabled={locked} onChange={() => setKind(value)} className="sr-only" />
                               <span className="flex items-start justify-between gap-3">
@@ -175,15 +179,6 @@ export function PlanBDialog({ mainCareer, careers, triggerLabel = "Choose Plan B
                                 </span>
                               )}
                             </label>
-                            {value === "change_role" && kind === "change_role" && (
-                              <div className="mt-2 rounded-2xl border border-app-border bg-app-background p-4">
-                                <label htmlFor={`${groupId}-career`} className="block font-lp-body text-[13px] font-semibold">Which career would you move to?</label>
-                                <select id={`${groupId}-career`} value={careerId} onChange={(e) => setCareerId(e.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-app-border bg-app-card px-3 font-lp-body text-[14px] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-app-orange">
-                                  <option value="">Select a career</option>
-                                  {careers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
-                              </div>
-                            )}
                           </div>
                         );
                       })}
@@ -201,7 +196,7 @@ export function PlanBDialog({ mainCareer, careers, triggerLabel = "Choose Plan B
             <div className="flex gap-2">
               <button type="button" onClick={close} className="min-h-11 rounded-full border border-app-border bg-app-card px-5 font-lp-body text-[14px] font-medium transition-colors hover:bg-app-background">Cancel</button>
               <button type="submit" disabled={!ready || busy} className="group inline-flex min-h-11 items-center gap-2 rounded-full bg-app-orange px-5 font-lp-body text-[14px] font-semibold text-white shadow-[0_12px_24px_-12px_rgb(255_87_1/0.8)] transition-[transform,filter] duration-200 hover:brightness-105 active:scale-[0.98] disabled:opacity-45 disabled:shadow-none">
-                {busy ? "Saving" : "Save Plan B"}
+                {busy ? "Saving" : kind === "change_role" ? "Continue" : "Save Plan B"}
                 {!busy && <ArrowRight size={16} aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5" />}
               </button>
             </div>

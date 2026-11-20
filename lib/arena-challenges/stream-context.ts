@@ -77,5 +77,5 @@ export async function loadStreamPool(service: Service, scope: Pick<StreamScope, 
   for (const row of (mine.data ?? []) as PoolRow[]) byId.set(row.id, { ...row, shared: false });
   // ECE, EEE, Mech and Civil practise in labs: only hands-on missions are served, never calculations, code or multiple-choice
   const labsOnly = labFamily(scope.promptLabel ?? "") !== null;
-  return [...byId.values()].filter((r) => !labsOnly || r.kind === "mission").map((r) => ({ id: r.id, difficulty: r.difficulty, category: r.category, courseTags: r.course_tags ?? [], shared: r.shared }));
+  return [...byId.values()].filter((r) => !labsOnly || r.kind === "mission").map((r) => ({ id: r.id, difficulty: r.difficulty, category: r.category, courseTags: r.course_tags ?? [], shared: r.shared, kind: r.kind }));
 }
