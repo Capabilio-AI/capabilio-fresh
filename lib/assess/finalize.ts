@@ -8,6 +8,9 @@ import type { Obs } from "./engine";
 import { slotsInPlan } from "./general";
 import { loadSession } from "./session";
 import { AssessError, type AssessmentResult } from "./types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
+import { completeRoleSwitch } from "@/lib/careers/role-switch";
 
 const CONFIDENCE_TO_LEGACY = { HIGH: "high", MEDIUM: "medium", LOW: "low" } as const;
 
@@ -65,6 +68,8 @@ export async function submitSession(db: Db, userId: string, sessionId: string, o
   } else {
     await feedCapabilities(db, userId, result);
     await advanceOnboarding(db, userId, "PROFILE_READY");
+    // A pending Plan B role switch completes here: the new role becomes the main role only once its assessment is done.
+    await completeRoleSwitch(db as unknown as SupabaseClient<Database>, userId, result.career?.id ?? null);
     await track(db, userId, "career_assessment_completed", { sessionId, careerId: result.career?.id, readiness: result.readiness, elo: result.elo?.newElo });
   }
   onCompleted?.(result);

@@ -26,7 +26,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const tab = tabOf(rawTab);
 
   const service = createServiceClient();
-  const [viewer, { data: details }, educationEntries, { intent, careers }, passport] = await Promise.all([
+  const [viewer, { data: details }, educationEntries, { intent }, passport] = await Promise.all([
     getViewerSummary(supabase, user.id),
     supabase.from("profiles").select("cover_url, headline, bio, location, phone, portfolio_show_contact, passport_code, passport_public").eq("id", user.id).single(),
     getEducationEntries(supabase, user.id),
@@ -69,7 +69,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                 <p className="font-lp-body text-[13.5px] font-semibold text-app-charcoal">Plan B: not decided yet</p>
                 <p className="mt-1 font-lp-body text-[12.5px] text-app-muted">Take your time. When you know where you are heading, choose it here.</p>
               </div>
-              <PlanBDialog mainCareer={intent.primary?.name ?? null} careers={careers.filter((c) => c.id !== intent.primary?.id)} triggerLabel="Decide Plan B" />
+              <PlanBDialog mainCareer={intent.primary?.name ?? null} triggerLabel="Decide Plan B" />
             </div>
           )}
           {tab === "about" && <AboutSection profile={profile} aspiringFor={aspiringFor} location={profile.location} email={viewer.email} />}

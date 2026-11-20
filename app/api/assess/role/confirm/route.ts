@@ -4,6 +4,7 @@ import { assessRoute, readJson } from "@/lib/assess/http";
 import { track } from "@/lib/assess/db";
 import { rememberStudentAlias } from "@/lib/assess/roles";
 import { saveCareerIntent } from "@/lib/careers/intent";
+import { roleReplaceBlocked } from "@/lib/careers/role-change";
 import { warmPrimaryCareerPool } from "@/lib/assess/warm";
 import { AssessError } from "@/lib/assess/types";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -21,6 +22,9 @@ const Body = z.object({ careerId: z.string().uuid(), typed: z.string().max(160).
  */
 export const POST = assessRoute("assess_role_confirm", 20, async (req, { userId, db }) => {
   const { careerId, typed, explore } = await readJson(req, Body);
+  // Fixing a wrongly entered role stays free while the student is onboarding; after that it is the dashboard's "Change role" (3 changes, with a reason).
+  const blocked = await roleReplaceBlocked(createServiceClient(), userId, careerId);
+  if (blocked) throw new AssessError("ROLE_LOCKED", blocked, 403);
   const result = await saveCareerIntent(createServiceClient(), userId, { primaryCareerId: careerId, isExploring: false });
   if (!result.ok) throw new AssessError("ROLE_REJECTED", result.message, result.status);
   void track(db, userId, "career_role_confirmed", { careerId });

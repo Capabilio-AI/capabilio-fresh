@@ -27,7 +27,7 @@ export function ResultPopup({ sessionId, result }: { sessionId: string; result: 
   const { feedback, failed } = useFeedback(sessionId);
   const elo = result.elo!;
   // the profile is the source of truth once it has loaded; until then the session summary already carries the same number
-  const rating = displayRating(profile, elo.newElo);
+  const rating = displayRating(profile, elo.newElo, result.career?.id);
   const shown = useCountUp(rating, 1100);
 
   useEffect(() => {

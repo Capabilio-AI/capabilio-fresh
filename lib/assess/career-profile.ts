@@ -30,8 +30,9 @@ export interface CareerProfile {
   updatedAt: string | null;
 }
 
-/** The rating any surface shows: the shared profile once loaded, else the figure the server returned with the same snapshot. */
-export const displayRating = (profile: CareerProfile | null, fallback: number) => profile?.elo?.rating ?? fallback;
+/** The rating any surface shows: the shared profile once loaded, else the figure the server returned with the same snapshot. The profile is the main role's, so a result for another role (Plan B) passes its `careerId` and keeps its own figure. */
+export const displayRating = (profile: CareerProfile | null, fallback: number, careerId?: string | null) =>
+  careerId && profile?.role?.id !== careerId ? fallback : profile?.elo?.rating ?? fallback;
 
 const EMPTY = (status: OnboardingStatus, unlocked = false): CareerProfile => ({ status, unlocked, role: null, elo: null, readiness: null, proven: null, coverage: null, skills: [], common: null, snapshotId: null, updatedAt: null });
 
