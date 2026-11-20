@@ -55,15 +55,15 @@ export const speedOk = (outRpm: number, targetRpm: number, tolerance: number): b
 export function narrowest(inRpm: number, targetRpm: number, tolerance: number, outTorqueNm: number): { teeth: [number, number, number, number]; module: number; widthMm: number } | null {
   const ratio = inRpm / targetRpm;
   let best: { teeth: [number, number, number, number]; module: number; widthMm: number } | null = null;
-  for (const module of MODULES) {
+  for (const mod of MODULES) {
     for (let z1 = TEETH_MIN; z1 <= 40; z1++) {
       for (let z3 = TEETH_MIN; z3 <= 40; z3++) {
         for (let z2 = TEETH_MIN; z2 <= TEETH_MAX; z2++) {
           for (const z4 of [Math.floor((ratio * z1 * z3) / z2), Math.ceil((ratio * z1 * z3) / z2)]) {
             if (z4 < TEETH_MIN || z4 > TEETH_MAX) continue;
             const teeth: [number, number, number, number] = [z1, z2, z3, z4];
-            const r = analyseGears({ teeth, module, inRpm, outTorqueNm });
-            if (!r.undercut && speedOk(r.outRpm, targetRpm, tolerance) && r.strongEnough[0] && r.strongEnough[1] && (!best || r.widthMm < best.widthMm)) best = { teeth, module, widthMm: r.widthMm };
+            const r = analyseGears({ teeth, module: mod, inRpm, outTorqueNm });
+            if (!r.undercut && speedOk(r.outRpm, targetRpm, tolerance) && r.strongEnough[0] && r.strongEnough[1] && (!best || r.widthMm < best.widthMm)) best = { teeth, module: mod, widthMm: r.widthMm };
           }
         }
       }

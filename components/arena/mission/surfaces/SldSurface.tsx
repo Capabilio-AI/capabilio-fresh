@@ -87,7 +87,7 @@ export function SldSurface({ data, settings, setSettings, disabled, outcome }: P
           {[1, 2, 3].map((k) => <path key={k} d={path(k)} fill="none" stroke={COLORS[k - 1]} strokeWidth={2.4} />)}
           <text x={(CW + M.l) / 2} y={CH - 6} textAnchor="middle" fontSize={10} fill="#6b6659">Current (A, log scale)</text>
         </svg>
-        <p className="mt-2 font-lp-body text-[11.5px] leading-relaxed text-app-muted">Short coloured ticks mark each relay's normal load; dashed red lines mark the fault currents. A curve to the right of its load tick will not trip on load. For one fault the curves must stack in order, relay 1 lowest, with a gap of at least {d.margin} s.{outcome ? "" : " Change a setting and watch the curve move."}</p>
+        <p className="mt-2 font-lp-body text-[11.5px] leading-relaxed text-app-muted">Short coloured ticks mark each relay&apos;s normal load; dashed red lines mark the fault currents. A curve to the right of its load tick will not trip on load. For one fault the curves must stack in order, relay 1 lowest, with a gap of at least {d.margin} s.{outcome ? "" : " Change a setting and watch the curve move."}</p>
       </div>
     </div>
   );

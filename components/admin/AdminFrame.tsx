@@ -10,6 +10,8 @@ const KEY = "capabilio-admin-sidebar";
 export function AdminFrame({ sidebar, header, children }: { sidebar: ReactNode; header: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(true);
   useEffect(() => {
+    // the stored choice can only be read in the browser, after mount: reading it during render would not match the server HTML
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     try { if (window.localStorage.getItem(KEY) === "closed") setOpen(false); } catch { /* storage blocked: it just starts open each time */ }
   }, []);
   const toggle = () => {
