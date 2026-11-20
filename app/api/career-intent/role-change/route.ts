@@ -1,30 +1,43 @@
-import { after } from "next/server";
-import { assessRoute, readJson } from "@/lib/assess/http";
-import { AssessError } from "@/lib/assess/types";
+import { NextResponse, after } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { requireUser } from "@/lib/api/require-user";
+import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { rememberStudentAlias } from "@/lib/assess/roles";
 import { warmPrimaryCareerPool } from "@/lib/assess/warm";
-import { createServiceClient } from "@/lib/supabase/service";
+import type { Db } from "@/lib/assess/db";
 import { startPathway } from "@/lib/personalization/start";
 import { changePrimaryRole, roleChangeState } from "@/lib/careers/role-change";
 import { RoleChangeBodySchema } from "@/lib/careers/role-change-rules";
+import { parseBody, respond } from "@/lib/careers/route";
 
 // the new role's roadmap and question pool are prepared after the response, so the function needs the full window
 export const maxDuration = 300;
 
 /** How many role changes the signed-in student has left. */
-export const GET = assessRoute("role_change_state", 30, async (_req, { userId }) => ({ state: await roleChangeState(createServiceClient(), userId) }));
+export async function GET() {
+  const auth = await requireUser(await createClient());
+  if ("error" in auth) return auth.error;
+  return NextResponse.json({ state: await roleChangeState(createServiceClient(), auth.userId) });
+}
 
 /**
- * The student's change of main role from the dashboard, with the reason they gave. At most 3 per student; the server enforces it. The new role's
- * roadmap and questions start building at once so the assessment for it does not wait.
+ * The student's change of main role from the dashboard, with the reason they gave. At most 3 per student; the server enforces it. The student is
+ * always the caller; a body cannot name one. The new role's roadmap and questions start building at once so its assessment does not wait.
  */
-export const POST = assessRoute("role_change", 6, async (req, { userId, db }) => {
-  const { careerId, reason, details, typed } = await readJson(req, RoleChangeBodySchema);
+export async function POST(request: Request) {
+  const auth = await requireUser(await createClient());
+  if ("error" in auth) return auth.error;
+  const limit = await checkRateLimit(auth.userId, { bucket: "role_change", maxRequests: 6, windowSeconds: 60 });
+  if (!limit.allowed) return rateLimitedResponse(limit.remaining);
+  const parsed = await parseBody(request, RoleChangeBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { careerId, reason, details, typed } = parsed.body;
   const service = createServiceClient();
-  const result = await changePrimaryRole(service, userId, { careerId, reason, details });
-  if (!result.ok) throw new AssessError("ROLE_CHANGE_REJECTED", result.message, result.status);
-  if (typed) await rememberStudentAlias(db, careerId, typed).catch(() => undefined);
-  after(() => warmPrimaryCareerPool(userId));
+  const result = await changePrimaryRole(service, auth.userId, { careerId, reason, details });
+  if (!result.ok) return respond(result);
+  if (typed) await rememberStudentAlias(service as unknown as Db, careerId, typed).catch(() => undefined);
+  after(() => warmPrimaryCareerPool(auth.userId));
   after(() => startPathway(service, careerId).catch((e) => console.error("[role-change] could not start the pathway:", e)));
-  return { ok: true, left: result.left, assessNow: result.assessNow };
-});
+  return respond(result);
+}
