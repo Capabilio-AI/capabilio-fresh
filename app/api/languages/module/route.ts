@@ -85,7 +85,7 @@ async function handlePost(request: Request): Promise<NextResponse> {
   if (body.data.action === "assessment") {
     if (c.row.assessmentPassedAt) return NextResponse.json({ error: "You have already passed this assessment." }, { status: 409 });
     const r = await submitAssessment(c.service, a.userId, c.track, c.m, c.row, body.data.answers);
-    return NextResponse.json({ correct: r.correct, total: r.total, passed: r.passed, state: r.state });
+    return NextResponse.json({ correct: r.correct, total: r.total, passed: r.passed, review: r.review, state: r.state });
   }
 
   if (!needsProblem(c.track, c.m)) return NextResponse.json({ error: "This module has no problem to run." }, { status: 400 });

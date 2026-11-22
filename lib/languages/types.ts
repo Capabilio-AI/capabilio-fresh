@@ -71,6 +71,21 @@ export type AnyChallenge = ModuleChallenge | SqlChallenge | HtmlChallenge;
 export const isSqlChallenge = (c: AnyChallenge): c is SqlChallenge => "kind" in c && c.kind === "sql";
 export const isHtmlChallenge = (c: AnyChallenge): c is HtmlChallenge => "kind" in c && c.kind === "html";
 
+/**
+ * A code-reading question: a short program and "what does it print?". The right answer and the wrong options are the real output of the program and of
+ * small, realistic mistakes of it, produced by RUNNING them on the code runner (scripts/gen-code-questions.mts), never typed by hand. Server only: the
+ * module test serves these without the answer.
+ */
+export interface CodeQuestion {
+  id: string;
+  code: string;
+  question: string;
+  options: [string, string, string, string];
+  answerIndex: number;
+  /** one or two short sentences saying why that is the output */
+  why: string;
+}
+
 export interface TrackModule {
   key: string;
   title: string;
@@ -78,6 +93,8 @@ export interface TrackModule {
   lessons: TrackLesson[];
   /** the problem that proves this module; a module without one is proven by its assessment alone, and the module page says so */
   challenge?: AnyChallenge;
+  /** code-reading questions for this module's assessment; with enough of them the assessment uses these instead of the lessons' check questions */
+  codeQuestions?: readonly CodeQuestion[];
 }
 export interface Track {
   key: "c" | "java" | "python" | "cpp" | "sql" | "html" | "javascript" | "csharp";
@@ -115,3 +132,7 @@ export const allLessons = (t: Track): TrackLesson[] => t.modules.flatMap((m) => 
 /** Attaches each module's proving problem, by module key, to the modules that have one. */
 export const withChallenges = (modules: TrackModule[], byKey: Readonly<Record<string, AnyChallenge>>): TrackModule[] =>
   modules.map((m) => (byKey[m.key] ? { ...m, challenge: byKey[m.key] } : m));
+
+/** Attaches each module's code-reading questions, by module key. */
+export const withCodeQuestions = (modules: TrackModule[], byModule: Readonly<Record<string, readonly CodeQuestion[]>>): TrackModule[] =>
+  modules.map((m) => (byModule[m.key]?.length ? { ...m, codeQuestions: byModule[m.key] } : m));
