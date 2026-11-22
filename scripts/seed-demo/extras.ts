@@ -132,14 +132,14 @@ export async function seedGithub(db: Db, d: { slug: string; name: string; career
 // Launchpad: fictional companies visiting the college, the student's registrations and the outcomes
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 interface Visit { company: string; slug: string; role: string; type: "job" | "internship"; location: string; ctc: string; status: "planned" | "registration_open" | "completed"; daysFromNow: number; skills: string[]; branches: string[]; outcome?: Partial<Record<string, "submitted" | "shortlisted" | "accepted" | "rejected">> }
-const VISITS = (roleName: string): Visit[] => [
+const VISITS = (roleName: string): Visit[] => ([
   { company: "Northwind Analytics", slug: "northwind-analytics", role: "Associate Data Scientist", type: "job", location: "Hyderabad", ctc: "6 to 8 LPA", status: "registration_open", daysFromNow: 12, skills: ["Python", "SQL", "Statistics", "Machine Learning"], branches: ["CSE", "IT"], outcome: { "Data Scientist": "shortlisted" } },
   { company: "Lumen Systems", slug: "lumen-systems", role: "Machine Learning Engineer", type: "job", location: "Bengaluru", ctc: "7 to 10 LPA", status: "registration_open", daysFromNow: 19, skills: ["Python", "Machine Learning", "Model Deployment Basics", "Software Engineering"], branches: ["CSE", "IT", "ECE"], outcome: { "AI/ML Engineer": "shortlisted" } },
   { company: "Orbit Data Labs", slug: "orbit-data-labs", role: "Data Analyst Intern", type: "internship", location: "Remote", ctc: "25,000 per month stipend", status: "planned", daysFromNow: 33, skills: ["SQL", "Python", "Data Storytelling"], branches: ["CSE", "IT"], outcome: {} },
   { company: "GreenGrid Energy Tech", slug: "greengrid-energy", role: "Junior Data Scientist", type: "job", location: "Pune", ctc: "5 to 7 LPA", status: "completed", daysFromNow: -24, skills: ["Python", "Statistics", "Exploratory Data Analysis"], branches: ["CSE", "IT", "EEE"], outcome: { "Data Scientist": "rejected", "AI/ML Engineer": "submitted" } },
   { company: "Vista Cloud Services", slug: "vista-cloud", role: "AI Engineer Trainee", type: "job", location: "Chennai", ctc: "6 to 8 LPA", status: "completed", daysFromNow: -41, skills: ["Python", "Machine Learning", "Neural Network Fundamentals"], branches: ["CSE", "IT"], outcome: { "Data Scientist": "shortlisted", "AI/ML Engineer": "accepted" } },
   { company: "Atlas Insight", slug: "atlas-insight", role: "Data Science Intern", type: "internship", location: "Mumbai", ctc: "30,000 per month stipend", status: "completed", daysFromNow: -58, skills: ["Python", "Statistics", "SQL"], branches: ["CSE", "IT"], outcome: { "Data Scientist": "accepted", "AI/ML Engineer": "shortlisted" } },
-].map((v) => ({ ...v, role: v.role.replace("{role}", roleName) }));
+] as Visit[]).map((v) => ({ ...v, role: v.role.replace("{role}", roleName) }));
 
 /** The college's visits are shared by both demo students; each student's registrations differ. Rewritten on every run. */
 export async function seedLaunchpad(db: Db, institutionId: string, demos: { userId: string; careerName: string }[]): Promise<number> {
