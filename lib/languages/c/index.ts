@@ -1,5 +1,6 @@
-import { withChallenges, type Track } from "../types";
+import { withChallenges, withCodeQuestions, type Track } from "../types";
 import { challenges } from "./challenges";
+import { codeQuestions } from "./code-questions";
 import { basics } from "./m1-basics";
 import { control } from "./m2-control";
 import { functions } from "./m3-functions";
@@ -22,5 +23,5 @@ export const cTrack: Track = {
     { title: "cppreference: C language reference", url: "https://en.cppreference.com/w/c" },
     { title: "GNU C Library manual", url: "https://www.gnu.org/software/libc/manual/html_node/index.html" },
   ],
-  modules: withChallenges([basics, control, functions, arrays, strings, pointers, memory, structs, files, advanced], challenges),
+  modules: withCodeQuestions(withChallenges([basics, control, functions, arrays, strings, pointers, memory, structs, files, advanced], challenges), codeQuestions),
 };

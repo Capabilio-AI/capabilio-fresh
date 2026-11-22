@@ -34,6 +34,14 @@ const exampleJobs = tracks.filter((t) => !only || t.key === only).flatMap((t) =>
 })));
 
 const CRASH = /Traceback|Error|Exception|error:|Segmentation|core dumped|Aborted|NZEC|Time limit/;
+// every code-reading question: the option marked right must be exactly what the program prints (the bank is generated from real runs; this proves it again)
+const codeLang = async (key: string) => { try { return ((await import(`./code-questions/${key}.mts`)) as { lang: { wrap(shown: string): string } }).lang; } catch { return null; } };
+const questionJobs = (await Promise.all(tracks.filter((t) => !only || t.key === only).map(async (t) => {
+  const lang = await codeLang(t.key);
+  if (!lang) return [];
+  return t.modules.flatMap((m) => (m.codeQuestions ?? []).map((q) => ({ id: `question ${q.id}`, lang: RUNNER_LANGUAGE[t.key], code: lang.wrap(q.code), tests: [{ input: "", output: q.options[q.answerIndex] }], isExample: false, trimmed: true })));
+}))).flat();
+
 type Row = { id: string; result: "ok" | "FAIL" | "MISSING"; detail: string; ms: number };
 const rows: Row[] = [];
 async function check(j: (typeof queue)[number]): Promise<void> {
@@ -45,13 +53,14 @@ async function check(j: (typeof queue)[number]): Promise<void> {
     if (r.compileError) { rows.push({ id: j.id, result: "FAIL", detail: `does not compile: ${r.compileError.split("\n").slice(0, 2).join(" | ").slice(0, 160)}`, ms: Date.now() - start }); return; }
     // a lesson may print to stderr on purpose (a debugging lesson does); only a crash-like message counts as a failure
     if (j.isExample) { if (CRASH.test(r.stderr)) { rows.push({ id: j.id, result: "FAIL", detail: `runtime: ${r.stderr.split("\n").slice(0, 2).join(" | ").slice(0, 170)}`, ms: Date.now() - start }); return; } continue; }
-    if (r.stdout !== t.output) { rows.push({ id: j.id, result: "FAIL", detail: `test ${i + 1}: expected ${JSON.stringify(t.output).slice(0, 50)} got ${JSON.stringify(r.stdout).slice(0, 50)} ${r.stderr.slice(0, 80)}`, ms: Date.now() - start }); return; }
+    const same = j.trimmed ? r.stdout.replace(/\r/g, "").split("\n").map((l) => l.trimEnd()).join("\n").trimEnd() === t.output : r.stdout === t.output;
+    if (!same) { rows.push({ id: j.id, result: "FAIL", detail: `test ${i + 1}: expected ${JSON.stringify(t.output).slice(0, 50)} got ${JSON.stringify(r.stdout).slice(0, 50)} ${r.stderr.slice(0, 80)}`, ms: Date.now() - start }); return; }
   }
   rows.push({ id: j.id, result: "ok", detail: "", ms: Date.now() - start });
 }
 
 // two at a time: the runner has two worker slots
-const queue = [...jobs.map((j) => ({ ...j, isExample: false })), ...exampleJobs];
+const queue = [...jobs.map((j) => ({ ...j, isExample: false, trimmed: false })), ...exampleJobs.map((j) => ({ ...j, trimmed: false })), ...questionJobs];
 await Promise.all([0, 1].map(async () => { for (let j = queue.shift(); j; j = queue.shift()) await check(j); }));
 
 rows.sort((a, b) => a.id.localeCompare(b.id));

@@ -9,9 +9,12 @@ import { Playground } from "@/components/skillstudio/learn/Playground";
 import { CheckYourself, type Verdict } from "@/components/skillstudio/learn/CheckYourself";
 import { Practice } from "@/components/skillstudio/learn/Practice";
 import { exampleLanguage } from "@/lib/languages/playground-language";
+import { canGuess } from "@/lib/languages/guess";
+import { GuessBox } from "@/components/languages/GuessBox";
 
 type Saved = "idle" | "saving" | "saved" | "failed";
 type Step = { href: string; title: string } | null;
+type Mode = "guess" | "change" | "blank";
 
 interface Example { title: string; code: string }
 
@@ -37,6 +40,11 @@ export function LessonWorkspace({ track, trackTitle, lessonKey, lesson, alreadyD
   const [at, setAt] = useState(0);
   const current = examples[at] ?? null;
   const language = current ? exampleLanguage(track, current.code) : null;
+  // the right half has three ways to work: guess what the example prints, change it and run it, or start from an empty editor
+  const [chosen, setChosen] = useState<Mode>("guess");
+  const guessable = current ? canGuess(language, current.code) : false;
+  const mode: Mode = chosen === "guess" && !guessable ? "change" : chosen;
+  const blankLanguage = language ?? exampleLanguage(track, "x");
 
   async function onCheckDone(correct: number, total: number) {
     setSaved("saving");
@@ -52,7 +60,7 @@ export function LessonWorkspace({ track, trackTitle, lessonKey, lesson, alreadyD
     return (await res.json()) as Verdict;
   }
 
-  const tryIt = (i: number) => { setAt(i); setPane("try"); };
+  const tryIt = (i: number) => { setAt(i); setChosen("guess"); setPane("try"); };
   const tab = (id: "learn" | "try", label: string) => (
     <button type="button" role="tab" aria-selected={pane === id} onClick={() => setPane(id)} className={clsx("flex-1 rounded-lg py-2 text-[14px] font-bold", pane === id ? "bg-[var(--m-ink)] text-white" : "text-[var(--m-ink)]")}>{label}</button>
   );
@@ -72,7 +80,7 @@ export function LessonWorkspace({ track, trackTitle, lessonKey, lesson, alreadyD
             return (
               <section key={i} aria-labelledby={`lw-${i}`} className="flex flex-col gap-3">
                 <h3 id={`lw-${i}`} className="font-lp-display text-[22px] font-bold leading-snug text-[var(--m-ink)]">{s.heading}</h3>
-                {s.paragraphs.map((p, pi) => <p key={pi} className="max-w-[68ch] text-[15.5px] leading-relaxed text-[var(--m-ink)]">{p}</p>)}
+                <p className="max-w-[68ch] text-[15.5px] leading-relaxed text-[var(--m-ink)]">{s.paragraphs[0]}</p>
                 {s.example && (
                   <figure className={clsx("overflow-hidden rounded-xl border bg-[var(--m-ground)]", hasExample && mine === at ? "border-[var(--m-accent)]" : "border-[var(--m-rule)]")}>
                     <figcaption className="flex items-center justify-between gap-3 px-4 pt-3 text-[14px] font-bold text-[var(--m-ink)]"><span>{s.example.title}</span>
@@ -81,6 +89,12 @@ export function LessonWorkspace({ track, trackTitle, lessonKey, lesson, alreadyD
                     {s.example.code && <pre className="ss-scroll mx-4 mt-2 overflow-x-auto rounded-lg bg-[var(--m-ink)] p-4 font-lp-mono text-[13px] leading-relaxed text-white"><code>{s.example.code}</code></pre>}
                     <p className="px-4 pb-4 pt-2 text-[14.5px] leading-relaxed text-[var(--m-ink)]">{s.example.explanation}</p>
                   </figure>
+                )}
+                {s.paragraphs.length > 1 && (
+                  <details className="max-w-[68ch]">
+                    <summary className="cursor-pointer text-[14px] font-bold text-[var(--m-accent-ink)]">Read more</summary>
+                    <div className="mt-2 flex flex-col gap-3">{s.paragraphs.slice(1).map((p, pi) => <p key={pi} className="text-[15px] leading-relaxed text-[var(--m-ink)]">{p}</p>)}</div>
+                  </details>
                 )}
               </section>
             );
@@ -117,14 +131,28 @@ export function LessonWorkspace({ track, trackTitle, lessonKey, lesson, alreadyD
               <h3 className="font-lp-display text-[18px] font-bold text-[var(--m-ink)]">Try it yourself</h3>
               {examples.length > 1 && <div className="ml-auto flex gap-1" role="group" aria-label="Choose an example">{examples.map((e, i) => <button key={i} type="button" onClick={() => setAt(i)} aria-pressed={i === at} title={e.title} className={clsx("ss-num h-7 w-7 rounded-md border text-[12.5px] font-bold", i === at ? "border-[var(--m-ink)] bg-[var(--m-ink)] text-white" : "border-[var(--m-rule)] text-[var(--m-ink)]")}>{i + 1}</button>)}</div>}
             </div>
-            {current ? (
+            <div role="tablist" aria-label="How to practise" className="mx-4 mt-2 flex gap-1 rounded-xl bg-[var(--m-ground)] p-1">
+              {([["guess", "Guess"], ["change", "Change it"], ["blank", "Blank"]] as const).map(([id, label]) => {
+                const off = (id === "guess" && !guessable) || (id === "blank" && !blankLanguage) || (id !== "blank" && !current);
+                return <button key={id} type="button" role="tab" aria-selected={mode === id} disabled={off} onClick={() => setChosen(id)}
+                  className={clsx("flex-1 rounded-lg py-1.5 text-[13.5px] font-bold disabled:opacity-40", mode === id ? "bg-[var(--m-ink)] text-white" : "text-[var(--m-ink)]")}>{label}</button>;
+              })}
+            </div>
+            {mode === "guess" && current && language && <GuessBox key={`g-${lessonKey}-${at}`} code={current.code} language={language} title={current.title} onChange={() => setChosen("change")} />}
+            {mode === "change" && (current ? (
               <>
-                <p className="px-4 pt-1 text-[13.5px] text-[var(--m-muted)]">{current.title}. Change anything and run it to see what happens.</p>
+                <p className="px-4 pt-2 text-[13.5px] text-[var(--m-muted)]">{current.title}. Change anything and run it to see what happens.</p>
                 {language
                   ? <Playground key={`${lessonKey}-${at}`} code={current.code} language={language} title={current.title} stacked />
-                  : <div className="mx-4 mt-2"><pre className="ss-scroll overflow-x-auto rounded-lg bg-[var(--m-ink)] p-4 font-lp-mono text-[13px] leading-relaxed text-white"><code>{current.code}</code></pre><p className="mt-2 text-[13px] text-[var(--m-muted)]">This language does not run in the page yet. Run it on your own computer with the .NET SDK, then take the module test.</p></div>}
+                  : <div className="mx-4 mt-2"><pre className="ss-scroll overflow-x-auto rounded-lg bg-[var(--m-ink)] p-4 font-lp-mono text-[13px] leading-relaxed text-white"><code>{current.code}</code></pre><p className="mt-2 text-[13px] text-[var(--m-muted)]">This example is shown as code. Copy it into your own editor to run it.</p></div>}
               </>
-            ) : <p className="px-4 pt-2 text-[14px] text-[var(--m-muted)]">This lesson has no code to run. Answer the questions to finish it.</p>}
+            ) : <p className="px-4 pt-2 text-[14px] text-[var(--m-muted)]">This lesson has no code to run. Answer the questions to finish it.</p>)}
+            {mode === "blank" && blankLanguage && (
+              <>
+                <p className="px-4 pt-2 text-[13.5px] text-[var(--m-muted)]">An empty editor. Write your own code and press Run.</p>
+                <Playground key={`b-${lessonKey}`} code="" language={blankLanguage} title="your own code" stacked />
+              </>
+            )}
           </div>
           <Practice source={{ track, lessonKey }} />
           <p className="px-1 text-[12.5px] text-[var(--m-muted)]">{trackTitle}: edit the example, break it on purpose, and run it again. That is how it sticks.</p>

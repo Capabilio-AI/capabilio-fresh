@@ -5,7 +5,8 @@ import Link from "next/link";
 import { CheckCircle2, CircleHelp, Code2, Loader2, Play, Send, XCircle } from "lucide-react";
 import { CodeEditor } from "@/components/skillstudio/learn/CodeEditor";
 import { JUDGE_LANGUAGES, starterFor, type JudgeLanguage } from "@/lib/arena-challenges/leetcode/starters";
-import { MODULE_PASS_PCT } from "@/lib/languages/module-gate";
+import { MODULE_PASS_PCT, type ReviewItem } from "@/lib/languages/module-gate";
+import { QuestionList, ReviewList, type TestQuestion } from "@/components/languages/AssessmentView";
 import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
 import type { Dataset } from "@/lib/arena-workstations/engines/dataset";
 import { PREVIEW_SANDBOX_CSP, buildPreviewDoc } from "@/lib/playground/playground";
@@ -15,7 +16,7 @@ type StdinProblem = PublicProblem & { kind: "stdin"; title: string };
 type SqlProblem = { kind: "sql"; title: string; statement: string; mode: "query" | "script"; tables: Dataset[]; starter: string; ordered: boolean };
 type HtmlProblem = { kind: "html"; title: string; statement: string; starter: string; requirements: string[] }
 interface PageRow { index: number; text: string; passed: boolean }
-interface Loaded { language: string; state: State; questions: { id: string; question: string; options: string[] }[]; problem: StdinProblem | SqlProblem | HtmlProblem | null; problemNote: string | null }
+interface Loaded { language: string; state: State; questions: TestQuestion[]; problem: StdinProblem | SqlProblem | HtmlProblem | null; problemNote: string | null }
 type Cells = (string | number | null)[][];
 interface SqlRow { index: number; passed: boolean; hidden: boolean; message?: string; expected?: { columns: string[]; rows: Cells }; actual?: { columns: string[]; rows: Cells } }
 
@@ -45,6 +46,7 @@ export function ModuleTest({ track, module, nextHref, nextLabel }: { track: stri
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [score, setScore] = useState<{ correct: number; total: number; passed: boolean } | null>(null);
+  const [review, setReview] = useState<ReviewItem[]>([]);
   const [lang, setLang] = useState<JudgeLanguage>("python");
   const [code, setCode] = useState("");
   const [rows, setRows] = useState<{ kind: "run" | "submit"; rows: Row[]; passed?: boolean } | null>(null);
@@ -80,8 +82,15 @@ export function ModuleTest({ track, module, nextHref, nextLabel }: { track: stri
     try {
       const r = await call("POST", "/api/languages/module", { action: "assessment", track, module, answers });
       setScore({ correct: r.correct, total: r.total, passed: r.passed });
+      setReview(Array.isArray(r.review) ? (r.review as ReviewItem[]) : []);
       setData((d) => (d ? { ...d, state: r.state, questions: r.passed ? [] : d.questions } : d));
     } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
+  }
+  /** Another try: new questions, and the failed score and the old answers are cleared, so the answers can be sent again. */
+  async function tryAgain() {
+    setScore(null); setReview([]); setAnswers({}); setError(null);
+    await load();
+    if (typeof window !== "undefined") document.getElementById("mt-a")?.scrollIntoView({ block: "start" });
   }
   async function runCode(action: "run" | "submit") {
     setBusy(action); setError(null);
@@ -111,24 +120,15 @@ export function ModuleTest({ track, module, nextHref, nextLabel }: { track: stri
         {state.assessmentPassedAt ? <p className="mt-2 text-[15px] text-[var(--m-ink)]">Passed. Nothing more to do here.</p> : (
           <>
             <p className="mt-1 text-[14.5px] text-[var(--m-muted)]">{data.questions.length} questions from this module. You need {MODULE_PASS_PCT}% to pass. If you miss, the next try draws different questions.{state.assessmentAttempts > 0 && ` Attempts so far: ${state.assessmentAttempts}.`}</p>
-            <ol className="mt-4 flex flex-col gap-5">
-              {data.questions.map((q, qi) => (
-                <li key={q.id}>
-                  <fieldset>
-                    <legend className="text-[15.5px] font-bold text-[var(--m-ink)]"><span className="ss-num mr-1 text-[var(--m-muted)]">{qi + 1}.</span>{q.question}</legend>
-                    <div className="mt-2 flex flex-col gap-1.5">
-                      {q.options.map((o, oi) => (
-                        <label key={oi} className="flex cursor-pointer items-start gap-2 rounded-lg border border-[var(--m-rule)] px-3 py-2 text-[14.5px] text-[var(--m-ink)] has-[:checked]:border-[var(--m-ink)] has-[:checked]:bg-[var(--m-ground)]">
-                          <input type="radio" name={q.id} checked={answers[q.id] === oi} onChange={() => setAnswers((a) => ({ ...a, [q.id]: oi }))} className="mt-1" />{o}
-                        </label>
-                      ))}
-                    </div>
-                  </fieldset>
-                </li>
-              ))}
-            </ol>
-            {score && !score.passed && <p role="status" className="mt-4 rounded-xl bg-red-50 p-3 text-[14.5px] font-semibold text-red-800">You got {score.correct} of {score.total}. You need {MODULE_PASS_PCT}%. Review the lessons, then try again with a fresh set. <button type="button" onClick={() => void load()} className="font-bold underline">New questions</button></p>}
-            <button type="button" onClick={() => void submitAssessment()} disabled={busy !== null || !answered || (score !== null && !score.passed)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 text-[14.5px] font-bold text-white disabled:opacity-50">{busy === "assessment" ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Send size={15} aria-hidden />}Submit answers</button>
+            {!(score && !score.passed) && <QuestionList questions={data.questions} answers={answers} onPick={(id, oi) => setAnswers((a) => ({ ...a, [id]: oi }))} track={track} />}
+            {score && !score.passed && (
+              <div role="status">
+                <p className="rounded-xl bg-red-50 p-3 text-[14.5px] font-semibold text-red-800">You got {score.correct} of {score.total}. You need {MODULE_PASS_PCT}%. Read what each missed question was and why, then try again with new questions.</p>
+                {review.length > 0 && <ReviewList items={review} />}
+                <button type="button" onClick={() => void tryAgain()} disabled={busy !== null} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 text-[14.5px] font-bold text-white disabled:opacity-50">Try again with new questions</button>
+              </div>
+            )}
+            {!(score && !score.passed) && <button type="button" onClick={() => void submitAssessment()} disabled={busy !== null || !answered} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 text-[14.5px] font-bold text-white disabled:opacity-50">{busy === "assessment" ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Send size={15} aria-hidden />}Submit answers</button>}
           </>
         )}
       </section>
