@@ -1,5 +1,6 @@
 "use client";
 
+import { GoalBox } from "@/components/pathways/GoalBox";
 import { useMemo, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import clsx from "clsx";
@@ -36,6 +37,8 @@ export function ExploreRoles({ roles, required, stream }: { roles: RoleOption[];
             : "Nobody expects you to know yet. Open any role to see the skills it needs. If a few of them already sound like you, that is a good sign. Choosing a role is optional until 3rd year."}
         </p>
       </header>
+
+      <GoalBox heading="Your goal is not a job role?" />
 
       <label className="relative block max-w-md">
         <span className="sr-only">Search roles</span>

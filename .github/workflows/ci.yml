@@ -24,3 +24,25 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+  # Java and C# lesson examples are compiled and run with the real toolchains. Kept as its own job so a failing example is reported without
+  # blocking the main verify job; make it a required check once it has run clean.
+  lesson-examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: npm ci
+      - run: npx vitest run lib/languages/tracks.test.ts -t "compiles and runs under a local JDK|builds and runs under the .NET SDK|a Java solution passes every test|a C# solution passes every test"
+        env:
+          REQUIRE_RUNTIMES: "1"

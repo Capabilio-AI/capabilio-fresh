@@ -3,8 +3,11 @@ import { javaTrack } from "./java";
 import { pythonTrack } from "./python";
 import { cppTrack } from "./cpp";
 import { sqlTrack } from "./sql";
+import { htmlTrack } from "./html";
+import { javascriptTrack } from "./javascript";
+import { csharpTrack } from "./csharp";
 import type { Track } from "./types";
 
-export const TRACKS: readonly Track[] = [cTrack, javaTrack, pythonTrack, cppTrack, sqlTrack];
+export const TRACKS: readonly Track[] = [cTrack, javaTrack, pythonTrack, cppTrack, sqlTrack, htmlTrack, javascriptTrack, csharpTrack];
 
 export const findTrack = (key: string): Track | undefined => TRACKS.find((t) => t.key === key);

@@ -1,4 +1,5 @@
-import type { Track } from "../types";
+import { withChallenges, type Track } from "../types";
+import { challenges } from "./challenges";
 import { basics } from "./m1-basics";
 import { control, methods } from "./m2-control-methods";
 import { arrays } from "./m3-arrays-strings";
@@ -17,5 +18,5 @@ export const javaTrack: Track = {
     { title: "Java SE 21 API documentation", url: "https://docs.oracle.com/en/java/javase/21/docs/api/index.html" },
     { title: "Effective Java (Joshua Bloch)", url: "https://www.oreilly.com/library/view/effective-java/9780134686097/" },
   ],
-  modules: [basics, control, methods, arrays, oop, exceptions, collections, modern, tools],
+  modules: withChallenges([basics, control, methods, arrays, oop, exceptions, collections, modern, tools], challenges),
 };

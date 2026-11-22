@@ -2,6 +2,7 @@ import type { Track } from "../types";
 import { basics, control } from "./m1-basics-control";
 import { functions, data } from "./m2-functions-data";
 import { oop, tools } from "./m3-oop-tools";
+import { basicsChallenge, controlChallenge, functionsChallenge, dataChallenge, oopChallenge, toolsChallenge } from "./challenges";
 
 export const pythonTrack: Track = {
   key: "python",
@@ -14,5 +15,12 @@ export const pythonTrack: Track = {
     { title: "Python standard library reference", url: "https://docs.python.org/3/library/" },
     { title: "PEP 8: Style guide for Python code", url: "https://peps.python.org/pep-0008/" },
   ],
-  modules: [basics, control, functions, data, oop, tools],
+  modules: [
+    { ...basics, challenge: basicsChallenge },
+    { ...control, challenge: controlChallenge },
+    { ...functions, challenge: functionsChallenge },
+    { ...data, challenge: dataChallenge },
+    { ...oop, challenge: oopChallenge },
+    { ...tools, challenge: toolsChallenge },
+  ],
 };

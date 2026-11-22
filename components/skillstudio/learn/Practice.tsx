@@ -119,7 +119,7 @@ export function Practice({ source }: { source: PracticeSource }) {
     <section aria-labelledby="practice-h" className="flex flex-col gap-4">
       <h3 id="practice-h" className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Practice: write the code</h3>
       {state.s === "pending" && <p role="status" className="flex items-center gap-2 text-[14px] text-[var(--m-muted)]"><Loader2 size={15} aria-hidden className="animate-spin" />Writing and checking exercises for this lesson. The first time this can take a minute or two.</p>}
-      {state.s === "unavailable" && <p className="text-[14px] text-[var(--m-muted)]">Practice for this lesson isn&apos;t ready right now. Try again a little later.</p>}
+      {state.s === "unavailable" && <p className="text-[14px] leading-relaxed text-[var(--m-muted)]">Practice tasks for this lesson are still being prepared. Until they are here, change the example above and run it: break it on purpose, then fix it.</p>}
       {state.s === "ready" && (
         <>
           <ul className="flex flex-col gap-4">{state.exercises.map((ex) => <Exercise key={ex.id} ex={ex} passedBefore={Boolean(state.progress[ex.id]?.passed)} />)}</ul>
