@@ -40,7 +40,7 @@ export async function addAdmin(actorId: string, input: { email: string; role: Ad
   const db = adminDb();
   const svc = createServiceClient();
   // Checked before an account is created, so a missing migration never leaves a half-made admin behind.
-  if ((await db.from("platform_admins").select("role").limit(1)).error) return { ok: false, status: 409, error: MISSING };
+  if ((await db.from("platform_admins").select("role", { count: "exact", head: true })).error) return { ok: false, status: 409, error: MISSING };
   const { data: existing } = await db.from("profiles").select("id").ilike("email", email).maybeSingle();
   let userId = (existing as { id: string } | null)?.id ?? null;
   let tempPassword: string | undefined;

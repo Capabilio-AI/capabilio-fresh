@@ -103,9 +103,11 @@ describe.each(tracks)("$title track", (track) => {
       // the file must be named after its public class; the class to run is the one that holds main
       const file = `${/public\s+(?:final\s+)?class\s+(\w+)/.exec(code)?.[1] ?? "Main"}.java`;
       writeFileSync(path.join(d, file), code);
+      // the public class holds main (nested records and enums come before it, so "the last type before main" would wrongly pick one of them);
+      // without a public class, the last type declared before main is the one
       const mainAt = code.search(/static\s+void\s+main/);
       const owners = [...code.slice(0, Math.max(mainAt, 0)).matchAll(/\b(?:class|record|enum)\s+(\w+)/g)];
-      const mainClass = owners.length ? owners[owners.length - 1][1] : "Main";
+      const mainClass = /public\s+(?:final\s+)?class\s+(\w+)/.exec(code)?.[1] ?? (owners.length ? owners[owners.length - 1][1] : "Main");
       const cc = spawnSync("javac", ["-d", d, path.join(d, file)], { encoding: "utf8", timeout: 60000 });
       expect(cc.status, cc.stderr).toBe(0);
       const run = spawnSync("java", ["-cp", d, mainClass], { input: "3 4\n", encoding: "utf8", timeout: 60000 });

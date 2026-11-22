@@ -19,7 +19,7 @@ describe("Arena challenge admin routes", () => {
     }
   });
   it("the admin page 404s for anyone who is not a platform admin", () => {
-    const src = readFileSync("app/(app)/admin/arena-challenges/page.tsx", "utf8");
+    const src = readFileSync("app/(admin)/admin/(portal)/arena-challenges/page.tsx", "utf8");
     expect(src).toContain("isPlatformAdmin(");
     expect(src.indexOf("notFound()")).toBeLessThan(src.indexOf("listChallenges("));
   });
@@ -36,7 +36,7 @@ describe("Roadmap template admin routes", () => {
     }
   });
   it("the admin page 404s for anyone who is not a platform admin", () => {
-    const src = readFileSync("app/(app)/admin/roadmap-templates/page.tsx", "utf8");
+    const src = readFileSync("app/(admin)/admin/(portal)/roadmap-templates/page.tsx", "utf8");
     expect(src).toContain("isPlatformAdmin(");
     expect(src.indexOf("notFound()")).toBeLessThan(src.indexOf("listTemplates("));
   });
