@@ -78,6 +78,15 @@ export async function generateVerified(service: Service, userId: string | null, 
   return { kept, dropped };
 }
 
+/** Stores verified exercises for a lesson; one that already exists (same lesson and title) is left as it is. */
+export async function storeExercises(service: Service, topic: TopicInfo, kept: readonly GeneratedExercise[]): Promise<void> {
+  const { error } = await untyped(service).from("lesson_exercises").upsert(
+    kept.map((k, i) => ({ topic_key: topic.key, language: topic.language, position: i, title: k.title, instructions: k.instructions, starter_code: k.starterCode, solution: k.solution, tests: k.tests, verified_at: new Date().toISOString() })),
+    { onConflict: "topic_key,title", ignoreDuplicates: true },
+  );
+  if (error) throw error;
+}
+
 /**
  * A lesson's exercises: the stored ones, or (the first time anyone opens it) generated, verified and stored. Learners who open the same
  * lesson together wait on one generation. Returns an empty list, storing nothing, when no generated exercise survived verification.
@@ -89,11 +98,7 @@ export async function exercisesFor(service: Service, userId: string, topic: Topi
   return cached<StoredExercise[]>(`exercises:${topic.key}`, async () => {
     const { kept, dropped } = await generateVerified(service, userId, topic);
     if (kept.length === 0) throw new Error(dropped.some((d) => d.infra) ? "the code runner was busy, so nothing could be verified" : "no exercise survived verification");
-    const { error } = await untyped(service).from("lesson_exercises").upsert(
-      kept.map((k, i) => ({ topic_key: topic.key, language: topic.language, position: i, title: k.title, instructions: k.instructions, starter_code: k.starterCode, solution: k.solution, tests: k.tests })),
-      { onConflict: "topic_key,title", ignoreDuplicates: true },
-    );
-    if (error) throw error;
+    await storeExercises(service, topic, kept);
     return loadExercises(service, topic.key);
   }).catch((e) => { failedAt.set(topic.key, Date.now()); console.error("[practice] no exercises for", topic.key, e instanceof Error ? e.message : e); return []; });
 }

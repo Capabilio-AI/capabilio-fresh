@@ -10,8 +10,9 @@ const WANDBOX_URL = "https://wandbox.org/api/compile.json";
 
 // Pinned to specific Wandbox compiler names (verified working — see the
 // git history for this file). "latest" isn't a valid compiler id here.
-const COMPILER_BY_LANGUAGE: Record<string, string> = {
-  python: "cpython-3.10.15",
+export const COMPILER_BY_LANGUAGE: Record<string, string> = {
+  // cpython-3.10.15 was removed from Wandbox (every Python run answered 500); `npm run judge:health` now checks every pin still exists
+  python: "cpython-3.12.16",
   c: "gcc-13.2.0-c",
   cpp: "gcc-13.2.0",
   java: "openjdk-jdk-21+35",

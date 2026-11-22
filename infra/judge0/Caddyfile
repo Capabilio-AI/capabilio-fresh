@@ -1,0 +1,15 @@
+# HTTPS front door for Judge0. Caddy gets and renews the certificate by itself.
+# Only POST /submissions with the right X-Auth-Token gets through; everything else is refused before it reaches Judge0.
+# AUTHN_TOKEN and JUDGE0_HOST come from judge0.conf (see the caddy service in docker-compose.yml).
+{$JUDGE0_HOST} {
+	@allowed {
+		path /submissions /submissions/*
+		header X-Auth-Token {$AUTHN_TOKEN}
+	}
+	handle @allowed {
+		reverse_proxy server:2358
+	}
+	handle {
+		respond "Unauthorized" 401
+	}
+}

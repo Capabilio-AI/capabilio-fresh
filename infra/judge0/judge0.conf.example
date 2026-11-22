@@ -1,0 +1,24 @@
+# Copy to judge0.conf (git-ignored) and replace every CHANGE_ME with a long random value (for example `openssl rand -hex 24`).
+REDIS_HOST=redis
+REDIS_PASSWORD=CHANGE_ME
+POSTGRES_HOST=db
+POSTGRES_DB=judge0
+POSTGRES_USER=judge0
+POSTGRES_PASSWORD=CHANGE_ME
+# Capabilio sends this as X-Auth-Token (JUDGE0_TOKEN); requests without it are refused.
+AUTHN_HEADER=X-Auth-Token
+AUTHN_TOKEN=CHANGE_ME
+# Public hostname Caddy serves over HTTPS (its DNS A record must point at this server).
+JUDGE0_HOST=judge.capabilio.online
+# Per-run limits: a student program gets a few seconds and bounded memory; the Capabilio client also sets its own limits per request.
+MAX_CPU_TIME_LIMIT=10
+MAX_WALL_TIME_LIMIT=20
+MAX_MEMORY_LIMIT=512000
+# Limit REAL memory (cgroup), not address space: .NET and the JVM reserve far more address space than they use, so an address-space cap
+# (Judge0's default) makes them fail with "Out of memory" at start-up. The cgroup limit still stops a program that really uses too much.
+ENABLE_PER_PROCESS_AND_THREAD_MEMORY_LIMIT=false
+# Student code never gets network access, and no request may turn it on: hidden test inputs reach the program as stdin, so a networked program could send them out.
+ENABLE_NETWORK=false
+ALLOW_ENABLE_NETWORK=false
+# One worker slot per CPU core is a sensible start; raise only after measuring.
+COUNT=2
