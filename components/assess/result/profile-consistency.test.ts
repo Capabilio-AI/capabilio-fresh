@@ -39,6 +39,8 @@ describe("one profile, every surface", () => {
     const locked: CareerProfile = { ...profile, status: "ASSESSMENT_REQUIRED", unlocked: false, elo: null, readiness: null, skills: [], common: null };
     const html = (renderToStaticMarkup(h(EloCardView, { profile: locked })) + renderToStaticMarkup(h(SkillsView, { profile: locked }))).replace(/<[^>]*>/g, " ");
     expect(html).not.toMatch(/\d{2,}/);
-    expect(html).toContain("Continue Assessment");
+    // the locked state explains when the numbers appear and what to do meanwhile (the role assessment comes in 3rd year)
+    expect(html).toContain("will appear after your role assessment");
+    expect(html).toContain("Open SkillStudio");
   });
 });
