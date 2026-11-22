@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Activity, Building2, Briefcase, ClipboardCheck, Crown, GraduationCap, History, KeyRound, LayoutGrid, ShieldCheck, UserCog, Users, UserRoundCheck } from "lucide-react";
+import { Activity, Building2, Compass, Briefcase, ClipboardCheck, Crown, GraduationCap, History, KeyRound, LayoutGrid, ShieldCheck, UserCog, Users, UserRoundCheck } from "lucide-react";
 import { can, type AdminLimits, type Permission } from "@/lib/admin/permissions";
 
 const ITEMS = [
@@ -21,6 +21,7 @@ const ITEMS = [
 const TOOLS = [
   { href: "/admin/pulse", label: "Pulse moderation", icon: ShieldCheck, needs: ["lists"] },
   { href: "/admin/careers", label: "Careers hiring", icon: Building2, needs: ["lists"] },
+  { href: "/admin/goals", label: "Goals asked for", icon: Compass, needs: ["lists"] },
 ] as const;
 
 const ACCESS = [
