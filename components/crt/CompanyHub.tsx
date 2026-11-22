@@ -19,7 +19,7 @@ const checkedOn = (iso: string | null) => (iso ? new Date(iso).toLocaleDateStrin
 const PRACTICE_LINK: Partial<Record<RoundView["kind"], { href: string; label: string }>> = {
   technical_interview: { href: "/dashboard/interview", label: "Practise with a mock interview" },
   hr_interview: { href: "/dashboard/interview", label: "Practise with a mock interview" },
-  coding: { href: "/skillstudio/languages", label: "Practise coding in SkillStudio" },
+  coding: { href: "/skillstudio/courses", label: "Practise coding in SkillStudio" },
 };
 
 function meta(r: RoundView): string {

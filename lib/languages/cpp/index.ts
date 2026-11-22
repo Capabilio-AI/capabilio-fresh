@@ -1,4 +1,5 @@
-import type { Track } from "../types";
+import { withChallenges, type Track } from "../types";
+import { challenges } from "./challenges";
 import { basics, functions } from "./m1-basics-functions";
 import { stl, memory } from "./m2-stl-memory";
 import { oop, practice } from "./m3-oop-practice";
@@ -14,5 +15,5 @@ export const cppTrack: Track = {
     { title: "C++ Core Guidelines", url: "https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines" },
     { title: "A Tour of C++ (Bjarne Stroustrup)", url: "https://www.stroustrup.com/tour3.html" },
   ],
-  modules: [basics, functions, stl, memory, oop, practice],
+  modules: withChallenges([basics, functions, stl, memory, oop, practice], challenges),
 };

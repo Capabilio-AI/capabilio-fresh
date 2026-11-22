@@ -52,14 +52,32 @@ export function runJavaScript(code: string): Promise<RunResult> {
 }
 
 // ---- C, C++ and Java need a compiler, so they run on the server's code runner.
-export async function runOnServer(language: RunnableLanguage, code: string, stdin: string): Promise<RunResult> {
-  try {
-    const res = await fetch("/api/code/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ language, code, stdin }) });
-    const body = (await res.json().catch(() => ({}))) as { stdout?: string; stderr?: string; compileError?: string; error?: unknown };
-    if (!res.ok) return { ok: false, message: res.status === 429 ? "You're running code too fast. Wait a few seconds." : typeof body.error === "string" ? body.error : "The code runner is busy. Try again in a moment." };
-    if (body.compileError) return { ok: true, text: body.compileError, isError: true };
-    return { ok: true, text: body.stdout || body.stderr || "(no output)", isError: !body.stdout && Boolean(body.stderr) };
-  } catch {
-    return { ok: false, message: "Couldn't reach the server. Check your connection." };
+const RETRY_WAITS_MS = [1500, 4000];
+const RETRYABLE = new Set([500, 502, 503, 504]);
+
+/**
+ * The shared runner drops requests now and then. A student should not see that: a busy answer is tried again twice, after a short wait, before it is
+ * reported. Rate limiting (429) is never retried, and nothing is retried once the code has actually run (a compile error is an answer).
+ */
+export async function runOnServer(language: RunnableLanguage, code: string, stdin: string, deps: { sleep?: (ms: number) => Promise<void> } = {}): Promise<RunResult> {
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  let last: RunResult = { ok: false, message: "The code runner is busy. Try again in a moment." };
+  for (let attempt = 0; attempt <= RETRY_WAITS_MS.length; attempt++) {
+    try {
+      const res = await fetch("/api/code/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ language, code, stdin }) });
+      const body = (await res.json().catch(() => ({}))) as { stdout?: string; stderr?: string; compileError?: string; error?: unknown };
+      if (res.status === 429) return { ok: false, message: "You're running code too fast. Wait a few seconds." };
+      if (!res.ok) {
+        last = { ok: false, message: typeof body.error === "string" && !RETRYABLE.has(res.status) ? body.error : "The code runner is busy. Your code was not run." };
+        if (!RETRYABLE.has(res.status)) return last;
+      } else {
+        if (body.compileError) return { ok: true, text: body.compileError, isError: true };
+        return { ok: true, text: body.stdout || body.stderr || "(no output)", isError: !body.stdout && Boolean(body.stderr) };
+      }
+    } catch {
+      last = { ok: false, message: "Couldn't reach the server. Check your connection." };
+    }
+    if (attempt < RETRY_WAITS_MS.length) await sleep(RETRY_WAITS_MS[attempt]);
   }
+  return last;
 }

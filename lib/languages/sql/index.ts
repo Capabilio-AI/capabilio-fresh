@@ -1,4 +1,5 @@
-import type { Track } from "../types";
+import { withChallenges, type Track } from "../types";
+import { challenges } from "./challenges";
 import { queries } from "./m1-queries";
 import { joins, subqueries } from "./m2-joins-subqueries";
 import { windows, changing, design } from "./m3-windows-design";
@@ -14,5 +15,5 @@ export const sqlTrack: Track = {
     { title: "SQLite SQL reference", url: "https://www.sqlite.org/lang.html" },
     { title: "MySQL reference manual", url: "https://dev.mysql.com/doc/refman/8.0/en/" },
   ],
-  modules: [queries, joins, subqueries, windows, changing, design],
+  modules: withChallenges([queries, joins, subqueries, windows, changing, design], challenges),
 };

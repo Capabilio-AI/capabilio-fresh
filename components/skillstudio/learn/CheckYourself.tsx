@@ -1,25 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { CircleCheck, CircleHelp } from "lucide-react";
-import type { CheckQuestion } from "@/lib/skillstudio/lesson-content";
 
 /**
  * Questions to answer from memory right after learning. Watching or reading feels like knowing; answering shows what actually stuck,
  * so this sits under every lesson. It is practice only: it never changes a score.
  */
-export function CheckYourself({ questions, id, onDone }: { questions: CheckQuestion[]; id: string; onDone?: (right: number, total: number) => void }) {
+export interface Verdict { correct: boolean; answerIndex: number; why: string }
+/** A question as the page holds it. Where the answers must not reach the browser they are left out and `grade` asks the server instead. */
+export interface CheckItem { question: string; options: string[]; answerIndex?: number; why?: string }
+
+export function CheckYourself({ questions, id, onDone, grade }: {
+  questions: CheckItem[];
+  id: string;
+  onDone?: (right: number, total: number) => void;
+  /** marks one answer on the server; when it is given the questions carry no answers */
+  grade?: (questionIndex: number, optionIndex: number) => Promise<Verdict>;
+}) {
   const [picked, setPicked] = useState<Record<number, number>>({});
-  const choose = (qi: number, oi: number) => {
-    const next = { ...picked, [qi]: oi };
-    setPicked(next);
-    if (onDone && Object.keys(next).length === questions.length) onDone(questions.filter((q, i) => next[i] === q.answerIndex).length, questions.length);
+  const [verdicts, setVerdicts] = useState<Record<number, Verdict>>({});
+  const [failed, setFailed] = useState<number | null>(null);
+  const reported = useRef(false);
+  const choose = async (qi: number, oi: number) => {
+    setPicked((p) => ({ ...p, [qi]: oi }));
+    setFailed(null);
+    let verdict: Verdict;
+    if (grade) {
+      try { verdict = await grade(qi, oi); } catch {
+        // the answer was never marked: let the student pick again
+        setPicked((p) => Object.fromEntries(Object.entries(p).filter(([k]) => Number(k) !== qi)));
+        setFailed(qi);
+        return;
+      }
+    } else {
+      const q = questions[qi];
+      verdict = { correct: oi === q.answerIndex, answerIndex: q.answerIndex ?? 0, why: q.why ?? "" };
+    }
+    setVerdicts((v) => ({ ...v, [qi]: verdict }));
   };
-  const answered = Object.keys(picked).length;
-  const right = questions.filter((q, i) => picked[i] === q.answerIndex).length;
+  const answered = Object.keys(verdicts).length;
+  const right = Object.values(verdicts).filter((v) => v.correct).length;
   const done = answered === questions.length;
+  useEffect(() => {
+    if (done && onDone && !reported.current) { reported.current = true; onDone(right, questions.length); }
+  }, [done, onDone, right, questions.length]);
 
   return (
     <section aria-labelledby={`${id}-h`} className="rounded-2xl border border-[var(--m-ink)] bg-white p-5">
@@ -39,9 +66,11 @@ export function CheckYourself({ questions, id, onDone }: { questions: CheckQuest
                   </label>
                 ))}
               </div>
-              {choice !== undefined && (
-                <p role="status" className={clsx("mt-2 text-[14px]", choice === q.answerIndex ? "font-bold text-[#17784a]" : "text-[var(--m-ink)]")}>
-                  {choice === q.answerIndex ? "Correct. " : `Not quite. The answer is “${q.options[q.answerIndex]}”. `}{q.why}
+              {choice !== undefined && verdicts[qi] === undefined && <p role="status" className="mt-2 text-[14px] text-[var(--m-muted)]">Checking…</p>}
+              {failed === qi && <p role="alert" className="mt-2 text-[14px] text-[var(--m-ink)]">Could not check that answer. Check your connection and pick again.</p>}
+              {verdicts[qi] !== undefined && (
+                <p role="status" className={clsx("mt-2 text-[14px]", verdicts[qi].correct ? "font-bold text-[#17784a]" : "text-[var(--m-ink)]")}>
+                  {verdicts[qi].correct ? "Correct. " : `Not quite. The answer is “${q.options[verdicts[qi].answerIndex]}”. `}{verdicts[qi].why}
                 </p>
               )}
             </fieldset>

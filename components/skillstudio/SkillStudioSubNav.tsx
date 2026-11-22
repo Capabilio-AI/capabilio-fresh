@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { UnderlineTabs } from "@/components/metro/UnderlineTabs";
 
 const TABS = [
-  { label: "Languages", href: "/skillstudio/languages" },
+  { label: "Courses", href: "/skillstudio/courses" },
   { label: "Materials", href: "/skillstudio/materials" },
   { label: "Role Modules", href: "/skillstudio" },
   { label: "Certifications", href: "/skillstudio/certifications" },
@@ -13,5 +13,5 @@ const TABS = [
 
 export function SkillStudioSubNav() {
   const pathname = usePathname();
-  return <UnderlineTabs label="SkillStudio" tabs={TABS.map((t) => ({ ...t, active: t.href === "/skillstudio" ? pathname === "/skillstudio" || pathname.startsWith("/skillstudio/course") : t.href === "/skillstudio/languages" ? pathname.startsWith(t.href) : pathname === t.href }))} />;
+  return <UnderlineTabs label="SkillStudio" tabs={TABS.map((t) => ({ ...t, active: t.href === "/skillstudio" ? pathname === "/skillstudio" || pathname.startsWith("/skillstudio/course/") : t.href === "/skillstudio/courses" ? pathname.startsWith(t.href) : pathname === t.href }))} />;
 }

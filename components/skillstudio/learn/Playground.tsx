@@ -23,7 +23,7 @@ function CopyButton({ text }: { text: string }) {
  * "Try it Yourself": the example's code on the left, its result on the right, one Run button. Python, JavaScript, HTML and CSS run in the
  * student's own browser, so they are instant; C, C++ and Java run on the server's code runner. SQL examples are shown with a Copy button.
  */
-export function Playground({ code: original, language, title }: { code: string; language: PlaygroundLanguage; title: string }) {
+export function Playground({ code: original, language, title, stacked = false }: { code: string; language: PlaygroundLanguage; title: string; /** editor above result, for a narrow column (the lesson's side pane) */ stacked?: boolean }) {
   const [code, setCode] = useState(original);
   const [stdin, setStdin] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export function Playground({ code: original, language, title }: { code: string; 
         <button type="button" onClick={() => { setCode(original); setResult(null); if (web) setPage(buildPreviewDoc(language as "html" | "css", original)); }} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold text-[var(--m-muted)] hover:text-[var(--m-ink)]"><RotateCcw size={13} aria-hidden />Reset</button>
         <span className="ml-auto hidden text-[12px] text-[var(--m-muted)] sm:inline">{canRunInBrowser(language) ? "Runs in your browser" : "Runs on our server"} · Ctrl/⌘ + Enter</span>
       </div>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className={stacked ? "grid gap-2" : "grid gap-2 md:grid-cols-2"}>
         <CodeEditor value={code} onChange={setCode} onRun={() => void run()} label={`Code for ${title}`} />
         <div className="flex min-h-[200px] flex-col overflow-hidden rounded-lg border border-[var(--m-rule)] bg-white">
           <p className="border-b border-[var(--m-rule)] px-3 py-1.5 text-[12px] font-bold uppercase tracking-wide text-[var(--m-muted)]">Result</p>
@@ -78,7 +78,7 @@ export function Playground({ code: original, language, title }: { code: string; 
           ) : result ? (
             result.ok
               ? <pre role="status" className={`ss-scroll m-0 flex-1 overflow-auto whitespace-pre-wrap p-3 font-lp-mono text-[13px] ${result.isError ? "bg-red-50 text-red-800" : "text-[var(--m-ink)]"}`}>{result.text}</pre>
-              : <p role="alert" className="m-0 flex-1 bg-red-50 p-3 text-[13.5px] font-semibold text-red-800">{result.message}</p>
+              : <div role="alert" className="m-0 flex flex-1 flex-col items-start gap-2 bg-red-50 p-3 text-[13.5px] font-semibold text-red-800"><p>{result.message}</p><button type="button" onClick={() => void run()} className="inline-flex items-center gap-1.5 rounded-full border border-red-300 bg-white px-3 py-1 text-[12.5px] font-bold text-red-800"><RotateCcw size={12} aria-hidden />Run again</button></div>
           ) : (
             <p className="p-3 text-[13.5px] text-[var(--m-muted)]">Press Run to see what your code does. Edit it first if you like.</p>
           )}
