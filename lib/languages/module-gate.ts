@@ -20,6 +20,15 @@ export interface ModuleProofRow {
   problemAttempts: number;
   problemPassedAt: string | null;
   provenAt: string | null;
+  /** the score of the assessment attempt that passed it, for example 9 of 10 */
+  assessmentCorrect?: number | null;
+  assessmentTotal?: number | null;
+  /** how the problem was passed: the language, and how many of the judge's tests the passing submission met */
+  problemLanguage?: string | null;
+  problemTestsPassed?: number | null;
+  problemTestsTotal?: number | null;
+  /** SHA-256 of the passing code. The code itself is kept apart and is never sent to the browser with the proof state. */
+  problemCodeSha256?: string | null;
 }
 export type ModuleStatus = "proven" | "open" | "locked";
 

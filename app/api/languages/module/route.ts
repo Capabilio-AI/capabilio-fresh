@@ -96,7 +96,7 @@ async function handlePost(request: Request): Promise<NextResponse> {
     try {
       const r = await judgeSqlChallenge(c.m.challenge, code, kind === "run" ? "run" : "submit");
       if (kind === "run") return NextResponse.json({ kind: "sql", results: r.rows });
-      const state = await recordProblem(c.service, a.userId, c.track, c.m, c.row, r.passed);
+      const state = await recordProblem(c.service, a.userId, c.track, c.m, c.row, r.passed, { language: "sql", code, passedTests: r.rows.filter((x) => x.passed).length, totalTests: r.rows.length });
       return NextResponse.json({ kind: "sql", passed: r.passed, results: r.rows, state });
     } catch (e) {
       console.error("[module-sql] judging failed:", e instanceof Error ? e.message : e);
@@ -106,7 +106,7 @@ async function handlePost(request: Request): Promise<NextResponse> {
   if (isHtmlChallenge(c.m.challenge!)) {
     const r = judgePage(c.m.challenge, body.data.code);
     if (kind === "run") return NextResponse.json({ kind: "html", results: r.results, note: r.note });
-    const state = await recordProblem(c.service, a.userId, c.track, c.m, c.row, r.passed);
+    const state = await recordProblem(c.service, a.userId, c.track, c.m, c.row, r.passed, { language: "html", code: body.data.code, passedTests: r.results.filter((x) => x.passed).length, totalTests: r.results.length });
     return NextResponse.json({ kind: "html", passed: r.passed, results: r.results, note: r.note, state });
   }
   const ch = c.m.challenge as ModuleChallenge;
@@ -116,6 +116,6 @@ async function handlePost(request: Request): Promise<NextResponse> {
   const rows = verdicts.map((v, i) => ({ index: i, passed: v.passed, hidden: i >= ch.exampleCount, ...(i < ch.exampleCount ? { input: tests[i].input.trimEnd(), expected: tests[i].output.trimEnd(), actual: v.actual.trimEnd(), error: v.error } : {}) }));
   if (kind === "run") return NextResponse.json({ results: rows });
   const passed = verdicts.every((v) => v.passed);
-  const state = await recordProblem(c.service, a.userId, c.track, c.m, c.row, passed);
+  const state = await recordProblem(c.service, a.userId, c.track, c.m, c.row, passed, { language: c.track.runnerLanguage, code: body.data.code, passedTests: verdicts.filter((v) => v.passed).length, totalTests: verdicts.length });
   return NextResponse.json({ passed, results: rows, state });
 }
