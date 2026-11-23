@@ -13,7 +13,12 @@ const FORBIDDEN = [
 ];
 
 // The few shared pieces that are identity or plumbing, not path features.
-const ALLOWED = ["@/lib/assess/http", "@/lib/assess/types", "@/lib/graduate/name-match", "@/lib/roadmap/extract/pdf", "@/lib/uploads/limits"];
+const ALLOWED = [
+  "@/lib/assess/http", "@/lib/assess/types", "@/lib/graduate/name-match", "@/lib/roadmap/extract/pdf", "@/lib/uploads/limits",
+  // Pulse messaging is shared on purpose (#127): a professional's inbox holds the same conversations students and graduates write into, so a mentor
+  // reads what a student sent. Only the three modules the messages page needs; the rest of @/lib/pulse stays forbidden.
+  "@/lib/pulse/graph", "@/lib/pulse/messages", "@/lib/pulse/people",
+];
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {

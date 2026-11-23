@@ -15,14 +15,18 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe("admin surfaces are all gated by the organisation-admin check", () => {
-  it("every /api/admin route handler calls requireOrgAdmin before doing anything", () => {
+  it("every /api/admin route handler calls an admin gate before doing anything", () => {
     const routes = walk("app/api/admin").filter((f) => f.endsWith("route.ts"));
     expect(routes.length).toBeGreaterThanOrEqual(4);
+    // the organisation routes use requireOrgAdmin; the Capabilio admin console's own routes use requireAdminApi
+    const gates = ["requireOrgAdmin(", "requireAdminApi("];
     for (const f of routes) {
       const src = read(f);
-      expect(src, f).toContain("requireOrgAdmin(");
+      const gateAt = Math.min(...gates.map((g) => src.indexOf(g)).filter((i) => i !== -1));
+      expect(Number.isFinite(gateAt), `${f} has no admin gate`).toBe(true);
       // The gate must come before any service-role use.
-      expect(src.indexOf("requireOrgAdmin("), f).toBeLessThan(src.indexOf("createServiceClient()"));
+      const serviceAt = src.indexOf("createServiceClient()");
+      if (serviceAt !== -1) expect(gateAt, f).toBeLessThan(serviceAt);
     }
   });
   it("the curriculum page needs the Curriculum permission (404 otherwise) and derives the institution from the caller", () => {
@@ -32,7 +36,9 @@ describe("admin surfaces are all gated by the organisation-admin check", () => {
     expect(read("lib/org/page.ts")).toContain("notFound()");
   });
   it("the old student-shell URL only redirects into the organisation workspace", () => {
-    const src = read("app/(app)/admin/curriculum/page.tsx");
+    // the student-shell admin folder is gone; the old curriculum URL now lives in the admin console and only redirects
+    expect(existsSync(join(ROOT, "app/(app)/admin"))).toBe(false);
+    const src = read("app/(admin)/admin/(portal)/curriculum/page.tsx");
     expect(src).toContain('redirect("/org/curriculum")');
     expect(src).not.toContain("createServiceClient");
   });

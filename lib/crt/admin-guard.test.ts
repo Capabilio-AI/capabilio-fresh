@@ -12,7 +12,7 @@ describe("CRT company admin", () => {
     }
   });
   it("the admin page 404s for anyone who is not a platform admin", () => {
-    const src = readFileSync("app/(app)/admin/crt-companies/page.tsx", "utf8");
+    const src = readFileSync("app/(admin)/admin/(portal)/crt-companies/page.tsx", "utf8");
     expect(src).toContain("isPlatformAdmin(");
     expect(src.indexOf("notFound()")).toBeLessThan(src.indexOf("listAllCompanies("));
   });
