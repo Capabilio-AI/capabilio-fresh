@@ -1,0 +1,54 @@
+{
+  "key": "c-project-skills",
+  "title": "Result Table: Sort Students by Marks",
+  "statement": "Read n student records. Each record has a name and marks. Print a table sorted by marks, highest first. If two students have the same marks, put the name that comes first in ASCII order (the order strcmp uses) first. Capital letters come before small letters. Print a header line and a line of 16 dashes. Print each name left-aligned in 10 characters, then one space, then marks right-aligned in 5 characters.",
+  "inputFormat": "First line: n. Then n lines, each with a name (one word, letters only) and an integer mark, separated by one space.",
+  "outputFormat": "Header \"Name\" (width 10), a space, \"Marks\" (width 5, right-aligned). Then 16 dashes. Then n rows in sorted order, formatted like the header.",
+  "constraints": [
+    "1 <= n <= 100",
+    "Name has 1 to 10 letters (A-Z, a-z)",
+    "0 <= marks <= 100",
+    "Names may repeat"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Ravi has 92, Meena 85, Asha 78. So the order is by marks, highest first.",
+    "Zoya has 90 and is first. Amit, Bala and Kiran all have 70, so they are sorted by name."
+  ],
+  "reference": "import sys\ndata = sys.stdin.read().split()\nn = int(data[0])\nrecs = []\nfor i in range(n):\n    name = data[1 + 2 * i]\n    marks = int(data[2 + 2 * i])\n    recs.append((name, marks))\nrecs.sort(key=lambda r: (-r[1], r[0]))\nprint(f\"{'Name':<10} {'Marks':>5}\")\nprint(\"-\" * 16)\nfor name, marks in recs:\n    print(f\"{name:<10} {marks:>5}\")\n",
+  "tests": [
+    {
+      "input": "3\nAsha 78\nRavi 92\nMeena 85\n",
+      "output": "Name       Marks\n----------------\nRavi          92\nMeena         85\nAsha          78\n"
+    },
+    {
+      "input": "4\nKiran 70\nAmit 70\nZoya 90\nBala 70\n",
+      "output": "Name       Marks\n----------------\nZoya          90\nAmit          70\nBala          70\nKiran         70\n"
+    },
+    {
+      "input": "1\nX 0\n",
+      "output": "Name       Marks\n----------------\nX              0\n"
+    },
+    {
+      "input": "5\nzed 50\nAmy 50\nbob 50\nCara 50\nabe 50\n",
+      "output": "Name       Marks\n----------------\nAmy           50\nCara          50\nabe           50\nbob           50\nzed           50\n"
+    },
+    {
+      "input": "5\nAbcdefghij 100\nB 100\nC 0\nD 100\nE 0\n",
+      "output": "Name       Marks\n----------------\nAbcdefghij   100\nB            100\nD            100\nC              0\nE              0\n"
+    },
+    {
+      "input": "3\nRam 60\nRam 60\nRam 75\n",
+      "output": "Name       Marks\n----------------\nRam           75\nRam           60\nRam           60\n"
+    },
+    {
+      "input": "10\nSita 88\nGita 88\nRita 88\nMita 91\nNita 67\nLata 67\nKavi 100\nDev 99\nEsha 91\nFarah 0\n",
+      "output": "Name       Marks\n----------------\nKavi         100\nDev           99\nEsha          91\nMita          91\nGita          88\nRita          88\nSita          88\nLata          67\nNita          67\nFarah          0\n"
+    },
+    {
+      "input": "4\nNeha 5\nOm 100\nPia 50\nQ 0\n",
+      "output": "Name       Marks\n----------------\nOm           100\nPia           50\nNeha           5\nQ              0\n"
+    }
+  ],
+  "solutionC": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\ntypedef struct {\n    char name[11];\n    int marks;\n} Rec;\n\nstatic int cmp(const void *a, const void *b)\n{\n    const Rec *x = (const Rec *)a;\n    const Rec *y = (const Rec *)b;\n    if (x->marks != y->marks) {\n        return y->marks - x->marks;\n    }\n    return strcmp(x->name, y->name);\n}\n\nint main(void)\n{\n    Rec r[100];\n    int n;\n    if (scanf(\"%d\", &n) != 1) {\n        return 1;\n    }\n    for (int i = 0; i < n; i++) {\n        if (scanf(\"%10s %d\", r[i].name, &r[i].marks) != 2) {\n            return 1;\n        }\n    }\n    qsort(r, (size_t)n, sizeof(Rec), cmp);\n    printf(\"%-10s %5s\\n\", \"Name\", \"Marks\");\n    puts(\"----------------\");\n    for (int i = 0; i < n; i++) {\n        printf(\"%-10s %5d\\n\", r[i].name, r[i].marks);\n    }\n    return 0;\n}\n"
+}

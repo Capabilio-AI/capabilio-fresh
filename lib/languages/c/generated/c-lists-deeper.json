@@ -1,0 +1,57 @@
+{
+  "key": "c-lists-deeper",
+  "title": "Reverse a Linked List",
+  "statement": "You are given n integers. Insert them into a singly linked list, one by one, at the end of the list. The first number must be the head. Now reverse the list by changing the next pointers. Then print the values from head to end, separated by single spaces.",
+  "inputFormat": "The first line has the integer n. The second line has n integers separated by spaces.",
+  "outputFormat": "One line with the n integers of the reversed list, separated by single spaces.",
+  "constraints": [
+    "1 <= n <= 50",
+    "-1000000000 <= each integer <= 1000000000",
+    "Numbers may repeat"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The list is 1,2,3,4,5 from head to end. After reversing, the old last node becomes the head.",
+    "Duplicates stay as separate nodes. Negative numbers are kept as they are. Only the order changes."
+  ],
+  "reference": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    vals = [int(x) for x in data[1:1 + n]]\n    print(\" \".join(str(v) for v in reversed(vals)))\n\nmain()",
+  "tests": [
+    {
+      "input": "5\n1 2 3 4 5\n",
+      "output": "5 4 3 2 1\n"
+    },
+    {
+      "input": "4\n10 -3 7 7\n",
+      "output": "7 7 -3 10\n"
+    },
+    {
+      "input": "1\n42\n",
+      "output": "42\n"
+    },
+    {
+      "input": "2\n0 0\n",
+      "output": "0 0\n"
+    },
+    {
+      "input": "3\n-1000000000 0 1000000000\n",
+      "output": "1000000000 0 -1000000000\n"
+    },
+    {
+      "input": "7\n-1 -2 -3 -4 -5 -6 -7\n",
+      "output": "-7 -6 -5 -4 -3 -2 -1\n"
+    },
+    {
+      "input": "6\n5 5 5 1 5 5\n",
+      "output": "5 5 1 5 5 5\n"
+    },
+    {
+      "input": "50\n1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50\n",
+      "output": "50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1\n"
+    },
+    {
+      "input": "30\n1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 7\n",
+      "output": "7 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000 -1000000000 1000000000\n"
+    }
+  ],
+  "solutionC": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int val;\n    struct Node *next;\n};\n\nint main(void) {\n    int n;\n    if (scanf(\"%d\", &n) != 1) {\n        return 0;\n    }\n    struct Node *head = NULL;\n    struct Node *tail = NULL;\n    for (int i = 0; i < n; i++) {\n        int x;\n        if (scanf(\"%d\", &x) != 1) {\n            return 0;\n        }\n        struct Node *node = malloc(sizeof(struct Node));\n        if (node == NULL) {\n            return 1;\n        }\n        node->val = x;\n        node->next = NULL;\n        if (head == NULL) {\n            head = node;\n        } else {\n            tail->next = node;\n        }\n        tail = node;\n    }\n    struct Node *prev = NULL;\n    struct Node *cur = head;\n    while (cur != NULL) {\n        struct Node *nxt = cur->next;\n        cur->next = prev;\n        prev = cur;\n        cur = nxt;\n    }\n    head = prev;\n    for (struct Node *p = head; p != NULL; p = p->next) {\n        if (p != head) {\n            printf(\" \");\n        }\n        printf(\"%d\", p->val);\n    }\n    printf(\"\\n\");\n    while (head != NULL) {\n        struct Node *nxt = head->next;\n        free(head);\n        head = nxt;\n    }\n    return 0;\n}"
+}

@@ -3,18 +3,1310 @@
 import type { CodeQuestion } from "../types";
 
 export const codeQuestions: Record<string, CodeQuestion[]> = {
+  "c-types-deep": [
+    {
+      "id": "c:c-types-deep:1",
+      "code": "#include <limits.h>\n\nint main(void) {\n    unsigned char a = 255; a = a + 1; printf(\"%u\\n\", a);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0",
+        "254",
+        "255",
+        "256"
+      ],
+      "answerIndex": 0,
+      "why": "unsigned overflow wraps around, so 255+1 becomes 0 and prints 0."
+    },
+    {
+      "id": "c:c-types-deep:2",
+      "code": "#include <limits.h>\n\nint main(void) {\n    int x = INT_MAX; x = x + 1; printf(\"%d\\n\", x);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2147483647",
+        "0",
+        "2147483646",
+        "-2147483648"
+      ],
+      "answerIndex": 3,
+      "why": "Signed overflow is undefined; on typical two's‑complement it wraps to the minimum value, but the behavior is not guaranteed."
+    },
+    {
+      "id": "c:c-types-deep:3",
+      "code": "#include <stdint.h>\n\nint main(void) {\n    int32_t a = 2000000000; int64_t b = a * 3; printf(\"%lld\\n\", b);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "-2147483648",
+        "1705032704",
+        "-1294967296",
+        "6000000000"
+      ],
+      "answerIndex": 1,
+      "why": "The multiplication is done in 32‑bit int first, overflow occurs, then the wrong value is promoted to 64‑bit."
+    },
+    {
+      "id": "c:c-types-deep:4",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    double x = 0.1 + 0.2; printf(\"%.17g\\n\", x);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0.29999999999999999",
+        "0.30000000000000004",
+        "0.40000000000000002",
+        "0.30"
+      ],
+      "answerIndex": 1,
+      "why": "Binary floating‑point cannot represent 0.1 or 0.2 exactly, so the sum is slightly larger than 0.3."
+    },
+    {
+      "id": "c:c-types-deep:5",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    float f = 1e30f; double d = f; printf(\"%e\\n\", d);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1.000000e+20",
+        "1.000000e+30",
+        "inf",
+        "0.000000e+00"
+      ],
+      "answerIndex": 1,
+      "why": "The float overflows to infinity; assigning it to double keeps the infinity value."
+    },
+    {
+      "id": "c:c-types-deep:6",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    unsigned int u = 10; int i = -5; printf(\"%u\\n\", u + i);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "4",
+        "15",
+        "5",
+        "4294967291"
+      ],
+      "answerIndex": 2,
+      "why": "u is unsigned; i is converted to unsigned, so 10 + (UINT_MAX-4) wraps to 5."
+    },
+    {
+      "id": "c:c-types-deep:7",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    char c = 'A'; printf(\"%d\\n\", c+1);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "65",
+        "64",
+        "67",
+        "66"
+      ],
+      "answerIndex": 3,
+      "why": "Character literals are integers; 'A' is 65, adding 1 yields 66 which is printed."
+    },
+    {
+      "id": "c:c-types-deep:8",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    short s = 32767; s++; printf(\"%d\\n\", s);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "32766",
+        "-32768",
+        "32767",
+        "0"
+      ],
+      "answerIndex": 1,
+      "why": "Unsigned short would wrap, but signed short overflow is undefined; on typical two's‑complement it becomes -32768."
+    },
+    {
+      "id": "c:c-types-deep:9",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int a = 7; int b = 3; printf(\"%d\\n\", a % b);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1",
+        "2.333333",
+        "2",
+        "3"
+      ],
+      "answerIndex": 0,
+      "why": "The modulus operator returns the remainder; 7 divided by 3 leaves remainder 2."
+    },
+    {
+      "id": "c:c-types-deep:10",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int arr[3] = {0,1,2}; for(int i=0;i<=3;i++) printf(\"%d \", arr[i]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0 1 2",
+        "0 1 2 0",
+        "0 1 2 3",
+        "0\n1\n2\n3"
+      ],
+      "answerIndex": 2,
+      "why": "Loop runs one step too far; arr[3] is out of bounds but here we assume it contains 0 for illustration."
+    }
+  ],
+  "c-recursion-algos": [
+    {
+      "id": "c:c-recursion-algos:1",
+      "code": "void bubble(int*a,int n){for(int i=0;i<n-1;i++)for(int j=0;j<n-i-1;j++)if(a[j]>a[j+1]){int t=a[j];a[j]=a[j+1];a[j+1]=t;}}\n\nint main(void) {\n    int a[4]={4,3,2,1};bubble(a,4);printf(\"%d %d %d %d\\n\",a[0],a[1],a[2],a[3]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2 1 3 4",
+        "1 2 3",
+        "4 3 2 1",
+        "1 2 3 4"
+      ],
+      "answerIndex": 3,
+      "why": "Bubble sort repeatedly swaps adjacent out‑of‑order elements, ending with the array sorted ascending."
+    },
+    {
+      "id": "c:c-recursion-algos:2",
+      "code": "void selection(int*a,int n){for(int i=0;i<n-1;i++){int mi=i;for(int j=i+1;j<n;j++)if(a[j]<a[mi])mi=j;int t=a[i];a[i]=a[mi];a[mi]=t;}}\n\nint main(void) {\n    int a[5]={5,1,4,2,3};selection(a,5);printf(\"%d %d %d %d %d\\n\",a[0],a[1],a[2],a[3],a[4]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 2 3 4",
+        "1 3 2 4 5",
+        "5 4 3 2 1",
+        "1 2 3 4 5"
+      ],
+      "answerIndex": 3,
+      "why": "Selection sort picks the smallest remaining element and puts it at the current position, producing a sorted array."
+    },
+    {
+      "id": "c:c-recursion-algos:3",
+      "code": "void insertion(int*a,int n){for(int i=1;i<n;i++){int key=a[i];int j=i-1;while(j>=0 && a[j]>key){a[j+1]=a[j];j--;}a[j+1]=key;}}\n\nint main(void) {\n    int a[5]={3,5,1,4,2};insertion(a,5);printf(\"%d %d %d %d %d\\n\",a[0],a[1],a[2],a[3],a[4]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "3 5 1 4 2",
+        "1 2 3 4 5",
+        "1 2 3 4",
+        "3 1 2 4 5"
+      ],
+      "answerIndex": 1,
+      "why": "Insertion sort builds the sorted portion one element at a time, shifting larger elements right, ending with a sorted array."
+    },
+    {
+      "id": "c:c-recursion-algos:4",
+      "code": "void merge(int*src,int*tmp,int l,int m,int r){int i=l,j=m+1,k=l;while(i<=m && j<=r){if(src[i]<=src[j])tmp[k++]=src[i++];else tmp[k++]=src[j++];}while(i<=m)tmp[k++]=src[i++];while(j<=r)tmp[k++]=src[j++];for(i=l;i<=r;i++)src[i]=tmp[i];}\n\nint main(void) {\n    int a[6]={4,5,1,2,3,6};int t[6];merge(a,t,0,2,5);printf(\"%d %d %d %d %d %d\\n\",a[0],a[1],a[2],a[3],a[4],a[5]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 2 3 4 5 6",
+        "4 5 1 2 3 6",
+        "2 3 4 5 1",
+        "2 3 4 5 1 6"
+      ],
+      "answerIndex": 3,
+      "why": "The merge combines the sorted halves [4,5,1] and [2,3,6] into a single sorted segment, resulting in 1 2 3 4 5 6."
+    },
+    {
+      "id": "c:c-recursion-algos:5",
+      "code": "int recCount(int n){if(n<=0)return 0;return 1+recCount(n-1);}\n\nint main(void) {\n    printf(\"%d\\n\",recCount(4));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0",
+        "5",
+        "3",
+        "4"
+      ],
+      "answerIndex": 3,
+      "why": "Each call counts one operation and recurses until n reaches 0, so 4 calls give a count of 4."
+    },
+    {
+      "id": "c:c-recursion-algos:6",
+      "code": "int fib(int n){if(n<=1)return n;return fib(n-1)+fib(n-2);}\n\nint main(void) {\n    printf(\"%d\\n\",fib(6));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "5",
+        "13",
+        "8",
+        "1"
+      ],
+      "answerIndex": 2,
+      "why": "Fibonacci numbers start 0,1,1,2,3,5,8; the 6th index (starting at 0) is 8."
+    },
+    {
+      "id": "c:c-recursion-algos:7",
+      "code": "int ops=0;int sum(int n){ops++;if(n==0)return 0;return n+sum(n-1);}\n\nint main(void) {\n    sum(3);printf(\"%d\\n\",ops);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "8",
+        "5",
+        "4",
+        "2"
+      ],
+      "answerIndex": 2,
+      "why": "The function is called once for each integer from 3 down to 0, so it increments ops four times (3,2,1,0)."
+    },
+    {
+      "id": "c:c-recursion-algos:8",
+      "code": "int main(void) {\n    int fact(int n){if(n<=1)return 1;return n*fact(n-1);}printf(\"%d\\n\",fact(5));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "15",
+        "120",
+        "720",
+        "24"
+      ],
+      "answerIndex": 1,
+      "why": "The function calls itself with n-1 until it reaches 1, multiplying the numbers 5·4·3·2·1 gives 120."
+    },
+    {
+      "id": "c:c-recursion-algos:9",
+      "code": "int main(void) {\n    int sumDigits(int n){if(n==0)return 0;return n%10+sumDigits(n/10);}printf(\"%d\\n\",sumDigits(1234));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1234",
+        "14",
+        "10",
+        "1"
+      ],
+      "answerIndex": 2,
+      "why": "Each recursive call adds the last digit (n%10) and removes it with n/10; 1+2+3+4 equals 10."
+    },
+    {
+      "id": "c:c-recursion-algos:10",
+      "code": "int main(void) {\n    int lo=0,hi=4,mid;int a[5]={1,3,5,7,9};int key=7;while(lo<=hi){mid=lo+(hi-lo)/2;if(a[mid]==key)break;else if(a[mid]<key)lo=mid+1;else hi=mid-1;}printf(\"%d\\n\",mid);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "4",
+        "2",
+        "-1",
+        "3"
+      ],
+      "answerIndex": 3,
+      "why": "Binary search finds 7 at index 3, so mid is 3 when the loop breaks."
+    },
+    {
+      "id": "c:c-recursion-algos:11",
+      "code": "int main(void) {\n    int n=5;int i;for(i=0;i<n;i++)for(int j=0;j<n;j++)printf(\".\");printf(\"\\n\");\n}",
+      "question": "What does this program print?",
+      "options": [
+        ".........................",
+        "..............................",
+        "30 dots",
+        "25 dots"
+      ],
+      "answerIndex": 0,
+      "why": "Two nested loops each run 5 times, printing a dot 25 times on one line."
+    },
+    {
+      "id": "c:c-recursion-algos:12",
+      "code": "int main(void) {\n    int a[4]={4,3,2,1};int i,j,temp;for(i=0;i<4-1;i++)for(j=0;j<4-i-1;j++)if(a[j]>a[j+1]){temp=a[j];a[j]=a[j+1];a[j+1]=temp;}printf(\"%d %d %d %d\\n\",a[0],a[1],a[2],a[3]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2 1 3 4",
+        "4 3 2 1",
+        "1 2 3 4",
+        "1 -760794608 2 3"
+      ],
+      "answerIndex": 2,
+      "why": "Bubble sort repeatedly swaps adjacent out‑of‑order elements; after sorting the array becomes 1 2 3 4."
+    }
+  ],
+  "c-library": [
+    {
+      "id": "c:c-library:1",
+      "code": "int cmp(const void*a,const void*b){return *(int*)a-*(int*)b;}\n\nint main(void) {\n    int arr[5]={5,3,4,1,2};qsort(arr,5,sizeof(int),cmp);printf(\"%d %d %d %d %d\\n\",arr[0],arr[1],arr[2],arr[3],arr[4]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 3 4 5 2",
+        "5 3 4 1 2",
+        "1 2 3 4 5",
+        "1 2 3 4"
+      ],
+      "answerIndex": 2,
+      "why": "qsort sorts the array in ascending order using the comparison function. The printed numbers are the sorted values."
+    },
+    {
+      "id": "c:c-library:2",
+      "code": "#define S \"Hello\"\n\nint main(void) {\n    printf(\"%s %s\\n\",S,\"World\");\n}",
+      "question": "What does this program print?",
+      "options": [
+        "Hi World",
+        "Hello-World",
+        "Hello world",
+        "Hello World"
+      ],
+      "answerIndex": 3,
+      "why": "The macro expands to Hello, so the output is Hello World."
+    },
+    {
+      "id": "c:c-library:3",
+      "code": "int main(void) {\n    char c='a';printf(\"%c %d\\n\",c,isupper(c));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "a 1",
+        "A 256",
+        "a 512",
+        "a 0"
+      ],
+      "answerIndex": 3,
+      "why": "'a' is not uppercase, so isupper returns 0."
+    },
+    {
+      "id": "c:c-library:4",
+      "code": "int rand_range(int lo,int hi){return lo+rand()%(hi-lo+1);}\n\nint main(void) {\n    srand(1);printf(\"%d %d %d\\n\",rand_range(1,3),rand_range(1,3),rand_range(1,3));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1-2-2",
+        "0 2 2",
+        "3 2 1",
+        "1 2 2"
+      ],
+      "answerIndex": 3,
+      "why": "With seed 1 the first three values in the range 1‑3 are 2,1,3."
+    },
+    {
+      "id": "c:c-library:5",
+      "code": "int main(void) {\n    char s[]=\"a1b2\";int sum=0;for(int i=0;s[i];i++)if(isdigit((unsigned char)s[i]))sum+=s[i]-'0';printf(\"%d\\n\",sum);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "12",
+        "a",
+        "3",
+        "99"
+      ],
+      "answerIndex": 2,
+      "why": "Digits are 1 and 2, their numeric values sum to 3."
+    },
+    {
+      "id": "c:c-library:6",
+      "code": "int main(void) {\n    int x=5;printf(\"%5d\\n\",x);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "    5",
+        "5",
+        "   50",
+        "00005"
+      ],
+      "answerIndex": 0,
+      "why": "Width 5 pads with spaces on the left, so four spaces then 5."
+    },
+    {
+      "id": "c:c-library:7",
+      "code": "int cmp_int(const void*a,const void*b){return *(int*)a-*(int*)b;}\n\nint main(void) {\n    int arr[]={5,2,9,1};qsort(arr,4,sizeof(int),cmp_int);printf(\"%d %d %d %d\\n\",arr[0],arr[1],arr[2],arr[3]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 2 5 9",
+        "5 2 9 1",
+        "1 2 5",
+        "-1932547920 0 0 32765"
+      ],
+      "answerIndex": 0,
+      "why": "qsort sorts the array in ascending order using the comparison function, so the printed numbers are 1 2 5 9."
+    },
+    {
+      "id": "c:c-library:8",
+      "code": "#define MAX 10\n\nint main(void) {\n    int i;for(i=0;i<=MAX;i++)printf(\"%d \",i);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0 1 2 3 4 5 6 7 8 9 10",
+        "1 2 3 4 5 6 7 8 9 10",
+        "0 1 2 3 4 5 6 7 8 9",
+        " 0  1  2  3  4  5  6  7  8  9 10"
+      ],
+      "answerIndex": 0,
+      "why": "The loop uses <=, so it prints numbers from 0 through 10 inclusive."
+    },
+    {
+      "id": "c:c-library:9",
+      "code": "char *s=\"a1 B2\";\n\nint main(void) {\n    int cnt=0;for(;*s;s++)if(isdigit((unsigned char)*s))cnt++;printf(\"%d\\n\",cnt);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1",
+        "0",
+        "2",
+        "4"
+      ],
+      "answerIndex": 2,
+      "why": "isdigit counts the two digit characters '1' and '2', so the result is 2 printed."
+    },
+    {
+      "id": "c:c-library:10",
+      "code": "char buf[20];\n\nint main(void) {\n    sprintf(buf,\"%5.2f\",3.14159);printf(\"%s\\n\",buf);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "  3.1",
+        " 3.14",
+        "3.1416",
+        "3.14"
+      ],
+      "answerIndex": 1,
+      "why": "%5.2f prints the number rounded to two decimals, padded to width 5, resulting in \" 3.14\"."
+    },
+    {
+      "id": "c:c-library:11",
+      "code": "int n=5;\n\nint main(void) {\n    printf(\"%*d\\n\",n,42);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "    4",
+        " 42",
+        "42",
+        "   42"
+      ],
+      "answerIndex": 3,
+      "why": "The * gets the width from n, so three spaces then 42 are printed."
+    },
+    {
+      "id": "c:c-library:12",
+      "code": "char *p=\"Hello\";\n\nint main(void) {\n    printf(\"%c %c\\n\",*p,*(p+1));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "H i",
+        "H e",
+        "H l",
+        "e l"
+      ],
+      "answerIndex": 1,
+      "why": "*p is 'H' and *(p+1) is 'e', so the output is H e."
+    }
+  ],
+  "c-stack-queue": [
+    {
+      "id": "c:c-stack-queue:1",
+      "code": "typedef struct{char a[10];int top;}Stack;void init(Stack*s){s->top=-1;}int push(Stack*s,char c){if(s->top>=9)return 0; s->a[++s->top]=c;return 1;}char pop(Stack*s){if(s->top<0)return '\\0'; return s->a[s->top--];}\n\nint main(void) {\n    Stack st;init(&st);push(&st,'X');push(&st,'Y');printf(\"%c %c\\n\",pop(&st),pop(&st));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "X Y",
+        "X Z",
+        "Y Y",
+        "Y X"
+      ],
+      "answerIndex": 0,
+      "why": "The stack is LIFO. The last pushed element Y is popped first, then X."
+    },
+    {
+      "id": "c:c-stack-queue:2",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;typedef struct{Node*head;}Stack;void push(Stack*s,int x){Node*n=malloc(sizeof(Node));n->v=x;n->next=s->head;s->head=n;}int pop(Stack*s){int v=s->head->v;Node*t=s->head;s->head=t->next;free(t);return v;}\n\nint main(void) {\n    Stack s={0};push(&s,5);push(&s,7);printf(\"%d %d\\n\",pop(&s),pop(&s));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "7 7",
+        "5 7",
+        "5 8",
+        "7 5"
+      ],
+      "answerIndex": 1,
+      "why": "Linked‑list stack also pops the most recent element first, so 7 then 5."
+    },
+    {
+      "id": "c:c-stack-queue:3",
+      "code": "typedef struct{int q[5];int front;int rear;int cnt;}Queue;void initQ(Queue*q){q->front=0;q->rear=0;q->cnt=0;}int enq(Queue*q,int x){if(q->cnt==5)return 0;q->q[q->rear]=x;q->rear=(q->rear+1)%5;q->cnt++;return 1;}int deq(Queue*q){if(q->cnt==0)return -1;int v=q->q[q->front];q->front=(q->front+1)%5;q->cnt--;return v;}\n\nint main(void) {\n    Queue q;initQ(&q);enq(&q,1);enq(&q,2);enq(&q,3);printf(\"%d %d %d\\n\",deq(&q),deq(&q),deq(&q));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "4 2 1",
+        "1 2",
+        "1 2 3",
+        "3 2 1"
+      ],
+      "answerIndex": 3,
+      "why": "Queue is FIFO, elements leave in the order they entered: 1 then 2 then 3."
+    },
+    {
+      "id": "c:c-stack-queue:4",
+      "code": "typedef struct{int a[4];int top;}ArrStack;void init(ArrStack*s){s->top=-1;}int push(ArrStack*s,int x){if(s->top==3)return 0;s->a[++s->top]=x;return 1;}int peek(ArrStack*s){return s->a[s->top];}\n\nint main(void) {\n    ArrStack st;init(&st);push(&st,10);push(&st,20);printf(\"%d\\n\",peek(&st));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "20",
+        "30",
+        "15",
+        "10"
+      ],
+      "answerIndex": 0,
+      "why": "peek returns the current top value, which is the last pushed element 20."
+    },
+    {
+      "id": "c:c-stack-queue:5",
+      "code": "typedef struct{char a[6];int top;}S;void init(S*s){s->top=-1;}int push(S*s,char c){if(s->top==5)return 0;s->a[++s->top]=c;return 1;}char pop(S*s){return s->a[s->top--];}\n\nint main(void) {\n    S s;init(&s);push(&s,'a');push(&s,'b');push(&s,'c');printf(\"%c%c%c\\n\",pop(&s),pop(&s),pop(&s));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "abd",
+        "abc",
+        "bbc",
+        "cba"
+      ],
+      "answerIndex": 1,
+      "why": "Stack pops in reverse order of pushes, producing c b a."
+    },
+    {
+      "id": "c:c-stack-queue:6",
+      "code": "typedef struct Node{char c;struct Node*next;}Node;typedef struct{Node*head;Node*tail;}QueueL;void enq(QueueL*q,char c){Node*n=malloc(sizeof(Node));n->c=c;n->next=NULL;if(q->tail)q->tail->next=n;else q->head=n;q->tail=n;}char deq(QueueL*q){Node*t=q->head;char c=t->c;q->head=t->next;if(!q->head)q->tail=NULL;free(t);return c;}\n\nint main(void) {\n    QueueL q={0};enq(&q,'x');enq(&q,'y');enq(&q,'z');printf(\"%c %c %c\\n\",deq(&q),deq(&q),deq(&q));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "w y x",
+        "{ y x",
+        "z y x",
+        "x y z"
+      ],
+      "answerIndex": 2,
+      "why": "Linked list queue removes elements in FIFO order, so x then y then z."
+    },
+    {
+      "id": "c:c-stack-queue:7",
+      "code": "typedef struct{int a[3];int top;}S2;void init(S2*s){s->top=-1;}int push(S2*s,int v){if(s->top==2)return 0;s->a[++s->top]=v;return 1;}int pop(S2*s){return s->a[s->top--];}\n\nint main(void) {\n    S2 st;init(&st);push(&st,1);push(&st,2);push(&st,3);printf(\"%d %d\\n\",pop(&st),pop(&st));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2 3",
+        "1 3",
+        "3 2",
+        "2 4"
+      ],
+      "answerIndex": 0,
+      "why": "Two pops return the last two pushed values: 3 then 2."
+    },
+    {
+      "id": "c:c-stack-queue:8",
+      "code": "typedef struct{int q[3];int front;int rear;int size;}CQ;void initC(CQ*c){c->front=0;c->rear=0;c->size=0;}int enqC(CQ*c,int v){if(c->size==3)return 0;c->q[c->rear]=v;c->rear=(c->rear+1)%3;c->size++;return 1;}int deqC(CQ*c){if(c->size==0)return -1;int v=c->q[c->front];c->front=(c->front+1)%3;c->size--;return v;}\n\nint main(void) {\n    CQ q;initC(&q);enqC(&q,5);enqC(&q,6);enqC(&q,7);deqC(&q);enqC(&q,8);printf(\"%d %d\\n\",deqC(&q),deqC(&q));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "5 6",
+        "7 6",
+        "9 6",
+        "6 8"
+      ],
+      "answerIndex": 1,
+      "why": "After removing 5, the queue holds 6,7; then 8 is added. Dequeues give 6 then 8."
+    },
+    {
+      "id": "c:c-stack-queue:9",
+      "code": "typedef struct{int a[4];int top;}ArrSt;void init(ArrSt*s){s->top=-1;}int push(ArrSt*s,int v){if(s->top==3)return 0;s->a[++s->top]=v;return 1;}int peek(ArrSt*s){return s->a[s->top];}\n\nint main(void) {\n    ArrSt st;init(&st);push(&st,9);push(&st,8);push(&st,7);printf(\"%d\\n\",peek(&st));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "9",
+        "6",
+        "7",
+        "5"
+      ],
+      "answerIndex": 2,
+      "why": "The top element after pushes is the last one, 7."
+    },
+    {
+      "id": "c:c-stack-queue:10",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;typedef struct{Node*head;}StackL;void push(StackL*s,int x){Node*n=malloc(sizeof(Node));n->v=x;n->next=s->head;s->head=n;}int pop(StackL*s){int v=s->head->v;Node*t=s->head;s->head=t->next;free(t);return v;}\n\nint main(void) {\n    StackL s={0};push(&s,100);push(&s,200);printf(\"%d\\n\",pop(&s));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "100",
+        "200",
+        "150",
+        "300"
+      ],
+      "answerIndex": 1,
+      "why": "pop returns the most recent value, 200."
+    },
+    {
+      "id": "c:c-stack-queue:11",
+      "code": "typedef struct{int a[2];int front;int rear;int cnt;}Q2;void init(Q2*q){q->front=0;q->rear=0;q->cnt=0;}int enq(Q2*q,int v){if(q->cnt==2)return 0;q->a[q->rear]=v;q->rear=(q->rear+1)%2;q->cnt++;return 1;}int deq(Q2*q){if(q->cnt==0)return -1;int v=q->a[q->front];q->front=(q->front+1)%2;q->cnt--;return v;}\n\nint main(void) {\n    Q2 q;init(&q);enq(&q,4);enq(&q,5);printf(\"%d %d\\n\",deq(&q),deq(&q));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "5 4",
+        "6 4",
+        "5",
+        "4 5"
+      ],
+      "answerIndex": 0,
+      "why": "FIFO order gives 4 then 5."
+    },
+    {
+      "id": "c:c-stack-queue:12",
+      "code": "typedef struct{char a[5];int top;}CSt;void init(CSt*s){s->top=-1;}int push(CSt*s,char c){if(s->top==4)return 0;s->a[++s->top]=c;return 1;}char peek(CSt*s){return s->a[s->top];}\n\nint main(void) {\n    CSt st;init(&st);push(&st,'A');push(&st,'B');push(&st,'C');printf(\"%c\\n\",peek(&st));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "A",
+        "D",
+        "C",
+        "B"
+      ],
+      "answerIndex": 2,
+      "why": "The top after three pushes is the last character, C."
+    }
+  ],
+  "c-lists-deeper": [
+    {
+      "id": "c:c-lists-deeper:1",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*mid(Node*head){Node*slow=head;Node*fast=head;while(fast&&fast->next){slow=slow->next;fast=fast->next->next;}return slow;}\n\nint main(void) {\n    Node*a=malloc(sizeof(Node));a->v=10;a->next=malloc(sizeof(Node));a->next->v=20;a->next->next=malloc(sizeof(Node));a->next->next->v=30;a->next->next->next=NULL;printf(\"%d\\n\",mid(a)->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "20 30",
+        "20",
+        "10",
+        "30"
+      ],
+      "answerIndex": 1,
+      "why": "With three nodes, the slow pointer stops at the second node, value 20, which is printed."
+    },
+    {
+      "id": "c:c-lists-deeper:2",
+      "code": "typedef struct DNode{int v;struct DNode*prev;struct DNode*next;}DNode;DNode*insTail(DNode*head,int x){DNode*new=malloc(sizeof(DNode));new->v=x;new->prev=NULL;new->next=NULL;if(!head)return new;DNode*cur=head;while(cur->next)cur=cur->next;cur->next=new;new->prev=cur;return head;}\n\nint main(void) {\n    DNode*h=NULL;h=insTail(h,5);h=insTail(h,9);printf(\"%d %d\\n\",h->v,h->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "5 8",
+        "5 9",
+        "6 10",
+        "5"
+      ],
+      "answerIndex": 1,
+      "why": "First insertion creates head with 5, second adds 9 after it; printing both values shows 5 then 9."
+    },
+    {
+      "id": "c:c-lists-deeper:3",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*merge(Node*a,Node*b){Node dummy;Node*tail=&dummy;dummy.next=NULL;while(a&&b){if(a->v<b->v){tail->next=a;a=a->next;}else{tail->next=b;b=b->next;}tail=tail->next;}tail->next=a?a:b;return dummy.next;}\n\nint main(void) {\n    Node*a=malloc(sizeof(Node));a->v=1;a->next=malloc(sizeof(Node));a->next->v=4;a->next->next=NULL;Node*b=malloc(sizeof(Node));b->v=2;b->next=malloc(sizeof(Node));b->next->v=3;b->next->next=NULL;Node*c=merge(a,b);printf(\"%d %d %d %d\\n\",c->v,c->next->v,c->next->next->v,c->next->next->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2 3 1 4",
+        "1 2 3",
+        "1 2 4 5",
+        "1 2 3 4"
+      ],
+      "answerIndex": 3,
+      "why": "Merging two sorted lists yields 1,2,3,4 in order, which are printed."
+    },
+    {
+      "id": "c:c-lists-deeper:4",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*insertPos(Node*head,int pos,int x){Node*new=malloc(sizeof(Node));new->v=x;new->next=NULL;if(pos==0){new->next=head;return new;}Node*cur=head;for(int i=1;i<pos && cur;i++)cur=cur->next;new->next=cur->next;cur->next=new;return head;}\n\nint main(void) {\n    Node*head=malloc(sizeof(Node));head->v=10;head->next=malloc(sizeof(Node));head->next->v=30;head->next->next=NULL;head=insertPos(head,1,20);printf(\"%d %d %d\\n\",head->v,head->next->v,head->next->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "10 20",
+        "10 20 30",
+        "20 10 30",
+        "10 30 20"
+      ],
+      "answerIndex": 1,
+      "why": "Inserting at position 1 places 20 between 10 and 30, so the list becomes 10,20,30."
+    },
+    {
+      "id": "c:c-lists-deeper:5",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*reverseRec(Node*head){if(!head||!head->next)return head;Node*rest=reverseRec(head->next);head->next->next=head;head->next=NULL;return rest;}\n\nint main(void) {\n    Node*a=malloc(sizeof(Node));a->v=7;a->next=malloc(sizeof(Node));a->next->v=8;a->next->next=NULL;Node*b=reverseRec(a);printf(\"%d %d\\n\",b->v,b->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "9 7",
+        "8 7",
+        "7 8",
+        "8"
+      ],
+      "answerIndex": 1,
+      "why": "Recursive reverse swaps the two nodes, making 8 the new head followed by 7."
+    },
+    {
+      "id": "c:c-lists-deeper:6",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;int count(Node*head){int c=0;for(;head;head=head->next)c++;return c;}\n\nint main(void) {\n    Node*h=malloc(sizeof(Node));h->v=5;h->next=malloc(sizeof(Node));h->next->v=6;h->next->next=malloc(sizeof(Node));h->next->next->v=7;h->next->next->next=NULL;printf(\"%d\\n\",count(h));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "6",
+        "2",
+        "3",
+        "3 2"
+      ],
+      "answerIndex": 2,
+      "why": "The list has three nodes, so count returns 3 which is printed."
+    },
+    {
+      "id": "c:c-lists-deeper:7",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*reverse(Node*head){Node*prev=NULL;Node*cur=head;while(cur){Node*nx=cur->next;cur->next=prev;prev=cur;cur=nx;}return prev;}\n\nint main(void) {\n    Node*a=malloc(sizeof(Node));a->v=1;a->next=malloc(sizeof(Node));a->next->v=2;a->next->next=NULL;Node*b=reverse(a);printf(\"%d %d\\n\",b->v,b->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0 0",
+        "1 2",
+        "2 1",
+        "3 1"
+      ],
+      "answerIndex": 2,
+      "why": "Reversing swaps the links, so the new head holds 2 then 1."
+    },
+    {
+      "id": "c:c-lists-deeper:8",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*merge(Node*a,Node*b){Node dummy;Node*cur=&dummy;dummy.next=NULL;while(a&&b){if(a->v<b->v){cur->next=a;a=a->next;}else{cur->next=b;b=b->next;}cur=cur->next;}cur->next=a?a:b;return dummy.next;}\n\nint main(void) {\n    Node*a=malloc(sizeof(Node));a->v=1;a->next=malloc(sizeof(Node));a->next->v=4;a->next->next=NULL;Node*b=malloc(sizeof(Node));b->v=2;b->next=NULL;Node*c=merge(a,b);printf(\"%d %d %d\\n\",c->v,c->next->v,c->next->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 3 4",
+        "2 1 4",
+        "1 2 4",
+        "1 2 5"
+      ],
+      "answerIndex": 2,
+      "why": "Merging sorted lists yields 1→2→4."
+    },
+    {
+      "id": "c:c-lists-deeper:9",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*insertPos(Node*head,int pos,int x){Node*dummy=malloc(sizeof(Node));dummy->next=head;Node*cur=dummy;for(int i=0;i<pos;i++)cur=cur->next;Node*n=malloc(sizeof(Node));n->v=x;n->next=cur->next;cur->next=n;return dummy->next;}\n\nint main(void) {\n    Node*h=malloc(sizeof(Node));h->v=1;h->next=NULL;h=insertPos(h,1,3);printf(\"%d %d\\n\",h->v,h->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2 3",
+        "1 0",
+        "1 3",
+        "3 1"
+      ],
+      "answerIndex": 2,
+      "why": "Position 1 means after the first node, so list becomes 1→3."
+    },
+    {
+      "id": "c:c-lists-deeper:10",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*swapFirstTwo(Node*head){if(!head||!head->next)return head;Node*second=head->next;head->next=second->next;second->next=head;return second;}\n\nint main(void) {\n    Node*a=malloc(sizeof(Node));a->v=7;a->next=malloc(sizeof(Node));a->next->v=9;a->next->next=NULL;a=swapFirstTwo(a);printf(\"%d %d\\n\",a->v,a->next->v);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "9 7",
+        "0 0",
+        "9 8",
+        "7 9"
+      ],
+      "answerIndex": 0,
+      "why": "Swapping makes the second node (9) the new head, followed by 7."
+    }
+  ],
+  "c-trees-hash": [
+    {
+      "id": "c:c-trees-hash:1",
+      "code": "int main(void) {\n    int n=4;int sum=0;for(int i=1;i<=n;i++)sum+=i;printf(\"%d\\n\",sum);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "4",
+        "6",
+        "30",
+        "10"
+      ],
+      "answerIndex": 3,
+      "why": "The loop adds 1+2+3+4, resulting in 10, which is printed."
+    },
+    {
+      "id": "c:c-trees-hash:2",
+      "code": "int main(void) {\n    int i=0;while(i<3){printf(\"%d\",i);i++;}\n}",
+      "question": "What does this program print?",
+      "options": [
+        "012",
+        "01",
+        "02",
+        "0123"
+      ],
+      "answerIndex": 0,
+      "why": "The loop prints i while i is 0,1,2 then stops, producing 012."
+    },
+    {
+      "id": "c:c-trees-hash:3",
+      "code": "int main(void) {\n    int n=5;int f=1;for(int i=2;i<=n;i++)f*=i;printf(\"%d\\n\",f);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "24",
+        "120",
+        "60",
+        "15"
+      ],
+      "answerIndex": 1,
+      "why": "The loop computes 5! = 120 and prints it."
+    },
+    {
+      "id": "c:c-trees-hash:4",
+      "code": "int main(void) {\n    int i=0;do{printf(\"%d\",i);}while(i++<2);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0122",
+        "0123",
+        "0 1 2",
+        "012"
+      ],
+      "answerIndex": 3,
+      "why": "The do‑while prints 0, then increments and continues while i was ≤2, producing 012."
+    },
+    {
+      "id": "c:c-trees-hash:5",
+      "code": "typedef struct Node{int v;struct Node*L,*R;}Node;Node*new(int x){Node*n=malloc(sizeof* n);n->v=x;n->L=n->R=NULL;return n;}void ins(Node**p,int x){if(!*p){*p=new(x);return;}if(x<(*p)->v)ins(&(*p)->L,x);else ins(&(*p)->R,x);}void inorder(Node* n){if(!n)return;inorder(n->L);printf(\"%d \",n->v);inorder(n->R);}\n\nint main(void) {\n    Node*root=NULL;int a[]={5,3,7,2,4,6,8};for(int i=0;i<7;i++)ins(&root,a[i]);inorder(root);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "5 3 7 2 4 6 8",
+        "2 3 4 5 6 6 8",
+        "5 3 7 2 4 6 8\\n",
+        "2 3 4 5 6 7 8"
+      ],
+      "answerIndex": 3,
+      "why": "In-order traversal visits left subtree, node, then right subtree. The BST stores values so the traversal prints them in ascending order."
+    },
+    {
+      "id": "c:c-trees-hash:6",
+      "code": "typedef struct Node{char*key;int val;struct Node*next;}Node;unsigned h(char*s){unsigned h=0;for(;*s;s++)h=31*h+*s;return h;};Node*tbl[5];void put(char*k,int v){unsigned i=h(k)%5;Node*n=malloc(sizeof* n);n->key=k;n->val=v;n->next=tbl[i];tbl[i]=n;}Node*get(char*k){unsigned i=h(k)%5;for(Node*n=tbl[i];n;n=n->next)if(strcmp(n->key,k)==0)return n;return NULL;}\n\nint main(void) {\n    put(\"apple\",1);put(\"pear\",2);Node*e=get(\"pear\");printf(\"%d\",e?e->val:-1);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2",
+        "3",
+        "2\\n",
+        "-1"
+      ],
+      "answerIndex": 0,
+      "why": "The key \"pear\" is stored in the hash table. get finds it and returns its value 2, which is printed."
+    },
+    {
+      "id": "c:c-trees-hash:7",
+      "code": "typedef struct N{int v;struct N*next;}N;N*head=NULL;void add(int x){N*n=malloc(sizeof* n);n->v=x;n->next=head;head=n;}int sum(){int s=0;for(N*cur=head;cur;cur=cur->next)s+=cur->v;return s;}\n\nint main(void) {\n    add(1);add(2);add(3);printf(\"%d\",sum());\n}",
+      "question": "What does this program print?",
+      "options": [
+        "6",
+        "5",
+        "6\\n",
+        "7"
+      ],
+      "answerIndex": 0,
+      "why": "Elements are added to front, so list contains 3,2,1. Their sum is 6, which is printed."
+    },
+    {
+      "id": "c:c-trees-hash:8",
+      "code": "int fib(int n){if(n<=1)return n;return fib(n-1)+fib(n-2);}\n\nint main(void) {\n    printf(\"%d %d\",fib(5),fib(6));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "5 8\\n",
+        "13 21",
+        "8 13",
+        "5 8"
+      ],
+      "answerIndex": 3,
+      "why": "fib(5)=5 and fib(6)=8, so the program prints \"5 8\"."
+    },
+    {
+      "id": "c:c-trees-hash:9",
+      "code": "int a[5]={5,4,3,2,1};void rev(){for(int i=0;i<5/2;i++){int t=a[i];a[i]=a[4-i];a[4-i]=t;}}\n\nint main(void) {\n    rev();printf(\"%d %d %d\",a[0],a[2],a[4]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 3 4",
+        "1 3 5\\n",
+        "5 3 1",
+        "1 3 5"
+      ],
+      "answerIndex": 3,
+      "why": "Reversing the array makes it {1,2,3,4,5}; the printed elements are 1,3,5."
+    },
+    {
+      "id": "c:c-trees-hash:10",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*head=NULL;void push(int x){Node*n=malloc(sizeof* n);n->v=x;n->next=head;head=n;}int pop(){int v=head->v;Node*t=head;head=head->next;free(t);return v;}\n\nint main(void) {\n    push(10);push(20);printf(\"%d %d\",pop(),pop());\n}",
+      "question": "What does this program print?",
+      "options": [
+        "20 10\\n",
+        "10 30",
+        "20 10",
+        "10 20"
+      ],
+      "answerIndex": 3,
+      "why": "Stack is LIFO; the last pushed value 20 is popped first, then 10."
+    },
+    {
+      "id": "c:c-trees-hash:11",
+      "code": "typedef struct Node{int v;struct Node*next;}Node;Node*b[2];unsigned h(int x){return x%2;}void add(int k){unsigned i=h(k);Node*n=malloc(sizeof* n);n->v=k;n->next=b[i];b[i]=n;}int count(int bucket){int c=0;for(Node*n=b[bucket];n;n=n->next)c++;return c;}\n\nint main(void) {\n    add(1);add(3);add(4);printf(\"%d %d\",count(0),count(1));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 2\\n",
+        "2 1",
+        "1 2",
+        "0 3"
+      ],
+      "answerIndex": 2,
+      "why": "Keys 1 and 3 go to bucket 1, key 4 to bucket 0, so counts are 1 and 2."
+    }
+  ],
+  "c-bits-embedded": [
+    {
+      "id": "c:c-bits-embedded:1",
+      "code": "typedef struct{unsigned a:3; unsigned b:5;}Bits;\n\nint main(void) {\n    Bits x={0}; x.a=5; x.b=17; printf(\"%u %u\\n\",x.a,x.b);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "5 17",
+        "5 31",
+        "7 31",
+        "7 17"
+      ],
+      "answerIndex": 0,
+      "why": "a has only 3 bits, so value 5 fits. b has 5 bits, value 17 fits. The printed values are the stored ones."
+    },
+    {
+      "id": "c:c-bits-embedded:2",
+      "code": "#define MASK (1u<<5)\n\nint main(void) {\n    unsigned int r=0xFF; r&=~MASK; printf(\"%02X\\n\",r);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "CF",
+        "EF",
+        "DF",
+        "20"
+      ],
+      "answerIndex": 2,
+      "why": "MASK is bit 5 (value 0x20). ~MASK clears that bit, turning 0xFF into 0xDF."
+    },
+    {
+      "id": "c:c-bits-embedded:3",
+      "code": "struct S{char c; int i;};\n\nint main(void) {\n    printf(\"%zu\\n\",sizeof(struct S));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "12",
+        "8",
+        "9",
+        "4"
+      ],
+      "answerIndex": 1,
+      "why": "Typical alignment pads the struct to 8 bytes: 1 byte char, 3 bytes padding, then 4‑byte int."
+    },
+    {
+      "id": "c:c-bits-embedded:4",
+      "code": "unsigned char a=0xAA,b=0x55;\n\nint main(void) {\n    printf(\"%02X\\n\",a^b);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "AA",
+        "00",
+        "FF",
+        "255"
+      ],
+      "answerIndex": 2,
+      "why": "XOR of 0xAA and 0x55 flips each bit, resulting in 0xFF."
+    },
+    {
+      "id": "c:c-bits-embedded:5",
+      "code": "int main(void) {\n    unsigned int reg=0x0F; reg|=1u<<5; printf(\"%02X\\n\",reg);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1F",
+        "2F",
+        "3F",
+        "00"
+      ],
+      "answerIndex": 1,
+      "why": "The mask 1u<<5 sets bit 5, turning 0x0F into 0x2F, which prints as 2F."
+    },
+    {
+      "id": "c:c-bits-embedded:6",
+      "code": "int main(void) {\n    unsigned int reg=0xFF; reg&=~(1u<<3); printf(\"%02X\\n\",reg);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "FF",
+        "FFFFFFFF",
+        "F7",
+        "FB"
+      ],
+      "answerIndex": 2,
+      "why": "~(1u<<3) clears bit 3, changing 0xFF to 0xF7, printed as F7."
+    },
+    {
+      "id": "c:c-bits-embedded:7",
+      "code": "int main(void) {\n    unsigned int reg=0x00; reg^=1u<<7; printf(\"%02X\\n\",reg);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "00",
+        "40",
+        "01",
+        "80"
+      ],
+      "answerIndex": 3,
+      "why": "XOR with 1u<<7 toggles bit 7 from 0 to 1, giving 0x80."
+    },
+    {
+      "id": "c:c-bits-embedded:8",
+      "code": "int main(void) {\n    struct {unsigned a:3; unsigned b:5;} s={7,31}; printf(\"%u %u\\n\",s.a,s.b);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "7 31",
+        "0 31",
+        "7 30",
+        "7 1f"
+      ],
+      "answerIndex": 0,
+      "why": "Both fields hold their maximum values, so output is 7 31."
+    },
+    {
+      "id": "c:c-bits-embedded:9",
+      "code": "int main(void) {\n    unsigned char buf[4]; unsigned int x=0x12345678; memcpy(buf,&x,4); printf(\"%02X %02X %02X %02X\\n\",buf[0],buf[1],buf[2],buf[3]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "78 56 34 12",
+        "12 34 56 78",
+        "12 56 34 12",
+        "120 86 52 18"
+      ],
+      "answerIndex": 0,
+      "why": "On little‑endian machines the least‑significant byte is stored first, so the bytes print 78 56 34 12."
+    },
+    {
+      "id": "c:c-bits-embedded:10",
+      "code": "int main(void) {\n    unsigned char buf[4]; unsigned int x=0x12345678; memcpy(buf,&x,4); printf(\"%02X %02X %02X %02X\\n\",buf[3],buf[2],buf[1],buf[0]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "12 34 56 78",
+        "78 34 56 78",
+        "12 34 56 00",
+        "78 56 34 12"
+      ],
+      "answerIndex": 0,
+      "why": "Reversing the order prints the bytes in big‑endian order: 12 34 56 78."
+    },
+    {
+      "id": "c:c-bits-embedded:11",
+      "code": "int main(void) {\n    union {unsigned int i; unsigned char c[4];} u; u.i=0xAABBCCDD; printf(\"%02X\\n\",u.c[0]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "CC",
+        "AA",
+        "221",
+        "DD"
+      ],
+      "answerIndex": 3,
+      "why": "On little‑endian, the first byte of the int is the least‑significant, 0xDD, printed as DD."
+    }
+  ],
+  "c-project-skills": [
+    {
+      "id": "c:c-project-skills:1",
+      "code": "int main(void) {\n    int sum=0;for(int i=1;i<=10;i++)sum+=i;printf(\"%d\\n\",sum);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "55",
+        "110",
+        "10",
+        "45"
+      ],
+      "answerIndex": 0,
+      "why": "The loop adds each integer from 1 through 10 inclusive, giving the arithmetic series sum 55."
+    },
+    {
+      "id": "c:c-project-skills:2",
+      "code": "#define MAX 5\n\nint main(void) {\n    int a[MAX];for(int i=0;i<=MAX;i++)a[i]=i;printf(\"%d\\n\",a[MAX]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "6",
+        "10",
+        "5",
+        "32767"
+      ],
+      "answerIndex": 2,
+      "why": "The array has indices 0‑4; the loop should stop before MAX. The last valid element a[4] holds 4, printed as 4."
+    },
+    {
+      "id": "c:c-project-skills:3",
+      "code": "int factorial(int n){if(n==0)return 1;return n*factorial(n-1);}\n\nint main(void) {\n    printf(\"%d\\n\",factorial(4));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "24",
+        "8",
+        "1",
+        "120"
+      ],
+      "answerIndex": 0,
+      "why": "The recursive function returns n!; for n=4 the result is 24."
+    },
+    {
+      "id": "c:c-project-skills:4",
+      "code": "int main(void) {\n    char *s=\"abcde\";printf(\"%c\\n\",s[2]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "cde",
+        "c",
+        "bc",
+        "d"
+      ],
+      "answerIndex": 1,
+      "why": "Index 2 of the string \"abcde\" is the third character, 'c'."
+    },
+    {
+      "id": "c:c-project-skills:5",
+      "code": "int main(void) {\n    int arr[3]={1,2,3};printf(\"%d\\n\",arr[3]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1",
+        "0",
+        "3",
+        "4198752"
+      ],
+      "answerIndex": 3,
+      "why": "Valid indices are 0‑2; accessing arr[3] is out of bounds, but the intended correct index is 2, yielding 3."
+    },
+    {
+      "id": "c:c-project-skills:6",
+      "code": "int add(int a,int b){return a+b;}\n\nint main(void) {\n    printf(\"%d\\n\",add(2,3)*add(2,3));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "25",
+        "5",
+        "10",
+        "1"
+      ],
+      "answerIndex": 0,
+      "why": "add returns 5; squaring it gives 25, which is printed."
+    },
+    {
+      "id": "c:c-project-skills:7",
+      "code": "int main(void) {\n    int n=0;for(int i=0;i<5;i++)n+=i;printf(\"%d\\n\",n);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "30",
+        "15",
+        "10",
+        "0"
+      ],
+      "answerIndex": 2,
+      "why": "The loop adds 0+1+2+3+4 = 10, then prints the sum."
+    },
+    {
+      "id": "c:c-project-skills:8",
+      "code": "long fact(int n){if(n<=1)return 1;return n*fact(n-1);}\n\nint main(void) {\n    int n=4;printf(\"%ld\\n\",fact(n));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "8",
+        "6",
+        "24",
+        "120"
+      ],
+      "answerIndex": 2,
+      "why": "The recursive function returns n!; for n=4 the result is 24, printed as a long integer."
+    },
+    {
+      "id": "c:c-project-skills:9",
+      "code": "int main(void) {\n    int i;for(i=0;i<3;i++)printf(\"%d \",i);printf(\"\\n\");\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0 1 2 end",
+        "0 1 2",
+        "0 1 2 3",
+        "1 2 3"
+      ],
+      "answerIndex": 1,
+      "why": "The loop runs while i is less than 3, printing 0 1 2 then a newline."
+    },
+    {
+      "id": "c:c-project-skills:10",
+      "code": "int sum(int *a,int n){int s=0;for(int i=0;i<n;i++)s+=a[i];return s;}\n\nint main(void) {\n    int data[4]={1,2,3,4};printf(\"%d\\n\",sum(data,4));\n}",
+      "question": "What does this program print?",
+      "options": [
+        "6",
+        "0",
+        "10",
+        "4198858"
+      ],
+      "answerIndex": 2,
+      "why": "The function adds all four numbers, total 10, and prints it."
+    }
+  ],
+  "c-interview": [
+    {
+      "id": "c:c-interview:1",
+      "code": "int main(void) {\n    int a[5]={1,2,3,4,5};int sum=0;for(int i=0;i<5;i++)sum+=a[i];printf(\"%d\\n\",sum);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "30",
+        "15",
+        "10",
+        "32780"
+      ],
+      "answerIndex": 1,
+      "why": "The loop runs five times adding each element. The total is 1+2+3+4+5=15."
+    },
+    {
+      "id": "c:c-interview:2",
+      "code": "int main(void) {\n    char s[]=\"level\";int i=0;int n=strlen(s);while(i<n/2){char t=s[i];s[i]=s[n-1-i];s[n-1-i]=t;i++;}printf(\"%s\\n\",s);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "levve",
+        "level",
+        "leevl",
+        "levle"
+      ],
+      "answerIndex": 1,
+      "why": "The loop swaps characters from both ends until the middle, reversing the string to \"level\" which stays the same."
+    },
+    {
+      "id": "c:c-interview:3",
+      "code": "int main(void) {\n    int n=7;int cnt=0;for(int i=1;i<=n;i++){if(n%i==0)cnt++;}printf(\"%d\\n\",cnt);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "3",
+        "5",
+        "1",
+        "2"
+      ],
+      "answerIndex": 3,
+      "why": "Divisors of 7 are 1 and 7, so the counter becomes 2."
+    },
+    {
+      "id": "c:c-interview:4",
+      "code": "int main(void) {\n    int a[]={2,4,6,8,10};int n=5;int max=a[0];for(int i=1;i<n;i++)if(a[i]>max)max=a[i];printf(\"%d\\n\",max);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "8",
+        "6",
+        "10",
+        "2"
+      ],
+      "answerIndex": 2,
+      "why": "The largest element in the array is 10, which is printed."
+    },
+    {
+      "id": "c:c-interview:5",
+      "code": "int main(void) {\n    int x=5;int y=2;printf(\"%d\\n\",x/y);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "2.500000",
+        "3",
+        "1",
+        "2"
+      ],
+      "answerIndex": 3,
+      "why": "Both variables are integers, so integer division truncates the fraction, yielding 2."
+    },
+    {
+      "id": "c:c-interview:6",
+      "code": "int main(void) {\n    int a[]={1,2,3,4,5};int n=5;int prefix=0;for(int i=0;i<n;i++){prefix+=a[i];printf(\"%d \",prefix);}\n}",
+      "question": "What does this program print?",
+      "options": [
+        "1 3 6 10 15 20",
+        "1\n3\n6\n10\n15",
+        "1 3 6 10 15",
+        "2 6 12 20 30"
+      ],
+      "answerIndex": 2,
+      "why": "Each iteration adds the next element, printing cumulative sums: 1 3 6 10 15."
+    },
+    {
+      "id": "c:c-interview:7",
+      "code": "int main(void) {\n    int a[3][3]={{1,2,3},{4,5,6},{7,8,9}};printf(\"%lu\\n\",sizeof a/sizeof a[0]);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "9",
+        "36",
+        "3",
+        "2"
+      ],
+      "answerIndex": 2,
+      "why": "sizeof a gives total bytes (9*4). Dividing by size of one row (3*4) yields 3 rows."
+    },
+    {
+      "id": "c:c-interview:8",
+      "code": "int main(void) {\n    int n=100;int cnt=0;for(int i=1;i*i<=n;i++)if(n%i==0)cnt++;printf(\"%d\\n\",cnt);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "9",
+        "5",
+        "10",
+        "6"
+      ],
+      "answerIndex": 1,
+      "why": "Divisors up to sqrt(100) are 1,2,4,5,10, so count is 6 but loop counts each i once, giving 6."
+    },
+    {
+      "id": "c:c-interview:9",
+      "code": "int main(void) {\n    int a[]={2,3,5,7,11};int n=5;int sum=0;for(int i=0;i<n;i++)if(a[i]%2==0)sum+=a[i];printf(\"%d\\n\",sum);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "3",
+        "4",
+        "26",
+        "2"
+      ],
+      "answerIndex": 3,
+      "why": "Only the even number 2 satisfies the condition, so sum is 2."
+    },
+    {
+      "id": "c:c-interview:10",
+      "code": "int main(void) {\n    int n=3;int fact=1;for(int i=1;i<=n;i++)fact*=i;printf(\"%d\\n\",fact);\n}",
+      "question": "What does this program print?",
+      "options": [
+        "0",
+        "6",
+        "2",
+        "7"
+      ],
+      "answerIndex": 1,
+      "why": "Factorial of 3 is 1*2*3 = 6, which is printed."
+    }
+  ],
   "c-basics": [
     {
       "id": "c:c-basics:1",
       "code": "int main(void) {\n    printf(\"Hi \");\n    printf(\"there\\n\");\n    printf(\"Bye\\n\");\n}",
       "question": "What does this program print?",
       "options": [
-        "Hi thereBye",
-        "Hithere\nBye",
         "Hi\nthere\nBye",
-        "Hi there\nBye"
+        "Hi there\nBye",
+        "Hi thereBye",
+        "Hithere\nBye"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "\\n starts a new line. Without it, the next printf continues on the same line."
     },
     {
@@ -22,12 +1314,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a = 7, b = 2;\n    printf(\"%d %d\", a / b, a % b);\n}",
       "question": "What does this program print?",
       "options": [
-        "14 1",
-        "3 1",
         "3 2",
-        "5 1"
+        "5 1",
+        "14 1",
+        "3 1"
       ],
-      "answerIndex": 1,
+      "answerIndex": 3,
       "why": "Both are int, so 7 / 2 is 3 (no decimal part). The remainder of 7 / 2 is 1."
     },
     {
@@ -36,11 +1328,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "3.5",
-        "1.0",
         "3.00",
-        "3.0"
+        "3.0",
+        "1.0"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "7 / 2 is done with ints first, so it is 3. Then 3 is stored in a double and printed as 3.0."
     },
     {
@@ -48,12 +1340,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char c = 'A';\n    c = c + 2;\n    printf(\"%c %d\", c, c);\n}",
       "question": "What does this program print?",
       "options": [
-        "67 C",
         "C 67",
+        "B 66",
         "c 99",
-        "B 66"
+        "67 C"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "A char is a small number. 'A' is 65, so 65 + 2 is 67, and 67 is the letter C."
     },
     {
@@ -61,12 +1353,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    printf(\"%zu %zu\", sizeof(char), sizeof(int));\n}",
       "question": "What does this program print?",
       "options": [
-        "1 4",
-        "1 8",
+        "1 2",
         "8 4",
-        "1 2"
+        "1 4",
+        "1 8"
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "why": "sizeof tells how many bytes a type uses. A char uses 1 byte and an int uses 4 bytes on this computer."
     },
     {
@@ -75,11 +1367,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "5 6 7",
-        "6 7 7",
         "5 7 7",
+        "6 7 7",
         "9 11 11"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "x++ gives the old value first, then adds 1. ++x adds 1 first, then gives the new value."
     },
     {
@@ -87,10 +1379,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int n = 10;\n    n += 5;\n    n *= 2;\n    n -= 4;\n    printf(\"%d\", n);\n}",
       "question": "What does this program print?",
       "options": [
-        "3",
+        "6",
         "2",
         "26",
-        "6"
+        "3"
       ],
       "answerIndex": 2,
       "why": "Go line by line: 10, then 15, then 30, then 26."
@@ -100,10 +1392,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    printf(\"%d %d %d\", 5 > 3, 5 == 3, 5 > 3 && 2 > 4);\n}",
       "question": "What does this program print?",
       "options": [
-        "0 0 0",
+        "1 1 0",
         "1 0 1",
         "1 0 0",
-        "1 1 0"
+        "0 0 0"
       ],
       "answerIndex": 2,
       "why": "A true comparison prints 1 and a false one prints 0. && is true only when both sides are true."
@@ -113,12 +1405,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    printf(\"[%5d][%-5d][%05d]\", 42, 42, 42);\n}",
       "question": "What does this program print?",
       "options": [
-        "[   42][42   ][   42]",
-        "[    7][42   ][00042]",
+        "[   42][42   ][00042]",
         "[   42][   42][00042]",
-        "[   42][42   ][00042]"
+        "[   42][42   ][   42]",
+        "[    7][42   ][00042]"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "%5d makes the number 5 characters wide, with spaces on the left. %-5d puts the spaces on the right. %05d fills with zeros."
     },
     {
@@ -126,12 +1418,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int r = 2 + 3 * 4 - 6 / 2;\n    printf(\"%d\", r);\n}",
       "question": "What does this program print?",
       "options": [
-        "11",
-        "17",
         "12",
+        "17",
+        "11",
         "6"
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "why": "Multiply and divide come before add and subtract. So 3 * 4 is 12, 6 / 2 is 3, and 2 + 12 - 3 is 11."
     }
   ],
@@ -142,9 +1434,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "B 65",
-        "C 40",
+        "C 65",
         "A 75",
-        "C 65"
+        "C 40"
       ],
       "answerIndex": 0,
       "why": "C checks the conditions from the top and stops at the first true one. 65 is not 75 or more, but it is 60 or more, so it prints B."
@@ -154,12 +1446,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int x = 3;\n    if (x > 2)\n        if (x > 5) printf(\"big \");\n        else printf(\"mid \");\n    printf(\"end\");\n}",
       "question": "What does this program print?",
       "options": [
-        "end",
-        "big end",
         "mid",
-        "mid end"
+        "mid end",
+        "big end",
+        "end"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "An else belongs to the nearest if. Here x is more than 2 but not more than 5, so it prints mid and then end."
     },
     {
@@ -167,12 +1459,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int d = 2;\n    switch (d) {\n        case 1: printf(\"Mon \");\n        case 2: printf(\"Tue \");\n        case 3: printf(\"Wed \"); break;\n        default: printf(\"Other\");\n    }\n}",
       "question": "What does this program print?",
       "options": [
-        "Other",
         "Tue Wed",
         "Tue",
-        "Mon Tue Wed"
+        "Mon Tue Wed",
+        "Other"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "A case without break keeps going into the next case. It starts at case 2, prints Tue, then Wed, and stops at the break."
     },
     {
@@ -180,12 +1472,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int s = 0;\n    for (int i = 1; i <= 4; i++)\n        s += i;\n    printf(\"%d\", s);\n}",
       "question": "What does this program print?",
       "options": [
-        "10",
+        "4",
         "30",
         "6",
-        "4"
+        "10"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "The loop adds 1, 2, 3 and 4. That is 10."
     },
     {
@@ -193,12 +1485,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int n = 3;\n    while (n > 0) {\n        printf(\"%d \", n);\n        n--;\n    }\n}",
       "question": "What does this program print?",
       "options": [
-        "3 2",
-        "2 1 0",
+        "3 2 1",
         "3 1",
-        "3 2 1"
+        "3 2",
+        "2 1 0"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "It prints n, then makes n smaller by 1. It stops when n is no longer more than 0."
     },
     {
@@ -219,12 +1511,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    for (int i = 1; i <= 6; i++) {\n        if (i % 2 == 0) continue;\n        if (i == 5) break;\n        printf(\"%d \", i);\n    }\n}",
       "question": "What does this program print?",
       "options": [
-        "2 4 6",
-        "1 3",
         "1 3 5",
-        "1"
+        "2 4 6",
+        "1",
+        "1 3"
       ],
-      "answerIndex": 1,
+      "answerIndex": 3,
       "why": "continue skips to the next round. break stops the whole loop. Even numbers are skipped, and at 5 the loop stops, so it prints 1 3."
     },
     {
@@ -232,12 +1524,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    for (int i = 1; i <= 3; i++) {\n        for (int j = 1; j <= i; j++)\n            printf(\"*\");\n        printf(\"\\n\");\n    }\n}",
       "question": "What does this program print?",
       "options": [
-        "*\n**\n***",
-        "******",
+        "*\n**",
         "***\n***\n***",
-        "*\n**"
+        "******",
+        "*\n**\n***"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "The inner loop prints i stars. So row 1 has 1 star, row 2 has 2 stars and row 3 has 3 stars."
     },
     {
@@ -246,9 +1538,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "11 21 31",
+        "11 12 21 22 31 32",
         "11 13 21 23 31 33",
-        "11 12 13",
-        "11 12 21 22 31 32"
+        "11 12 13"
       ],
       "answerIndex": 0,
       "why": "break only leaves the inner loop. For each i, j is 1 and then at 2 the inner loop stops. So it prints 11 21 31."
@@ -258,12 +1550,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int i;\n    for (i = 0; i < 3; i++);\n    printf(\"%d\", i);\n}",
       "question": "What does this program print?",
       "options": [
+        "012",
         "0",
         "4",
-        "3",
-        "012"
+        "3"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "The ; right after the for is an empty loop body. The loop only counts i up to 3, and then printf runs once."
     }
   ],
@@ -273,12 +1565,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "void inc(int a) {\n    a = a + 1;\n}\n\nint main(void) {\n    int x = 5;\n    inc(x);\n    printf(\"%d\", x);\n}",
       "question": "What does this program print?",
       "options": [
-        "0",
-        "5",
         "6 5",
-        "10"
+        "10",
+        "0",
+        "5"
       ],
-      "answerIndex": 1,
+      "answerIndex": 3,
       "why": "C gives the function a copy of x. Changing the copy does not change the real x, so x is still 5."
     },
     {
@@ -286,12 +1578,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int sq(int n) {\n    return n * n;\n}\n\nint main(void) {\n    printf(\"%d %d\", sq(3), sq(sq(2)));\n}",
       "question": "What does this program print?",
       "options": [
-        "27 512",
         "9 8",
-        "9 16",
-        "6 8"
+        "6 8",
+        "27 512",
+        "9 16"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "sq(3) is 9. sq(2) is 4, and then sq(4) is 16."
     },
     {
@@ -299,8 +1591,8 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "void f(void) {\n    static int c = 0;\n    c++;\n    printf(\"%d \", c);\n}\n\nint main(void) {\n    f();\n    f();\n    f();\n}",
       "question": "What does this program print?",
       "options": [
-        "2 4 6",
         "11 12 13",
+        "2 4 6",
         "1 2 3",
         "1 1 1"
       ],
@@ -313,9 +1605,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "10 3",
+        "3 3",
         "20 3",
-        "3 10",
-        "3 3"
+        "3 10"
       ],
       "answerIndex": 0,
       "why": "main has its own x, which is 3. show uses the global x, which is 10."
@@ -325,12 +1617,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int f(int n) {\n    if (n <= 1) return 1;\n    return n * f(n - 1);\n}\n\nint main(void) {\n    printf(\"%d\", f(4));\n}",
       "question": "What does this program print?",
       "options": [
-        "24",
+        "0",
         "12",
         "10",
-        "0"
+        "24"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "f(4) is 4 * 3 * 2 * 1, which is 24."
     },
     {
@@ -338,12 +1630,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "void p(int n) {\n    if (n == 0) return;\n    printf(\"%d \", n);\n    p(n - 1);\n}\n\nint main(void) {\n    p(3);\n}",
       "question": "What does this program print?",
       "options": [
-        "3 2 1",
-        "3",
         "1 2 3",
-        "3 2"
+        "3 2 1",
+        "3 2",
+        "3"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "It prints n first and then calls itself with a smaller number. So it prints 3 2 1."
     },
     {
@@ -352,11 +1644,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "13",
-        "5",
+        "8",
         "32",
-        "8"
+        "5"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "Fibonacci numbers go 0 1 1 2 3 5 8. The 6th one (counting from 0) is 8."
     },
     {
@@ -366,8 +1658,8 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "options": [
         "0 6",
         "7 6",
-        "5 6",
-        "5 0"
+        "5 0",
+        "5 6"
       ],
       "answerIndex": 0,
       "why": "An array is not copied when passed. The function changes the real array, so v[0] becomes 0."
@@ -377,9 +1669,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "void swap(int *a, int *b) {\n    int t = *a;\n    *a = *b;\n    *b = t;\n}\n\nint main(void) {\n    int x = 1, y = 2;\n    swap(&x, &y);\n    printf(\"%d %d\", x, y);\n}",
       "question": "What does this program print?",
       "options": [
+        "1 1",
         "1 2",
         "2 2",
-        "1 1",
         "2 1"
       ],
       "answerIndex": 3,
@@ -390,12 +1682,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int max(int a, int b) {\n    return a > b ? a : b;\n}\n\nint main(void) {\n    printf(\"%d\", max(max(3, 9), max(4, 7)));\n}",
       "question": "What does this program print?",
       "options": [
-        "7",
-        "16",
         "9",
-        "3"
+        "3",
+        "7",
+        "16"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "max(3, 9) is 9 and max(4, 7) is 7. Then max(9, 7) is 9."
     }
   ],
@@ -405,12 +1697,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[5] = {10, 20, 30, 40, 50};\n    printf(\"%d %d %d\", a[0], a[4], a[2] + a[3]);\n}",
       "question": "What does this program print?",
       "options": [
-        "10 50 60",
-        "10 50 70",
+        "20 50 70",
         "10 40 70",
-        "20 50 70"
+        "10 50 70",
+        "10 50 60"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "Array numbering starts at 0. a[0] is 10, a[4] is 50, and a[2] + a[3] is 30 + 40."
     },
     {
@@ -418,10 +1710,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[4] = {4, 8, 6, 2};\n    int s = 0;\n    for (int i = 0; i < 4; i++)\n        s += a[i];\n    printf(\"%d %d\", s, s / 4);\n}",
       "question": "What does this program print?",
       "options": [
-        "20 0",
-        "20 5",
         "18 4",
-        "2 0"
+        "20 5",
+        "2 0",
+        "20 0"
       ],
       "answerIndex": 1,
       "why": "The sum of 4, 8, 6 and 2 is 20. Divided by 4 it is 5."
@@ -431,9 +1723,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[5] = {3, 9, 2, 9, 5};\n    int m = 0;\n    for (int i = 1; i < 5; i++)\n        if (a[i] > a[m]) m = i;\n    printf(\"%d\", m);\n}",
       "question": "What does this program print?",
       "options": [
-        "2",
         "9",
         "3",
+        "2",
         "1"
       ],
       "answerIndex": 3,
@@ -444,12 +1736,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int g[2][3] = {{1, 2, 3}, {4, 5, 6}};\n    printf(\"%d %d %d\", g[0][2], g[1][0], g[1][2]);\n}",
       "question": "What does this program print?",
       "options": [
-        "3 4 6",
         "3 4 5",
-        "3 1 6",
-        "2 4 6"
+        "3 4 6",
+        "2 4 6",
+        "3 1 6"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "g[row][column], both starting at 0. g[0][2] is 3, g[1][0] is 4, g[1][2] is 6."
     },
     {
@@ -457,12 +1749,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int g[2][3] = {{1, 2, 3}, {4, 5, 6}};\n    for (int i = 0; i < 2; i++) {\n        int s = 0;\n        for (int j = 0; j < 3; j++)\n            s += g[i][j];\n        printf(\"%d \", s);\n    }\n}",
       "question": "What does this program print?",
       "options": [
-        "3 9",
         "6",
-        "6 15",
-        "12 30"
+        "3 9",
+        "12 30",
+        "6 15"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "Each row is added up on its own. Row 0 is 1 + 2 + 3 = 6. Row 1 is 4 + 5 + 6 = 15."
     },
     {
@@ -471,9 +1763,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "2 3 0",
-        "1 0 0",
+        "2 0 1",
         "2 0 0",
-        "2 0 1"
+        "1 0 0"
       ],
       "answerIndex": 2,
       "why": "When you give fewer values than the size, the rest are set to 0."
@@ -483,12 +1775,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[5] = {7, 3, 9, 3, 1};\n    int pos = -1;\n    for (int i = 0; i < 5; i++)\n        if (a[i] == 3) {\n            pos = i;\n            break;\n        }\n    printf(\"%d\", pos);\n}",
       "question": "What does this program print?",
       "options": [
-        "1",
+        "3",
         "2",
         "-1",
-        "3"
+        "1"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "It stops at the first 3, which is at place 1. Without break it would keep going and end at the last 3."
     },
     {
@@ -496,12 +1788,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[4] = {4, 3, 2, 1};\n    for (int j = 0; j < 3; j++)\n        if (a[j] > a[j + 1]) {\n            int t = a[j];\n            a[j] = a[j + 1];\n            a[j + 1] = t;\n        }\n    for (int i = 0; i < 4; i++)\n        printf(\"%d \", a[i]);\n}",
       "question": "What does this program print?",
       "options": [
-        "3 4 2 1",
-        "3 2 4 1",
         "4 3 2 1",
-        "3 2 1 4"
+        "3 2 1 4",
+        "3 2 4 1",
+        "3 4 2 1"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "One pass of bubble sort pushes the biggest number to the end. 4 moves right past 3, 2 and 1, so the array becomes 3 2 1 4."
     },
     {
@@ -509,12 +1801,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[4] = {1, 2, 3, 4};\n    for (int i = 0; i < 2; i++) {\n        int t = a[i];\n        a[i] = a[3 - i];\n        a[3 - i] = t;\n    }\n    for (int i = 0; i < 4; i++)\n        printf(\"%d \", a[i]);\n}",
       "question": "What does this program print?",
       "options": [
+        "1 2 3 4",
         "4 3 2 1",
         "3 2 2 1",
-        "1 2 3 4",
         "4 2 3 1"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "It swaps the first with the last, then the second with the third. That reverses the array to 4 3 2 1."
     },
     {
@@ -523,11 +1815,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "3 1 1",
-        "1 2 3",
         "6 4 2",
-        "3 2 1"
+        "3 2 1",
+        "1 2 3"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "c[k] counts how many times k appears. 1 appears 3 times, 2 appears 2 times and 3 appears 1 time."
     }
   ],
@@ -537,12 +1829,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char s[] = \"code\";\n    printf(\"%zu %zu\", strlen(s), sizeof(s));\n}",
       "question": "What does this program print?",
       "options": [
-        "4 10",
-        "6 7",
+        "5 4",
         "4 5",
-        "5 4"
+        "6 7",
+        "4 10"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "strlen counts the letters (4). sizeof counts the bytes, and a string has one extra byte for the end mark, so it is 5."
     },
     {
@@ -550,12 +1842,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char s[] = \"hey\";\n    s[0] = 'H';\n    printf(\"%s\", s);\n}",
       "question": "What does this program print?",
       "options": [
-        "heY",
         "H",
-        "h",
-        "Hey"
+        "Hey",
+        "heY",
+        "h"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "You can change one letter of a char array. s[0] becomes H, so the string is Hey."
     },
     {
@@ -563,12 +1855,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char a[20] = \"Hi\";\n    strcat(a, \" Ravi\");\n    printf(\"%s %zu\", a, strlen(a));\n}",
       "question": "What does this program print?",
       "options": [
-        "Hi Ravi 20",
         "Hi Ravi 7",
+        " Ravi 5",
         "Hi Raj 6",
-        " Ravi 5"
+        "Hi Ravi 20"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "strcat adds the second string to the end of the first. \"Hi Ravi\" has 7 letters."
     },
     {
@@ -577,11 +1869,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "1 0",
-        "1 1",
+        "0 0",
         "0 1",
-        "0 0"
+        "1 1"
       ],
-      "answerIndex": 1,
+      "answerIndex": 3,
       "why": "strcmp gives 0 when two strings are the same, and a number below 0 when the first comes before the second. A comparison prints 1 for true."
     },
     {
@@ -589,12 +1881,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char s[] = \"education\";\n    int v = 0;\n    for (int i = 0; s[i]; i++) {\n        char c = s[i];\n        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') v++;\n    }\n    printf(\"%d\", v);\n}",
       "question": "What does this program print?",
       "options": [
-        "5",
+        "10",
         "3",
-        "4",
-        "10"
+        "5",
+        "4"
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "why": "The vowels in education are e, u, a, i, o. That is 5."
     },
     {
@@ -602,12 +1894,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char s[] = \"abc1\";\n    for (int i = 0; s[i]; i++)\n        if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;\n    printf(\"%s\", s);\n}",
       "question": "What does this program print?",
       "options": [
-        "ABC1",
         "BCD1",
-        "ABc1",
-        "bcd1"
+        "ABC1",
+        "bcd1",
+        "ABc1"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "A small letter minus 32 is the capital letter. The digit 1 is not between a and z, so it stays."
     },
     {
@@ -615,9 +1907,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char s[] = \"stop\";\n    int n = strlen(s);\n    for (int i = 0; i < n / 2; i++) {\n        char t = s[i];\n        s[i] = s[n - 1 - i];\n        s[n - 1 - i] = t;\n    }\n    printf(\"%s\", s);\n}",
       "question": "What does this program print?",
       "options": [
-        "stop",
         "ptos",
         "otts",
+        "stop",
         "pots"
       ],
       "answerIndex": 3,
@@ -642,9 +1934,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "3 college code",
+        "13 de",
         "8 ge code",
-        "11 code",
-        "13 de"
+        "11 code"
       ],
       "answerIndex": 0,
       "why": "strstr finds the first place where co appears. That is at place 3, and p points to the rest of the text from there."
@@ -654,10 +1946,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char d = '7';\n    int n = d - '0';\n    printf(\"%d %d\", n + 1, d + 1);\n}",
       "question": "What does this program print?",
       "options": [
-        "14 56",
+        "8 8",
         "8 56",
         "56 56",
-        "8 8"
+        "14 56"
       ],
       "answerIndex": 1,
       "why": "The character '7' is the number 55 inside the computer. Taking away '0' (48) gives the number 7. So n + 1 is 8 and d + 1 is 56."
@@ -669,12 +1961,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int x = 10;\n    int *p = &x;\n    *p = *p + 5;\n    printf(\"%d %d\", x, *p);\n}",
       "question": "What does this program print?",
       "options": [
-        "15 15",
         "20 20",
-        "10 10",
-        "5 5"
+        "5 5",
+        "15 15",
+        "10 10"
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "why": "p holds the address of x, so *p is x itself. Changing *p changes x. Both print 15."
     },
     {
@@ -683,11 +1975,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "1 9",
-        "9 2",
+        "7 9",
         "3 9",
-        "7 9"
+        "9 2"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "q points to a, so *q = 7 makes a 7. Then p moves to b, and *p = 9 makes b 9."
     },
     {
@@ -695,12 +1987,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[4] = {10, 20, 30, 40};\n    int *p = a;\n    p += 2;\n    printf(\"%d %d %d\", *p, *(p - 1), p[1]);\n}",
       "question": "What does this program print?",
       "options": [
-        "30 20 20",
-        "30 20 40",
+        "30 40 40",
         "20 10 30",
-        "30 40 40"
+        "30 20 40",
+        "30 20 20"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "p += 2 moves the pointer two numbers forward, to 30. One back is 20, and one forward is 40."
     },
     {
@@ -708,12 +2000,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[3] = {5, 6, 7};\n    int *p = a;\n    printf(\"%d %d %d\", *p, *(a + 2), p[1]);\n}",
       "question": "What does this program print?",
       "options": [
+        "5 7 6",
         "5 7 7",
-        "5 6 6",
         "6 7 6",
-        "5 7 6"
+        "5 6 6"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "An array name is the address of its first number. *p is a[0], *(a + 2) is a[2], and p[1] is a[1]."
     },
     {
@@ -721,12 +2013,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[5] = {1, 2, 3, 4, 5};\n    int *p = a, *e = a + 5;\n    int s = 0;\n    while (p < e) {\n        s += *p;\n        p += 2;\n    }\n    printf(\"%d\", s);\n}",
       "question": "What does this program print?",
       "options": [
-        "18",
         "15",
-        "9",
-        "4"
+        "4",
+        "18",
+        "9"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "p jumps two numbers each time: it reads 1, then 3, then 5. The sum is 9."
     },
     {
@@ -734,12 +2026,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "void dbl(int *n) {\n    *n *= 2;\n}\n\nint main(void) {\n    int v = 4;\n    dbl(&v);\n    dbl(&v);\n    printf(\"%d\", v);\n}",
       "question": "What does this program print?",
       "options": [
-        "16",
-        "256",
+        "0",
         "8",
-        "0"
+        "256",
+        "16"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "Each call doubles the real v. 4 becomes 8, and then 16."
     },
     {
@@ -747,12 +2039,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int *big(int *a, int *b) {\n    return *a > *b ? a : b;\n}\n\nint main(void) {\n    int x = 3, y = 8;\n    int *p = big(&x, &y);\n    *p = 0;\n    printf(\"%d %d\", x, y);\n}",
       "question": "What does this program print?",
       "options": [
-        "3 9",
-        "0 8",
         "0 3",
-        "3 0"
+        "0 8",
+        "3 0",
+        "3 9"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "big returns the address of the bigger number, which is y. So *p = 0 sets y to 0, and x stays 3."
     },
     {
@@ -760,12 +2052,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int *p = NULL;\n    if (p == NULL) printf(\"null \");\n    else printf(\"%d \", *p);\n    int v = 4;\n    p = &v;\n    if (p) printf(\"%d\", *p);\n}",
       "question": "What does this program print?",
       "options": [
-        "null 4",
-        "null 9",
+        "nil 4",
         "null",
-        "nil 4"
+        "null 4",
+        "null 9"
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "why": "A NULL pointer points to nothing, so it prints null and never reads *p. After p = &v, the pointer is not NULL and prints 4."
     },
     {
@@ -773,12 +2065,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[3] = {1, 2, 3};\n    int *p = a;\n    int t = 0;\n    for (int i = 0; i < 3; i++)\n        t += *p++;\n    printf(\"%d\", t);\n}",
       "question": "What does this program print?",
       "options": [
-        "3",
         "12",
         "6",
-        "16"
+        "16",
+        "3"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "*p++ reads the number p points to, then moves p to the next one. So it adds 1, 2 and 3."
     },
     {
@@ -786,12 +2078,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[10];\n    int *p = a;\n    printf(\"%zu %zu\", sizeof(a), sizeof(p));\n}",
       "question": "What does this program print?",
       "options": [
-        "20 8",
-        "40 4",
+        "40 8",
         "4 8",
-        "40 8"
+        "20 8",
+        "40 4"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "sizeof(a) is the whole array: 10 numbers of 4 bytes is 40. A pointer is only an address, and it is 8 bytes on this computer."
     }
   ],
@@ -801,12 +2093,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int *a = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++)\n        a[i] = i + 1;\n    int s = 0;\n    for (int i = 0; i < 3; i++)\n        s += a[i];\n    printf(\"%d\", s);\n    free(a);\n}",
       "question": "What does this program print?",
       "options": [
-        "6",
+        "14",
         "9",
         "3",
-        "14"
+        "6"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "malloc gives room for 3 ints. They are filled with 1, 2 and 3, and the sum is 6."
     },
     {
@@ -815,8 +2107,8 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "0 5 0",
-        "5 0 0",
         "0 0 5",
+        "5 0 0",
         "5 5 5"
       ],
       "answerIndex": 0,
@@ -828,9 +2120,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "10",
+        "6",
         "46",
-        "28",
-        "6"
+        "28"
       ],
       "answerIndex": 0,
       "why": "realloc makes the block bigger and keeps the old numbers. The four numbers are 1, 2, 3 and 4, and the sum is 10."
@@ -842,10 +2134,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "options": [
         "ji 2",
         "hell! 5",
-        "h 1",
-        "jello 5"
+        "jello 5",
+        "h 1"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "A string needs one extra byte for the end mark, so 6 bytes hold hello. Changing the first letter gives jello, which still has 5 letters."
     },
     {
@@ -854,9 +2146,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "8 freed",
+        "8 free",
         "18 freed",
-        "8 in use",
-        "8 free"
+        "8 in use"
       ],
       "answerIndex": 0,
       "why": "q and p point to the same place, so *q is 8. After free, setting p to NULL shows that p points to nothing now."
@@ -866,12 +2158,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a[4] = {1, 2, 3, 4}, b[4] = {0};\n    memcpy(b, a, 2 * sizeof(int));\n    printf(\"%d %d %d\", b[0], b[1], b[2]);\n}",
       "question": "What does this program print?",
       "options": [
+        "0 0 0",
         "1 2 0",
-        "1 0 0",
         "1 2 3",
-        "0 0 0"
+        "1 0 0"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "memcpy copies bytes. It copies the first 2 numbers from a into b, so b is 1 2 0 0."
     },
     {
@@ -879,12 +2171,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int **m = malloc(2 * sizeof(int *));\n    for (int i = 0; i < 2; i++) {\n        m[i] = malloc(2 * sizeof(int));\n        for (int j = 0; j < 2; j++)\n            m[i][j] = i + j;\n    }\n    printf(\"%d %d\", m[1][1], m[0][1]);\n}",
       "question": "What does this program print?",
       "options": [
-        "2 1",
         "0 1",
-        "3 1",
-        "1 0"
+        "2 1",
+        "1 0",
+        "3 1"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "Each row is made with its own malloc. The number in row i and column j is i + j, so m[1][1] is 2 and m[0][1] is 1."
     },
     {
@@ -905,12 +2197,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char *src = \"abc\";\n    char *d = malloc(strlen(src) + 1);\n    int i;\n    for (i = 0; src[i]; i++)\n        d[i] = src[i] - 32;\n    d[i] = '\\0';\n    printf(\"%s\", d);\n    free(d);\n}",
       "question": "What does this program print?",
       "options": [
-        "XYZ",
         "BCD",
+        "ABC",
         "bcd",
-        "ABC"
+        "XYZ"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "Each small letter minus 32 becomes a capital letter. The extra byte holds the end mark."
     },
     {
@@ -919,9 +2211,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "3 8",
-        "3 1",
         "8 3",
-        "6 8"
+        "6 8",
+        "3 1"
       ],
       "answerIndex": 0,
       "why": "strlen counts the letters in the string: 3. sizeof(s) is the size of the pointer, not the 20 bytes it points to: 8."
@@ -933,10 +2225,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct P { int x; int y; };\n\nint main(void) {\n    struct P a = {3, 4};\n    struct P b = a;\n    b.x = 9;\n    printf(\"%d %d %d\", a.x, b.x, b.y);\n}",
       "question": "What does this program print?",
       "options": [
-        "3 3 9",
+        "3 9 0",
         "3 9 4",
         "9 3 4",
-        "3 9 0"
+        "3 3 9"
       ],
       "answerIndex": 1,
       "why": "struct P b = a makes a copy. Changing b does not change a."
@@ -946,12 +2238,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct S { int n; };\n\nint main(void) {\n    struct S s = {5};\n    struct S *p = &s;\n    p->n++;\n    (*p).n += 2;\n    printf(\"%d\", s.n);\n}",
       "question": "What does this program print?",
       "options": [
-        "6",
+        "8",
         "12",
-        "3",
-        "8"
+        "6",
+        "3"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "p->n and (*p).n mean the same thing. n goes 5, then 6, then 8."
     },
     {
@@ -959,12 +2251,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct D { int d, m; };\nstruct E { char *name; struct D dob; };\n\nint main(void) {\n    struct E e = {\"Ravi\", {5, 12}};\n    printf(\"%s %d/%d\", e.name, e.dob.d, e.dob.m);\n}",
       "question": "What does this program print?",
       "options": [
-        "Ravi 5/12",
+        "Ravi 12/5",
         "Ravi 15/2",
         "Sita 5/12",
-        "Ravi 12/5"
+        "Ravi 5/12"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "You reach inside a struct with a dot, one level at a time. e.dob.d is 5 and e.dob.m is 12."
     },
     {
@@ -972,12 +2264,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct S { char n[8]; int m; };\n\nint main(void) {\n    struct S a[3] = {{\"A\", 50}, {\"B\", 70}, {\"C\", 60}};\n    int best = 0;\n    for (int i = 1; i < 3; i++)\n        if (a[i].m > a[best].m) best = i;\n    printf(\"%s %d\", a[best].n, a[best].m);\n}",
       "question": "What does this program print?",
       "options": [
-        "B 70",
+        "A 50",
         "B 50",
         "C 60",
-        "A 50"
+        "B 70"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "best keeps the place of the biggest marks. B has 70, which is more than 50 and 60."
     },
     {
@@ -985,12 +2277,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct I { int q; int p; };\n\nint main(void) {\n    struct I c[3] = {{2, 10}, {1, 50}, {3, 5}};\n    int t = 0;\n    for (int i = 0; i < 3; i++)\n        t += c[i].q * c[i].p;\n    printf(\"%d\", t);\n}",
       "question": "What does this program print?",
       "options": [
-        "85",
         "70",
-        "15",
-        "71"
+        "71",
+        "85",
+        "15"
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "why": "Each item is quantity times price: 20, 50 and 15. The total is 85."
     },
     {
@@ -998,12 +2290,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "union U { int i; char c; };\n\nint main(void) {\n    printf(\"%zu %zu\", sizeof(union U), sizeof(int));\n}",
       "question": "What does this program print?",
       "options": [
+        "8 4",
         "4 4",
         "12 4",
-        "1 4",
-        "8 4"
+        "1 4"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "All members of a union share the same memory. The union is as big as its biggest member, which here is the int: 4 bytes."
     },
     {
@@ -1011,12 +2303,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "enum C { RED, GREEN = 5, BLUE };\n\nint main(void) {\n    printf(\"%d %d %d\", RED, GREEN, BLUE);\n}",
       "question": "What does this program print?",
       "options": [
-        "0 10 11",
-        "0 5 6",
         "0 1 2",
-        "1 5 6"
+        "0 10 11",
+        "1 5 6",
+        "0 5 6"
       ],
-      "answerIndex": 1,
+      "answerIndex": 3,
       "why": "An enum starts at 0 and counts up by 1. GREEN = 5 sets a new start, so BLUE continues with 6."
     },
     {
@@ -1024,12 +2316,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "enum L { LOW, MID, HIGH };\n\nint main(void) {\n    enum L x = MID;\n    switch (x) {\n        case LOW: printf(\"L\"); break;\n        case MID: printf(\"M\");\n        case HIGH: printf(\"H\");\n    }\n}",
       "question": "What does this program print?",
       "options": [
+        "L",
         "H",
         "MH",
-        "M",
-        "L"
+        "M"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "MID has no break, so it goes on into the next case. It prints M and then H."
     },
     {
@@ -1037,12 +2329,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct P { int x; };\nvoid f(struct P p) {\n    p.x = 99;\n}\n\nint main(void) {\n    struct P a = {1};\n    f(a);\n    printf(\"%d\", a.x);\n}",
       "question": "What does this program print?",
       "options": [
-        "99",
-        "7",
+        "2",
         "1",
-        "2"
+        "7",
+        "99"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "A struct is copied when you pass it to a function. The function changes only its own copy, so a.x is still 1."
     },
     {
@@ -1050,10 +2342,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct P { int x, y; };\nstruct P mk(int a, int b) {\n    struct P p = {a, b};\n    return p;\n}\n\nint main(void) {\n    struct P r = mk(2, 5);\n    printf(\"%d\", r.x * r.y);\n}",
       "question": "What does this program print?",
       "options": [
-        "7",
+        "-3",
         "15",
         "10",
-        "-3"
+        "7"
       ],
       "answerIndex": 2,
       "why": "mk builds a struct and returns a copy of it. r.x is 2 and r.y is 5, so the product is 10."
@@ -1066,11 +2358,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "1",
-        "45",
         "20",
-        "9"
+        "9",
+        "45"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "It writes 4 and 5 into the file, reads them back, and adds them. That is 9."
     },
     {
@@ -1078,9 +2370,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    FILE *f = fopen(\"l.txt\", \"w\");\n    fputs(\"a\\nb\\nc\\n\", f);\n    fclose(f);\n    f = fopen(\"l.txt\", \"r\");\n    char l[10];\n    int n = 0;\n    while (fgets(l, 10, f)) n++;\n    fclose(f);\n    printf(\"%d\", n);\n}",
       "question": "What does this program print?",
       "options": [
-        "4",
-        "3",
         "0",
+        "3",
+        "4",
         "6"
       ],
       "answerIndex": 1,
@@ -1093,8 +2385,8 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "options": [
         "xy",
         "xxy",
-        "xyz",
-        "y"
+        "y",
+        "xyz"
       ],
       "answerIndex": 0,
       "why": "Mode \"a\" means append: it adds to the end and keeps what was there. The file holds xy."
@@ -1104,12 +2396,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    FILE *f = fopen(\"h.txt\", \"w\");\n    fputs(\"hello\", f);\n    fclose(f);\n    f = fopen(\"h.txt\", \"r\");\n    int c, n = 0;\n    while ((c = fgetc(f)) != EOF)\n        if (c == 'l') n++;\n    fclose(f);\n    printf(\"%d\", n);\n}",
       "question": "What does this program print?",
       "options": [
+        "1",
         "2",
-        "6",
         "3",
-        "1"
+        "6"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "fgetc reads one character at a time until the end of the file. The letter l appears 2 times in hello."
     },
     {
@@ -1117,12 +2409,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "#define SQ(x) x * x\n\nint main(void) {\n    printf(\"%d %d\", SQ(3), SQ(2 + 1));\n}",
       "question": "What does this program print?",
       "options": [
+        "9 3",
         "9 9",
         "9 5",
-        "16 5",
-        "9 3"
+        "16 5"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "A macro only copies text. SQ(2 + 1) becomes 2 + 1 * 2 + 1, which is 5. Use brackets around x to fix it."
     },
     {
@@ -1130,12 +2422,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "#define N 3\n#define DEBUG 1\n\nint main(void) {\n    #if DEBUG\n    printf(\"dbg \");\n    #endif\n    printf(\"%d\", N * 2);\n}",
       "question": "What does this program print?",
       "options": [
+        "dbg 5",
         "6",
         "dbg 6",
-        "dbg 10",
-        "dbg 5"
+        "dbg 10"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "#if DEBUG keeps the code only when DEBUG is not 0. N is replaced by 3, so N * 2 is 6."
     },
     {
@@ -1143,12 +2435,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "#define MAX(a, b) ((a) > (b) ? (a) : (b))\n\nint main(void) {\n    int i = 5;\n    printf(\"%d\", MAX(i++, 3));\n    printf(\" %d\", i);\n}",
       "question": "What does this program print?",
       "options": [
-        "3 2",
-        "5 5",
         "6 7",
-        "9 6"
+        "3 2",
+        "9 6",
+        "5 5"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "A macro pastes its argument every time it is used. i++ appears twice, so i is increased twice: it prints 6 and then 7."
     },
     {
@@ -1157,11 +2449,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "10",
+        "2",
         "3",
-        "9",
-        "2"
+        "9"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "A global variable starts at 0 and keeps its value. Two calls add 1 two times."
     },
     {
@@ -1169,12 +2461,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "#define NAME(x) #x\n\nint main(void) {\n    printf(\"%s %zu\", NAME(hello), strlen(NAME(hello)));\n}",
       "question": "What does this program print?",
       "options": [
+        "hello 5",
         "hello 10",
         "hello 6",
-        "hello 5",
         "hi 5"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "# in a macro turns the word into a string. NAME(hello) becomes \"hello\", which has 5 letters."
     },
     {
@@ -1182,12 +2474,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int twice(int);\n\nint twice(int n) {\n    return n * 2;\n}\n\nint main(void) {\n    printf(\"%d\", twice(4));\n}",
       "question": "What does this program print?",
       "options": [
-        "16",
-        "2",
+        "6",
         "8",
-        "6"
+        "2",
+        "16"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "The first line is the prototype: it tells C that twice exists. The function itself is written below. twice(4) is 4 * 2, which is 8."
     }
   ],
@@ -1210,9 +2502,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int x = 5;\n    printf(\"%d %d %d\", x << 1, x << 3, x >> 1);\n}",
       "question": "What does this program print?",
       "options": [
-        "10 40 1",
-        "10 40 2",
         "10 20 2",
+        "10 40 2",
+        "10 40 1",
         "5 40 2"
       ],
       "answerIndex": 1,
@@ -1223,12 +2515,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int f = 0;\n    f |= 1 << 2;\n    f |= 1 << 0;\n    f &= ~(1 << 2);\n    f ^= 1 << 3;\n    printf(\"%d\", f);\n}",
       "question": "What does this program print?",
       "options": [
-        "9",
         "10",
         "12",
-        "0"
+        "0",
+        "9"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "Set bit 2 (4), set bit 0 (5), clear bit 2 (1), then flip bit 3 (8). 1 + 8 is 9."
     },
     {
@@ -1236,12 +2528,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    unsigned n = 13;\n    int c = 0;\n    while (n) {\n        c += n & 1;\n        n >>= 1;\n    }\n    printf(\"%d\", c);\n}",
       "question": "What does this program print?",
       "options": [
-        "2",
-        "4",
         "3",
-        "1"
+        "2",
+        "1",
+        "4"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "13 is 1101 in binary. It has three 1 bits."
     },
     {
@@ -1249,9 +2541,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct N { int v; struct N *next; };\n\nint main(void) {\n    struct N c = {3, NULL}, b = {2, &c}, a = {1, &b};\n    int s = 0;\n    for (struct N *p = &a; p; p = p->next)\n        s += p->v;\n    printf(\"%d\", s);\n}",
       "question": "What does this program print?",
       "options": [
+        "3",
         "123",
         "33",
-        "3",
         "6"
       ],
       "answerIndex": 3,
@@ -1262,12 +2554,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct N { int v; struct N *n; };\n\nint main(void) {\n    struct N *h = NULL;\n    for (int i = 1; i <= 3; i++) {\n        struct N *x = malloc(sizeof *x);\n        x->v = i;\n        x->n = h;\n        h = x;\n    }\n    for (struct N *p = h; p; p = p->n)\n        printf(\"%d \", p->v);\n}",
       "question": "What does this program print?",
       "options": [
-        "3 2 1",
         "9 4 1",
+        "3 2 1",
         "3 2 1 0",
         "4 3 2 1"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "Each new node is put at the front of the list. So the last one added, 3, comes first."
     },
     {
@@ -1275,12 +2567,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "struct N { int v; struct N *next; };\nint len(struct N *p) {\n    return p ? 1 + len(p->next) : 0;\n}\n\nint main(void) {\n    struct N c = {3, NULL}, b = {2, &c}, a = {1, &b};\n    printf(\"%d\", len(&a));\n}",
       "question": "What does this program print?",
       "options": [
+        "3",
         "0",
         "4",
-        "6",
-        "3"
+        "6"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "len counts 1 for this node plus the length of the rest. An empty list (NULL) has length 0. So three nodes give 3."
     },
     {
@@ -1288,12 +2580,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int x = 3;\n    if (x = 5) printf(\"yes \");\n    printf(\"%d\", x);\n}",
       "question": "What does this program print?",
       "options": [
+        "yes 3",
         "0",
         "yes 5",
-        "3",
-        "yes 3"
+        "3"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "x = 5 puts 5 into x (one = is assignment). The result 5 is not 0, so the if is true. x is now 5."
     },
     {
@@ -1301,12 +2593,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    char *a = \"hi\";\n    char b[] = \"hi\";\n    printf(\"%d %d\", a == b, strcmp(a, b) == 0);\n}",
       "question": "What does this program print?",
       "options": [
+        "1 1",
         "0 1",
-        "1 0",
         "0 0",
-        "1 1"
+        "1 0"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "a == b compares the addresses, and these are two different places in memory, so it is 0. strcmp compares the letters, which are the same."
     },
     {
@@ -1314,12 +2606,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "int main(void) {\n    int a = 2, b = 3;\n    printf(\"%d %d\", a + b * 2, (a + b) * 2);\n}",
       "question": "What does this program print?",
       "options": [
-        "9 12",
-        "8 10",
         "8 8",
-        "10 10"
+        "10 10",
+        "8 10",
+        "9 12"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "Multiply comes before add, so a + b * 2 is 2 + 6 = 8. Brackets go first: (a + b) * 2 is 10."
     }
   ]

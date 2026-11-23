@@ -1,0 +1,57 @@
+{
+  "key": "c-recursion-algos",
+  "title": "Big Fibonacci with a Loop",
+  "statement": "The Fibonacci numbers start with F(0) = 0 and F(1) = 1. After that, each number is the sum of the two numbers before it: F(n) = F(n-1) + F(n-2). Given n, print F(n) modulo 1000000007. Modulo means the remainder after division. The numbers grow very fast, so take the remainder at every step.",
+  "inputFormat": "One line with one integer n.",
+  "outputFormat": "One integer: F(n) modulo 1000000007.",
+  "constraints": [
+    "0 <= n <= 1000000",
+    "F(0) = 0 and F(1) = 1",
+    "Plain recursion is too slow. Use a loop."
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Start with 0 and 1. Add the last two numbers ten times. Keep only the remainder each time. The first number of the pair is F(10).",
+    "Same loop with n = 7. The values are small, so the remainder does not change them. Print F(7)."
+  ],
+  "reference": "n = int(input())\nM = 1000000007\na, b = 0, 1\nfor _ in range(n):\n    a, b = b, (a + b) % M\nprint(a % M)",
+  "tests": [
+    {
+      "input": "10\n",
+      "output": "55\n"
+    },
+    {
+      "input": "7\n",
+      "output": "13\n"
+    },
+    {
+      "input": "0\n",
+      "output": "0\n"
+    },
+    {
+      "input": "1\n",
+      "output": "1\n"
+    },
+    {
+      "input": "2\n",
+      "output": "1\n"
+    },
+    {
+      "input": "50\n",
+      "output": "586268941\n"
+    },
+    {
+      "input": "100000\n",
+      "output": "911435502\n"
+    },
+    {
+      "input": "999999\n",
+      "output": "616309404\n"
+    },
+    {
+      "input": "1000000\n",
+      "output": "918091266\n"
+    }
+  ],
+  "solutionC": "#include <stdio.h>\n\nint main(void) {\n    int n;\n    if (scanf(\"%d\", &n) != 1) {\n        return 0;\n    }\n    long long a = 0, b = 1;\n    for (int i = 0; i < n; i++) {\n        long long c = (a + b) % 1000000007LL;\n        a = b;\n        b = c;\n    }\n    printf(\"%lld\\n\", a);\n    return 0;\n}"
+}
