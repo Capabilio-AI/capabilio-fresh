@@ -12,7 +12,7 @@ type Verdict = { guess: string; output: string; right: boolean; isError: boolean
  * Guess before you run. Reading code and predicting what it does is the skill; pressing Run only to see is not. The student writes what they think the
  * program prints, and then the real program is run and compared.
  */
-export function GuessBox({ code, language, title, onChange }: { code: string; language: string; title: string; onChange: () => void }) {
+export function GuessBox({ code, language, title, onChange, onChecked }: { code: string; language: string; title: string; onChange: () => void; onChecked?: () => void }) {
   const [guess, setGuess] = useState("");
   const [busy, setBusy] = useState(false);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
@@ -27,6 +27,7 @@ export function GuessBox({ code, language, title, onChange }: { code: string; la
     setBusy(false);
     if (!r.ok) { setProblem(r.message); return; }
     setVerdict({ guess, output: r.text, right: !r.isError && sameOutput(guess, r.text), isError: r.isError });
+    onChecked?.();
   }
 
   return (

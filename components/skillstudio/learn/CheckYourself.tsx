@@ -13,17 +13,20 @@ export interface Verdict { correct: boolean; answerIndex: number; why: string }
 /** A question as the page holds it. Where the answers must not reach the browser they are left out and `grade` asks the server instead. */
 export interface CheckItem { question: string; options: string[]; answerIndex?: number; why?: string }
 
-export function CheckYourself({ questions, id, onDone, grade }: {
+export function CheckYourself({ questions, id, onDone, grade, initial }: {
   questions: CheckItem[];
   id: string;
   onDone?: (right: number, total: number) => void;
   /** marks one answer on the server; when it is given the questions carry no answers */
   grade?: (questionIndex: number, optionIndex: number) => Promise<Verdict>;
+  /** answers already recorded (by the server) from an earlier visit, so they show as answered */
+  initial?: Record<number, { choice: number } & Verdict>;
 }) {
-  const [picked, setPicked] = useState<Record<number, number>>({});
-  const [verdicts, setVerdicts] = useState<Record<number, Verdict>>({});
+  const [picked, setPicked] = useState<Record<number, number>>(() => Object.fromEntries(Object.entries(initial ?? {}).map(([k, v]) => [k, v.choice])));
+  const [verdicts, setVerdicts] = useState<Record<number, Verdict>>(() => Object.fromEntries(Object.entries(initial ?? {}).map(([k, v]) => [k, { correct: v.correct, answerIndex: v.answerIndex, why: v.why }])));
   const [failed, setFailed] = useState<number | null>(null);
-  const reported = useRef(false);
+  // answers restored from an earlier visit were already reported then: do not report them again
+  const reported = useRef(Object.keys(initial ?? {}).length === questions.length && questions.length > 0);
   const choose = async (qi: number, oi: number) => {
     setPicked((p) => ({ ...p, [qi]: oi }));
     setFailed(null);

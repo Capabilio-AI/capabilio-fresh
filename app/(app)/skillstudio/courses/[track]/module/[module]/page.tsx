@@ -36,7 +36,7 @@ export default async function ModuleTestPage({ params }: { params: Promise<{ tra
           <h1 className="mt-1 font-lp-display text-[32px] font-bold leading-[1.06] tracking-tight text-[var(--m-ink)] sm:text-[40px]">Prove: {m.title}</h1>
           <p className="mt-2 max-w-[62ch] text-[15.5px] leading-relaxed text-[var(--m-muted)]">Pass the assessment{m.challenge ? " and solve the problem" : ""} to prove this module{nextModule ? " and open the next one" : ""}.</p>
         </header>
-        <ModuleTest track={track.key} module={m.key} nextHref={nextModule ? `/skillstudio/courses/${track.key}/${nextModule.lessons[0].key}` : `/skillstudio/courses/${track.key}`} nextLabel={nextModule ? `Start: ${nextModule.title}` : "Back to the course"} />
+        <ModuleTest track={track.key} module={m.key} nextHref={nextModule ? `/skillstudio/courses/${track.key}/${nextModule.lessons[0].key}` : `/skillstudio/courses/${track.key}`} nextLabel={nextModule ? `Start: ${nextModule.title}` : "Back to the course"} finalModule={nextModule ? undefined : { courseTitle: track.title }} />
       </div>
     </div>
   );
