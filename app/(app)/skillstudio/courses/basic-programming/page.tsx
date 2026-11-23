@@ -16,7 +16,10 @@ export const metadata: Metadata = { title: "Basic programming | SkillStudio | Ca
 /** The short mark shown on each language card; plain letters, not a logo. */
 const MARK: Record<string, string> = { c: "C", java: "Jv", python: "Py", cpp: "C++", sql: "SQL", html: "</>", javascript: "JS", csharp: "C#" };
 
-/** Which language do you want to learn? One card per language, with where the student is in it. */
+/** The two languages that are the best ones to start with. */
+const FIRST = new Set(["python", "c"]);
+
+/** Pick a language: one big card per language in a grid, so the whole choice fits on one screen. */
 export default async function BasicProgrammingPage() {
   const { user } = await requireAuthedUser();
   const service = createServiceClient();
@@ -32,24 +35,24 @@ export default async function BasicProgrammingPage() {
         <Link href="/skillstudio/courses" className="inline-flex items-center gap-1.5 hover:text-[var(--m-ink)]"><ArrowLeft size={13} aria-hidden />Courses</Link>
       </nav>
       <header className="mt-4 max-w-[60ch]">
-        <h1 className="font-lp-display text-[34px] font-bold leading-[1.05] tracking-tight text-[var(--m-ink)] sm:text-[44px]">Which language do you want to learn?</h1>
-        <p className="mt-2 text-[16px] leading-relaxed text-[var(--m-muted)]">Each language is a series of modules. Read a little, try it yourself beside the lesson, then prove the module with a short test and one problem. Prove a module to open the next.</p>
+        <h1 className="font-lp-display text-[34px] font-bold leading-[1.05] tracking-tight text-[var(--m-ink)] sm:text-[44px]">Pick a language</h1>
+        <p className="mt-2 text-[16px] leading-relaxed text-[var(--m-muted)]">Each language is small steps. Read a little, try the code, then pass a short test to open the next step. Not sure where to start? Start with <strong className="text-[var(--m-ink)]">Python</strong> or <strong className="text-[var(--m-ink)]">C</strong>.</p>
       </header>
-      <ul className="mt-6 flex flex-col gap-3 pb-12">
+      <ul className="mt-6 grid gap-4 pb-12 sm:grid-cols-2 lg:grid-cols-4">
         {rows.map(({ track, progress, proven }) => (
           <li key={track.key}>
-            <Link href={`/skillstudio/courses/${track.key}`} className="group flex items-center gap-4 rounded-2xl border border-[var(--m-rule)] bg-white p-4 transition-colors hover:border-[var(--m-ink)] sm:p-5">
-              <span aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--m-ink)] font-lp-mono text-[15px] font-bold text-white">{MARK[track.key] ?? track.title.slice(0, 2)}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-lp-display text-[22px] font-bold leading-tight text-[var(--m-ink)]">{track.title}</span>
-                <span className="mt-0.5 block text-[14.5px] leading-snug text-[var(--m-muted)]">{track.tagline}</span>
-                <span className="ss-num mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-bold text-[var(--m-ink)]">
-                  <span>{track.modules.length} modules · {allLessons(track).length} lessons</span>
-                  <span className="text-[var(--m-accent-ink)]">{proven}/{track.modules.length} modules proven</span>
-                </span>
-                <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-[var(--m-ground)]" role="img" aria-label={`${progress.pct} percent of lessons complete`}><span className="block h-full rounded-full bg-[var(--m-accent)]" style={{ width: `${progress.pct}%` }} /></span>
+            <Link href={`/skillstudio/courses/${track.key}`} className="group flex h-full flex-col gap-3 rounded-2xl border border-[var(--m-rule)] bg-white p-5 transition-colors hover:border-[var(--m-ink)] focus-visible:border-[var(--m-ink)]">
+              <span className="flex items-start justify-between gap-2">
+                <span aria-hidden className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--m-ink)] font-lp-mono text-[20px] font-bold text-white">{MARK[track.key] ?? track.title.slice(0, 2)}</span>
+                {FIRST.has(track.key) && <span className="rounded-full bg-[var(--m-accent-soft)] px-2.5 py-1 text-[11.5px] font-bold uppercase tracking-wide text-[var(--m-accent-ink)]">Good first language</span>}
               </span>
-              <span className="hidden items-center gap-1.5 text-[14px] font-bold text-[var(--m-accent-ink)] sm:inline-flex">{progress.done === 0 ? "Start" : "Continue"}<ArrowRight size={15} aria-hidden className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" /></span>
+              <span className="block font-lp-display text-[22px] font-bold leading-tight text-[var(--m-ink)]">{track.title}</span>
+              <span className="block text-[14.5px] leading-snug text-[var(--m-muted)]">{track.tagline}</span>
+              <span className="mt-auto flex flex-col gap-2 pt-2">
+                <span className="ss-num text-[13px] font-bold text-[var(--m-ink)]">{track.modules.length} steps · {allLessons(track).length} lessons</span>
+                <span className="block h-1.5 overflow-hidden rounded-full bg-[var(--m-ground)]" role="img" aria-label={`${progress.pct} percent of lessons done, ${proven} of ${track.modules.length} steps passed`}><span className="block h-full rounded-full bg-[var(--m-accent)]" style={{ width: `${progress.pct}%` }} /></span>
+                <span className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--m-ink)] px-4 py-2.5 text-[14.5px] font-bold text-white">{progress.done === 0 ? "Start" : "Continue"}<ArrowRight size={15} aria-hidden className="transition-transform group-hover:translate-x-0.5" /></span>
+              </span>
             </Link>
           </li>
         ))}

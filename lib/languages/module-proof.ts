@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { untyped } from "@/lib/org/db";
 import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
-import { assessmentPool, gradeAssessment, isProven, pickAssessment, type ModuleProofRow } from "./module-gate";
+import { assessmentPool, gradeAssessment, isProven, pickAssessment, reviewAssessment, type ModuleProofRow } from "./module-gate";
 import type { HtmlChallenge, ModuleChallenge, SqlChallenge, Track, TrackModule } from "./types";
 import type { Dataset } from "@/lib/arena-workstations/engines/dataset";
 
@@ -67,6 +67,11 @@ export async function submitAssessment(service: Service, userId: string, track: 
   const graded = gradeAssessment(currentAssessment(m, userId, row), answers);
   const saved = await save(service, userId, track, m, row, { ...row, assessmentAttempts: row.assessmentAttempts + 1, assessmentPassedAt: row.assessmentPassedAt ?? (graded.passed ? new Date().toISOString() : null), ...(graded.passed && !row.assessmentPassedAt ? { assessmentCorrect: graded.correct, assessmentTotal: graded.total } : {}) });
   return { ...graded, state: saved };
+  const asked = currentAssessment(m, userId, row);
+  const graded = gradeAssessment(asked, answers);
+  const saved = await save(service, userId, track, m, row, { ...row, assessmentAttempts: row.assessmentAttempts + 1, assessmentPassedAt: row.assessmentPassedAt ?? (graded.passed ? new Date().toISOString() : null) });
+  // a pass needs no review; a miss shows what each missed question was and why, so the next try is informed
+  return { ...graded, review: graded.passed ? [] : reviewAssessment(asked, answers), state: saved };
 }
 
 /** Records a judged attempt at the module's problem; a pass stays a pass. */

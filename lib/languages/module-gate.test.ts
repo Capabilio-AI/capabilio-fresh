@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ASSESSMENT_SIZE, assessmentPool, gradeAssessment, isProven, moduleStatuses, needsProblem, pickAssessment, publicQuestion, type ModuleProofRow } from "./module-gate";
+import { ASSESSMENT_SIZE, MIN_CODE_QUESTIONS, assessmentPool, gradeAssessment, isProven, moduleStatuses, needsProblem, pickAssessment, publicQuestion, reviewAssessment, type ModuleProofRow } from "./module-gate";
 import { lesson, q, sec, type ModuleChallenge, type Track, type TrackModule } from "./types";
 
 const challenge: ModuleChallenge = { title: "t", statement: "s", inputFormat: "i", outputFormat: "o", constraints: [], tests: [{ input: "1\n", output: "1\n" }], exampleCount: 1, explanations: ["e"], reference: "print(1)" };
@@ -52,5 +52,33 @@ describe("assessment", () => {
     expect(gradeAssessment(asked, { ...seven, "not-asked:0": 0 })).toMatchObject({ correct: 7, passed: true });
     expect(gradeAssessment(asked, Object.fromEntries(asked.slice(0, 6).map((x) => [x.id, x.answerIndex])))).toMatchObject({ correct: 6, passed: false });
     expect(gradeAssessment([], {}).passed).toBe(false);
+  });
+});
+
+describe("code-reading assessment", () => {
+  const cq = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `c:m:${i}`, code: `int main(void) { printf("${i}"); }`, question: "What does this program print?", options: ["a", "b", "c", "d"] as [string, string, string, string], answerIndex: i % 4, why: `because ${i}` }));
+  const withQ = (n: number): TrackModule => ({ ...mod("m", false), codeQuestions: cq(n) });
+
+  it("uses the code questions once the module has enough of them, and the lesson check questions before that", () => {
+    expect(assessmentPool(withQ(MIN_CODE_QUESTIONS)).map((q) => q.id)).toEqual(cq(MIN_CODE_QUESTIONS).map((q) => q.id));
+    expect(assessmentPool(withQ(MIN_CODE_QUESTIONS - 1)).every((q) => q.code === undefined)).toBe(true);
+    expect(assessmentPool(mod("m", false)).every((q) => q.code === undefined)).toBe(true);
+  });
+  it("shows the code to the student but never the answer or the reason", () => {
+    const shown = assessmentPool(withQ(10)).map(publicQuestion);
+    expect(shown[0].code).toContain("printf");
+    for (const s of shown) expect(Object.keys(s).sort()).toEqual(["code", "id", "options", "question"]);
+    expect(JSON.stringify(shown)).not.toContain("because");
+  });
+  it("reviews only the questions that were missed, with the right answer, what the student chose, and why", () => {
+    const asked = assessmentPool(withQ(10));
+    const answers = Object.fromEntries(asked.map((q) => [q.id, q.answerIndex]));
+    expect(reviewAssessment(asked, answers)).toEqual([]);
+    const wrong = { ...answers, [asked[2].id]: (asked[2].answerIndex + 1) % 4 };
+    delete (wrong as Record<string, number>)[asked[5].id];
+    const r = reviewAssessment(asked, wrong);
+    expect(r.map((x) => x.id)).toEqual([asked[2].id, asked[5].id]);
+    expect(r[0]).toMatchObject({ correctIndex: asked[2].answerIndex, yourIndex: (asked[2].answerIndex + 1) % 4, why: "because 2" });
+    expect(r[1].yourIndex).toBeNull();
   });
 });
