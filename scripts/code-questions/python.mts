@@ -1,5 +1,6 @@
 // Source snippets for the Python code-reading questions. The generator runs them; the answers are NOT written here.
 import type { Language, Spec } from "../gen-code-questions.mts";
+import { extra } from "./python-extra";
 
 const S = String.raw;
 
@@ -10,6 +11,7 @@ export const lang: Language = {
 };
 
 export const specs: Spec[] = [
+  ...extra,
   // ---------------------------------------------------------------- python-basics
   { m: "python-basics", body: S`x = 7
 y = 2

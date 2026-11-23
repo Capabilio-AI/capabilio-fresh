@@ -1,8 +1,17 @@
-import { withCodeQuestions, type Track } from "../types";
+import { withChallenges, withCodeQuestions, type Track } from "../types";
+import { extraChallenges } from "./challenges-extra";
 import { codeQuestions } from "./code-questions";
 import { basics, control } from "./m1-basics-control";
 import { functions, data } from "./m2-functions-data";
 import { oop, tools } from "./m3-oop-tools";
+import { textTools } from "./m4-text";
+import { iterFunctional } from "./m5-iter-functional";
+import { algorithms } from "./m6-algorithms";
+import { dataStructures } from "./m7-data-structures";
+import { oopAdvanced } from "./m8-oop-advanced";
+import { stdlibPractical } from "./m9-stdlib";
+import { dataWork } from "./m10-data-work";
+import { interviewPython } from "./m11-interview";
 import { basicsChallenge, controlChallenge, functionsChallenge, dataChallenge, oopChallenge, toolsChallenge } from "./challenges";
 
 export const pythonTrack: Track = {
@@ -23,5 +32,6 @@ export const pythonTrack: Track = {
     { ...data, challenge: dataChallenge },
     { ...oop, challenge: oopChallenge },
     { ...tools, challenge: toolsChallenge },
+    ...withChallenges([textTools, iterFunctional, algorithms, dataStructures, oopAdvanced, stdlibPractical, dataWork, interviewPython], extraChallenges),
   ], codeQuestions),
 };

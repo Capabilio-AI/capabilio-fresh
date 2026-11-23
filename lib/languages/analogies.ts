@@ -15,9 +15,11 @@ export interface Analogy {
 }
 
 import { EXTRA_ANALOGIES } from "./analogies-extra";
+import { EXTRA_ANALOGIES_PYTHON } from "./analogies-extra-python";
 
 export const ANALOGIES: Readonly<Record<string, Analogy>> = {
   ...EXTRA_ANALOGIES,
+  ...EXTRA_ANALOGIES_PYTHON,
   "c/program-structure": { icon: "🍳", title: "A recipe", text: "A C program is like a recipe: steps in order. The kitchen, your computer, follows them from the first line to the last.", pairs: [["Recipe card", "Source file (.c)"], ["The first step of cooking", "main() function"], ["Ingredients listed on top", "#include lines"]], differs: "A person can read a recipe as it is. A C program must first be translated by a compiler into something the computer can run." },
   "c/variables-types": { icon: "📦", title: "Labeled storage boxes", text: "A variable is a box with a label. The label is the name, what is inside is the value, and the shape of the box is the data type.", pairs: [["Label on the box", "Variable name (age)"], ["What is inside", "Value (18)"], ["Shape of the box", "Data type (int, float, char)"]], differs: "A real box holds anything. A C variable holds only the type it was made for, and its size is fixed." },
   "c/input-output": { icon: "🧾", title: "A shop counter", text: "printf is the shopkeeper telling you the price. scanf is you telling the shopkeeper what you want.", pairs: [["Shopkeeper speaks to you", "printf prints on the screen"], ["You tell what you want", "scanf reads from the keyboard"], ["Item code you quote", "Format specifier (%d, %f)"]], differs: "A shopkeeper understands any words. scanf needs the exact format, and the address of the variable (&)." },

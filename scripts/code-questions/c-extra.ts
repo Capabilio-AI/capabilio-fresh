@@ -42,7 +42,7 @@ export const extra: Spec[] = [
       "0",
       "2147483647"
     ],
-    "why": "Signed overflow is undefined; on typical two's‑complement it wraps to the minimum value, but the behavior is not guaranteed."
+    "why": "Signed overflow is undefined; on typical two's\u2011complement it wraps to the minimum value, but the behavior is not guaranteed."
   },
   {
     "m": "c-types-deep",
@@ -63,7 +63,7 @@ export const extra: Spec[] = [
       "-2147483648",
       "2000000000"
     ],
-    "why": "The multiplication is done in 32‑bit int first, overflow occurs, then the wrong value is promoted to 64‑bit."
+    "why": "The multiplication is done in 32\u2011bit int first, overflow occurs, then the wrong value is promoted to 64\u2011bit."
   },
   {
     "m": "c-types-deep",
@@ -84,7 +84,7 @@ export const extra: Spec[] = [
       "0.30",
       "0.29999999999999999"
     ],
-    "why": "Binary floating‑point cannot represent 0.1 or 0.2 exactly, so the sum is slightly larger than 0.3."
+    "why": "Binary floating\u2011point cannot represent 0.1 or 0.2 exactly, so the sum is slightly larger than 0.3."
   },
   {
     "m": "c-types-deep",
@@ -168,7 +168,7 @@ export const extra: Spec[] = [
       "0",
       "32768"
     ],
-    "why": "Unsigned short would wrap, but signed short overflow is undefined; on typical two's‑complement it becomes -32768."
+    "why": "Unsigned short would wrap, but signed short overflow is undefined; on typical two's\u2011complement it becomes -32768."
   },
   {
     "m": "c-types-deep",
@@ -235,7 +235,7 @@ export const extra: Spec[] = [
       "4 3 2 1",
       "2 1 3 4"
     ],
-    "why": "Bubble sort repeatedly swaps adjacent out‑of‑order elements, ending with the array sorted ascending."
+    "why": "Bubble sort repeatedly swaps adjacent out\u2011of\u2011order elements, ending with the array sorted ascending."
   },
   {
     "m": "c-recursion-algos",
@@ -405,7 +405,7 @@ export const extra: Spec[] = [
       "720",
       "24"
     ],
-    "why": "The function calls itself with n-1 until it reaches 1, multiplying the numbers 5·4·3·2·1 gives 120."
+    "why": "The function calls itself with n-1 until it reaches 1, multiplying the numbers 5\u00b74\u00b73\u00b72\u00b71 gives 120."
   },
   {
     "m": "c-recursion-algos",
@@ -486,7 +486,7 @@ export const extra: Spec[] = [
       "4 3 2 1",
       "2 1 3 4"
     ],
-    "why": "Bubble sort repeatedly swaps adjacent out‑of‑order elements; after sorting the array becomes 1 2 3 4."
+    "why": "Bubble sort repeatedly swaps adjacent out\u2011of\u2011order elements; after sorting the array becomes 1 2 3 4."
   },
   {
     "m": "c-library",
@@ -585,7 +585,7 @@ export const extra: Spec[] = [
       "1 2 3",
       "3 3 3"
     ],
-    "why": "With seed 1 the first three values in the range 1‑3 are 2,1,3."
+    "why": "With seed 1 the first three values in the range 1\u20113 are 2,1,3."
   },
   {
     "m": "c-library",
@@ -825,7 +825,7 @@ export const extra: Spec[] = [
       "7 5",
       "5"
     ],
-    "why": "Linked‑list stack also pops the most recent element first, so 7 then 5."
+    "why": "Linked\u2011list stack also pops the most recent element first, so 7 then 5."
   },
   {
     "m": "c-stack-queue",
@@ -1227,7 +1227,7 @@ export const extra: Spec[] = [
       "1 3 4",
       "2 1 4"
     ],
-    "why": "Merging sorted lists yields 1→2→4."
+    "why": "Merging sorted lists yields 1\u21922\u21924."
   },
   {
     "m": "c-lists-deeper",
@@ -1248,7 +1248,7 @@ export const extra: Spec[] = [
       "3 1",
       "1 0"
     ],
-    "why": "Position 1 means after the first node, so list becomes 1→3."
+    "why": "Position 1 means after the first node, so list becomes 1\u21923."
   },
   {
     "m": "c-lists-deeper",
@@ -1349,7 +1349,7 @@ export const extra: Spec[] = [
       "0122",
       "01"
     ],
-    "why": "The do‑while prints 0, then increments and continues while i was ≤2, producing 012."
+    "why": "The do\u2011while prints 0, then increments and continues while i was \u22642, producing 012."
   },
   {
     "m": "c-trees-hash",
@@ -1559,7 +1559,7 @@ export const extra: Spec[] = [
       "4",
       "12"
     ],
-    "why": "Typical alignment pads the struct to 8 bytes: 1 byte char, 3 bytes padding, then 4‑byte int."
+    "why": "Typical alignment pads the struct to 8 bytes: 1 byte char, 3 bytes padding, then 4\u2011byte int."
   },
   {
     "m": "c-bits-embedded",
@@ -1680,7 +1680,7 @@ export const extra: Spec[] = [
       "12 34 56 78",
       "78 56 34 00"
     ],
-    "why": "On little‑endian machines the least‑significant byte is stored first, so the bytes print 78 56 34 12."
+    "why": "On little\u2011endian machines the least\u2011significant byte is stored first, so the bytes print 78 56 34 12."
   },
   {
     "m": "c-bits-embedded",
@@ -1700,7 +1700,7 @@ export const extra: Spec[] = [
       "78 56 34 12",
       "12 34 56 00"
     ],
-    "why": "Reversing the order prints the bytes in big‑endian order: 12 34 56 78."
+    "why": "Reversing the order prints the bytes in big\u2011endian order: 12 34 56 78."
   },
   {
     "m": "c-bits-embedded",
@@ -1720,7 +1720,7 @@ export const extra: Spec[] = [
       "AA",
       "CC"
     ],
-    "why": "On little‑endian, the first byte of the int is the least‑significant, 0xDD, printed as DD."
+    "why": "On little\u2011endian, the first byte of the int is the least\u2011significant, 0xDD, printed as DD."
   },
   {
     "m": "c-project-skills",
@@ -1769,7 +1769,7 @@ export const extra: Spec[] = [
       "10",
       "6"
     ],
-    "why": "The array has indices 0‑4; the loop should stop before MAX. The last valid element a[4] holds 4, printed as 4."
+    "why": "The array has indices 0\u20114; the loop should stop before MAX. The last valid element a[4] holds 4, printed as 4."
   },
   {
     "m": "c-project-skills",
@@ -1842,7 +1842,7 @@ export const extra: Spec[] = [
       "0",
       "undefined"
     ],
-    "why": "Valid indices are 0‑2; accessing arr[3] is out of bounds, but the intended correct index is 2, yielding 3."
+    "why": "Valid indices are 0\u20112; accessing arr[3] is out of bounds, but the intended correct index is 2, yielding 3."
   },
   {
     "m": "c-project-skills",

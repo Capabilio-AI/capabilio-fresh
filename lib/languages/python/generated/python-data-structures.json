@@ -1,0 +1,51 @@
+{
+  "key": "python-data-structures",
+  "title": "Balanced Brackets",
+  "statement": "You are given a string made only of the characters ( ) [ ] { }. The string is balanced if every opening bracket is closed by the same type of bracket, in the correct order. Print YES if the string is balanced. Otherwise print NO. Use a stack.",
+  "inputFormat": "One line with a string of brackets. The characters are only ( ) [ ] { }.",
+  "outputFormat": "Print YES if the string is balanced, otherwise print NO.",
+  "constraints": [
+    "1 <= length of the string <= 400",
+    "The string has only the characters ( ) [ ] { }"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Each bracket is closed by its own type, and the inner pairs close before the outer pairs. So the answer is YES.",
+    "The ( is opened first, then [. The next closing bracket is ), but the top of the stack is [. So the answer is NO."
+  ],
+  "reference": "import sys\n\ns = sys.stdin.readline().strip()\npairs = {')': '(', ']': '[', '}': '{'}\nstack = []\nok = True\nfor c in s:\n    if c in '([{':\n        stack.append(c)\n    else:\n        if not stack or stack.pop() != pairs[c]:\n            ok = False\n            break\nprint(\"YES\" if ok and not stack else \"NO\")",
+  "tests": [
+    {
+      "input": "{[()]}\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "([)]\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "(\n",
+      "output": "NO\n"
+    },
+    {
+      "input": ")\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "())(\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "()()(){}[]\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "((((((((((()))))))))))\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "{{{{[[[[(((())))]]]]}}}}\n",
+      "output": "YES\n"
+    }
+  ]
+}
