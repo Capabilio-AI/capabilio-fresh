@@ -26,6 +26,7 @@
     "pathway:content": "node --env-file=.env.local --import tsx scripts/pathway-content.mts",
     "exercises:bulk": "node --env-file=.env.local --import tsx scripts/exercises-bulk.mts",
     "judge:health": "node --env-file=.env.local --import tsx scripts/judge-health.mts",
+    "credentials:key": "node --import tsx scripts/credential-key.mts",
     "questions:gen": "node --env-file=.env.local --import tsx scripts/gen-code-questions.mts",
     "runner:verify": "node --env-file=.env.local --import tsx scripts/verify-on-runner.mts",
     "coverage:audit": "node --env-file=.env.local --import tsx scripts/coverage-audit.mts",
