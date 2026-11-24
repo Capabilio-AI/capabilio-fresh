@@ -1,0 +1,58 @@
+{
+  "key": "cpp-oop-advanced",
+  "title": "Totals per Name",
+  "statement": "You get n lines. Each line has a name and an amount. The same name can appear many times. Add up the amounts for each name. Print each name with its total, one per line, as \"name total\". Sort the lines by name in ASCII order. In ASCII order, capital letters come before small letters. Print a name even if its total is 0.",
+  "inputFormat": "First line: integer n. Then n lines, each with a name and an integer amount, separated by one space.",
+  "outputFormat": "One line per different name, sorted by name in ASCII order: the name, a space, then the total.",
+  "constraints": [
+    "1 <= n <= 1000",
+    "Name has 1 to 10 English letters (A-Z, a-z); names are case-sensitive",
+    "-10^9 <= amount <= 10^9",
+    "Totals can be larger than 32-bit int"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "asha has 100+25=125, ravi has 50-20=30, meena has 70. Sorted by name: asha, meena, ravi.",
+    "zoya has 10+5=15 and amit has 20. After sorting, amit comes before zoya."
+  ],
+  "reference": "import sys\ndef main():\n    t = sys.stdin.read().split()\n    n = int(t[0])\n    d = {}\n    for i in range(n):\n        name = t[1 + 2 * i]\n        amt = int(t[2 + 2 * i])\n        d[name] = d.get(name, 0) + amt\n    for k in sorted(d):\n        print(k, d[k])\nmain()",
+  "tests": [
+    {
+      "input": "5\nasha 100\nravi 50\nasha 25\nmeena 70\nravi -20\n",
+      "output": "asha 125\nmeena 70\nravi 30\n"
+    },
+    {
+      "input": "3\nzoya 10\namit 20\nzoya 5\n",
+      "output": "amit 20\nzoya 15\n"
+    },
+    {
+      "input": "1\nkiran 0\n",
+      "output": "kiran 0\n"
+    },
+    {
+      "input": "4\nbig 1000000000\nbig 1000000000\nbig 1000000000\nbig 1000000000\n",
+      "output": "big 4000000000\n"
+    },
+    {
+      "input": "3\nBob 5\nalice 3\nbob 1\n",
+      "output": "Bob 5\nalice 3\nbob 1\n"
+    },
+    {
+      "input": "4\nabc 7\nab 3\nabc -7\nab -5\n",
+      "output": "ab -2\nabc 0\n"
+    },
+    {
+      "input": "25\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\nk -1000000000\n",
+      "output": "k -25000000000\n"
+    },
+    {
+      "input": "6\nZed 1\nzed 2\nAmy 3\namy 4\nZed 10\nAmy -3\n",
+      "output": "Amy 0\nZed 11\namy 4\nzed 2\n"
+    },
+    {
+      "input": "2\nx 1000000000\ny -1000000000\n",
+      "output": "x 1000000000\ny -1000000000\n"
+    }
+  ],
+  "solution": "#include <iostream>\n#include <map>\n#include <string>\n\nstruct Total {\n    long long v = 0;\n    Total& operator+=(long long x) {\n        v += x;\n        return *this;\n    }\n};\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::map<std::string, Total> m;\n    for (int i = 0; i < n; i++) {\n        std::string s;\n        long long a;\n        std::cin >> s >> a;\n        m[s] += a;\n    }\n    for (const auto& p : m) {\n        std::cout << p.first << \" \" << p.second.v << \"\\n\";\n    }\n    return 0;\n}"
+}

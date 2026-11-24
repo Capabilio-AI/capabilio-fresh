@@ -1,0 +1,53 @@
+{
+  "key": "cpp-data-structures",
+  "title": "Balanced Brackets with a Stack",
+  "statement": "You are given a string made only of the characters ( ) [ ] { }. A string is balanced if every opening bracket is closed by the same type of bracket, and brackets close in the correct order. Use a stack. Print YES if the string is balanced. Print NO otherwise.",
+  "inputFormat": "One line with a string of length N. It has only the characters ( ) [ ] { }.",
+  "outputFormat": "Print YES if the brackets are balanced. Otherwise print NO.",
+  "constraints": [
+    "1 <= N <= 400",
+    "Characters are only ( ) [ ] { }",
+    "There are no spaces in the line"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Each bracket closes right after it opens, with the same type. So the string is balanced and the answer is YES.",
+    "The ] arrives while the top of the stack is (. The types do not match, so the answer is NO."
+  ],
+  "reference": "import sys\n\ns = sys.stdin.read().strip()\npairs = {')': '(', ']': '[', '}': '{'}\nstack = []\nok = True\nfor c in s:\n    if c in '([{':\n        stack.append(c)\n    else:\n        if not stack or stack[-1] != pairs[c]:\n            ok = False\n            break\n        stack.pop()\nif stack:\n    ok = False\nprint(\"YES\" if ok else \"NO\")",
+  "tests": [
+    {
+      "input": "()[]{}\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "([)]\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "(\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "())(\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "{[()()]}\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "(]\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "((((((((((((((((((((((((((((((((((((((((((((((((((()))))))))))))))))))))))))))))))))))))))))))))))))))\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "([{}])(\n",
+      "output": "NO\n"
+    }
+  ],
+  "solution": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::string s;\n    std::cin >> s;\n    std::vector<char> st;\n    bool ok = true;\n    for (char c : s) {\n        if (c == '(' || c == '[' || c == '{') {\n            st.push_back(c);\n        } else {\n            if (st.empty()) {\n                ok = false;\n                break;\n            }\n            char o = st.back();\n            st.pop_back();\n            if ((c == ')' && o != '(') || (c == ']' && o != '[') || (c == '}' && o != '{')) {\n                ok = false;\n                break;\n            }\n        }\n    }\n    if (!st.empty()) ok = false;\n    std::cout << (ok ? \"YES\" : \"NO\") << \"\\n\";\n    return 0;\n}"
+}

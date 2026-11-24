@@ -1,5 +1,6 @@
 import { extraNativeSolutions } from "./c/native-extra";
 import { extraNativeSolutions as extraJavaSolutions } from "./java/native-extra";
+import { extraNativeSolutions as extraCppSolutions } from "./cpp/native-extra";
 /**
  * An independent solution to each module problem, written in the track's own language (not Python). CI compiles and runs each one on every test of its
  * problem, so a statement that two languages read differently, or an expected output that only Python's rules produce, is found before a student is.
@@ -8,6 +9,7 @@ import { extraNativeSolutions as extraJavaSolutions } from "./java/native-extra"
 export const NATIVE_SOLUTIONS: Record<string, string> = {
   ...extraNativeSolutions,
   ...extraJavaSolutions,
+  ...extraCppSolutions,
   "c/c-basics": String.raw`#include <stdio.h>
 int main(void) { long n; scanf("%ld", &n); int d[] = {500, 100, 50, 20, 10, 5, 2, 1}; for (int i = 0; i < 8; i++) { printf("%d %ld\n", d[i], n / d[i]); n %= d[i]; } return 0; }
 `,

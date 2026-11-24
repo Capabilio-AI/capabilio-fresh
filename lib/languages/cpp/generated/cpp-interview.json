@@ -1,0 +1,57 @@
+{
+  "key": "cpp-interview",
+  "title": "Longest Run of Equal Values",
+  "statement": "You are given n integers. A run is a block of equal values that sit next to each other. For example, in 1 1 2 2 2 1, the runs are 1 1, then 2 2 2, then 1. Print the length of the longest run.",
+  "inputFormat": "First line: integer n. Second line: n space-separated integers.",
+  "outputFormat": "Print one integer: the length of the longest run of equal consecutive values.",
+  "constraints": [
+    "1 <= n <= 100000",
+    "-1000000000 <= each value <= 1000000000",
+    "Values fit in a 32-bit int"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The runs are 1 1, then 2 2 2, then 1. The longest has length 3.",
+    "All five values are equal, so the whole list is one run of length 5."
+  ],
+  "reference": "import sys\ndata = sys.stdin.read().split()\nn = int(data[0])\na = data[1:1 + n]\na = [int(x) for x in a]\nbest = 1\ncur = 1\nfor i in range(1, n):\n    if a[i] == a[i - 1]:\n        cur += 1\n    else:\n        cur = 1\n    if cur > best:\n        best = cur\nprint(best)",
+  "tests": [
+    {
+      "input": "6\n1 1 2 2 2 1\n",
+      "output": "3\n"
+    },
+    {
+      "input": "5\n7 7 7 7 7\n",
+      "output": "5\n"
+    },
+    {
+      "input": "1\n5\n",
+      "output": "1\n"
+    },
+    {
+      "input": "2\n3 4\n",
+      "output": "1\n"
+    },
+    {
+      "input": "7\n1 2 1 2 1 2 1\n",
+      "output": "1\n"
+    },
+    {
+      "input": "8\n-5 -5 -5 2 2 -5 -5 -5\n",
+      "output": "3\n"
+    },
+    {
+      "input": "10\n1000000000 1000000000 -1000000000 -1000000000 -1000000000 -1000000000 0 0 0 1000000000\n",
+      "output": "4\n"
+    },
+    {
+      "input": "6\n4 4 4 1 2 3\n",
+      "output": "3\n"
+    },
+    {
+      "input": "6\n1 2 3 9 9 9\n",
+      "output": "3\n"
+    }
+  ],
+  "solution": "#include <iostream>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::vector<int> a(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> a[i];\n    }\n    int best = 1;\n    int cur = 1;\n    for (int i = 1; i < n; i++) {\n        if (a[i] == a[i - 1]) {\n            cur++;\n        } else {\n            cur = 1;\n        }\n        if (cur > best) {\n            best = cur;\n        }\n    }\n    std::cout << best << \"\\n\";\n    return 0;\n}"
+}

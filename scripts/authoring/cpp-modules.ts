@@ -1,0 +1,86 @@
+// The blueprint for the C++ modules added after the first six. Programs are C++17 (the runner's compiler is GCC 9), one file, no input, deterministic.
+// See c-modules.ts for the shape.
+import type { ModuleSpec } from "./c-modules";
+
+export const CPP_MODULES: ModuleSpec[] = [
+  { key: "cpp-types-text", file: "m4-types-text", export: "typesText", title: "Types, strings and formatting", summary: "Sizes and limits, auto and const, std::string, string_view and formatted output without surprises.",
+    challengeBrief: "Read one line of text and print the number of words, the longest word, and the line with each word capitalised, on three lines.",
+    lessons: [
+      { key: "types-limits", title: "Types, limits and conversions", minutes: 12, brief: "sizeof, numeric_limits, int overflow, integer division, static_cast, narrowing with braces, auto and decltype basics." },
+      { key: "const-constexpr", title: "const, constexpr and references", minutes: 12, brief: "const variables and parameters, const references to avoid copies, constexpr functions evaluated at compile time, why const-correctness helps." },
+      { key: "string-methods", title: "std::string and string_view", minutes: 13, brief: "length, substr, find, replace, compare, push_back, erase, string_view as a cheap read-only window, why not to return a view of a temporary." },
+      { key: "iostream-format", title: "Formatted output and string streams", minutes: 12, brief: "cout with setw, setprecision, fixed, left/right, ostringstream and istringstream to build and parse text, getline, why endl is slower than newline." },
+    ] },
+  { key: "cpp-containers", file: "m5-containers", export: "containers", title: "Containers in depth", summary: "Pick the right container: vector, deque, list, map, unordered_map, set and priority_queue.",
+    challengeBrief: "Read n words and print each distinct word with how many times it appeared, sorted by count descending and then alphabetically.",
+    lessons: [
+      { key: "vector-deque-array", title: "vector, deque and array", minutes: 13, brief: "push_back vs emplace_back, reserve and capacity, erase and the erase-remove idiom, std::array, iterator invalidation after push_back." },
+      { key: "map-unordered", title: "map, unordered_map and multimap", minutes: 13, brief: "operator[] inserts, find and count, insert vs emplace, iteration order of map vs unordered_map, structured bindings over a map." },
+      { key: "set-pq-stack-queue", title: "set, priority_queue, stack and queue", minutes: 13, brief: "set ordering and uniqueness, lower_bound, priority_queue min and max, stack and queue adapters, custom comparators." },
+      { key: "iterators-ranges", title: "Iterators and range-for", minutes: 12, brief: "begin and end, range-for with const auto&, iterator categories in plain words, reverse iterators, erasing while iterating safely." },
+    ] },
+  { key: "cpp-stl-algorithms", file: "m6-stl-algorithms", export: "stlAlgorithms", title: "STL algorithms and lambdas", summary: "Stop writing loops by hand: sort, search, transform and accumulate with lambdas.",
+    challengeBrief: "Read n integers and print the sum of the squares of the even numbers, then the count of odd numbers, on two lines (use STL algorithms).",
+    lessons: [
+      { key: "sort-search", title: "sort, find and binary_search", minutes: 13, brief: "sort with a lambda, stable_sort, find and find_if, binary_search, lower_bound, upper_bound, equal_range." },
+      { key: "transform-accumulate", title: "transform, accumulate and for_each", minutes: 13, brief: "transform into another vector, accumulate with an init value and a lambda, for_each, count_if, any_of, all_of, none_of." },
+      { key: "lambda-captures", title: "Lambdas and captures", minutes: 13, brief: "capture by value and by reference, mutable lambdas, init captures, returning a lambda with std::function, a lambda stored in auto." },
+      { key: "permutation-numeric", title: "Permutations, partial sums and rotation", minutes: 12, brief: "next_permutation, iota, partial_sum, adjacent_difference, rotate, unique with erase, min_element, max_element, minmax." },
+    ] },
+  { key: "cpp-memory-deep", file: "m7-memory-deep", export: "memoryDeep", title: "Memory, RAII and move semantics", summary: "Own resources safely: stack and heap, smart pointers, copy and move, and the rule of five.",
+    challengeBrief: "Read n integers into a vector, then print the vector reversed using your own swap-based loop, followed by its sum.",
+    lessons: [
+      { key: "stack-heap-lifetime", title: "Stack, heap and object lifetime", minutes: 13, brief: "automatic storage vs new and delete, constructors and destructors running in order, a leak and a dangling pointer explained, why raw new is rare." },
+      { key: "unique-shared-weak", title: "unique_ptr, shared_ptr and weak_ptr", minutes: 14, brief: "make_unique, make_shared, ownership transfer with move, use_count, a reference cycle and weak_ptr to break it, custom deleter basics." },
+      { key: "copy-move", title: "Copy and move semantics", minutes: 14, brief: "copy constructor and assignment, deep vs shallow copy, std::move, move constructor, moved-from state, returning large objects cheaply (copy elision)." },
+      { key: "rule-of-five", title: "The rule of zero, three and five", minutes: 13, brief: "when a class needs a destructor, copy and move members, = default and = delete, preferring members that manage themselves." },
+    ] },
+  { key: "cpp-oop-advanced", file: "m8-oop-advanced", export: "oopAdvanced", title: "Classes, operators and polymorphism", summary: "Operator overloading, virtual functions, abstract classes and clean class design.",
+    challengeBrief: "Read n lines of 'name amount' and print the total per name, sorted by name, one per line as 'name total'.",
+    lessons: [
+      { key: "operator-overloading", title: "Operator overloading", minutes: 14, brief: "operator+, ==, <, <<, [] as members and free functions, a Vector2D or Fraction class, when overloading helps and when it confuses." },
+      { key: "virtual-abstract", title: "Virtual functions and abstract classes", minutes: 14, brief: "virtual and override, pure virtual interfaces, virtual destructors, object slicing, polymorphic calls through base pointers in a vector of unique_ptr." },
+      { key: "static-friend-nested", title: "static members, friend and nested types", minutes: 12, brief: "static data and functions, a counter of objects, friend functions for operator<<, nested classes and enum class." },
+      { key: "composition-design", title: "Composition and simple patterns", minutes: 13, brief: "has-a vs is-a, delegation, strategy with std::function, a factory function, RAII wrapper as a pattern." },
+    ] },
+  { key: "cpp-templates", file: "m9-templates", export: "templatesModule", title: "Templates and generic code", summary: "Write code once for many types: function templates, class templates and compile-time branching.",
+    challengeBrief: "Read n integers and print the largest, the smallest and their difference on three lines.",
+    lessons: [
+      { key: "function-templates", title: "Function templates", minutes: 13, brief: "template<typename T>, type deduction, explicit arguments, a generic max and swap, overloads vs templates, why errors appear at instantiation." },
+      { key: "class-templates", title: "Class templates", minutes: 14, brief: "a generic Stack<T> and Pair<A,B>, member functions defined in the class, default template arguments, using aliases." },
+      { key: "specialization-constexpr-if", title: "Specialization and if constexpr", minutes: 13, brief: "full specialization of a function or class, if constexpr to pick code per type, type traits like is_integral." },
+      { key: "variadic-basics", title: "Variadic templates and fold expressions", minutes: 12, brief: "parameter packs, sizeof..., a variadic print, fold expressions (C++17) for sum, forwarding with std::forward in plain words." },
+    ] },
+  { key: "cpp-data-structures", file: "m10-data-structures", export: "dataStructures", title: "Data structures from scratch", summary: "Stacks, queues, linked lists, trees, heaps and graphs, built by hand with C++ classes.",
+    challengeBrief: "Read a string of brackets ()[]{} and print YES if it is balanced and NO otherwise (use a stack).",
+    lessons: [
+      { key: "stack-queue-scratch", title: "A stack and a queue from scratch", minutes: 13, brief: "array-backed stack class with push, pop, top, an array-backed circular queue, bounds checks, matching brackets." },
+      { key: "linked-list-scratch", title: "Linked lists", minutes: 14, brief: "Node struct with unique_ptr or raw pointers, insert, delete, reverse a singly linked list, a destructor that frees nodes." },
+      { key: "bst-heap", title: "Binary search trees and heaps", minutes: 15, brief: "BST insert, search, in-order traversal with recursion, a min-heap in a vector with sift-up and sift-down." },
+      { key: "graphs-bfs-dfs", title: "Graphs: BFS and DFS", minutes: 14, brief: "adjacency list with vector<vector<int>>, BFS with queue for shortest steps, DFS recursion, visited array, connected components." },
+    ] },
+  { key: "cpp-modern-features", file: "m11-modern", export: "modernFeatures", title: "Modern C++ (11 to 17)", summary: "The features that make today's C++ short and safe: structured bindings, optional, variant and more.",
+    challengeBrief: "Read two dates in YYYY-MM-DD form and print the number of days between them.",
+    lessons: [
+      { key: "structured-bindings-auto", title: "Structured bindings, auto and initialisation", minutes: 12, brief: "auto, structured bindings over pair, tuple, map and struct, if with initialiser, brace initialisation and its narrowing check." },
+      { key: "optional-variant-tuple", title: "optional, variant and tuple", minutes: 13, brief: "std::optional for maybe-a-value, value_or, std::variant with std::visit, tuple and tie, returning several values." },
+      { key: "enum-class-chrono", title: "enum class, constexpr and chrono", minutes: 12, brief: "enum class and why it is safer, constexpr tables, std::chrono durations with fixed values (never read the clock), literals." },
+      { key: "exceptions-errors", title: "Exceptions and error handling", minutes: 13, brief: "try, catch, throw, exception hierarchy, custom exceptions, noexcept, RAII and exception safety, error codes vs exceptions." },
+    ] },
+  { key: "cpp-concurrency", file: "m12-concurrency", export: "concurrency", title: "Concurrency basics", summary: "Run work in parallel safely with threads, mutexes, atomics and futures, with outputs that do not depend on timing.",
+    challengeBrief: "Read n integers and print their sum, computed by splitting the work across two threads and adding the two partial sums.",
+    lessons: [
+      { key: "threads-join", title: "Threads and join", minutes: 13, brief: "std::thread, join, passing arguments (by value and with std::ref), why output order is not fixed (print only after join), a race on a counter." },
+      { key: "mutex-atomic", title: "mutex, lock_guard and atomic", minutes: 13, brief: "std::mutex with lock_guard, fixing the counter race, std::atomic, deadlock explained in words." },
+      { key: "future-async", title: "async and future", minutes: 13, brief: "std::async, future.get, promise and future, running tasks in parallel and collecting results in order." },
+      { key: "condition-variable", title: "condition_variable: waiting for work", minutes: 12, brief: "a producer and consumer with a queue, condition_variable wait with a predicate, notify_one, shutting down cleanly." },
+    ] },
+  { key: "cpp-interview", file: "m13-interview", export: "interviewCpp", title: "Placement and interview C++", summary: "The patterns placement rounds ask again and again, solved in C++, plus the output puzzles.",
+    challengeBrief: "Read n integers and print the length of the longest run of equal consecutive values.",
+    lessons: [
+      { key: "array-patterns", title: "Array patterns", minutes: 15, brief: "prefix sums, Kadane's maximum subarray, two pointers, rotate, merge two sorted arrays, find the missing number." },
+      { key: "string-patterns", title: "String patterns", minutes: 14, brief: "palindrome, anagram check with a count array, reverse words, first non-repeating character, valid parentheses." },
+      { key: "number-patterns", title: "Number patterns", minutes: 14, brief: "gcd and lcm, sieve of Eratosthenes, fast power with modulo, bit tricks, digit tricks, overflow-safe arithmetic." },
+      { key: "output-puzzles", title: "Tricky output questions", minutes: 14, brief: "evaluation order traps to avoid, integer promotion, const and pointers, static init order, virtual call in a constructor, slicing, pass by value vs reference." },
+    ] },
+];
