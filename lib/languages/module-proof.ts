@@ -64,12 +64,13 @@ export const currentAssessment = (m: TrackModule, userId: string, row: ModulePro
 
 /** Marks the current attempt. A pass stays a pass; a miss counts the attempt, so the next one draws different questions. */
 export async function submitAssessment(service: Service, userId: string, track: Track, m: TrackModule, row: ModuleProofRow, answers: Record<string, number>) {
-  const graded = gradeAssessment(currentAssessment(m, userId, row), answers);
-  const saved = await save(service, userId, track, m, row, { ...row, assessmentAttempts: row.assessmentAttempts + 1, assessmentPassedAt: row.assessmentPassedAt ?? (graded.passed ? new Date().toISOString() : null), ...(graded.passed && !row.assessmentPassedAt ? { assessmentCorrect: graded.correct, assessmentTotal: graded.total } : {}) });
-  return { ...graded, state: saved };
   const asked = currentAssessment(m, userId, row);
   const graded = gradeAssessment(asked, answers);
-  const saved = await save(service, userId, track, m, row, { ...row, assessmentAttempts: row.assessmentAttempts + 1, assessmentPassedAt: row.assessmentPassedAt ?? (graded.passed ? new Date().toISOString() : null) });
+  const saved = await save(service, userId, track, m, row, {
+    ...row, assessmentAttempts: row.assessmentAttempts + 1, assessmentPassedAt: row.assessmentPassedAt ?? (graded.passed ? new Date().toISOString() : null),
+    // the score of the attempt that passed is kept as evidence for the certificate
+    ...(graded.passed && !row.assessmentPassedAt ? { assessmentCorrect: graded.correct, assessmentTotal: graded.total } : {}),
+  });
   // a pass needs no review; a miss shows what each missed question was and why, so the next try is informed
   return { ...graded, review: graded.passed ? [] : reviewAssessment(asked, answers), state: saved };
 }
