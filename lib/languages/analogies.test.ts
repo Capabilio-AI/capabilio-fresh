@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cTrack } from "./c";
 import { pythonTrack } from "./python";
 import { javaTrack } from "./java";
+import { cppTrack } from "./cpp";
 import { allLessons } from "./types";
 import { ANALOGIES } from "./analogies";
 
@@ -11,7 +12,7 @@ describe("analogies", () => {
     expect(missing).toEqual([]);
   });
   it("every analogy belongs to a real lesson (no orphans)", () => {
-    const real = new Set([cTrack, pythonTrack, javaTrack].flatMap((t) => allLessons(t).map((l) => `${t.key}/${l.key}`)));
+    const real = new Set([cTrack, pythonTrack, javaTrack, cppTrack].flatMap((t) => allLessons(t).map((l) => `${t.key}/${l.key}`)));
     expect(Object.keys(ANALOGIES).filter((k) => !real.has(k))).toEqual([]);
   });
   it("each one says what matches what and, always, where the analogy stops being true", () => {

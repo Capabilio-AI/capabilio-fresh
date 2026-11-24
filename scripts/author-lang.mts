@@ -4,7 +4,7 @@
 //   npm run author -- questions  <track> <moduleKey|all>   draft code-reading snippets, keep only those the runner proves usable
 //   npm run author -- analogies  <track>                   one everyday analogy per new lesson
 //   npm run author -- index      <track>                   collect generated/*.json into challenges-extra.ts (and native-extra.ts when the track has native solutions)
-// Authoring uses Anthropic claude-sonnet-5-5 (AUTHOR_PROVIDER / AUTHOR_MODEL override). Tracks: c, python, java.
+// Authoring uses Anthropic claude-sonnet-5-5 (AUTHOR_PROVIDER / AUTHOR_MODEL override). Tracks: c, python, java, cpp.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -63,6 +63,19 @@ const CONFIGS: Record<string, Cfg> = {
     localCheck: () => ({ error: null, stdout: "" }),
     compareWithLocal: false, nativeSolution: true,
     analogyFile: "lib/languages/analogies-extra-java.ts", analogyExport: "EXTRA_ANALOGIES_JAVA", questionsExtra: "scripts/code-questions/java-extra.ts", questionsModule: "./code-questions/java.mts",
+  },
+  cpp: {
+    track: "cpp", runner: "cpp", dir: "lib/languages/cpp", ext: "cpp", modules: async () => (await import("./authoring/cpp-modules")).CPP_MODULES,
+    style: `${SHARED}\n- Each program is C++17 (the runner's compiler is GCC 9: NO C++20 features such as concepts, ranges, std::format, std::span, designated initialisers) in ONE file, at most 40 lines. Include every header it needs. It compiles with g++ -std=c++17 -Wall -Wextra with NO warnings (no signed/unsigned comparisons, no unused variables or parameters) and ends with return 0 from main. Never print addresses, sizeof of types that vary, the time, or anything that depends on thread timing (join before printing).`,
+    questionRules: `"body" = the statements inside main (no main, no #include). Optional "top" = declarations before main (structs, classes, functions, templates). <bits/stdc++.h> is already included and "using namespace std;" is in effect. No input, no undefined behaviour, no uninitialised variables, no thread timing, no addresses.`,
+    localCheck: (code, file) => {
+      writeFileSync(`${file}.cpp`, code);
+      const cc = spawnSync("c++", ["-Wall", "-Wextra", "-std=c++17", "-o", file, `${file}.cpp`], { encoding: "utf8" });
+      if (cc.stderr.trim()) return { error: `gives compiler warnings or errors with -Wall -Wextra -std=c++17: ${cc.stderr.slice(0, 400)}`, stdout: "" };
+      return { error: null, stdout: "" };
+    },
+    compareWithLocal: false, nativeSolution: true,
+    analogyFile: "lib/languages/analogies-extra-cpp.ts", analogyExport: "EXTRA_ANALOGIES_CPP", questionsExtra: "scripts/code-questions/cpp-extra.ts", questionsModule: "./code-questions/cpp.mts",
   },
   python: {
     track: "python", runner: "python", dir: "lib/languages/python", ext: "py", modules: async () => (await import("./authoring/python-modules")).PYTHON_MODULES,

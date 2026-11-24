@@ -1,0 +1,53 @@
+{
+  "key": "cpp-containers",
+  "title": "Word Count Ranking",
+  "statement": "You are given n words. Print each distinct word once, with the number of times it appeared. Sort the lines by count, largest first. If two words have the same count, put the word that comes first in dictionary order first. Dictionary order means \"app\" comes before \"apple\".",
+  "inputFormat": "The first line has an integer n. Then n words follow, separated by spaces or new lines. Each word has only lowercase English letters.",
+  "outputFormat": "One line for each distinct word: the word, a space, then its count. Lines are sorted by count descending, then by word ascending.",
+  "constraints": [
+    "1 <= n <= 100000",
+    "Each word has 1 to 20 lowercase letters (a-z)",
+    "Words may be spread over several lines"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "apple and banana both appear 2 times, so they come first, and apple is before banana in dictionary order. cherry appears once, so it is last.",
+    "be and to appear 2 times each. be comes before to. not and or appear once each, and not comes before or."
+  ],
+  "reference": "import sys\ndata = sys.stdin.read().split()\nn = int(data[0])\nwords = data[1:1 + n]\ncounts = {}\nfor w in words:\n    counts[w] = counts.get(w, 0) + 1\nfor w, c in sorted(counts.items(), key=lambda p: (-p[1], p[0])):\n    print(w, c)\n",
+  "tests": [
+    {
+      "input": "5\napple banana apple cherry banana\n",
+      "output": "apple 2\nbanana 2\ncherry 1\n"
+    },
+    {
+      "input": "6\nto be or not to be\n",
+      "output": "be 2\nto 2\nnot 1\nor 1\n"
+    },
+    {
+      "input": "1\nhello\n",
+      "output": "hello 1\n"
+    },
+    {
+      "input": "4\nzed zed zed zed\n",
+      "output": "zed 4\n"
+    },
+    {
+      "input": "5\ne d c b a\n",
+      "output": "a 1\nb 1\nc 1\nd 1\ne 1\n"
+    },
+    {
+      "input": "6\napple app apple app apple ap\n",
+      "output": "apple 3\napp 2\nap 1\n"
+    },
+    {
+      "input": "7\nb a\nb\na c\nc c\n",
+      "output": "c 3\na 2\nb 2\n"
+    },
+    {
+      "input": "30\nq q q q q q q q q q p p p p p p p p p p o o o o o o o o o o\n",
+      "output": "o 10\np 10\nq 10\n"
+    }
+  ],
+  "solution": "#include <algorithm>\n#include <iostream>\n#include <map>\n#include <string>\n#include <utility>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::map<std::string, int> counts;\n    for (int i = 0; i < n; i++) {\n        std::string w;\n        std::cin >> w;\n        counts[w]++;\n    }\n    std::vector<std::pair<std::string, int>> v(counts.begin(), counts.end());\n    std::sort(v.begin(), v.end(),\n              [](const std::pair<std::string, int>& a,\n                 const std::pair<std::string, int>& b) {\n                  if (a.second != b.second) return a.second > b.second;\n                  return a.first < b.first;\n              });\n    for (const auto& p : v) {\n        std::cout << p.first << \" \" << p.second << \"\\n\";\n    }\n    return 0;\n}\n"
+}
