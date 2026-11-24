@@ -4,7 +4,7 @@
 //   npm run author -- questions  <track> <moduleKey|all>   draft code-reading snippets, keep only those the runner proves usable
 //   npm run author -- analogies  <track>                   one everyday analogy per new lesson
 //   npm run author -- index      <track>                   collect generated/*.json into challenges-extra.ts (and native-extra.ts when the track has native solutions)
-// Set LLM_MODEL=claude-sonnet-5-5. Tracks: c, python.
+// Authoring uses Anthropic claude-sonnet-5-5 (AUTHOR_PROVIDER / AUTHOR_MODEL override). Tracks: c, python, java.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -13,7 +13,7 @@ import { z } from "zod";
 import { generateStructured as generate, type StructuredRequest } from "@/lib/ai/llm";
 
 // The Groq fallback has no credit, and when the main route fails it would hide the real error behind its own. Authoring uses the main route only.
-const NO_FALLBACK = { ...process.env, LLM_FALLBACK_PROVIDER: "", LLM_FALLBACK_MODEL: "", GROQ_FALLBACK_MODEL: "", LLM_FALLBACK2_PROVIDER: "", LLM_FALLBACK2_MODEL: "" };
+const NO_FALLBACK = { ...process.env, LLM_PROVIDER: process.env.AUTHOR_PROVIDER || "anthropic", LLM_MODEL: process.env.AUTHOR_MODEL || "claude-sonnet-5-5", LLM_FALLBACK_PROVIDER: "", LLM_FALLBACK_MODEL: "", GROQ_FALLBACK_MODEL: "", LLM_FALLBACK2_PROVIDER: "", LLM_FALLBACK2_MODEL: "" };
 const generateStructured = <T,>(req: StructuredRequest<T>) => generate(req, { env: NO_FALLBACK, repairs: 3 });
 import { runCode } from "@/lib/code-execution/wandbox";
 import type { LessonSpec, ModuleSpec } from "./authoring/c-modules";
@@ -55,6 +55,14 @@ const CONFIGS: Record<string, Cfg> = {
     },
     compareWithLocal: false, nativeSolution: true,
     analogyFile: "lib/languages/analogies-extra.ts", analogyExport: "EXTRA_ANALOGIES", questionsExtra: "scripts/code-questions/c-extra.ts", questionsModule: "./code-questions/c.mts",
+  },
+  java: {
+    track: "java", runner: "java", dir: "lib/languages/java", ext: "java", modules: async () => (await import("./authoring/java-modules")).JAVA_MODULES,
+    style: `${SHARED}\n- Each program is Java 21 in ONE file, at most 28 lines and under 800 characters in total (use short names, few blank lines, no unneeded imports). The class that holds main is named exactly "public class Main"; every other class, record, interface or enum in the file is NOT public. It compiles with plain javac without errors. Do not print the time, a Random without a fixed seed, a HashMap with keys other than Integer or short String, or anything that depends on thread timing (join before printing).`,
+    questionRules: `"body" = the statements inside main (no class, no main). Optional "top" = complete NON-public class, record, interface or enum declarations that go before Main (put helper methods inside such a class and call them as ClassName.method()). java.util.*, java.util.function.* and java.util.stream.* are already imported. No input, no Random without a fixed seed, no thread timing.`,
+    localCheck: () => ({ error: null, stdout: "" }),
+    compareWithLocal: false, nativeSolution: true,
+    analogyFile: "lib/languages/analogies-extra-java.ts", analogyExport: "EXTRA_ANALOGIES_JAVA", questionsExtra: "scripts/code-questions/java-extra.ts", questionsModule: "./code-questions/java.mts",
   },
   python: {
     track: "python", runner: "python", dir: "lib/languages/python", ext: "py", modules: async () => (await import("./authoring/python-modules")).PYTHON_MODULES,
@@ -102,7 +110,7 @@ async function proveExamples(cfg: Cfg, d: DraftLesson): Promise<string | null> {
 async function draftLesson(cfg: Cfg, m: ModuleSpec, spec: LessonSpec): Promise<DraftLesson> {
   let feedback = "";
   for (let attempt = 1; attempt <= 4; attempt++) {
-    const { value } = await generateStructured({ task: "general", promptVersion: "author-lang-1", schema: Lesson, temperature: 0.4, maxTokens: 6000, system: cfg.style,
+    const { value } = await generateStructured({ task: "general", promptVersion: "author-lang-1", schema: Lesson, temperature: 0.4, maxTokens: 10000, system: cfg.style,
       user: `Write the ${cfg.track} lesson "${spec.title}" for the module "${m.title}". It must teach: ${spec.brief}${feedback ? `\n\nYour last draft was rejected: ${feedback}\nFix exactly that.` : ""}` });
     const problem = await proveExamples(cfg, value);
     if (!problem) return value;

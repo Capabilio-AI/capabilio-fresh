@@ -1,0 +1,52 @@
+{
+  "key": "java-interview",
+  "title": "Longest Run of Equal Values",
+  "statement": "You are given n integers. A run is a block of equal values that sit next to each other. Print the length of the longest run. For example, in 1 1 2 2 2 3 the longest run is 2 2 2, so the answer is 3.",
+  "inputFormat": "First line: integer n. Second line: n integers separated by spaces.",
+  "outputFormat": "One integer: the length of the longest run of equal consecutive values.",
+  "constraints": [
+    "1 <= n <= 100000",
+    "-1000000000 <= each value <= 1000000000"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The runs are 1 1, then 2 2 2, then 3 3, then 1. The longest has length 3.",
+    "All five values are equal, so the whole list is one run of length 5."
+  ],
+  "reference": "import sys\nd = sys.stdin.read().split()\nn = int(d[0])\nv = d[1:1 + n]\nbest = 1\ncur = 1\nfor i in range(1, n):\n    if int(v[i]) == int(v[i - 1]):\n        cur += 1\n    else:\n        cur = 1\n    if cur > best:\n        best = cur\nprint(best)",
+  "tests": [
+    {
+      "input": "8\n1 1 2 2 2 3 3 1\n",
+      "output": "3\n"
+    },
+    {
+      "input": "5\n7 7 7 7 7\n",
+      "output": "5\n"
+    },
+    {
+      "input": "1\n5\n",
+      "output": "1\n"
+    },
+    {
+      "input": "6\n1 2 1 2 1 2\n",
+      "output": "1\n"
+    },
+    {
+      "input": "7\n-1 -1 -1 0 0 0 0\n",
+      "output": "4\n"
+    },
+    {
+      "input": "5\n1000 1000 1000 200 200\n",
+      "output": "3\n"
+    },
+    {
+      "input": "2\n3 4\n",
+      "output": "1\n"
+    },
+    {
+      "input": "9\n1000000000 1000000000 -1000000000 -1000000000 -1000000000 5 5 5 5\n",
+      "output": "4\n"
+    }
+  ],
+  "solution": "import java.util.*;\npublic class Main {\n    public static void main(String[] a) {\n        Scanner s = new Scanner(System.in);\n        int n = s.nextInt();\n        int p = s.nextInt(), c = 1, b = 1;\n        for (int i = 1; i < n; i++) {\n            int x = s.nextInt();\n            if (x == p) c++;\n            else { c = 1; p = x; }\n            if (c > b) b = c;\n        }\n        System.out.println(b);\n    }\n}"
+}

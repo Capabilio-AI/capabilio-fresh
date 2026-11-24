@@ -1,0 +1,57 @@
+{
+  "key": "java-generics-collections",
+  "title": "Word Count Ranking",
+  "statement": "You are given n words. Print each distinct word with the number of times it appears. Sort the lines by count, largest first. If two words have the same count, put them in alphabetical order. Words use only lowercase English letters, so alphabetical order is the normal dictionary order.",
+  "inputFormat": "First line: integer n. Then n words, separated by spaces or new lines.",
+  "outputFormat": "One line for each distinct word: the word, a space, then its count. Lines follow the sorting rule above.",
+  "constraints": [
+    "1 <= n <= 1000",
+    "Each word has 1 to 10 lowercase letters (a to z)",
+    "Words are separated by spaces or new lines"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "apple and banana both appear 2 times, so they are in alphabetical order. cherry appears once, so it comes last.",
+    "zebra appears 3 times, dog 2 times, cat once. Higher count comes first, so the order is zebra, dog, cat."
+  ],
+  "reference": "import sys\nfrom collections import Counter\n\ndata = sys.stdin.read().split()\nn = int(data[0])\nwords = data[1:1 + n]\nc = Counter(words)\nfor w, k in sorted(c.items(), key=lambda x: (-x[1], x[0])):\n    print(w, k)\n",
+  "tests": [
+    {
+      "input": "5\napple banana apple cherry banana\n",
+      "output": "apple 2\nbanana 2\ncherry 1\n"
+    },
+    {
+      "input": "6\nzebra dog zebra cat dog zebra\n",
+      "output": "zebra 3\ndog 2\ncat 1\n"
+    },
+    {
+      "input": "1\nhello\n",
+      "output": "hello 1\n"
+    },
+    {
+      "input": "100\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\nz z z z z z z z z z\n",
+      "output": "z 100\n"
+    },
+    {
+      "input": "7\nab a abc ab a abc b\n",
+      "output": "a 2\nab 2\nabc 2\nb 1\n"
+    },
+    {
+      "input": "5\nelephant dog cat bee ant\n",
+      "output": "ant 1\nbee 1\ncat 1\ndog 1\nelephant 1\n"
+    },
+    {
+      "input": "6\nto be\nor not\nto\nbe\n",
+      "output": "be 2\nto 2\nnot 1\nor 1\n"
+    },
+    {
+      "input": "3\nabcdefghij abcdefghij abcdefghii\n",
+      "output": "abcdefghij 2\nabcdefghii 1\n"
+    },
+    {
+      "input": "9\nd c c b b b a a a\n",
+      "output": "a 3\nb 3\nc 2\nd 1\n"
+    }
+  ],
+  "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<String, Integer> counts = new HashMap<>();\n        for (int i = 0; i < n; i++) {\n            String w = sc.next();\n            counts.merge(w, 1, Integer::sum);\n        }\n        List<Map.Entry<String, Integer>> list = new ArrayList<>(counts.entrySet());\n        list.sort((a, b) -> {\n            int c = Integer.compare(b.getValue(), a.getValue());\n            return c != 0 ? c : a.getKey().compareTo(b.getKey());\n        });\n        StringBuilder sb = new StringBuilder();\n        for (Map.Entry<String, Integer> e : list) {\n            sb.append(e.getKey()).append(' ').append(e.getValue()).append('\\n');\n        }\n        System.out.print(sb);\n    }\n}\n"
+}

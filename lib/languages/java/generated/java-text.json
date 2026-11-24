@@ -1,0 +1,57 @@
+{
+  "key": "java-text",
+  "title": "Word Count, Longest Word, Capitalise",
+  "statement": "You are given one line of text. Words are separated by one or more spaces. The line may start or end with spaces. Print three lines. Line 1: the number of words. Line 2: the longest word, as it was written. If two words tie, print the first one. Line 3: every word with its first letter in capital and the other letters in small letters, joined by a single space.",
+  "inputFormat": "One line with English letters and spaces. It has at least one word.",
+  "outputFormat": "Three lines: the word count, the longest word, and the capitalised line.",
+  "constraints": [
+    "1 <= length of the line <= 200",
+    "The line has only letters (a-z, A-Z) and spaces",
+    "The line has at least one word"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "There are 4 words. Hello and world both have 5 letters, so the first one, hello, is printed.",
+    "Extra spaces at the start, end and middle are ignored. Output words are joined by one space, and FUN becomes Fun."
+  ],
+  "reference": "import sys\n\nline = sys.stdin.readline()\nwords = line.split()\nbest = words[0]\nfor w in words:\n    if len(w) > len(best):\n        best = w\nprint(len(words))\nprint(best)\nprint(\" \".join(w[0].upper() + w[1:].lower() for w in words))",
+  "tests": [
+    {
+      "input": "hello world from java\n",
+      "output": "4\nhello\nHello World From Java\n"
+    },
+    {
+      "input": "  learning   strings is FUN  \n",
+      "output": "4\nlearning\nLearning Strings Is Fun\n"
+    },
+    {
+      "input": "a\n",
+      "output": "1\na\nA\n"
+    },
+    {
+      "input": "x y z\n",
+      "output": "3\nx\nX Y Z\n"
+    },
+    {
+      "input": "   spaces   everywhere   \n",
+      "output": "2\neverywhere\nSpaces Everywhere\n"
+    },
+    {
+      "input": "ALL CAPS TEXT\n",
+      "output": "3\nCAPS\nAll Caps Text\n"
+    },
+    {
+      "input": "mIxEd cAsE wOrDs\n",
+      "output": "3\nmIxEd\nMixed Case Words\n"
+    },
+    {
+      "input": "this is a Supercalifragilisticexpialidocious word\n",
+      "output": "5\nSupercalifragilisticexpialidocious\nThis Is A Supercalifragilisticexpialidocious Word\n"
+    },
+    {
+      "input": "ab cd ef gh ij kl mn op qr st uv wx yz AB CD EF GH IJ KL MN OP\n",
+      "output": "21\nab\nAb Cd Ef Gh Ij Kl Mn Op Qr St Uv Wx Yz Ab Cd Ef Gh Ij Kl Mn Op\n"
+    }
+  ],
+  "solution": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String line = br.readLine();\n        String[] w = line.trim().split(\" +\");\n        String best = w[0];\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < w.length; i++) {\n            if (w[i].length() > best.length()) {\n                best = w[i];\n            }\n            if (i > 0) {\n                sb.append(' ');\n            }\n            sb.append(w[i].substring(0, 1).toUpperCase());\n            sb.append(w[i].substring(1).toLowerCase());\n        }\n        System.out.println(w.length);\n        System.out.println(best);\n        System.out.println(sb);\n    }\n}"
+}

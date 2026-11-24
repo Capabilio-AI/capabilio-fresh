@@ -1,0 +1,54 @@
+{
+  "key": "java-oop-design",
+  "title": "Totals per Name",
+  "statement": "You get n lines. Each line has a name and an amount. The same name can appear many times. Add up the amounts for each name. Print each name with its total, sorted by name. Sort by character code, so every capital letter comes before every small letter.",
+  "inputFormat": "First line: integer n. Then n lines, each with a name and an integer amount, separated by one space.",
+  "outputFormat": "One line per different name, in sorted order: the name, a space, and the total.",
+  "constraints": [
+    "1 <= n <= 1000",
+    "Name has 1 to 10 English letters, no spaces. Capital and small letters are different names.",
+    "-10^9 <= amount <= 10^9",
+    "A total can be larger than 32-bit integer range"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "asha appears twice: 100 + 25 = 125. ravi: 50 + 5 = 55. meena has only 10. Names are printed in sorted order.",
+    "bala: 40 - 15 = 25. anu: 5 - 5 = 0. A total of 0 is still printed."
+  ],
+  "reference": "import sys\nt = sys.stdin.read().split()\nn = int(t[0])\nd = {}\nfor i in range(n):\n    name = t[1 + 2 * i]\n    d[name] = d.get(name, 0) + int(t[2 + 2 * i])\nfor k in sorted(d):\n    print(k, d[k])\n",
+  "tests": [
+    {
+      "input": "5\nasha 100\nravi 50\nasha 25\nmeena 10\nravi 5\n",
+      "output": "asha 125\nmeena 10\nravi 55\n"
+    },
+    {
+      "input": "4\nbala 40\nbala -15\nanu 5\nanu -5\n",
+      "output": "anu 0\nbala 25\n"
+    },
+    {
+      "input": "1\nx 5\n",
+      "output": "x 5\n"
+    },
+    {
+      "input": "3\nraj 1000000000\nraj 1000000000\nraj 1000000000\n",
+      "output": "raj 3000000000\n"
+    },
+    {
+      "input": "4\nzoya 7\nZoya 3\nzoya -2\nabc 1\n",
+      "output": "Zoya 3\nabc 1\nzoya 5\n"
+    },
+    {
+      "input": "3\nmina -1000000000\nmina -1000000000\nmina -1000000000\n",
+      "output": "mina -3000000000\n"
+    },
+    {
+      "input": "6\nab 1\na 2\nabc 3\nb 4\nab 5\na 6\n",
+      "output": "a 8\nab 6\nabc 3\nb 4\n"
+    },
+    {
+      "input": "5\nDev 10\nDev -10\nCha 0\nBo 5\nAl 5\n",
+      "output": "Al 5\nBo 5\nCha 0\nDev 0\n"
+    }
+  ],
+  "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        TreeMap<String, Long> totals = new TreeMap<>();\n        for (int i = 0; i < n; i++) {\n            String name = sc.next();\n            long amount = sc.nextLong();\n            totals.merge(name, amount, Long::sum);\n        }\n        StringBuilder sb = new StringBuilder();\n        for (Map.Entry<String, Long> e : totals.entrySet()) {\n            sb.append(e.getKey()).append(' ').append(e.getValue()).append('\\n');\n        }\n        System.out.print(sb);\n    }\n}\n"
+}

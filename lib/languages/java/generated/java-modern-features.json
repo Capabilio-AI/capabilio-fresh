@@ -1,0 +1,53 @@
+{
+  "key": "java-modern-features",
+  "title": "Days Between Dates and Weekday",
+  "statement": "You get two dates, A and B, in YYYY-MM-DD form. Print the number of days you must move from A to reach B. The number is negative if B is before A. Then print the day of the week of A in capital English letters, such as MONDAY. Remember that leap years add one day to February.",
+  "inputFormat": "Two lines. Line 1 has date A. Line 2 has date B. Both are real calendar dates written with leading zeros.",
+  "outputFormat": "One line: the signed number of days from A to B, a space, then the weekday of A in capital letters.",
+  "constraints": [
+    "Both years are between 1900 and 2100",
+    "Both dates exist in the calendar",
+    "Use the normal Gregorian leap year rule (2100 is not a leap year)"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "2024 is a leap year. January has 31 days and February has 29, so March 1 is 60 days later. January 1, 2024 was a Monday.",
+    "B is 5 days before A, so the answer is negative. August 15, 2023 was a Tuesday."
+  ],
+  "reference": "import sys, datetime\na, b = sys.stdin.read().split()\ndef p(s):\n    y, m, d = map(int, s.split('-'))\n    return datetime.date(y, m, d)\nx = p(a)\ny = p(b)\nnames = [\"MONDAY\", \"TUESDAY\", \"WEDNESDAY\", \"THURSDAY\", \"FRIDAY\", \"SATURDAY\", \"SUNDAY\"]\nprint((y - x).days, names[x.weekday()])",
+  "tests": [
+    {
+      "input": "2024-01-01\n2024-03-01\n",
+      "output": "60 MONDAY\n"
+    },
+    {
+      "input": "2023-08-15\n2023-08-10\n",
+      "output": "-5 TUESDAY\n"
+    },
+    {
+      "input": "2000-01-01\n2000-01-01\n",
+      "output": "0 SATURDAY\n"
+    },
+    {
+      "input": "1900-01-01\n2100-12-31\n",
+      "output": "73413 MONDAY\n"
+    },
+    {
+      "input": "2100-03-01\n2100-02-28\n",
+      "output": "-1 MONDAY\n"
+    },
+    {
+      "input": "2024-02-28\n2024-03-01\n",
+      "output": "2 WEDNESDAY\n"
+    },
+    {
+      "input": "1999-12-31\n2000-03-01\n",
+      "output": "61 FRIDAY\n"
+    },
+    {
+      "input": "2023-01-01\n2024-01-01\n",
+      "output": "365 SUNDAY\n"
+    }
+  ],
+  "solution": "import java.time.LocalDate;\nimport java.time.temporal.ChronoUnit;\nimport java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner s = new Scanner(System.in);\n        LocalDate x = LocalDate.parse(s.next());\n        LocalDate y = LocalDate.parse(s.next());\n        System.out.println(ChronoUnit.DAYS.between(x, y) + \" \" + x.getDayOfWeek());\n    }\n}"
+}

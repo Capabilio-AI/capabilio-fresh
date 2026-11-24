@@ -1,0 +1,52 @@
+{
+  "key": "java-concurrency",
+  "title": "Sum with Two Threads",
+  "statement": "Read n integers. Print their sum. You must split the work across two threads. Thread 1 adds the first half of the numbers. Thread 2 adds the rest. Wait for both threads to finish, then print the sum of the two partial sums. The sum can be larger than an int can hold.",
+  "inputFormat": "First line: n. Second line: n integers separated by spaces.",
+  "outputFormat": "One integer: the sum of all n numbers.",
+  "constraints": [
+    "1 <= n <= 30",
+    "-1000000000 <= each number <= 1000000000"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The numbers are 1, 2, 3, 4, 5. Their sum is 15. Any way of splitting the work gives the same total.",
+    "The numbers are 10, -3, 7, 6. One thread adds 10 and -3. The other adds 7 and 6. The two partial sums add up to 20."
+  ],
+  "reference": "import sys\nd = sys.stdin.read().split()\nn = int(d[0])\nprint(sum(int(x) for x in d[1:1 + n]))",
+  "tests": [
+    {
+      "input": "5\n1 2 3 4 5\n",
+      "output": "15\n"
+    },
+    {
+      "input": "4\n10 -3 7 6\n",
+      "output": "20\n"
+    },
+    {
+      "input": "1\n42\n",
+      "output": "42\n"
+    },
+    {
+      "input": "2\n-5 5\n",
+      "output": "0\n"
+    },
+    {
+      "input": "3\n-1 -2 -3\n",
+      "output": "-6\n"
+    },
+    {
+      "input": "30\n1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000 1000000000\n",
+      "output": "30000000000\n"
+    },
+    {
+      "input": "30\n-1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000 -1000000000\n",
+      "output": "-30000000000\n"
+    },
+    {
+      "input": "7\n1000000000 1000000000 1000000000 -1000000000 5 0 0\n",
+      "output": "2000000005\n"
+    }
+  ],
+  "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Scanner s = new Scanner(System.in);\n        int n = s.nextInt();\n        long[] v = new long[n];\n        for (int i = 0; i < n; i++) v[i] = s.nextLong();\n        int m = n / 2;\n        long[] p = new long[2];\n        Thread t1 = new Thread(() -> {\n            long x = 0;\n            for (int i = 0; i < m; i++) x += v[i];\n            p[0] = x;\n        });\n        Thread t2 = new Thread(() -> {\n            long x = 0;\n            for (int i = m; i < n; i++) x += v[i];\n            p[1] = x;\n        });\n        t1.start();\n        t2.start();\n        t1.join();\n        t2.join();\n        System.out.println(p[0] + p[1]);\n    }\n}"
+}
