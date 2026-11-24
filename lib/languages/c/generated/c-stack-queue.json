@@ -1,0 +1,52 @@
+{
+  "key": "c-stack-queue",
+  "title": "Balanced Brackets",
+  "statement": "You are given a string made only of the characters ( ) [ ] { }. The string is balanced if every opening bracket is closed by the same type of bracket, in the correct order. Print YES if the string is balanced. Otherwise print NO. Use a stack.",
+  "inputFormat": "One line with a string S of brackets. It has no spaces.",
+  "outputFormat": "Print YES if S is balanced, otherwise print NO.",
+  "constraints": [
+    "1 <= length of S <= 200",
+    "S contains only the characters ( ) [ ] { }"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Push ( and [ and {. Then } closes {, ] closes [, ) closes ( in the right order. The stack ends empty, so the answer is YES.",
+    "Push ( and [. The next character ) needs ( on top, but the top is [. The order is wrong, so the answer is NO."
+  ],
+  "reference": "import sys\ns = sys.stdin.read().strip()\npair = {')': '(', ']': '[', '}': '{'}\nst = []\nok = True\nfor c in s:\n    if c in '([{':\n        st.append(c)\n    else:\n        if not st or st[-1] != pair[c]:\n            ok = False\n            break\n        st.pop()\nif st:\n    ok = False\nprint(\"YES\" if ok else \"NO\")",
+  "tests": [
+    {
+      "input": "([]{})\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "([)]\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "(\n",
+      "output": "NO\n"
+    },
+    {
+      "input": ")(\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "((((\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "{[()()]}[]\n",
+      "output": "YES\n"
+    },
+    {
+      "input": ")\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]\n",
+      "output": "NO\n"
+    }
+  ],
+  "solutionC": "#include <stdio.h>\n\nint main(void) {\n    char s[256];\n    char st[256];\n    int top = 0;\n    int ok = 1;\n    if (scanf(\"%255s\", s) != 1) {\n        return 0;\n    }\n    for (int i = 0; s[i] != '\\0'; i++) {\n        char c = s[i];\n        if (c == '(' || c == '[' || c == '{') {\n            st[top++] = c;\n        } else {\n            if (top == 0) {\n                ok = 0;\n                break;\n            }\n            char o = st[--top];\n            if ((c == ')' && o != '(') ||\n                (c == ']' && o != '[') ||\n                (c == '}' && o != '{')) {\n                ok = 0;\n                break;\n            }\n        }\n    }\n    if (top != 0) {\n        ok = 0;\n    }\n    puts(ok ? \"YES\" : \"NO\");\n    return 0;\n}"
+}

@@ -1,0 +1,52 @@
+{
+  "key": "java-data-structures",
+  "title": "Balanced Brackets with a Stack",
+  "statement": "You are given a string made only of the brackets ( ) [ ] { }. A string is balanced if every opening bracket is closed by the same type of bracket, and the brackets close in the correct order. Use a stack to check this. Print YES if the string is balanced. Print NO if it is not.",
+  "inputFormat": "One line with a string S. S has only these characters: ( ) [ ] { }.",
+  "outputFormat": "Print YES if S is balanced. Otherwise print NO.",
+  "constraints": [
+    "1 <= length of S <= 100",
+    "S contains only the characters ()[]{}"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Each bracket closes right after it opens, so the stack is empty at the end. The answer is YES.",
+    "The ( is opened first, then [. The next ) meets [ on top of the stack. The types do not match, so the answer is NO."
+  ],
+  "reference": "import sys\n\ns = sys.stdin.readline().strip()\npairs = {')': '(', ']': '[', '}': '{'}\nstack = []\nok = True\nfor ch in s:\n    if ch in '([{':\n        stack.append(ch)\n    else:\n        if not stack or stack[-1] != pairs[ch]:\n            ok = False\n            break\n        stack.pop()\nif stack:\n    ok = False\nprint(\"YES\" if ok else \"NO\")",
+  "tests": [
+    {
+      "input": "()[]{}\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "([)]\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "(\n",
+      "output": "NO\n"
+    },
+    {
+      "input": ")\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "(()\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "{[()()]}[]({})\n",
+      "output": "YES\n"
+    },
+    {
+      "input": "))((\n",
+      "output": "NO\n"
+    },
+    {
+      "input": "(((((((((((((((((((((((((((((((((((((((((((((((((())))))))))))))))))))))))))))))))))))))))))))))))))\n",
+      "output": "YES\n"
+    }
+  ],
+  "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String s = sc.hasNextLine() ? sc.nextLine().trim() : \"\";\n        char[] stack = new char[s.length() + 1];\n        int top = 0;\n        boolean ok = true;\n        for (int i = 0; i < s.length() && ok; i++) {\n            char c = s.charAt(i);\n            if (c == '(' || c == '[' || c == '{') {\n                stack[top++] = c;\n            } else {\n                char need;\n                if (c == ')') need = '(';\n                else if (c == ']') need = '[';\n                else need = '{';\n                if (top == 0 || stack[top - 1] != need) {\n                    ok = false;\n                } else {\n                    top--;\n                }\n            }\n        }\n        if (top != 0) ok = false;\n        System.out.println(ok ? \"YES\" : \"NO\");\n    }\n}"
+}

@@ -1,6 +1,7 @@
 // Source snippets for the C code-reading questions. The generator runs them; the answers are NOT written here.
 // Each snippet is tiny, deterministic and free of undefined behaviour. `alt` edits are the mistakes students really make.
 import type { Language, Spec } from "../gen-code-questions.mts";
+import { extra } from "./c-extra";
 
 const S = String.raw;
 
@@ -11,6 +12,7 @@ export const lang: Language = {
 };
 
 export const specs: Spec[] = [
+  ...extra,
   // ---------------------------------------------------------------- c-basics
   { m: "c-basics", body: S`printf("Hi ");
 printf("there\n");

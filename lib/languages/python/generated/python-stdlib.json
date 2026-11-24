@@ -1,0 +1,57 @@
+{
+  "key": "python-stdlib",
+  "title": "Earliest, Latest and Days Between",
+  "statement": "You are given n dates. Each date is written as YYYY-MM-DD. Find the earliest date and the latest date. Then count the days between them. Remember leap years: a date like 2024-02-29 is real. The dates may come in any order. Some dates may repeat.",
+  "inputFormat": "First line: the integer n. Then n lines, each with one valid date in YYYY-MM-DD form.",
+  "outputFormat": "Print three lines: the earliest date, the latest date, and the number of days from the earliest to the latest. Print dates in YYYY-MM-DD form.",
+  "constraints": [
+    "1 <= n <= 100",
+    "Every date is a real calendar date (Gregorian rules)",
+    "Years run from 0001 to 9999",
+    "Years are always written with 4 digits, months and days with 2 digits"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The earliest date is 2023-12-31 and the latest is 2024-03-15. 2024 is a leap year, so February has 29 days. The gap is 75 days.",
+    "The year 2000 is a leap year, so 2000-02-29 exists. That makes 2000-02-28 to 2000-03-01 two days, not one."
+  ],
+  "reference": "import sys\nfrom datetime import date\n\n\ndef main():\n    tokens = sys.stdin.read().split()\n    n = int(tokens[0])\n    days = []\n    for text in tokens[1:1 + n]:\n        y, m, d = text.split(\"-\")\n        days.append(date(int(y), int(m), int(d)))\n    lo = min(days)\n    hi = max(days)\n    print(lo.isoformat())\n    print(hi.isoformat())\n    print((hi - lo).days)\n\n\nmain()\n",
+  "tests": [
+    {
+      "input": "3\n2024-03-15\n2023-12-31\n2024-01-01\n",
+      "output": "2023-12-31\n2024-03-15\n75\n"
+    },
+    {
+      "input": "2\n2000-02-28\n2000-03-01\n",
+      "output": "2000-02-28\n2000-03-01\n2\n"
+    },
+    {
+      "input": "1\n2024-02-29\n",
+      "output": "2024-02-29\n2024-02-29\n0\n"
+    },
+    {
+      "input": "2\n2021-07-04\n2021-07-04\n",
+      "output": "2021-07-04\n2021-07-04\n0\n"
+    },
+    {
+      "input": "2\n9999-12-31\n0001-01-01\n",
+      "output": "0001-01-01\n9999-12-31\n3652058\n"
+    },
+    {
+      "input": "2\n1900-02-28\n1900-03-01\n",
+      "output": "1900-02-28\n1900-03-01\n1\n"
+    },
+    {
+      "input": "5\n2019-12-31\n2020-01-01\n2018-06-15\n2020-02-29\n2019-01-01\n",
+      "output": "2018-06-15\n2020-02-29\n624\n"
+    },
+    {
+      "input": "4\n2100-02-28\n2100-03-01\n2099-12-31\n2100-01-01\n",
+      "output": "2099-12-31\n2100-03-01\n60\n"
+    },
+    {
+      "input": "6\n1999-12-31\n2000-12-31\n2000-01-01\n1947-08-15\n2026-01-26\n1950-01-26\n",
+      "output": "1947-08-15\n2026-01-26\n28654\n"
+    }
+  ]
+}

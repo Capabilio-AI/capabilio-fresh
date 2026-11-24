@@ -1,0 +1,57 @@
+{
+  "key": "python-text",
+  "title": "Word Count, Longest Word, Capitalised",
+  "statement": "Read one line of text. A word is a group of characters with no spaces. Words can be separated by one or more spaces. Print three lines. Line 1: the number of words. Line 2: the longest word. If two words are equally long, print the one that comes first. Line 3: the text with each word capitalised (first letter upper case, all other letters lower case). Join the words with a single space.",
+  "inputFormat": "One line of text. It has at least one word. It may have extra spaces at the start, at the end, or between words.",
+  "outputFormat": "Three lines: the word count, the longest word, and the capitalised text with single spaces.",
+  "constraints": [
+    "The line has 1 to 300 characters",
+    "Only printable ASCII characters and spaces are used",
+    "The line has at least one word",
+    "Punctuation is part of a word and counts in its length"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "There are 4 words. 'programming' is the longest. Each word gets a capital first letter.",
+    "There are 4 words. 'quick' and 'brown' both have 5 letters, so the first one, 'quick', is printed."
+  ],
+  "reference": "import sys\n\nline = sys.stdin.readline()\nwords = line.split()\nlongest = words[0]\nfor w in words:\n    if len(w) > len(longest):\n        longest = w\nprint(len(words))\nprint(longest)\nprint(\" \".join(w.capitalize() for w in words))",
+  "tests": [
+    {
+      "input": "i love python programming\n",
+      "output": "4\nprogramming\nI Love Python Programming\n"
+    },
+    {
+      "input": "the quick brown fox\n",
+      "output": "4\nquick\nThe Quick Brown Fox\n"
+    },
+    {
+      "input": "Hello\n",
+      "output": "1\nHello\nHello\n"
+    },
+    {
+      "input": "   many    spaces   here  \n",
+      "output": "3\nspaces\nMany Spaces Here\n"
+    },
+    {
+      "input": "hELLO wORLD\n",
+      "output": "2\nhELLO\nHello World\n"
+    },
+    {
+      "input": "3rd place, winner!\n",
+      "output": "3\nwinner!\n3rd Place, Winner!\n"
+    },
+    {
+      "input": "a b c\n",
+      "output": "3\na\nA B C\n"
+    },
+    {
+      "input": "PYTHON IS FUN AND EASY TO LEARN\n",
+      "output": "7\nPYTHON\nPython Is Fun And Easy To Learn\n"
+    },
+    {
+      "input": "one  two   three    four     five      six       seven        eight         nine          ten\n",
+      "output": "10\nthree\nOne Two Three Four Five Six Seven Eight Nine Ten\n"
+    }
+  ]
+}

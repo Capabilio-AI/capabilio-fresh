@@ -1,0 +1,55 @@
+{
+  "key": "java-algorithms",
+  "title": "Big Fibonacci with Modulo",
+  "statement": "The Fibonacci numbers start with F(0) = 0 and F(1) = 1. After that, each number is the sum of the two numbers before it: F(n) = F(n-1) + F(n-2). Given n, print F(n) modulo 1000000007. Modulo means the remainder after dividing by 1000000007.",
+  "inputFormat": "One line with one integer n.",
+  "outputFormat": "One integer: F(n) modulo 1000000007.",
+  "constraints": [
+    "0 <= n <= 1000000"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The sequence is 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55. So F(10) is 55. It is smaller than 1000000007, so the remainder is 55.",
+    "F(50) is 12586269025. This is bigger than 1000000007. Dividing gives 12 full times, and the remainder is 586268941. That is the answer."
+  ],
+  "reference": "import sys\n\ndef main():\n    n = int(sys.stdin.read().split()[0])\n    M = 1000000007\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, (a + b) % M\n    print(a)\n\nmain()",
+  "tests": [
+    {
+      "input": "10\n",
+      "output": "55\n"
+    },
+    {
+      "input": "50\n",
+      "output": "586268941\n"
+    },
+    {
+      "input": "0\n",
+      "output": "0\n"
+    },
+    {
+      "input": "1\n",
+      "output": "1\n"
+    },
+    {
+      "input": "2\n",
+      "output": "1\n"
+    },
+    {
+      "input": "45\n",
+      "output": "134903163\n"
+    },
+    {
+      "input": "100\n",
+      "output": "687995182\n"
+    },
+    {
+      "input": "999999\n",
+      "output": "616309404\n"
+    },
+    {
+      "input": "1000000\n",
+      "output": "918091266\n"
+    }
+  ],
+  "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        final long M = 1000000007L;\n        long a = 0;\n        long b = 1;\n        for (int i = 0; i < n; i++) {\n            long c = (a + b) % M;\n            a = b;\n            b = c;\n        }\n        System.out.println(a);\n    }\n}"
+}

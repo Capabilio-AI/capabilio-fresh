@@ -8,6 +8,8 @@ import { findTrack } from "@/lib/languages";
 import { gradeLessonCheck } from "@/lib/languages/lesson-check";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
 import { moduleStatuses } from "@/lib/languages/module-gate";
+import { loadProgress } from "@/lib/languages/progress";
+import { finishStepIfReady, isStepOpen, recordAnswer } from "@/lib/languages/step-proof";
 
 const Body = z.object({ track: z.string().max(20), lessonKey: z.string().max(80), index: z.number().int().min(0).max(9), choice: z.number().int().min(0).max(3) });
 
@@ -26,10 +28,17 @@ export async function POST(request: Request) {
   const track = findTrack(body.data.track);
   const verdict = track ? gradeLessonCheck(track, body.data.lessonKey, body.data.index, body.data.choice) : null;
   if (!track || !verdict) return NextResponse.json({ error: "That question does not exist." }, { status: 404 });
-  // a locked module's questions are not for reading yet: without this, every module's answers could be collected without unlocking it
-  const proofs = await loadModuleProofs(createServiceClient(), auth.userId, track.key);
-  if (moduleStatuses(track, proofs)[track.modules.findIndex((m) => m.key === verdict.moduleKey)] === "locked") {
-    return NextResponse.json({ error: "Prove the module before this one first." }, { status: 403 });
-  }
-  return NextResponse.json({ correct: verdict.correct, answerIndex: verdict.answerIndex, why: verdict.why });
+  const service = createServiceClient();
+  const m = track.modules.find((x) => x.key === verdict.moduleKey)!;
+  // a locked module's questions are not for reading yet, and a step opens only after the steps before it are done
+  const proofs = await loadModuleProofs(service, auth.userId, track.key);
+  if (moduleStatuses(track, proofs)[track.modules.indexOf(m)] === "locked") return NextResponse.json({ error: "Prove the module before this one first." }, { status: 403 });
+  if (!isStepOpen(m, body.data.lessonKey, await loadProgress(service, auth.userId, track.key))) return NextResponse.json({ error: "Finish the steps before this one first." }, { status: 403 });
+
+  // the server records the answer (the first answer to a question stands) and decides where the step stands; the browser's own count is never used
+  const answers = await recordAnswer(service, auth.userId, track.key, body.data.lessonKey, body.data.index, body.data.choice);
+  const chosen = answers[String(body.data.index)];
+  const marked = gradeLessonCheck(track, body.data.lessonKey, body.data.index, chosen) ?? verdict;
+  const step = await finishStepIfReady(service, auth.userId, track, body.data.lessonKey);
+  return NextResponse.json({ correct: marked.correct, answerIndex: marked.answerIndex, why: marked.why, chosen, step });
 }

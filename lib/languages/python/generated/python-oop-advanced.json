@@ -1,0 +1,53 @@
+{
+  "key": "python-oop-advanced",
+  "title": "Totals Per Name, Sorted",
+  "statement": "You are given n lines. Each line has a name and an integer amount. The same name can appear many times. Add up the amounts for each name. Print one line per name as \"name total\". Sort the lines by name in plain string order. Capital letters come before small letters. Names are compared as text, not as numbers.",
+  "inputFormat": "The first line has the integer n. Each of the next n lines has a name and an integer amount, separated by one space.",
+  "outputFormat": "For each different name, print \"name total\" on its own line. Sort by name in plain string order.",
+  "constraints": [
+    "1 <= n <= 1000",
+    "Each name has 1 to 10 letters or digits and no spaces",
+    "Each amount is an integer from -1000000000 to 1000000000",
+    "Names are case-sensitive: Bob and bob are different"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "asha has 100 and 25, so 125. ravi has 50 and -20, so 30. mina has 10. Sorted order is asha, mina, ravi.",
+    "zoya appears twice with 5 each, so her total is 10. amit comes before zoya in sorted order."
+  ],
+  "reference": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    totals = {}\n    for i in range(n):\n        name = data[1 + 2 * i]\n        amount = int(data[2 + 2 * i])\n        totals[name] = totals.get(name, 0) + amount\n    for name in sorted(totals):\n        print(name, totals[name])\n\nmain()\n",
+  "tests": [
+    {
+      "input": "5\nasha 100\nravi 50\nasha 25\nmina 10\nravi -20\n",
+      "output": "asha 125\nmina 10\nravi 30\n"
+    },
+    {
+      "input": "3\nzoya 5\namit 7\nzoya 5\n",
+      "output": "amit 7\nzoya 10\n"
+    },
+    {
+      "input": "1\nonly 0\n",
+      "output": "only 0\n"
+    },
+    {
+      "input": "4\nBob 5\nalice 3\nbob 2\nBob 1\n",
+      "output": "Bob 6\nalice 3\nbob 2\n"
+    },
+    {
+      "input": "4\n10 1\n9 2\n10 3\n2 4\n",
+      "output": "10 4\n2 4\n9 2\n"
+    },
+    {
+      "input": "3\nx 1000000000\nx 1000000000\nx 1000000000\n",
+      "output": "x 3000000000\n"
+    },
+    {
+      "input": "3\nneg -5\nneg 5\npos 0\n",
+      "output": "neg 0\npos 0\n"
+    },
+    {
+      "input": "6\nabc 1\na 2\nab 3\nabc 4\na 5\nab -3\n",
+      "output": "a 7\nab 0\nabc 5\n"
+    }
+  ]
+}

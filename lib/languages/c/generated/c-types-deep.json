@@ -1,0 +1,57 @@
+{
+  "key": "c-types-deep",
+  "title": "Sum That Never Overflows",
+  "statement": "You are given n integers. Each one fits in a 32-bit int. Print the sum of all n integers. The sum can be far bigger than a 32-bit int can hold, so use a wider type such as long long for the total. Print only the sum.",
+  "inputFormat": "The first line has the integer n. The second line has n integers separated by single spaces.",
+  "outputFormat": "One integer: the sum of the n numbers.",
+  "constraints": [
+    "1 <= n <= 100000",
+    "-2147483648 <= each number <= 2147483647",
+    "The sum always fits in a 64-bit signed integer"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Small numbers add up to 6. This is the simple case with no overflow.",
+    "Each number fits in an int, but four of them add up to 8000000000. That is more than a 32-bit int can hold, so the total needs long long."
+  ],
+  "reference": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    nums = [int(x) for x in data[1:1 + n]]\n    print(sum(nums))\n\nmain()",
+  "tests": [
+    {
+      "input": "3\n1 2 3\n",
+      "output": "6\n"
+    },
+    {
+      "input": "4\n2000000000 2000000000 2000000000 2000000000\n",
+      "output": "8000000000\n"
+    },
+    {
+      "input": "1\n-2147483648\n",
+      "output": "-2147483648\n"
+    },
+    {
+      "input": "1\n2147483647\n",
+      "output": "2147483647\n"
+    },
+    {
+      "input": "3\n-2147483648 -2147483648 -2147483648\n",
+      "output": "-6442450944\n"
+    },
+    {
+      "input": "4\n2147483647 -2147483648 1 0\n",
+      "output": "0\n"
+    },
+    {
+      "input": "3\n2147483647 2147483647 -2147483647\n",
+      "output": "2147483647\n"
+    },
+    {
+      "input": "30\n2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647 2147483647\n",
+      "output": "64424509410\n"
+    },
+    {
+      "input": "5\n0 0 0 0 0\n",
+      "output": "0\n"
+    }
+  ],
+  "solutionC": "#include <stdio.h>\n\nint main(void) {\n    int n;\n    if (scanf(\"%d\", &n) != 1) {\n        return 0;\n    }\n    long long sum = 0;\n    for (int i = 0; i < n; i++) {\n        long long x;\n        if (scanf(\"%lld\", &x) != 1) {\n            break;\n        }\n        sum += x;\n    }\n    printf(\"%lld\\n\", sum);\n    return 0;\n}"
+}

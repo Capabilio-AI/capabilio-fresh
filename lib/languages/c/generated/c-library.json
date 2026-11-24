@@ -1,0 +1,58 @@
+{
+  "key": "c-library",
+  "title": "Count Letters, Digits, Spaces and Others",
+  "statement": "Read one line of text. Count its letters, digits, spaces and other characters. Use the functions isalpha, isdigit and isspace from ctype.h. A character that is none of these three is \"other\". Punctuation marks and symbols are \"other\". Print the four counts on one line, separated by single spaces, in this order: letters, digits, spaces, others.",
+  "inputFormat": "One line of text. It has only printable ASCII characters (codes 32 to 126). It may contain spaces.",
+  "outputFormat": "Four integers on one line, separated by single spaces: letters digits spaces others.",
+  "constraints": [
+    "The line has 1 to 200 characters.",
+    "Only printable ASCII characters appear.",
+    "The line does not end with a space.",
+    "Read the whole line, not just one word."
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "Hello World has 10 letters. 123 gives 3 digits. There are 2 spaces and no other characters.",
+    "The letters are C, i, s, f, u, n. There are 2 spaces. The exclamation mark is the 1 other character."
+  ],
+  "reference": "import sys\n\ndata = sys.stdin.read()\nline = data.split(\"\\n\")[0].rstrip(\"\\r\")\nletters = digits = spaces = others = 0\nfor ch in line:\n    if (\"a\" <= ch <= \"z\") or (\"A\" <= ch <= \"Z\"):\n        letters += 1\n    elif \"0\" <= ch <= \"9\":\n        digits += 1\n    elif ch == \" \":\n        spaces += 1\n    else:\n        others += 1\nprint(letters, digits, spaces, others)",
+  "tests": [
+    {
+      "input": "Hello World 123\n",
+      "output": "10 3 2 0\n"
+    },
+    {
+      "input": "C is fun!\n",
+      "output": "6 0 2 1\n"
+    },
+    {
+      "input": "a\n",
+      "output": "1 0 0 0\n"
+    },
+    {
+      "input": "12345\n",
+      "output": "0 5 0 0\n"
+    },
+    {
+      "input": "!@#$%^&*()_+-=\n",
+      "output": "0 0 0 14\n"
+    },
+    {
+      "input": "   two  spaces   here\n",
+      "output": "13 0 8 0\n"
+    },
+    {
+      "input": "/09:@AZ[`az{~\n",
+      "output": "4 2 0 7\n"
+    },
+    {
+      "input": "Aa1 !Aa1 !Aa1 !Aa1 !Aa1 !Aa1 !Aa1 !Aa1 !Aa1 !Aa1 !\n",
+      "output": "20 10 10 10\n"
+    },
+    {
+      "input": "Room no. 42, Block B-7: open 9am-5pm.\n",
+      "output": "20 5 6 6\n"
+    }
+  ],
+  "solutionC": "#include <stdio.h>\n#include <ctype.h>\n\nint main(void) {\n    char s[1000];\n    int letters = 0, digits = 0, spaces = 0, others = 0;\n    if (fgets(s, sizeof s, stdin) == NULL) {\n        printf(\"0 0 0 0\\n\");\n        return 0;\n    }\n    for (int i = 0; s[i] != '\\0'; i++) {\n        unsigned char c = (unsigned char)s[i];\n        if (c == '\\n' || c == '\\r') {\n            continue;\n        }\n        if (isalpha(c)) {\n            letters++;\n        } else if (isdigit(c)) {\n            digits++;\n        } else if (isspace(c)) {\n            spaces++;\n        } else {\n            others++;\n        }\n    }\n    printf(\"%d %d %d %d\\n\", letters, digits, spaces, others);\n    return 0;\n}"
+}

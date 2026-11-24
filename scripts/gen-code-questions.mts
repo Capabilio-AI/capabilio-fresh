@@ -85,7 +85,7 @@ export async function build(trackKey: string, lang: Language, specs: readonly Sp
           const o = await output(lang, mutated, spec.stdin ?? "");
           if (o !== null && sane(o) && o !== right && !wrongs.includes(o)) wrongs.push(o);
         }
-        for (const w of spec.wrong ?? []) if (w !== right && !wrongs.includes(norm(w))) wrongs.push(norm(w));
+        for (const w of spec.wrong ?? []) if (norm(w) !== right && !wrongs.includes(norm(w))) wrongs.push(norm(w));
         if (wrongs.length < 3) { problems.push(`${label}: only ${wrongs.length} distinct wrong answers (need 3); the right output is ${JSON.stringify(right)}`); continue; }
         const options = [right, ...wrongs.slice(0, 3)];
         const id = `${trackKey}:${spec.m}:${i}`;

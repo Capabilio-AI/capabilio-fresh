@@ -3,18 +3,1191 @@
 import type { CodeQuestion } from "../types";
 
 export const codeQuestions: Record<string, CodeQuestion[]> = {
+  "python-text": [
+    {
+      "id": "python:python-text:1",
+      "code": "text = \"banana\"\nprint(text.count('a'))",
+      "question": "What does this program print?",
+      "options": [
+        "2",
+        "3",
+        "Count:",
+        "1"
+      ],
+      "answerIndex": 1,
+      "why": "The count method returns how many times the exact substring 'a' appears in the string."
+    },
+    {
+      "id": "python:python-text:2",
+      "code": "msg = \"Hello world\"\nprint(msg.find('world'))",
+      "question": "What does this program print?",
+      "options": [
+        "6",
+        "Result:",
+        "-1",
+        "5"
+      ],
+      "answerIndex": 0,
+      "why": "find returns the lowest index where the substring starts; 'world' begins at index 6."
+    },
+    {
+      "id": "python:python-text:3",
+      "code": "words = [\"one\",\"two\",\"three\"]\nprint(', '.join(words))",
+      "question": "What does this program print?",
+      "options": [
+        "three, two, one",
+        "Result:",
+        "one, two, three",
+        "one - two - three"
+      ],
+      "answerIndex": 2,
+      "why": "join inserts the separator between each list element in order."
+    },
+    {
+      "id": "python:python-text:4",
+      "code": "value = 3.14159\nprint(f\"{value:.2f}\")",
+      "question": "What does this program print?",
+      "options": [
+        "3.14",
+        "3.14159",
+        " 3.142",
+        "Val:"
+      ],
+      "answerIndex": 0,
+      "why": "The format .2f rounds the float to two digits after the decimal point."
+    },
+    {
+      "id": "python:python-text:5",
+      "code": "import re\ns = \"a1 b2 c3\"\nprint(re.findall(r\"\\d\", s))",
+      "question": "What does this program print?",
+      "options": [
+        "['1', '2', '3']",
+        "Digits:",
+        "<re.Match object; span=(1, 2), match='1'>",
+        "['a', '1', 'b', '2', 'c', '3']"
+      ],
+      "answerIndex": 0,
+      "why": "\\d matches any digit; findall returns each digit as a separate string in a list."
+    },
+    {
+      "id": "python:python-text:6",
+      "code": "sentence = \"one two three\"\nprint(len(sentence.split()))",
+      "question": "What does this program print?",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "Count:"
+      ],
+      "answerIndex": 1,
+      "why": "split without arguments splits on whitespace, producing a list of three words; len gives its length."
+    },
+    {
+      "id": "python:python-text:7",
+      "code": "import re\ns = \"ID: 12345\"\nm = re.search(r\"\\d+\", s)\nprint(m.group())",
+      "question": "What does this program print?",
+      "options": [
+        "12345",
+        "ID:",
+        "\"12345\"",
+        "ID"
+      ],
+      "answerIndex": 0,
+      "why": "\\d+ matches one or more digits; the first match is '12345'."
+    },
+    {
+      "id": "python:python-text:8",
+      "code": "text = \"abracadabra\"\npos = text.find(\"cad\")\nprint(pos)",
+      "question": "What does this program print?",
+      "options": [
+        "5",
+        "-1",
+        "4",
+        "6"
+      ],
+      "answerIndex": 2,
+      "why": "find returns the index of the first character of the substring, which is 5."
+    },
+    {
+      "id": "python:python-text:9",
+      "code": "msg = \"banana\"\nprint(msg.count(\"a\"))",
+      "question": "What does this program print?",
+      "options": [
+        "0",
+        "2",
+        "1",
+        "3"
+      ],
+      "answerIndex": 3,
+      "why": "The string contains three 'a' characters, so count returns 3."
+    },
+    {
+      "id": "python:python-text:10",
+      "code": "word = \"PyThOn\"\nprint(word.upper())",
+      "question": "What does this program print?",
+      "options": [
+        "PyThOn",
+        "Python",
+        "python",
+        "PYTHON"
+      ],
+      "answerIndex": 3,
+      "why": "upper converts all letters to uppercase, resulting in PYTHON."
+    },
+    {
+      "id": "python:python-text:11",
+      "code": "words = [\"one\",\"two\",\"three\"]\nprint(\", \".join(words))",
+      "question": "What does this program print?",
+      "options": [
+        "one, two, three",
+        "one,  two,  three",
+        "one two three",
+        "one-two-three"
+      ],
+      "answerIndex": 0,
+      "why": "join inserts the separator between each list element, producing a comma‑space separated string."
+    }
+  ],
+  "python-iter-functional": [
+    {
+      "id": "python:python-iter-functional:1",
+      "code": "for i, ch in enumerate('abc'):\n    print(i, ch)",
+      "question": "What does this program print?",
+      "options": [
+        "0 a\n1 b\n2 c\n3 d",
+        "0 a\n1 b",
+        "1 a\n2 b\n3 c",
+        "0 a\n1 b\n2 c"
+      ],
+      "answerIndex": 3,
+      "why": "enumerate starts counting at 0, so the first index is 0."
+    },
+    {
+      "id": "python:python-iter-functional:2",
+      "code": "gen = (i*i for i in range(3))\nprint(next(gen))\nprint(next(gen))",
+      "question": "What does this program print?",
+      "options": [
+        "1\n1",
+        "1\n4",
+        "0\n4",
+        "0\n1"
+      ],
+      "answerIndex": 3,
+      "why": "The generator yields squares one at a time; first two are 0 and 1."
+    },
+    {
+      "id": "python:python-iter-functional:3",
+      "code": "from itertools import chain\nlist1 = [1,2]\nlist2 = [3,4]\nfor x in chain(list1, list2):\n    print(x, end=' ')",
+      "question": "What does this program print?",
+      "options": [
+        "1\n2\n3\n4",
+        "1 2",
+        "1 2 3",
+        "1 2 3 4"
+      ],
+      "answerIndex": 3,
+      "why": "chain yields all elements of the first iterable then the second."
+    },
+    {
+      "id": "python:python-iter-functional:4",
+      "code": "from itertools import accumulate\nprint(list(accumulate([1,2,3])))",
+      "question": "What does this program print?",
+      "options": [
+        "[1, 2, 6]",
+        "[1, 3, 6]",
+        "[0, 1, 3, 6]",
+        "[1, 2, 3]"
+      ],
+      "answerIndex": 1,
+      "why": "Default accumulate adds each element to the running sum, giving 1,3,6."
+    },
+    {
+      "id": "python:python-iter-functional:5",
+      "code": "def count():\n    for i in range(3):\n        yield i\nc = count()\nprint(next(c))\nprint(list(c))",
+      "question": "What does this program print?",
+      "options": [
+        "0\n[1, 2]",
+        "0\n1\n[2]",
+        "0\n[1, 2, 3, 4]",
+        "0\n[0,1,2]"
+      ],
+      "answerIndex": 0,
+      "why": "After the first next, the generator is advanced; list(c) consumes the remaining values 1 and 2."
+    },
+    {
+      "id": "python:python-iter-functional:6",
+      "code": "data = [3,1,4]\nsorted_data = sorted(data)\nprint(data)\nprint(sorted_data)",
+      "question": "What does this program print?",
+      "options": [
+        "[1,3,4]\n[1,3,4]",
+        "[3, 1, 4]\n[1, 3, 4]",
+        "[4, 1, 3]\n[1, 3, 4]",
+        "[1, 3, 4]\nNone"
+      ],
+      "answerIndex": 1,
+      "why": "sorted returns a new list; the original list remains unchanged."
+    },
+    {
+      "id": "python:python-iter-functional:7",
+      "code": "from itertools import product\nprint(list(product(range(2), repeat=2)))",
+      "question": "What does this program print?",
+      "options": [
+        "[(0, 0), (0, 1), (1, 0), (1, 1)]",
+        "[(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)]",
+        "[(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]",
+        "[(0, 0, 0), (0, 0, 1)]"
+      ],
+      "answerIndex": 0,
+      "why": "product with repeat=2 creates all ordered pairs of 0 and 1."
+    },
+    {
+      "id": "python:python-iter-functional:8",
+      "code": "from functools import lru_cache\n@lru_cache(maxsize=None)\ndef fib(n):\n    if n<2:\n        return n\n    return fib(n-1)+fib(n-2)\nprint(fib(5))",
+      "question": "What does this program print?",
+      "options": [
+        "1",
+        "8",
+        "5",
+        "3"
+      ],
+      "answerIndex": 2,
+      "why": "fib(5) = 5; caching avoids repeated work but does not change the result."
+    },
+    {
+      "id": "python:python-iter-functional:9",
+      "code": "a = 5\nb = 9\na, b = b, a\nprint(a, b)",
+      "question": "What does this program print?",
+      "options": [
+        "9 5",
+        "5 9",
+        "9 5\n5 9",
+        "9 9"
+      ],
+      "answerIndex": 0,
+      "why": "Tuple unpacking swaps the values in one step, so a becomes 9 and b becomes 5."
+    },
+    {
+      "id": "python:python-iter-functional:10",
+      "code": "names = [\"Ann\", \"Bob\"]\nages = [28, 34]\nfor name, age in zip(names, ages):\n    print(name, age)",
+      "question": "What does this program print?",
+      "options": [
+        "Bob 34\nAnn 28",
+        "Ann 34\nBob 28",
+        "28 Ann\n34 Bob",
+        "Ann 28\nBob 34"
+      ],
+      "answerIndex": 3,
+      "why": "zip pairs elements by position, so the first name pairs with the first age, etc."
+    },
+    {
+      "id": "python:python-iter-functional:11",
+      "code": "it = iter([100, 200, 300])\nprint(next(it))\nprint(next(it))",
+      "question": "What does this program print?",
+      "options": [
+        "200\n300",
+        "100\n300",
+        "100\n200",
+        "100\n200\n300"
+      ],
+      "answerIndex": 2,
+      "why": "next returns the next element of the iterator each time; the first two calls give 100 then 200."
+    },
+    {
+      "id": "python:python-iter-functional:12",
+      "code": "data = [(1, 'b'), (2, 'a'), (3, 'c')]\nsorted_data = sorted(data, key=lambda x: x[1])\nprint(sorted_data)",
+      "question": "What does this program print?",
+      "options": [
+        "[(3, 'c'), (2, 'a'), (1, 'b')]",
+        "[(2, 'a'), (1, 'b'), (3, 'c')]",
+        "[(1, 'b'), (2, 'a'), (3, 'c')]",
+        "[(3, 'c'), (1, 'b'), (2, 'a')]"
+      ],
+      "answerIndex": 1,
+      "why": "The key extracts the second item of each tuple, so sorting orders them alphabetically by that letter."
+    }
+  ],
+  "python-algorithms": [
+    {
+      "id": "python:python-algorithms:1",
+      "code": "lst=[]\nfor i in range(3):\n    lst.append(i)\n    lst.insert(0,i)\nprint(lst)",
+      "question": "What does this program print?",
+      "options": [
+        "[2, 1, 0, 0, 2, 4]",
+        "[2, 1, 0, 0, 1, 2]",
+        "[0, 1, 2]",
+        "[4, 2, 0, 0, 1, 2]"
+      ],
+      "answerIndex": 1,
+      "why": "Each iteration adds i at the end and also at the front. Final list is [2,1,0,0,1,2]."
+    },
+    {
+      "id": "python:python-algorithms:2",
+      "code": "lst=[3,1,4,2]\nfor i in range(len(lst)-1):\n    if lst[i]>lst[i+1]:\n        lst[i],lst[i+1]=lst[i+1],lst[i]\nprint(lst)",
+      "question": "What does this program print?",
+      "options": [
+        "[1, 3, 2, 4]",
+        "[2,1,3,4]",
+        "[1,2,3,4]",
+        "[1,3,2,4]"
+      ],
+      "answerIndex": 0,
+      "why": "One bubble pass swaps each adjacent out‑of‑order pair, resulting in [1,3,2,4]."
+    },
+    {
+      "id": "python:python-algorithms:3",
+      "code": "arr=[4,2,5]\nsorted_arr=[]\nfor x in arr:\n    i=0\n    while i<len(sorted_arr) and sorted_arr[i]<x:\n        i+=1\n    sorted_arr.insert(i,x)\nprint(sorted_arr)",
+      "question": "What does this program print?",
+      "options": [
+        "[2,4,5]",
+        "[4, 10, 8]",
+        "[2, 4, 5]",
+        "[5, 4, 2]"
+      ],
+      "answerIndex": 2,
+      "why": "Elements are inserted so that the list stays sorted; final order is 2,4,5."
+    },
+    {
+      "id": "python:python-algorithms:4",
+      "code": "a=[1,4,6]\nb=[2,3,5]\nres=[]\nwhile a and b:\n    if a[0]<=b[0]:\n        res.append(a.pop(0))\n    else:\n        res.append(b.pop(0))\nres+=a+b\nprint(res)",
+      "question": "What does this program print?",
+      "options": [
+        "[1,2,4,3,5,6]",
+        "[1,2,3,4,5,6]",
+        "[6, 4, 1, 2, 3, 5]",
+        "[1, 2, 3, 4, 5, 6]"
+      ],
+      "answerIndex": 3,
+      "why": "The merge picks the smaller front element each step, producing a fully sorted list."
+    },
+    {
+      "id": "python:python-algorithms:5",
+      "code": "s='abcaab'\nseen=set()\nres=''\nfor ch in s:\n    if ch not in seen:\n        seen.add(ch)\n        res+=ch\nprint(res)",
+      "question": "What does this program print?",
+      "options": [
+        "abc",
+        "aabbcc",
+        "'abc'",
+        "'abca'"
+      ],
+      "answerIndex": 0,
+      "why": "Each character is added only the first time it appears, giving 'abc'."
+    },
+    {
+      "id": "python:python-algorithms:6",
+      "code": "s='abca'\nmax_len=0\nfor i in range(len(s)):\n    seen=set()\n    j=i\n    while j<len(s) and s[j] not in seen:\n        seen.add(s[j])\n        j+=1\n    max_len=max(max_len,len(seen))\nprint(max_len)",
+      "question": "What does this program print?",
+      "options": [
+        "0",
+        "9",
+        "2",
+        "3"
+      ],
+      "answerIndex": 3,
+      "why": "The longest segment without repeat is 'abc' of length 3."
+    },
+    {
+      "id": "python:python-algorithms:7",
+      "code": "from functools import lru_cache\n@lru_cache(None)\ndef fib(n):\n    if n<2:\n        return n\n    return fib(n-1)+fib(n-2)\nprint(fib(6))",
+      "question": "What does this program print?",
+      "options": [
+        "1",
+        "8",
+        "13",
+        "5"
+      ],
+      "answerIndex": 1,
+      "why": "fib(6)=8 (0,1,1,2,3,5,8)."
+    },
+    {
+      "id": "python:python-algorithms:8",
+      "code": "coins=[1,2]\ntarget=4\nways=[0]*(target+1)\nways[0]=1\nfor c in coins:\n    for i in range(c,target+1):\n        ways[i]+=ways[i-c]\nprint(ways[target])",
+      "question": "What does this program print?",
+      "options": [
+        "3",
+        "7",
+        "5",
+        "0"
+      ],
+      "answerIndex": 0,
+      "why": "Ways: 1+1+1+1, 2+1+1, 2+2 => 3 ways."
+    },
+    {
+      "id": "python:python-algorithms:9",
+      "code": "arr=[3,2,1]\nfor i in range(len(arr)-1):\n    if arr[i]>arr[i+1]:\n        arr[i],arr[i+1]=arr[i+1],arr[i]\nprint(arr)",
+      "question": "What does this program print?",
+      "options": [
+        "[2, 1, 3]",
+        "[1,2,3]",
+        "[3,1,2]",
+        "[2,1,3]"
+      ],
+      "answerIndex": 0,
+      "why": "One pass swaps adjacent out‑of‑order pairs, resulting in [2,1,3]."
+    },
+    {
+      "id": "python:python-algorithms:10",
+      "code": "arr=[4,3,2]\nsorted_arr=[]\nfor x in arr:\n    i=0\n    while i<len(sorted_arr) and sorted_arr[i]<x:\n        i+=1\n    sorted_arr.insert(i,x)\nprint(sorted_arr)",
+      "question": "What does this program print?",
+      "options": [
+        "[-4, -3, -2]",
+        "[4, 3, 2]",
+        "[2,3,4]",
+        "[2, 3, 4]"
+      ],
+      "answerIndex": 3,
+      "why": "Elements are inserted so that larger numbers go later, producing [2,3,4]."
+    },
+    {
+      "id": "python:python-algorithms:11",
+      "code": "a=[1,4,7]\nb=[2,5,8]\nmerged=[]\nwhile a and b:\n    if a[0]<=b[0]:\n        merged.append(a.pop(0))\n    else:\n        merged.append(b.pop(0))\nmerged+=a+b\nprint(merged)",
+      "question": "What does this program print?",
+      "options": [
+        "[7, 4, 1, 2, 5, 8]",
+        "[1, 2, 4, 5, 7, 8]",
+        "[2, 5, 8, 1, 4, 7]",
+        "[1,2,4,5,7,8]"
+      ],
+      "answerIndex": 1,
+      "why": "Elements are taken in order, yielding a fully sorted list [1,2,4,5,7,8]."
+    },
+    {
+      "id": "python:python-algorithms:12",
+      "code": "lst=[1,2,2,3,3,3]\nunique=[]\nseen=set()\nfor x in lst:\n    if x not in seen:\n        seen.add(x)\n        unique.append(x)\nprint(unique)",
+      "question": "What does this program print?",
+      "options": [
+        "[1, 2, 3]",
+        "[-1, -2, -3]",
+        "[1,2,3]",
+        "[]"
+      ],
+      "answerIndex": 0,
+      "why": "Each new value is added once, producing [1,2,3]."
+    }
+  ],
+  "python-data-structures": [
+    {
+      "id": "python:python-data-structures:1",
+      "code": "s=[]\nfor i in range(5):\n    s.append(i)\nwhile s:\n    print(s.pop())",
+      "question": "What does this program print?",
+      "options": [
+        "4\n3\n2\n1\n0",
+        "0\n1\n2\n3\n4",
+        "4\n3\n2\n1",
+        "5\n4\n3\n2\n1"
+      ],
+      "answerIndex": 0,
+      "why": "list.append adds to the right end, list.pop removes the rightmost element. The loop prints numbers from 4 down to 0."
+    },
+    {
+      "id": "python:python-data-structures:2",
+      "code": "from collections import deque\nq=deque()\nfor ch in 'abc':\n    q.append(ch)\nwhile q:\n    print(q.popleft())",
+      "question": "What does this program print?",
+      "options": [
+        "c\nb\na",
+        "a\nc\nb",
+        "a\nb",
+        "a\nb\nc"
+      ],
+      "answerIndex": 3,
+      "why": "deque.append adds to the right, popleft removes from the left, so items come out in the order they were added."
+    },
+    {
+      "id": "python:python-data-structures:3",
+      "code": "s='[()]{}'\nstack=[]\nfor c in s:\n    if c in '({[':\n        stack.append(c)\n    else:\n        open=stack.pop()\n        print(open,c)",
+      "question": "What does this program print?",
+      "options": [
+        "[ )\n[ ]\n[ }",
+        "( )\n[ ]\n{ }",
+        ") (\n] [\n} {",
+        "[ ]\n( )\n{ }"
+      ],
+      "answerIndex": 1,
+      "why": "Each closing bracket pops the most recent opening bracket, so pairs are printed in the order they close."
+    },
+    {
+      "id": "python:python-data-structures:4",
+      "code": "import heapq\nh=[]\nfor x in [5,1,3]:\n    heapq.heappush(h,x)\nwhile h:\n    print(heapq.heappop(h))",
+      "question": "What does this program print?",
+      "options": [
+        "1\n3",
+        "-5\n-3\n-1",
+        "5\n3\n1",
+        "1\n3\n5"
+      ],
+      "answerIndex": 3,
+      "why": "heapq is a min‑heap, so the smallest element is removed each time, giving ascending order."
+    },
+    {
+      "id": "python:python-data-structures:5",
+      "code": "import heapq\nh=[]\nfor x in [2,7,4]:\n    heapq.heappush(h,-x)\nwhile h:\n    print(-heapq.heappop(h))",
+      "question": "What does this program print?",
+      "options": [
+        "-2\n-4\n-7",
+        "2\n4\n7",
+        "7\n4\n2",
+        "-7\n-4\n-2"
+      ],
+      "answerIndex": 2,
+      "why": "Negating turns the min‑heap into a max‑heap; removing gives the largest original value each step."
+    },
+    {
+      "id": "python:python-data-structures:6",
+      "code": "class Node:\n    def __init__(self,val,next=None):\n        self.val=val;self.next=next\nhead=Node(1,Node(2,Node(3)))\nprev=None\ncurr=head\nwhile curr:\n    nxt=curr.next\n    curr.next=prev\n    prev=curr\n    curr=nxt\nwhile prev:\n    print(prev.val)\n    prev=prev.next",
+      "question": "What does this program print?",
+      "options": [
+        "3\n2\n1",
+        "1\n2\n3",
+        "3",
+        "3\n2"
+      ],
+      "answerIndex": 0,
+      "why": "The loop reverses pointers, so the list is printed backward: 3 then 2 then 1."
+    },
+    {
+      "id": "python:python-data-structures:7",
+      "code": "class Node:\n    def __init__(self,val,left=None,right=None):\n        self.val=val;self.left=left;self.right=right\nroot=Node(2,Node(1),Node(3))\n\ndef inorder(n):\n    if not n:return\n    inorder(n.left)\n    print(n.val)\n    inorder(n.right)\n\ninorder(root)",
+      "question": "What does this program print?",
+      "options": [
+        "2\n1\n3",
+        "1\n2\n1",
+        "1\n2\n3",
+        "2\n4\n6"
+      ],
+      "answerIndex": 2,
+      "why": "In‑order visits left subtree, then node, then right subtree, yielding sorted order 1,2,3."
+    },
+    {
+      "id": "python:python-data-structures:8",
+      "code": "from collections import deque\nclass Node:\n    def __init__(self,val,children=None):\n        self.val=val;self.children=children or []\nroot=Node(1,[Node(2),Node(3)])\nq=deque([root])\nwhile q:\n    n=q.popleft()\n    print(n.val)\n    q.extend(n.children)",
+      "question": "What does this program print?",
+      "options": [
+        "1\n3\n2",
+        "1\n2\n3",
+        "1",
+        "2\n3\n1"
+      ],
+      "answerIndex": 1,
+      "why": "Breadth‑first uses a queue; nodes are printed in the order they are dequeued: root then its children."
+    },
+    {
+      "id": "python:python-data-structures:9",
+      "code": "graph={1:[2,3],2:[4],3:[],4:[]}\nvisited=set()\n\ndef dfs(v):\n    if v in visited:return\n    visited.add(v)\n    print(v)\n    for nb in graph[v]:\n        dfs(nb)\n\ndfs(1)",
+      "question": "What does this program print?",
+      "options": [
+        "1\n2\n4\n3",
+        "1\n3\n2\n4",
+        "2\n4\n8\n6",
+        "1\n2\n3\n4"
+      ],
+      "answerIndex": 0,
+      "why": "DFS explores each branch fully before backtracking, visiting nodes in the order 1,2,4,3."
+    },
+    {
+      "id": "python:python-data-structures:10",
+      "code": "data=[]\nfor i in range(3):\n    data.append(i)\nprint(data.pop(0))\nprint(data.pop())",
+      "question": "What does this program print?",
+      "options": [
+        "0\n1",
+        "0\n2",
+        "2\n0",
+        "2\n1"
+      ],
+      "answerIndex": 1,
+      "why": "First pop(0) removes the leftmost element (0), then pop() removes the rightmost (2)."
+    }
+  ],
+  "python-oop-advanced": [
+    {
+      "id": "python:python-oop-advanced:1",
+      "code": "class Point:\n    def __init__(self,x,y):\n        self.x=x;self.y=y\n    def __repr__(self):\n        return f'Point({self.x},{self.y})'\n    def __str__(self):\n        return f'({self.x},{self.y})'\n\np=Point(2,3)\nprint(repr(p))\nprint(str(p))",
+      "question": "What does this program print?",
+      "options": [
+        "Point(2,3)\n(2,3)",
+        "Point(2,3)\n(2-3)",
+        "Point(2;3)\n(2,3)",
+        "Point(2,3)"
+      ],
+      "answerIndex": 0,
+      "why": "repr returns the official representation, str returns a user friendly one. Both are called explicitly."
+    },
+    {
+      "id": "python:python-oop-advanced:2",
+      "code": "class Count:\n    def __init__(self,n):\n        self.n=n\n    def __iter__(self):\n        self.i=0\n        return self\n    def __next__(self):\n        if self.i<self.n:\n            self.i+=1;return self.i\n        raise StopIteration\nfor x in Count(3):\n    print(x)",
+      "question": "What does this program print?",
+      "options": [
+        "2\n4",
+        "0\n1\n2",
+        "1\n3\n5",
+        "1\n2\n3"
+      ],
+      "answerIndex": 3,
+      "why": "The iterator yields 1, then 2, then 3 before raising StopIteration, so those numbers are printed each on a new line."
+    },
+    {
+      "id": "python:python-oop-advanced:3",
+      "code": "class Vec:\n    def __init__(self,x):\n        self.x=x\n    def __add__(self,other):\n        return Vec(self.x+other.x)\n    def __repr__(self):\n        return f'Vec({self.x})'\nv=Vec(2)+Vec(3)\nprint(v)",
+      "question": "What does this program print?",
+      "options": [
+        "Vec(0)",
+        "Vec(20)",
+        "Vec(5)",
+        "Vec(-1)"
+      ],
+      "answerIndex": 2,
+      "why": "The __add__ method adds the x values, producing a new Vec with x=5, whose __repr__ prints Vec(5)."
+    },
+    {
+      "id": "python:python-oop-advanced:4",
+      "code": "class Person:\n    def __init__(self,age):\n        self.age=age\n    @property\n    def age(self):\n        return self._age\n    @age.setter\n    def age(self,val):\n        if val<0:\n            raise ValueError\n        self._age=val\np=Person(10)\nprint(p.age)",
+      "question": "What does this program print?",
+      "options": [
+        "0",
+        "10",
+        "ValueError",
+        "20"
+      ],
+      "answerIndex": 1,
+      "why": "The setter stores the valid age 10, and the getter returns it, so 10 is printed."
+    },
+    {
+      "id": "python:python-oop-advanced:5",
+      "code": "import abc\nclass Shape(abc.ABC):\n    @abc.abstractmethod\n    def area(self):\n        pass\nclass Square(Shape):\n    def __init__(self,s):\n        self.s=s\n    def area(self):\n        return self.s*self.s\nprint(Square(4).area())",
+      "question": "What does this program print?",
+      "options": [
+        "64",
+        "16",
+        "8",
+        "4"
+      ],
+      "answerIndex": 1,
+      "why": "Square overrides area to return side squared, 4*4 equals 16, which is printed."
+    },
+    {
+      "id": "python:python-oop-advanced:6",
+      "code": "def add(a,b):\n    return a+b\ndef mul(a,b):\n    return a*b\nclass Calculator:\n    def __init__(self,op):\n        self.op=op\n    def compute(self,x,y):\n        return self.op(x,y)\n\ncalc=Calculator(add)\nprint(calc.compute(2,3))\ncalc.op=mul\nprint(calc.compute(2,3))",
+      "question": "What does this program print?",
+      "options": [
+        "-1\n6",
+        "5\n5",
+        "5\n6",
+        "6\n6"
+      ],
+      "answerIndex": 2,
+      "why": "First compute uses addition (2+3=5), then operation is changed to multiplication (2*3=6)."
+    },
+    {
+      "id": "python:python-oop-advanced:7",
+      "code": "class Box:\n    def __init__(self, items):\n        self.items = items\n    def __len__(self):\n        return len(self.items)\n\nb = Box([1,2,3,4])\nprint(len(b))",
+      "question": "What does this program print?",
+      "options": [
+        "3",
+        "6",
+        "4",
+        "5"
+      ],
+      "answerIndex": 2,
+      "why": "The __len__ method returns the actual number of elements stored, which is 4."
+    },
+    {
+      "id": "python:python-oop-advanced:8",
+      "code": "class Seq:\n    def __init__(self,data):\n        self.data=data\n    def __add__(self,other):\n        return Seq(self.data+other.data)\n    def __repr__(self):\n        return f\"Seq({self.data})\"\n\ns1=Seq([1,2])\ns2=Seq([3,4])\nprint(s1+s2)",
+      "question": "What does this program print?",
+      "options": [
+        "Seq([1, 2])",
+        "Seq([3, 4])",
+        "Seq([1, 2, 1, 2])",
+        "Seq([1, 2, 3, 4])"
+      ],
+      "answerIndex": 3,
+      "why": "__add__ creates a new Seq containing the concatenated lists, so the printed result shows both original elements."
+    }
+  ],
+  "python-data-work": [
+    {
+      "id": "python:python-data-work:1",
+      "code": "import json\ntext = '{\"user\": {\"name\": \"Ana\", \"tags\": [\"a\", \"b\"]}, \"age\": 30}'\nd = json.loads(text)\nprint(d[\"user\"][\"tags\"][1], d.get(\"city\", \"none\"))\nprint(len(d[\"user\"]))",
+      "question": "What does this program print?",
+      "options": [
+        "b 0\n2",
+        "a none\n2",
+        "b none\n2",
+        "b None\n2"
+      ],
+      "answerIndex": 2,
+      "why": "The tags list has a at index 0 and b at index 1, so we get b. There is no city key, so get gives the default none. The user dict has two keys."
+    },
+    {
+      "id": "python:python-data-work:2",
+      "code": "import json\nrec = {\"b\": 1, \"a\": \"x\"}\nprint(json.dumps(rec, sort_keys=True))\nprint(json.dumps(rec))",
+      "question": "What does this program print?",
+      "options": [
+        "{\"b\": 1, \"a\": \"x\"}\n{\"b\": 1, \"a\": \"x\"}",
+        "{\"a\": \"x\", \"b\": 1}\n{\"b\": 1, \"a\": \"x\"}",
+        "{\"a\": \"x\", \"b\": 1}\n{\n \"b\": 1,\n \"a\": \"x\"\n}",
+        "{\"a\": \"x\", \"b\": 1}\n{\"a\": \"x\", \"b\": 1}"
+      ],
+      "answerIndex": 1,
+      "why": "sort_keys=True puts the keys in alphabetical order, so a comes first on line one. Without it, dumps keeps the original order, b then a. JSON uses double quotes."
+    },
+    {
+      "id": "python:python-data-work:3",
+      "code": "raw = [\" 4\", \"x\", \"7 \", \"\", \"10\"]\ntotal = 0\nbad = 0\nfor s in raw:\n    try:\n        total += int(s.strip())\n    except ValueError:\n        bad += 1\nprint(total, bad)",
+      "question": "What does this program print?",
+      "options": [
+        "21 2",
+        "21 4",
+        "11 3",
+        "5 0"
+      ],
+      "answerIndex": 0,
+      "why": "The good numbers are 4, 7 and 10, which add up to 21. The text x and the empty string fail to convert. That makes 2 bad values."
+    },
+    {
+      "id": "python:python-data-work:4",
+      "code": "names = [\"Ann\", \"bob\", \"ann \", \"Bob\", \"Cy\"]\nseen = []\nfor n in names:\n    k = n.strip().lower()\n    if k not in seen:\n        seen.append(k)\nprint(seen)\nprint(len(names) - len(seen))",
+      "question": "What does this program print?",
+      "options": [
+        "['ann', 'bob', 'cy']\n2",
+        "['ANN', 'BOB', 'CY']\n2",
+        "['ann', 'bob', 'cy']\n3",
+        "['ann', 'bob', 'ann ', 'cy']\n1"
+      ],
+      "answerIndex": 0,
+      "why": "Each name is stripped and made lower case before the check. So ann and bob appear twice and are dropped the second time. Three unique names stay, and 2 were removed."
+    },
+    {
+      "id": "python:python-data-work:5",
+      "code": "vals = [5, None, 7, None, 3]\nclean = [v for v in vals if v is not None]\nprint(len(clean), sum(clean) / len(clean))\nprint(sum(v or 0 for v in vals) / len(vals))",
+      "question": "What does this program print?",
+      "options": [
+        "3 5\n3.0",
+        "3 5.333333333333333\n3.2",
+        "3 5.0\n3.0",
+        "3 5.0\n3"
+      ],
+      "answerIndex": 2,
+      "why": "Dropping None leaves 5, 7 and 3. Their sum is 15, and 15 / 3 is 5.0. If None counts as 0, the sum is still 15 but we divide by 5, so we get 3.0."
+    },
+    {
+      "id": "python:python-data-work:6",
+      "code": "rows = [{\"age\": 25}, {\"age\": -3}, {\"age\": 130}, {}, {\"age\": 40}]\nok = 0\nfor r in rows:\n    a = r.get(\"age\")\n    if a is not None and 0 <= a <= 120:\n        ok += 1\nprint(ok, len(rows) - ok)",
+      "question": "What does this program print?",
+      "options": [
+        "4 1",
+        "2 3",
+        "2 2",
+        "3 2"
+      ],
+      "answerIndex": 1,
+      "why": "Only ages 25 and 40 are between 0 and 120. The ages -3 and 130 fail the range, and the empty record has no age. So 2 are valid and 3 are not."
+    },
+    {
+      "id": "python:python-data-work:7",
+      "code": "from collections import defaultdict\nsales = [(\"N\", 5), (\"S\", 2), (\"N\", 7), (\"E\", 1), (\"S\", 4)]\ntot = defaultdict(int)\nfor region, amt in sales:\n    tot[region] += amt\nprint(dict(tot))\nprint(max(tot, key=tot.get))",
+      "question": "What does this program print?",
+      "options": [
+        "{'N': 12, 'S': 6, 'E': 1}\nE",
+        "{'N': 12, 'S': 6, 'E': 1}\nN",
+        "['N', 'S', 'E']\nN",
+        "{'N': 2, 'S': 2, 'E': 1}\nN"
+      ],
+      "answerIndex": 1,
+      "why": "Each region starts at 0 and adds its amounts: N is 5+7=12, S is 2+4=6, E is 1. Keys stay in the order first seen. max with key=tot.get gives the key with the biggest total, N."
+    },
+    {
+      "id": "python:python-data-work:8",
+      "code": "from collections import defaultdict\nrows = [(\"a\", 80), (\"b\", 60), (\"a\", 90), (\"b\", 70), (\"a\", 70)]\ng = defaultdict(list)\nfor k, v in rows:\n    g[k].append(v)\nfor k in sorted(g):\n    print(k, len(g[k]), sum(g[k]) / len(g[k]))",
+      "question": "What does this program print?",
+      "options": [
+        "a 3 30.0\nb 2 35.0",
+        "a 3 80\nb 2 65",
+        "b 2 65.0\na 3 80.0",
+        "a 3 80.0\nb 2 65.0"
+      ],
+      "answerIndex": 3,
+      "why": "Group a holds 80, 90, 70: three scores with sum 240, so the mean is 80.0. Group b holds 60 and 70: two scores with sum 130, so the mean is 65.0. Keys are sorted, so a goes first."
+    },
+    {
+      "id": "python:python-data-work:9",
+      "code": "counts = {\"x\": 3, \"y\": 5, \"z\": 3, \"w\": 1}\ntop = sorted(counts.items(), key=lambda p: (-p[1], p[0]))[:3]\nprint(top)",
+      "question": "What does this program print?",
+      "options": [
+        "[('y', 5), ('x', 3)]",
+        "[('w', 1), ('x', 3), ('z', 3)]",
+        "[('y', 5), ('x', 3), ('z', 3)]",
+        "[('x', 3), ('z', 3)]"
+      ],
+      "answerIndex": 2,
+      "why": "The key sorts by biggest count first, and ties go by letter. That gives y, x, z, w. The slice [:3] keeps the first three pairs."
+    },
+    {
+      "id": "python:python-data-work:10",
+      "code": "data = {\"pen\": (3, 1.5), \"book\": (2, 12.25)}\nfor name, (qty, price) in data.items():\n    print(f\"{name:<6}{qty:>3}{qty * price:>8.2f}\")",
+      "question": "What does this program print?",
+      "options": [
+        "pen     3    4.50\nbook    2   14.25",
+        "pen     3    4.50\nbook    2   24.50",
+        "   pen  3    4.50\n  book  2   24.50",
+        "pen     3     4.5\nbook    2    24.5"
+      ],
+      "answerIndex": 1,
+      "why": "The name is padded to 6 characters on the left. The quantity gets width 3 and the total gets width 8 with two decimals. Pen is 3 * 1.5 = 4.50 and book is 2 * 12.25 = 24.50."
+    },
+    {
+      "id": "python:python-data-work:11",
+      "code": "import statistics\npay = [30, 32, 35, 31, 400]\nprint(statistics.mean(pay), statistics.median(pay))",
+      "question": "What does this program print?",
+      "options": [
+        "105.6 105.6",
+        "93.5 32.5",
+        "105.6 32",
+        "33.6 32"
+      ],
+      "answerIndex": 2,
+      "why": "The sum is 528, so the mean is 528 / 5 = 105.6. The big value 400 pulls the mean up. The median is the middle of the sorted list 30, 31, 32, 35, 400, which is 32."
+    },
+    {
+      "id": "python:python-data-work:12",
+      "code": "old, new = 80, 100\nprint((new - old) / old * 100)\nprint(round((old - new) / new * 100, 1))",
+      "question": "What does this program print?",
+      "options": [
+        "25.0\n20.0",
+        "25.0\n-20.0",
+        "0.25\n-20.0",
+        "20.0\n-20.0"
+      ],
+      "answerIndex": 1,
+      "why": "Going from 80 to 100 is a rise of 20 on a base of 80, which is 25.0 percent. Going back from 100 to 80 is a drop of 20 on a base of 100, which is -20.0 percent. The base is different."
+    }
+  ],
+  "python-concurrency-interview": [
+    {
+      "id": "python:python-concurrency-interview:1",
+      "code": "import threading\ncount = 0\nlock = threading.Lock()\ndef add():\n    global count\n    for _ in range(1000):\n        with lock:\n            count += 1\nts = [threading.Thread(target=add) for _ in range(4)]\nfor t in ts:\n    t.start()\nfor t in ts:\n    t.join()\nprint(count)",
+      "question": "What does this program print?",
+      "options": [
+        "3000",
+        "4000",
+        "8000",
+        "3996"
+      ],
+      "answerIndex": 1,
+      "why": "Four threads each add 1 a thousand times. The lock stops updates from mixing. join waits for all of them. So the total is 4000."
+    },
+    {
+      "id": "python:python-concurrency-interview:2",
+      "code": "import threading\nout = []\ndef work(n):\n    out.append(n * n)\nt = threading.Thread(target=work, args=(5,))\nt.start()\nt.join()\nout.append(0)\nprint(out)",
+      "question": "What does this program print?",
+      "options": [
+        "[0, 25]",
+        "[36, 0]",
+        "[10, 0]",
+        "[25, 0]"
+      ],
+      "answerIndex": 3,
+      "why": "join makes the main program wait until the thread has finished. So 25 is added first. Then the main program adds 0."
+    },
+    {
+      "id": "python:python-concurrency-interview:3",
+      "code": "from concurrent.futures import ThreadPoolExecutor\ndef sq(x):\n    return x * x\nwith ThreadPoolExecutor(max_workers=3) as ex:\n    results = list(ex.map(sq, [1, 2, 3, 4]))\nprint(results)\nprint(sum(results))",
+      "question": "What does this program print?",
+      "options": [
+        "[1, 4, 9, 16]\n4",
+        "[1, 4, 9, 16]\n30",
+        "[1, 8, 27, 64]\n100",
+        "[1, 4, 9]\n14"
+      ],
+      "answerIndex": 1,
+      "why": "ex.map gives results in the same order as the inputs. The squares are 1, 4, 9, 16. Their sum is 30."
+    },
+    {
+      "id": "python:python-concurrency-interview:4",
+      "code": "from concurrent.futures import ThreadPoolExecutor\ndef add(a, b):\n    return a + b\nwith ThreadPoolExecutor() as ex:\n    f = ex.submit(add, 2, 3)\n    print(f.result())\n    print(f.done())",
+      "question": "What does this program print?",
+      "options": [
+        "32\nTrue",
+        "5\nFalse",
+        "5\nTrue",
+        "6\nTrue"
+      ],
+      "answerIndex": 2,
+      "why": "submit starts the call and returns a future. result() waits and gives 2 + 3 = 5. After result() the job is finished, so done() is True."
+    },
+    {
+      "id": "python:python-concurrency-interview:5",
+      "code": "import asyncio\nasync def work(name, delay):\n    await asyncio.sleep(delay)\n    print(\"done\", name)\n    return name.upper()\nasync def main():\n    res = await asyncio.gather(work(\"a\", 0.2), work(\"b\", 0.1))\n    print(res)\nasyncio.run(main())",
+      "question": "What does this program print?",
+      "options": [
+        "done b\ndone a\nA",
+        "done a\ndone b\n['A', 'B']",
+        "done b\ndone a\n['A', 'B']",
+        "done b\ndone a\n['aa', 'bb']"
+      ],
+      "answerIndex": 2,
+      "why": "gather runs both jobs together. b waits less, so it prints first. But gather returns results in the order given, so a comes first in the list."
+    },
+    {
+      "id": "python:python-concurrency-interview:6",
+      "code": "import asyncio\nasync def job(tag, d):\n    await asyncio.sleep(d)\n    print(tag)\nasync def main():\n    await job(\"x\", 0.2)\n    await job(\"y\", 0.1)\n    print(\"z\")\nasyncio.run(main())",
+      "question": "What does this program print?",
+      "options": [
+        "x\ny\nzz",
+        "x\ny\nz",
+        "y\nx\nz",
+        "y\nz"
+      ],
+      "answerIndex": 1,
+      "why": "Each await finishes before the next line runs. Nothing runs together here. So x prints, then y, then z."
+    },
+    {
+      "id": "python:python-concurrency-interview:7",
+      "code": "d = {\"a\": 1}\nd.setdefault(\"b\", []).append(5)\nd.setdefault(\"a\", 99)\nprint(d.get(\"c\", 0), d)",
+      "question": "What does this program print?",
+      "options": [
+        "0 {'a': 1, 'b': [5]}",
+        "0 {'a': 1, 'b': [6]}",
+        "1 {'a': 1, 'b': [5]}",
+        "0 {'a': 99, 'b': [5]}"
+      ],
+      "answerIndex": 0,
+      "why": "setdefault adds b with an empty list and returns it, so 5 goes in. For a, the key exists, so 99 is ignored. get with a missing key c gives 0."
+    },
+    {
+      "id": "python:python-concurrency-interview:8",
+      "code": "data = {\"x\": \"12\", \"y\": \"ab\"}\ntotal = 0\nfor k in [\"x\", \"y\", \"z\"]:\n    try:\n        total += int(data[k])\n    except KeyError:\n        total += 100\n    except ValueError:\n        total += 10\nprint(total)",
+      "question": "What does this program print?",
+      "options": [
+        "122",
+        "1022",
+        "22",
+        "134"
+      ],
+      "answerIndex": 0,
+      "why": "x gives 12. y is not a number, so int fails with ValueError and adds 10. z is not a key, so KeyError adds 100. The total is 122."
+    },
+    {
+      "id": "python:python-concurrency-interview:9",
+      "code": "vals = [0, \"\", [], None, \"0\"]\nprint(any(vals), all(vals))\nprint(sum(1 for v in vals if v))\nprint(all([]), any([]))",
+      "question": "What does this program print?",
+      "options": [
+        "True False\n4\nTrue False",
+        "False False\n0\nTrue False",
+        "True False\n1\nTrue False",
+        "True False\n1\nFalse False"
+      ],
+      "answerIndex": 2,
+      "why": "Only the string \"0\" is truthy, because it is not empty. So any is True, all is False, and one value counts. all of an empty list is True. any of an empty list is False."
+    },
+    {
+      "id": "python:python-concurrency-interview:10",
+      "code": "def add(x, bag=[]):\n    bag.append(x)\n    return bag\nprint(add(1))\nprint(add(2))\nprint(add(3, []))",
+      "question": "What does this program print?",
+      "options": [
+        "[1]\n[1, 2]\n[3]",
+        "[1]\n[2]\n[3]",
+        "[1]\n[1, 2]\n[1, 2, 3]",
+        "[1]\n[2, 1]\n[3]"
+      ],
+      "answerIndex": 0,
+      "why": "The default list is made once and shared by calls that skip bag. The first two calls use it, so it grows to [1, 2]. The third call passes a new list, so it gives [3]."
+    },
+    {
+      "id": "python:python-concurrency-interview:11",
+      "code": "funcs = []\nfor i in range(3):\n    funcs.append(lambda: i * 10)\nprint([f() for f in funcs])\nfixed = [lambda i=i: i * 10 for i in range(3)]\nprint([f() for f in fixed])",
+      "question": "What does this program print?",
+      "options": [
+        "[20, 20, 20]\n[0, 10, 20]",
+        "[20, 20, 20]\n[20, 20, 20]",
+        "[0, 10, 20]\n[0, 10, 20]",
+        "[30, 30, 30, 30]\n[0, 10, 20]"
+      ],
+      "answerIndex": 0,
+      "why": "A plain lambda looks up i when it is called. By then the loop is over and i is 2, so every call gives 20. A default value i=i saves each i at creation time."
+    },
+    {
+      "id": "python:python-concurrency-interview:12",
+      "code": "a = [1, 2, 3]\nb = a\nc = a[:]\nb.append(4)\nc.append(5)\nprint(a)\nprint(c, a is b, a == c)",
+      "question": "What does this program print?",
+      "options": [
+        "[1, 2, 3, 40]\n[1, 2, 3, 5] True False",
+        "[1, 2, 3, 4]\n[1, 2, 3, 5] True False",
+        "[1, 2, 3, 4, 5]\n[1, 2, 3, 4, 5] True True",
+        "[1, 2, 3]\n[1, 2, 3, 5] False False"
+      ],
+      "answerIndex": 1,
+      "why": "b is the same list as a, so appending 4 changes a. c is a copy, so it only gets 5. a is b is True. a and c have different items, so == is False."
+    }
+  ],
+  "python-stdlib": [
+    {
+      "id": "python:python-stdlib:1",
+      "code": "from datetime import date, timedelta\nd = date(2024, 1, 1)\nprint(d.weekday())\nd2 = d + timedelta(days=10)\nprint(d2.weekday(), d2)",
+      "question": "What does this program print?",
+      "options": [
+        "1\n3 2024-01-11",
+        "0\n4 2024-01-12",
+        "0\n3 2024-01-11",
+        "1\n4 2024-01-12"
+      ],
+      "answerIndex": 2,
+      "why": "1 Jan 2024 is a Monday, and weekday() gives 0 for Monday. Ten days later is 11 Jan, a Thursday, which is 3."
+    },
+    {
+      "id": "python:python-stdlib:2",
+      "code": "from datetime import datetime\ns = \"03-04-2024\"\nd = datetime.strptime(s, \"%d-%m-%Y\")\nprint(d.month, d.day)\nprint(d.strftime(\"%b %d, %Y\"))",
+      "question": "What does this program print?",
+      "options": [
+        "4 3\nApr 03, 2024",
+        "3 4\nApr 03, 2024",
+        "4 3\nApril 03, 2024",
+        "3 4\nMar 04, 2024"
+      ],
+      "answerIndex": 0,
+      "why": "The format %d-%m-%Y reads day first, so 03 is the day and 04 is the month (April). %b gives Apr and %d keeps the leading zero."
+    },
+    {
+      "id": "python:python-stdlib:3",
+      "code": "from datetime import datetime, timedelta\nstart = datetime(2024, 12, 31, 22, 0)\nend = start + timedelta(hours=5, minutes=30)\nprint(end)\nprint(end - start)",
+      "question": "What does this program print?",
+      "options": [
+        "2025-01-01 03:30:00\n5:30:00",
+        "2025-01-01 03:30:00\n-1 day, 18:30:00",
+        "2025-01-01 00:30:00\n2:30:00",
+        "2025-01-01 03:45:00\n5:45:00"
+      ],
+      "answerIndex": 0,
+      "why": "22:00 plus 5 hours 30 minutes passes midnight and gives 03:30 on 1 Jan 2025. Subtracting two datetimes gives a timedelta, printed as 5:30:00."
+    },
+    {
+      "id": "python:python-stdlib:4",
+      "code": "from collections import Counter\nc = Counter(\"banana bread\")\nprint(c.most_common(2))\nprint(c[\"a\"], c[\"z\"])",
+      "question": "What does this program print?",
+      "options": [
+        "[('a', 4), ('b', 2)]\n4 0",
+        "[('a', 4), ('b', 2)]\n2 0",
+        "[('a', 3), ('n', 2)]\n3 0",
+        "[('a', 4), ('b', 2), ('n', 2)]\n4 0"
+      ],
+      "answerIndex": 0,
+      "why": "The letter a appears 4 times and is the most common. b and n tie at 2, and b was seen first, so b comes next. A missing key in a Counter gives 0."
+    },
+    {
+      "id": "python:python-stdlib:5",
+      "code": "from collections import defaultdict\nwords = [\"apple\", \"avocado\", \"banana\", \"blueberry\", \"cherry\"]\ngroups = defaultdict(list)\nfor w in words:\n    groups[w[0]].append(len(w))\nprint(dict(groups))\nprint(len(groups[\"z\"]), len(groups))",
+      "question": "What does this program print?",
+      "options": [
+        "{'a': [5, 7], 'b': [6, 9], 'c': [6]}\n0 4",
+        "{'a': [1, 1], 'b': [1, 1], 'c': [1]}\n0 4",
+        "{'a': [5, 7], 'b': [6, 9], 'c': [6]}\n3 0",
+        "{'e': [5], 'o': [7], 'a': [6], 'y': [9, 6]}\n0 5"
+      ],
+      "answerIndex": 0,
+      "why": "Words are grouped by first letter, each holding word lengths. Looking up \"z\" makes a new empty list, so its length is 0 and the dict then has 4 keys."
+    },
+    {
+      "id": "python:python-stdlib:6",
+      "code": "from collections import namedtuple\nfrom dataclasses import dataclass\nP = namedtuple(\"P\", [\"x\", \"y\"])\n@dataclass\nclass Q:\n    x: int\n    y: int\na = P(1, 2)\nb = Q(1, 2)\nprint(a == (1, 2), b == (1, 2))\nprint(a, b)",
+      "question": "What does this program print?",
+      "options": [
+        "False False\nP(x=1, y=3) Q(x=1, y=2)",
+        "True True\nP(x=1, y=2) Q(x=1, y=2)",
+        "True False\nP(x=1, y=2) Q(x=1, y=2)",
+        "True False\n1 2"
+      ],
+      "answerIndex": 2,
+      "why": "A namedtuple is a real tuple, so it equals (1, 2). A dataclass only equals objects of its own class, so the tuple compare is False."
+    },
+    {
+      "id": "python:python-stdlib:7",
+      "code": "from collections import deque\nd = deque([1, 2, 3, 4])\nd.rotate(1)\nd.appendleft(0)\nprint(list(d))\nd.pop()\nprint(d.popleft(), len(d))",
+      "question": "What does this program print?",
+      "options": [
+        "[4, 1, 2, 3, 0]\n4 3",
+        "[0, 4, 1, 2, 3]\n0 3",
+        "[0, 2, 3, 4, 1]\n0 3",
+        "[0, 4, 1, 2, 3]\n4 3"
+      ],
+      "answerIndex": 1,
+      "why": "rotate(1) moves the last item to the front: [4, 1, 2, 3]. Then 0 is added on the left. pop() drops the 3, popleft() returns 0, and 3 items remain."
+    },
+    {
+      "id": "python:python-stdlib:8",
+      "code": "import csv, io\ntext = \"name,score\\nAda,90\\nBob,75\\nCy,85\\n\"\nrows = list(csv.DictReader(io.StringIO(text)))\nprint(rows[1][\"name\"], rows[1][\"score\"] + \"!\")\ntotal = sum(int(r[\"score\"]) for r in rows)\nprint(total, total // len(rows))",
+      "question": "What does this program print?",
+      "options": [
+        "Bob 75!\n250 83.33333333333333",
+        "Ada 90!\n250 83",
+        "Bob 75!\n250 83",
+        "Ada 75!\n250 83"
+      ],
+      "answerIndex": 2,
+      "why": "DictReader skips the header, so rows[1] is Bob. His score is still a string, so \"!\" is joined on. The total is 250 and 250 // 3 is 83."
+    },
+    {
+      "id": "python:python-stdlib:9",
+      "code": "import csv, io\nout = io.StringIO()\nw = csv.writer(out)\nw.writerow([\"a\", \"b c\", \"d,e\"])\nw.writerow([1, 2.5, None])\nprint(out.getvalue().splitlines())",
+      "question": "What does this program print?",
+      "options": [
+        "['a,b c,\"d,e\"', '1,25,']",
+        "['a,b c,\"d,e\"', '1,2.5,x']",
+        "['a,b c,de', '1,2.5,']",
+        "['a,b c,\"d,e\"', '1,2.5,']"
+      ],
+      "answerIndex": 3,
+      "why": "The writer puts quotes around a field that contains a comma. None is written as an empty field. splitlines() gives one string per row."
+    },
+    {
+      "id": "python:python-stdlib:10",
+      "code": "from pathlib import PurePosixPath\np = PurePosixPath(\"/data/reports/jan.csv\")\nprint(p.name, p.suffix, p.stem)\nprint(p.parent)\nprint(p.with_suffix(\".txt\").name, p.parts[1])",
+      "question": "What does this program print?",
+      "options": [
+        "jan.csv .csv jan\n/data\njan.txt data",
+        "jan.csv .csv jan\n/data/reports\njan.md data",
+        "jan.csv .csv jan\n/data/reports\njan.txt data",
+        "jan.csv .csv jan\n/data/reports\njan.txt /"
+      ],
+      "answerIndex": 2,
+      "why": "name is the last part, suffix keeps the dot, and stem is the name without it. parent drops the last part. with_suffix swaps .csv for .txt. parts[0] is \"/\", so parts[1] is data."
+    },
+    {
+      "id": "python:python-stdlib:11",
+      "code": "import logging, sys\nlogging.basicConfig(stream=sys.stdout, level=logging.WARNING, format=\"%(levelname)s:%(message)s\")\nlogging.info(\"start\")\nlogging.warning(\"low disk\")\nlogging.error(\"failed\")",
+      "question": "What does this program print?",
+      "options": [
+        "WARNING:low disk\nERROR:failed",
+        "INFO:start\nWARNING:low disk\nERROR:failed",
+        "low disk\nfailed",
+        "ERROR:failed"
+      ],
+      "answerIndex": 0,
+      "why": "The level is WARNING, so info messages are dropped. The warning and error messages print using the format levelname:message."
+    },
+    {
+      "id": "python:python-stdlib:12",
+      "code": "import random\nrandom.seed(7)\na = [random.randint(1, 6) for _ in range(3)]\nrandom.seed(7)\nb = [random.randint(1, 6) for _ in range(3)]\nprint(a == b, len(a))\nprint(all(1 <= x <= 6 for x in a))",
+      "question": "What does this program print?",
+      "options": [
+        "True 3\nFalse",
+        "False 6\nTrue",
+        "True 3\nTrue",
+        "False 3\nTrue"
+      ],
+      "answerIndex": 2,
+      "why": "Setting the same seed again restarts the random numbers, so both lists are equal. Each list has 3 numbers, and randint(1, 6) always stays from 1 to 6."
+    }
+  ],
   "python-basics": [
     {
       "id": "python:python-basics:1",
       "code": "x = 7\ny = 2\nprint(x / y, x // y, x % y)",
       "question": "What does this program print?",
       "options": [
-        "14 3 1",
+        "3.5 3 1",
         "3.5 49 1",
-        "3.5 3 2",
-        "3.5 3 1"
+        "14 3 1",
+        "3.5 3 2"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "/ gives the full answer with a decimal (3.5). // drops the decimal part (3). % is the remainder (1)."
     },
     {
@@ -22,12 +1195,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "a = \"5\"\nb = 3\nprint(a * b)",
       "question": "What does this program print?",
       "options": [
-        "15",
-        "53",
         "555",
-        "55"
+        "55",
+        "53",
+        "15"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "A text times a number repeats the text. \"5\" three times is 555. It is not a sum."
     },
     {
@@ -36,11 +1209,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "Ravi is 20 next year",
-        "Ravi is 21 next year",
         "Ravi is 40 next year",
+        "Ravi is 21 next year",
         "20 is 21 next year"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "An f-string puts the values inside the { }. You can do a sum inside it too, so age + 1 is 21."
     },
     {
@@ -48,12 +1221,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "print(type(3), type(3.0), type(\"3\"))",
       "question": "What does this program print?",
       "options": [
+        "<class 'int'> <class 'float'> <class 'bool'>",
         "<class 'float'> <class 'float'> <class 'str'>",
         "<class 'int'> <class 'int'> <class 'str'>",
-        "<class 'int'> <class 'float'> <class 'str'>",
-        "<class 'int'> <class 'float'> <class 'bool'>"
+        "<class 'int'> <class 'float'> <class 'str'>"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "3 is an int, 3.0 is a float, and \"3\" with quotes is a str (text)."
     },
     {
@@ -63,8 +1236,8 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "options": [
         "3 10",
         "3 3",
-        "10 3",
-        "10 10"
+        "10 10",
+        "10 3"
       ],
       "answerIndex": 0,
       "why": "a, b = b, a swaps the two values in one line. So a becomes 3 and b becomes 10."
@@ -74,12 +1247,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "print(2 ** 3 ** 2, (2 ** 3) ** 2, -7 // 2)",
       "question": "What does this program print?",
       "options": [
+        "512 64 3",
         "512 64 -4",
         "512 64 1",
-        "512 64 3",
         "64 64 -4"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "** goes from the right: 3 ** 2 is 9, then 2 ** 9 is 512. (2 ** 3) ** 2 is 64. -7 // 2 rounds down to -4."
     },
     {
@@ -87,12 +1260,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "s = \"Capabilio\"\nprint(s[0], s[-1], s[2:5], len(s))",
       "question": "What does this program print?",
       "options": [
-        "C o pab 9",
-        "a o pab 9",
+        "C o pa 9",
         "C i pab 9",
-        "C o pa 9"
+        "a o pab 9",
+        "C o pab 9"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "Counting starts at 0. s[-1] is the last letter. s[2:5] takes the letters at places 2, 3 and 4."
     },
     {
@@ -100,10 +1273,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "print(True + True, bool(0), bool(\"a\"), 3 > 2 > 1)",
       "question": "What does this program print?",
       "options": [
-        "1 False True True",
+        "2 True True True",
         "2 False True True",
-        "2 False True False",
-        "2 True True True"
+        "1 False True True",
+        "2 False True False"
       ],
       "answerIndex": 1,
       "why": "True counts as 1, so True + True is 2. 0 is False and a non-empty text is True. 3 > 2 > 1 means 3 > 2 and 2 > 1."
@@ -113,12 +1286,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "x = 5\nx += 2\nx *= 3\nx -= 1\nprint(x)",
       "question": "What does this program print?",
       "options": [
-        "8",
-        "11",
         "20",
-        "1"
+        "1",
+        "8",
+        "11"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "Go line by line: 5, then 7, then 21, then 20."
     },
     {
@@ -127,11 +1300,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "Hello World 15",
-        "  Hello World   11",
         "HELLO WORLD 11",
-        "Hello World 11"
+        "Hello World 11",
+        "  Hello World   11"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "strip() removes the spaces at both ends. title() makes each word start with a capital letter. \"hello world\" has 11 characters."
     }
   ],
@@ -141,12 +1314,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "m = 65\nif m >= 75:\n    g = \"A\"\nelif m >= 60:\n    g = \"B\"\nelse:\n    g = \"C\"\nprint(g, m)",
       "question": "What does this program print?",
       "options": [
+        "C 65",
         "C 40",
         "B 65",
-        "C 65",
         "A 75"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "Python checks from the top and stops at the first true one. 65 is not 75 or more, but it is 60 or more, so g is B."
     },
     {
@@ -154,12 +1327,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "for i in range(1, 6, 2):\n    print(i, end=\" \")",
       "question": "What does this program print?",
       "options": [
-        "1 3",
         "1 3 5",
-        "0 2 4",
-        "1 2 3 4 5"
+        "1 3",
+        "1 2 3 4 5",
+        "0 2 4"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "range(1, 6, 2) starts at 1, stops before 6, and goes up by 2: 1 3 5."
     },
     {
@@ -167,12 +1340,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "total = 0\nfor n in [4, 8, 6]:\n    total += n\nprint(total, total / 3)",
       "question": "What does this program print?",
       "options": [
-        "18 4",
-        "20 6.666666666666667",
         "18 6.0",
+        "20 6.666666666666667",
+        "18 4",
         "6 2.0"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "The loop adds 4, 8 and 6 to get 18. 18 / 3 is 6.0 (a division always gives a decimal)."
     },
     {
@@ -180,12 +1353,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "n = 3\nwhile n > 0:\n    print(n, end=\" \")\n    n -= 1\nprint(\"go\")",
       "question": "What does this program print?",
       "options": [
-        "3 1 go",
         "3 2 1 go",
+        "3 2 1 go 0",
         "3 2 go",
-        "3 2 1 go 0"
+        "3 1 go"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "It prints n and makes it smaller by 1, while n is more than 0. Then it prints go."
     },
     {
@@ -193,8 +1366,8 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "for i in range(1, 8):\n    if i % 2 == 0:\n        continue\n    if i == 5:\n        break\n    print(i, end=\" \")",
       "question": "What does this program print?",
       "options": [
-        "2 4 6",
         "1 3 5",
+        "2 4 6",
         "1",
         "1 3"
       ],
@@ -206,12 +1379,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "for i in range(3):\n    if i == 5:\n        break\nelse:\n    print(\"done\")\nprint(i)",
       "question": "What does this program print?",
       "options": [
-        "done\n2",
         "done\n4",
         "2",
-        "1"
+        "1",
+        "done\n2"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "The else of a for loop runs only when the loop was not stopped by break. Here nothing breaks, so done is printed. i ends at 2."
     },
     {
@@ -220,9 +1393,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "*\n**\n***",
+        "\n*\n**",
         "***\n***\n***",
-        "1\n22\n333",
-        "\n*\n**"
+        "1\n22\n333"
       ],
       "answerIndex": 0,
       "why": "\"*\" * i repeats the star i times. So the rows have 1, 2 and 3 stars."
@@ -232,12 +1405,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "names = [\"A\", \"B\"]\nmarks = [70, 90]\nfor i, (n, m) in enumerate(zip(names, marks), 1):\n    print(i, n, m)",
       "question": "What does this program print?",
       "options": [
-        "1 70 A\n2 90 B",
-        "0 A 70\n1 B 90",
         "1 A 70\n2 B 90",
-        "1 A 70"
+        "0 A 70\n1 B 90",
+        "1 A 70",
+        "1 70 A\n2 90 B"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "zip pairs the two lists place by place. enumerate(..., 1) numbers the pairs starting from 1."
     },
     {
@@ -245,12 +1418,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "n = 1234\ns = 0\nwhile n:\n    s += n % 10\n    n //= 10\nprint(s)",
       "question": "What does this program print?",
       "options": [
-        "6",
         "1",
-        "10",
-        "70"
+        "6",
+        "70",
+        "10"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "n % 10 is the last digit and n // 10 removes it. It adds 4, 3, 2 and 1, which is 10."
     },
     {
@@ -258,12 +1431,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "print([x * x for x in range(1, 6) if x % 2 == 1])",
       "question": "What does this program print?",
       "options": [
-        "[1, 9, 25]",
+        "[4, 16]",
         "[1, 27, 125]",
         "[2, 6, 10]",
-        "[4, 16]"
+        "[1, 9, 25]"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "The list keeps only the odd numbers 1, 3 and 5, and squares each one: 1, 9, 25."
     }
   ],
@@ -273,12 +1446,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def add(a, b=10):\n    return a + b\nprint(add(5), add(5, 1))",
       "question": "What does this program print?",
       "options": [
+        "15 6",
         "50 5",
         "5 6",
-        "6 15",
-        "15 6"
+        "6 15"
       ],
-      "answerIndex": 3,
+      "answerIndex": 0,
       "why": "When you do not give b, it uses the default 10. So add(5) is 15, and add(5, 1) is 6."
     },
     {
@@ -286,12 +1459,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def f(x):\n    x = x + 1\n    return x\nn = 5\nf(n)\nprint(n, f(n))",
       "question": "What does this program print?",
       "options": [
-        "5 10",
+        "5 5",
         "0 1",
-        "5 6",
-        "5 5"
+        "5 10",
+        "5 6"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "The function changes its own copy x. The variable n outside stays 5. f(n) gives back 6."
     },
     {
@@ -299,9 +1472,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def add_item(lst):\n    lst.append(9)\nnums = [1, 2]\nadd_item(nums)\nprint(nums)",
       "question": "What does this program print?",
       "options": [
-        "[1, 2]",
         "[1, 2, 9, 8]",
         "[9, 1, 2]",
+        "[1, 2]",
         "[1, 2, 9]"
       ],
       "answerIndex": 3,
@@ -314,8 +1487,8 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "options": [
         "3\n10",
         "3\n3",
-        "10\n3",
-        "3\n20"
+        "3\n20",
+        "10\n3"
       ],
       "answerIndex": 0,
       "why": "x = 3 inside the function makes a new local x. The outside x is still 10."
@@ -326,11 +1499,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "15",
+        "120",
         "0",
-        "60",
-        "120"
+        "60"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "fact(5) is 5 * 4 * 3 * 2 * 1, which is 120."
     },
     {
@@ -338,10 +1511,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "words = [\"pear\", \"fig\", \"banana\"]\nprint(sorted(words, key=len))",
       "question": "What does this program print?",
       "options": [
-        "['banana', 'pear', 'fig']",
-        "['fig', 'pear', 'banana']",
         "['banana', 'fig', 'pear']",
-        "['pear', 'fig', 'banana']"
+        "['fig', 'pear', 'banana']",
+        "['pear', 'fig', 'banana']",
+        "['banana', 'pear', 'fig']"
       ],
       "answerIndex": 1,
       "why": "key=len sorts by how long each word is: fig (3), pear (4), banana (6)."
@@ -351,12 +1524,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def make(n):\n    def times(x):\n        return x * n\n    return times\ndouble = make(2)\nprint(double(5), make(3)(5))",
       "question": "What does this program print?",
       "options": [
-        "7 8",
         "10 6",
+        "10 15",
         "20 15",
-        "10 15"
+        "7 8"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "make returns a small function that remembers n. double multiplies by 2, so 5 gives 10. make(3)(5) is 15."
     },
     {
@@ -364,12 +1537,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def stats(*nums):\n    return min(nums), max(nums), sum(nums)\nlo, hi, total = stats(4, 9, 2)\nprint(lo, hi, total)",
       "question": "What does this program print?",
       "options": [
-        "2 9 15",
         "9 2 15",
+        "2 9 3",
         "4 9 13",
-        "2 9 3"
+        "2 9 15"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "*nums collects all the numbers. The function gives back three values, and Python unpacks them into lo, hi and total."
     },
     {
@@ -377,12 +1550,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def f(a, b=[]):\n    b.append(a)\n    return b\nprint(f(1), f(2))",
       "question": "What does this program print?",
       "options": [
-        "[2, 1] [2, 1]",
         "[1, 2] [1, 2]",
+        "[2, 1] [2, 1]",
         "[1]\n[1, 2]",
         "[1] [2]"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "The default list [] is made only once and shared by every call. So both calls add to the same list."
     },
     {
@@ -390,12 +1563,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def div(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return \"no\"\nprint(div(6, 3), div(1, 0))",
       "question": "What does this program print?",
       "options": [
-        "2.0 0",
-        "2 no",
         "2.0 no",
+        "2 no",
+        "2.0 0",
         "1.5 no"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "Dividing by zero is an error, and except catches it, so div(1, 0) gives no. div(6, 3) is 2.0."
     }
   ],
@@ -405,12 +1578,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "a = [3, 1, 2]\nb = a\nb.append(4)\nc = a.copy()\nc.append(5)\nprint(a, c)",
       "question": "What does this program print?",
       "options": [
-        "[3, 1, 2, 4, 5] [3, 1, 2, 4, 5]",
-        "[3, 1, 2] [3, 1, 2, 5]",
         "[3, 1, 2, 4] [3, 1, 2, 4, 5]",
+        "[3, 1, 2] [3, 1, 2, 5]",
+        "[3, 1, 2, 4, 5] [3, 1, 2, 4, 5]",
         "[3, 1, 2, 4, 5] [3, 1, 2, 4]"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "b = a makes a second name for the same list, so a also gets the 4. a.copy() makes a separate list, so the 5 goes only into c."
     },
     {
@@ -418,10 +1591,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "nums = [5, 2, 9, 1]\nnums.sort()\nprint(nums, nums[-1], nums[1:3])",
       "question": "What does this program print?",
       "options": [
-        "[1, 2, 5, 9] 9 [2]",
-        "[1, 2, 5, 9] 9 [2, 5]",
         "[1, 2, 5, 9] 5 [2, 5]",
-        "[9, 5, 2, 1] 1 [5, 2]"
+        "[1, 2, 5, 9] 9 [2, 5]",
+        "[9, 5, 2, 1] 1 [5, 2]",
+        "[1, 2, 5, 9] 9 [2]"
       ],
       "answerIndex": 1,
       "why": "sort() puts the numbers in order: 1, 2, 5, 9. nums[-1] is the last one, and nums[1:3] takes the places 1 and 2."
@@ -432,9 +1605,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "{'a': 11, 'b': 2, 'c': 3} 3 0",
-        "{'a': 13, 'b': 2} 2 0",
         "{'a': 11, 'b': 2, 'c': 3} 3 11",
-        "{'a': 10, 'b': 2, 'c': 3} 3 0"
+        "{'a': 10, 'b': 2, 'c': 3} 3 0",
+        "{'a': 13, 'b': 2} 2 0"
       ],
       "answerIndex": 0,
       "why": "d[\"c\"] = 3 adds a new key. d[\"a\"] += 10 changes its value to 11. get(\"z\", 0) gives 0 when the key is not there."
@@ -444,12 +1617,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "s = {1, 2, 2, 3}\nt = {3, 4}\nprint(len(s), s & t, sorted(s | t))",
       "question": "What does this program print?",
       "options": [
-        "3 {3} [1, 2, 3, 4]",
-        "3 {1, 2} [1, 2, 3, 4]",
+        "3 {3} [3]",
         "5 {3} [1, 2, 3, 4]",
-        "3 {3} [3]"
+        "3 {1, 2} [1, 2, 3, 4]",
+        "3 {3} [1, 2, 3, 4]"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "A set keeps each value once, so s is {1, 2, 3}. & is what both have in common. | is everything from both."
     },
     {
@@ -458,9 +1631,9 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "1 [2, 3, 4] 3",
-        "4 [1, 2, 3] 3",
+        "1 [2, 3, 4] 4",
         "1 [2] 1",
-        "1 [2, 3, 4] 4"
+        "4 [1, 2, 3] 3"
       ],
       "answerIndex": 0,
       "why": "a takes the first value. *rest collects all the other values into a list."
@@ -470,12 +1643,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "words = [\"a\", \"b\", \"a\", \"c\", \"a\"]\ncount = {}\nfor w in words:\n    count[w] = count.get(w, 0) + 1\nprint(count)",
       "question": "What does this program print?",
       "options": [
-        "{'a': 3, 'b': 1, 'c': 1}",
         "{'a': 6, 'b': 2, 'c': 2}",
-        "{'a': 2, 'b': 1, 'c': 1}",
-        "{'a': 1, 'b': 1, 'c': 1}"
+        "{'a': 1, 'b': 1, 'c': 1}",
+        "{'a': 3, 'b': 1, 'c': 1}",
+        "{'a': 2, 'b': 1, 'c': 1}"
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "why": "For each word it adds 1 to its count (starting from 0). a appears 3 times, b once and c once."
     },
     {
@@ -483,12 +1656,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "s = \"a,b,,c\"\nparts = s.split(\",\")\nprint(parts, len(parts), \"-\".join(parts))",
       "question": "What does this program print?",
       "options": [
-        "['a', 'b', '', 'c'] 4 abc",
-        "['a', 'b,,c'] 2 a-b,,c",
         "['a', 'b', '', 'c'] 4 a-b--c",
-        "['a', 'b', 'c'] 3 a-b-c"
+        "['a', 'b', 'c'] 3 a-b-c",
+        "['a', 'b,,c'] 2 a-b,,c",
+        "['a', 'b', '', 'c'] 4 abc"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": "split cuts at every comma, and two commas in a row give an empty text between them. There are 4 parts."
     },
     {
@@ -496,12 +1669,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "s = \"python\"\nprint(s[::-1], s[1:4], s[::2])",
       "question": "What does this program print?",
       "options": [
-        "nohtyp yth yhn",
-        "nohtyp yth pto",
         "nohtyp yt pto",
-        "python yth pto"
+        "python yth pto",
+        "nohtyp yth pto",
+        "nohtyp yth yhn"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "[::-1] reads from the end to the start. [1:4] takes places 1, 2 and 3. [::2] takes every second letter."
     },
     {
@@ -509,12 +1682,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "g = [[1, 2], [3, 4]]\nprint(g[1][0], sum(row[1] for row in g), [r[::-1] for r in g])",
       "question": "What does this program print?",
       "options": [
-        "3 6 [[1, 2], [3, 4]]",
-        "2 6 [[2, 1], [4, 3]]",
+        "3 4 [[2, 1], [4, 3]]",
         "3 6 [[2, 1], [4, 3]]",
-        "3 4 [[2, 1], [4, 3]]"
+        "2 6 [[2, 1], [4, 3]]",
+        "3 6 [[1, 2], [3, 4]]"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "g[1][0] is row 1, column 0, which is 3. The second column adds 2 + 4 = 6. Each row is also reversed."
     },
     {
@@ -522,12 +1695,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "marks = {\"A\": 70, \"B\": 90, \"C\": 80}\nbest = max(marks, key=marks.get)\nprint(best, sorted(marks, key=marks.get)[0])",
       "question": "What does this program print?",
       "options": [
-        "B C",
         "B B",
-        "A A",
-        "B A"
+        "B C",
+        "B A",
+        "A A"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "max with key=marks.get finds the name with the biggest mark, which is B. Sorting by marks puts A (70) first."
     }
   ],
@@ -538,11 +1711,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "Hello Ravi",
+        "Hi Ravi",
         "Hi RAVI",
-        "Hi Sita",
-        "Hi Ravi"
+        "Hi Sita"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "P(\"Ravi\") makes an object and __init__ saves the name. hi() joins Hi with that name."
     },
     {
@@ -550,12 +1723,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class C:\n    count = 0\n    def __init__(self):\n        C.count += 1\na = C()\nb = C()\nprint(C.count, a.count)",
       "question": "What does this program print?",
       "options": [
+        "0 1",
         "2 2",
         "3 3",
-        "0 1",
         "7 7"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "count belongs to the class, so every object shares it. Each new object adds 1 to the same count."
     },
     {
@@ -563,12 +1736,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class A:\n    def say(self):\n        return \"A\"\nclass B(A):\n    def say(self):\n        return \"B\" + super().say()\nprint(B().say(), A().say())",
       "question": "What does this program print?",
       "options": [
-        "AB A",
-        "BA BA",
+        "B A",
         "BA A",
-        "B A"
+        "AB A",
+        "BA BA"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "B changes say, and super().say() calls the version in A. So B says BA, and A says only A."
     },
     {
@@ -576,12 +1749,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class P:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n    def __str__(self):\n        return f\"({self.x}, {self.y})\"\nprint(P(1, 2), str(P(3, 4)))",
       "question": "What does this program print?",
       "options": [
-        "(5, 6) (3, 4)",
         "(1, 2) (3, 4)",
+        "(1, 2) 3",
         "(2, 1) (4, 3)",
-        "(1, 2) 3"
+        "(5, 6) (3, 4)"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "print uses __str__ to turn an object into text, so it shows (1, 2) and (3, 4)."
     },
     {
@@ -590,11 +1763,11 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "question": "What does this program print?",
       "options": [
         "212 32",
+        "210.0 30.0",
         "98.6 32.0",
-        "212.0 32.0",
-        "210.0 30.0"
+        "212.0 32.0"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "@property lets you use f like a variable, without brackets. 100 degrees C is 212.0 F and 0 is 32.0 F."
     },
     {
@@ -602,12 +1775,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class A: pass\nclass B(A): pass\nx = B()\nprint(isinstance(x, B), isinstance(x, A), isinstance(A(), B))",
       "question": "What does this program print?",
       "options": [
-        "False True False",
-        "True True True",
         "True False False",
-        "True True False"
+        "True True False",
+        "True True True",
+        "False True False"
       ],
-      "answerIndex": 3,
+      "answerIndex": 1,
       "why": "A B object is also an A, because B comes from A. But an A object is not a B."
     },
     {
@@ -615,12 +1788,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class M:\n    @staticmethod\n    def add(a, b):\n        return a + b\n    @classmethod\n    def name(cls):\n        return cls.__name__\nprint(M.add(2, 3), M.name())",
       "question": "What does this program print?",
       "options": [
-        "6 M",
         "M 5",
-        "5 M",
-        "5 m"
+        "5 m",
+        "6 M",
+        "5 M"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "A static method needs no object, and a class method receives the class itself. cls.__name__ is the name of the class, M."
     },
     {
@@ -630,10 +1803,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "options": [
         "0",
         "1200",
-        "1600",
-        "800"
+        "800",
+        "1600"
       ],
-      "answerIndex": 3,
+      "answerIndex": 2,
       "why": "A Car has an engine E inside it. start() sets the engine's rpm to 800."
     },
     {
@@ -641,12 +1814,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class V:\n    def __init__(self, n):\n        self.n = n\n    def __add__(self, o):\n        return V(self.n + o.n)\nprint((V(2) + V(5)).n)",
       "question": "What does this program print?",
       "options": [
+        "-3",
         "8",
         "7",
-        "-3",
         "10"
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "why": "__add__ tells Python what + means for V objects. V(2) + V(5) makes a new V with 7."
     },
     {
@@ -654,12 +1827,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class P:\n    pass\na = P()\nb = P()\nc = a\nprint(a == b, a == c, a is c)",
       "question": "What does this program print?",
       "options": [
-        "False True True",
         "True True True",
         "False False True",
-        "False False False"
+        "False False False",
+        "False True True"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "By default two objects are equal only when they are the very same object. a and b are different objects. c is another name for a."
     }
   ],
@@ -669,12 +1842,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "try:\n    n = int(\"12a\")\nexcept ValueError:\n    n = -1\nfinally:\n    print(\"done\")\nprint(n)",
       "question": "What does this program print?",
       "options": [
-        "end\n-1",
-        "done\n0",
+        "done\n12",
         "done\n-1",
-        "done\n12"
+        "done\n0",
+        "end\n-1"
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "why": "int(\"12a\") fails with a ValueError, so n becomes -1. finally always runs, so done is printed first."
     },
     {
@@ -682,12 +1855,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "class Low(Exception):\n    pass\ndef check(x):\n    if x < 5:\n        raise Low(\"low\")\n    return x\ntry:\n    check(3)\nexcept Low as e:\n    print(\"caught\", e)",
       "question": "What does this program print?",
       "options": [
-        "caught too low",
         "caught low",
+        "caught too low",
         "low caught",
         "caught Low"
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "why": "check(3) raises Low with the message low. except catches it, and e holds the message."
     },
     {
@@ -695,12 +1868,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "with open(\"t.txt\", \"w\") as f:\n    f.write(\"a\\nb\\n\")\nwith open(\"t.txt\") as f:\n    lines = f.readlines()\nprint(len(lines), lines[1].strip())",
       "question": "What does this program print?",
       "options": [
-        "2 b",
-        "3 b",
         "2 a",
-        "4"
+        "4",
+        "3 b",
+        "2 b"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "The file has two lines. readlines() gives a list of them, and strip() removes the line end from the second one."
     },
     {
@@ -710,10 +1883,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "options": [
         "1 3 2",
         "2 {'c': 3} 2",
-        "2 3 2",
-        "2 3 7"
+        "2 3 7",
+        "2 3 2"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "json.loads turns text into lists and dictionaries. data[\"a\"][1] is 2, data[\"b\"][\"c\"] is 3, and data has 2 keys."
     },
     {
@@ -721,12 +1894,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "import math\nprint(math.floor(3.7), math.ceil(3.2), round(2.5), round(3.5))",
       "question": "What does this program print?",
       "options": [
-        "3 4 2 4",
         "3 4 3 4",
+        "3 4 2 4",
         "3 4 2 3",
         "4 4 2 4"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "floor rounds down and ceil rounds up. Python's round() sends .5 to the nearest even number, so 2.5 becomes 2 and 3.5 becomes 4."
     },
     {
@@ -734,12 +1907,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "from collections import Counter\nc = Counter(\"banana\")\nprint(c[\"a\"], c.most_common(1))",
       "question": "What does this program print?",
       "options": [
-        "3 [('a', 3)]",
-        "0 [('i', 4)]",
         "2 [('a', 3)]",
-        "3 [('a', 3), ('n', 2)]"
+        "0 [('i', 4)]",
+        "3 [('a', 3), ('n', 2)]",
+        "3 [('a', 3)]"
       ],
-      "answerIndex": 0,
+      "answerIndex": 3,
       "why": "Counter counts each letter. a appears 3 times in banana, and most_common(1) gives the top one."
     },
     {
@@ -747,10 +1920,10 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def avg(xs):\n    return sum(xs) / len(xs)\ntry:\n    print(avg([]))\nexcept ZeroDivisionError:\n    print(\"empty\")\nprint(avg([2, 4]))",
       "question": "What does this program print?",
       "options": [
-        "empty\n3",
-        "empty\n3.0",
         "0\n3.0",
-        "empty\n3.5"
+        "empty\n3.0",
+        "empty\n3.5",
+        "empty\n3"
       ],
       "answerIndex": 1,
       "why": "avg([]) divides by 0 and fails, so except prints empty. The average of 2 and 4 is 3.0."
@@ -760,12 +1933,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "def gen(n):\n    for i in range(n):\n        yield i * 2\ng = gen(3)\nprint(next(g), next(g), list(g))",
       "question": "What does this program print?",
       "options": [
+        "0 2 [4, 6]",
         "0 2 4",
         "2 3 [4]",
-        "0 2 [4]",
-        "0 2 [4, 6]"
+        "0 2 [4]"
       ],
-      "answerIndex": 2,
+      "answerIndex": 3,
       "why": "yield gives one value at a time, and remembers where it stopped. The first two next() give 0 and 2. list(g) takes what is left: 4."
     },
     {
@@ -773,12 +1946,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "print(sorted({3: \"c\", 1: \"a\", 2: \"b\"}.items())[0], list(map(lambda x: x * 2, [1, 2, 3])), any(x > 2 for x in [1, 2, 3]), all(x > 2 for x in [1, 2, 3]))",
       "question": "What does this program print?",
       "options": [
+        "(3, 'c') [2, 4, 6] True False",
         "(1, 'a') [2, 4, 6] True False",
         "(1, 'a') [1, 4, 9] True False",
-        "(1, 'a') [2, 4, 6] False False",
-        "(3, 'c') [2, 4, 6] True False"
+        "(1, 'a') [2, 4, 6] False False"
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "why": "Sorted pairs start with key 1. map doubles each number. any is true when at least one is more than 2. all is true only when every one is."
     },
     {
@@ -786,12 +1959,12 @@ export const codeQuestions: Record<string, CodeQuestion[]> = {
       "code": "x = 3.14159\nprint(f\"{x:.2f}\", round(x, 1), f\"{42:05d}\", f\"{1234567:,}\")",
       "question": "What does this program print?",
       "options": [
-        "3.14 3 00042 1,234,567",
-        "3.14 3.1    42 1,234,567",
         "3.14 3.1 00042 1,234,567",
-        "3.142 3.1 00042 1,234,567"
+        "3.142 3.1 00042 1,234,567",
+        "3.14 3 00042 1,234,567",
+        "3.14 3.1    42 1,234,567"
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "why": ".2f keeps 2 digits after the point. 05d fills with zeros to width 5. , adds commas to a big number."
     }
   ]

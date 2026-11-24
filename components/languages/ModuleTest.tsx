@@ -6,6 +6,7 @@ import { CheckCircle2, CircleHelp, Code2, Loader2, Play, Send, XCircle } from "l
 import { CodeEditor } from "@/components/skillstudio/learn/CodeEditor";
 import { JUDGE_LANGUAGES, starterFor, type JudgeLanguage } from "@/lib/arena-challenges/leetcode/starters";
 import { MODULE_PASS_PCT, type ReviewItem } from "@/lib/languages/module-gate";
+import { ClaimCredential } from "@/components/credentials/ClaimCredential";
 import { QuestionList, ReviewList, type TestQuestion } from "@/components/languages/AssessmentView";
 import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
 import type { Dataset } from "@/lib/arena-workstations/engines/dataset";
@@ -41,7 +42,7 @@ async function call(method: "GET" | "POST", path: string, body?: unknown) {
 }
 
 /** A module's test: the assessment and, where the module has one, the problem. Both must pass to prove the module and open the next. */
-export function ModuleTest({ track, module, nextHref, nextLabel }: { track: string; module: string; nextHref: string; nextLabel: string }) {
+export function ModuleTest({ track, module, nextHref, nextLabel, finalModule }: { track: string; module: string; nextHref: string; nextLabel: string; /** set on the last module of the course: proving it proves the whole course, so the certificate is offered here and nowhere earlier */ finalModule?: { courseTitle: string } }) {
   const [data, setData] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -107,11 +108,19 @@ export function ModuleTest({ track, module, nextHref, nextLabel }: { track: stri
   const answered = data.questions.every((q) => answers[q.id] !== undefined);
   return (
     <div className="flex flex-col gap-5">
-      {proven && (
+      {proven && !finalModule && (
         <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#e8f5ee] p-5 text-[#0f5132]">
           <p className="flex items-center gap-2 text-[17px] font-bold"><CheckCircle2 size={20} aria-hidden />Module proven. The next module is open.</p>
           <Link href={nextHref} className="rounded-full bg-[var(--m-ink)] px-5 py-2.5 text-[14.5px] font-bold text-white">{nextLabel}</Link>
         </div>
+      )}
+      {proven && finalModule && (
+        <section role="status" aria-labelledby="final-h" className="rounded-2xl border-2 border-[#17784a] bg-[#e8f5ee] p-5 text-[#0f5132]">
+          <h2 id="final-h" className="flex items-center gap-2 font-lp-display text-[24px] font-bold"><CheckCircle2 size={22} aria-hidden />You have proven the whole {finalModule.courseTitle} course</h2>
+          <p className="mt-1 text-[14.5px]">Every module is proven: each one with a test and a coding problem. You can now claim your Capabilio certificate. It comes with a QR code, and a page where anyone you share it with can check the evidence.</p>
+          <div className="mt-3 rounded-xl bg-white p-4 text-[var(--m-ink)]"><ClaimCredential track={track} title={finalModule.courseTitle} /></div>
+          <p className="mt-3 text-[13.5px]"><Link href={nextHref} className="font-bold underline">{nextLabel}</Link></p>
+        </section>
       )}
       {error && <p role="alert" className="text-[14px] font-semibold text-red-700">{error}</p>}
 

@@ -1,0 +1,55 @@
+{
+  "key": "python-concurrency-interview",
+  "title": "Longest Run of Equal Values",
+  "statement": "You are given n integers. A run is a group of equal values that sit next to each other. Print the length of the longest run. Equal values that are not next to each other do not make one run.",
+  "inputFormat": "First line: the integer n. Second line: n integers separated by spaces.",
+  "outputFormat": "One integer: the length of the longest run of equal consecutive values.",
+  "constraints": [
+    "1 <= n <= 100000",
+    "-10^9 <= each value <= 10^9"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The runs are 1 1, then 2 2 2, then 3 3, then 1. The longest is 2 2 2, which has length 3.",
+    "The runs are 4, 5, 4 4, and 5 5. The longest length is 2. The 4 at the start does not join the later 4 4."
+  ],
+  "reference": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n    best = 0\n    cur = 0\n    prev = None\n    for x in a:\n        if prev is not None and x == prev:\n            cur += 1\n        else:\n            cur = 1\n            prev = x\n        if cur > best:\n            best = cur\n    print(best)\n\nmain()",
+  "tests": [
+    {
+      "input": "8\n1 1 2 2 2 3 3 1\n",
+      "output": "3\n"
+    },
+    {
+      "input": "6\n4 5 4 4 5 5\n",
+      "output": "2\n"
+    },
+    {
+      "input": "1\n42\n",
+      "output": "1\n"
+    },
+    {
+      "input": "5\n1 2 3 4 5\n",
+      "output": "1\n"
+    },
+    {
+      "input": "7\n-1 -1 -1 0 0 -1 -1\n",
+      "output": "3\n"
+    },
+    {
+      "input": "10\n5 5 1 5 5 1 5 5 5 1\n",
+      "output": "3\n"
+    },
+    {
+      "input": "6\n1 2 2 3 3 3\n",
+      "output": "3\n"
+    },
+    {
+      "input": "2\n1000000000 1000000000\n",
+      "output": "2\n"
+    },
+    {
+      "input": "3\n-1000000000 1000000000 1000000000\n",
+      "output": "2\n"
+    }
+  ]
+}

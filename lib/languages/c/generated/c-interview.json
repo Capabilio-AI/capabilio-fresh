@@ -1,0 +1,56 @@
+{
+  "key": "c-interview",
+  "title": "Longest Run of Equal Values",
+  "statement": "You are given n integers in a row. A run is a block of equal values that sit next to each other. Find the length of the longest run. Equal values that are not side by side do not join. This is a common interview question on arrays.",
+  "inputFormat": "The first line has n. The second line has n integers separated by spaces.",
+  "outputFormat": "Print one integer: the length of the longest run of equal consecutive values.",
+  "constraints": [
+    "1 <= n <= 100",
+    "Each value is between -1000000000 and 1000000000"
+  ],
+  "exampleCount": 2,
+  "explanations": [
+    "The values 2 2 2 form the longest run. It has length 3. The runs of 1 and 3 are shorter.",
+    "The first 7 7 has length 2. The last 7 7 7 has length 3. The lone 1 splits the 7s, so the answer is 3."
+  ],
+  "reference": "import sys\n\ndata = sys.stdin.read().split()\nn = int(data[0])\na = [int(x) for x in data[1:1 + n]]\nbest = 1\ncur = 1\nfor i in range(1, n):\n    if a[i] == a[i - 1]:\n        cur += 1\n    else:\n        cur = 1\n    best = max(best, cur)\nprint(best)",
+  "tests": [
+    {
+      "input": "8\n1 1 2 2 2 3 3 1\n",
+      "output": "3\n"
+    },
+    {
+      "input": "6\n7 7 1 7 7 7\n",
+      "output": "3\n"
+    },
+    {
+      "input": "1\n42\n",
+      "output": "1\n"
+    },
+    {
+      "input": "5\n9 9 9 9 9\n",
+      "output": "5\n"
+    },
+    {
+      "input": "6\n1 2 3 4 5 6\n",
+      "output": "1\n"
+    },
+    {
+      "input": "7\n-5 -5 0 0 0 -5 -5\n",
+      "output": "3\n"
+    },
+    {
+      "input": "6\n1000000000 1000000000 -1000000000 -1000000000 -1000000000 -1000000000\n",
+      "output": "4\n"
+    },
+    {
+      "input": "10\n2 2 3 3 3 4 4 4 4 1\n",
+      "output": "4\n"
+    },
+    {
+      "input": "100\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n",
+      "output": "100\n"
+    }
+  ],
+  "solutionC": "#include <stdio.h>\n\nint main(void)\n{\n    int n;\n    if (scanf(\"%d\", &n) != 1) {\n        return 0;\n    }\n    int prev = 0;\n    int cur = 0;\n    int best = 0;\n    for (int i = 0; i < n; i++) {\n        int x;\n        if (scanf(\"%d\", &x) != 1) {\n            return 0;\n        }\n        if (i > 0 && x == prev) {\n            cur++;\n        } else {\n            cur = 1;\n        }\n        if (cur > best) {\n            best = cur;\n        }\n        prev = x;\n    }\n    printf(\"%d\\n\", best);\n    return 0;\n}"
+}
