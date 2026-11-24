@@ -7,6 +7,7 @@ import { importTemplate } from "@/lib/roadmap-visual/template-store";
 import { importCareerExtras } from "@/lib/roadmap-visual/resource-import";
 import { draftRoadmap } from "./draft";
 import { isDomainOnly, profileIsNonIt, skillsForPrompt } from "./domain";
+import { certKind } from "./cert-kind";
 import { EXTRAS_TOOL_SCHEMA, ExtrasAnswer, REVIEW_TOOL_SCHEMA, ROADMAP_TOOL_SCHEMA, ReviewAnswer, RoadmapAnswer } from "./model";
 import { EXTRAS_SYSTEM, REVIEW_SYSTEM, ROADMAP_SYSTEM, extrasPrompt, reviewPrompt, roadmapPrompt } from "./prompts";
 import { publishGenerated } from "./publish";
@@ -130,7 +131,7 @@ export async function generateCareerRoadmap(service: Service, careerId: string, 
     const known = new Set(topicSkills);
     const onRoadmap = (names: string[]) => names.filter((n) => known.has(n));
     const projects = extras.value.projects.map((p) => ({ ...p, skills: onRoadmap(p.skills) })).filter((p) => p.skills.length > 0);
-    const proposedCerts = extras.value.certifications.map((c) => ({ ...c, skills: onRoadmap(c.skills) })).filter((c) => c.skills.length > 0);
+    const proposedCerts = extras.value.certifications.map((c) => ({ ...c, skills: onRoadmap(c.skills) })).filter((c) => c.skills.length > 0 && certKind(c) === "exam");
     const checks = await inBatches(proposedCerts, VERIFY_CONCURRENCY, (c) => verify({ name: c.name, provider: c.provider, url: c.url }));
     const certifications = proposedCerts.filter((_, i) => checks[i]);
     report.projects.proposed = extras.value.projects.length;
