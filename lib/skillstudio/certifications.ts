@@ -5,6 +5,7 @@ import { untyped } from "@/lib/org/db";
 import { loadCareerResources } from "@/lib/roadmap-visual/career-resources";
 import { safeUrl } from "@/lib/roadmap-visual/resources";
 import { factsFor, type CertFacts } from "./cert-facts";
+import { certKind, type CertKind } from "@/lib/roadmap-generate/cert-kind";
 
 export interface LearnLink { title: string; provider: string; url: string; hours: number | null }
 export interface CertCard {
@@ -14,6 +15,8 @@ export interface CertCard {
   /** the provider's own page: where to register */
   url: string | null;
   difficulty: string | null;
+  /** "exam" tests the student; "course" is only a completion certificate from a learning platform */
+  kind: CertKind;
   cost: string | null;
   exam: string | null;
   prerequisites: string | null;
@@ -60,7 +63,7 @@ export async function loadCertifications(service: SupabaseClient, userId: string
       const facts: CertFacts | null = factsFor(r.url);
       const learnIds = [...new Set((skillIdsOf.get(r.id) ?? []).flatMap((s) => itemsOfSkill.get(s) ?? []))].slice(0, LEARN_PER_CERT);
       return {
-        id: r.id, title: r.title, provider: r.provider, url: safeUrl(r.url), difficulty: r.difficulty,
+        id: r.id, title: r.title, provider: r.provider, url: safeUrl(r.url), difficulty: r.difficulty, kind: certKind({ provider: r.provider, url: r.url }),
         cost: row?.cost ?? facts?.cost ?? null,
         exam: row?.duration ?? facts?.exam ?? null,
         prerequisites: row?.eligibility ?? facts?.prerequisites ?? null,
@@ -68,7 +71,7 @@ export async function loadCertifications(service: SupabaseClient, userId: string
         skills: r.skills.map((name) => ({ name, level: levelOf.get(name) ?? null })),
         learn: learnIds.flatMap((id) => { const i = itemById.get(id); const url = i ? safeUrl(i.url) : null; return i && url ? [{ title: i.title, provider: i.provider, url, hours: i.estimated_hours === null ? null : Number(i.estimated_hours) }] : []; }),
       };
-    }),
+    }).sort((a, b) => Number(a.kind === "course") - Number(b.kind === "course")),
   }));
 }
 

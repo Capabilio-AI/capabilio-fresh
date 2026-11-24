@@ -17,7 +17,9 @@ function Card({ c }: { c: CertCard }) {
     <li className="flex flex-col gap-4 rounded-2xl border border-[var(--m-rule)] bg-white p-5">
       <div>
         <p className="flex flex-wrap items-center gap-2 text-[11.5px] font-bold uppercase tracking-wide text-[var(--m-muted)]">
-          {c.provider}{c.difficulty && <span className="rounded-full bg-[var(--m-ground)] px-2 py-0.5 text-[10.5px] text-[var(--m-ink)]">{DIFFICULTY[c.difficulty] ?? c.difficulty.toLowerCase()}</span>}
+          {c.provider}
+          <span className={c.kind === "exam" ? "rounded-full bg-[#e8f5ee] px-2 py-0.5 text-[10.5px] text-[#0f5132]" : "rounded-full bg-[#fdf1e3] px-2 py-0.5 text-[10.5px] text-[#8a4b08]"}>{c.kind === "exam" ? "Proctored exam" : "Course certificate, not an exam"}</span>
+          {c.difficulty && <span className="rounded-full bg-[var(--m-ground)] px-2 py-0.5 text-[10.5px] text-[var(--m-ink)]">{DIFFICULTY[c.difficulty] ?? c.difficulty.toLowerCase()}</span>}
         </p>
         <h3 className="mt-1 font-lp-display text-[19px] font-bold leading-snug text-[var(--m-ink)]">{c.title}</h3>
       </div>
@@ -66,7 +68,7 @@ export function CertCards({ sections }: { sections: CertSection[] }) {
       {sections.map((s) => (
         <section key={s.which} aria-labelledby={`cert-${s.which}`}>
           <h2 id={`cert-${s.which}`} className="font-lp-display text-[24px] font-bold text-[var(--m-ink)]">{s.which === "primary" ? `Certifications for ${s.careerName}` : `Certifications for ${s.careerName} (Plan B)`}</h2>
-          <p className="mb-4 mt-1 max-w-[75ch] text-[13.5px] text-app-muted">Each one is on your career roadmap. Learn it, earn it, and add the credential to your Vault. Prices and exam details are typical figures: they change by country and over time, so confirm on the official page before you pay.</p>
+          <p className="mb-4 mt-1 max-w-[75ch] text-[13.5px] text-app-muted">Each one is on your career roadmap. Proctored exams come first: they test your skill, which is what employers screen for. A course certificate only shows you finished a course. Prices and exam details are typical figures: they change by country and over time, so confirm on the official page before you pay.</p>
           <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">{s.certs.map((c) => <Card key={c.id} c={c} />)}</ul>
         </section>
       ))}

@@ -85,7 +85,8 @@ export function reviewPrompt(input: { career: PromptCareer; skills: string[] }):
 }
 
 export const EXTRAS_SYSTEM =`You recommend portfolio projects and professional certifications for engineering students in India. You answer only by calling the provided tool.
-Only recommend certifications you are certain exist, from the real provider, with the provider's real official URL. If you are not certain, leave it out: every link is machine-checked and unverifiable ones are dropped.`;
+Only recommend certifications you are certain exist, from the real provider, with the provider's real official URL. If you are not certain, leave it out: every link is machine-checked and unverifiable ones are dropped.
+Your goal is to raise the student's chance of being hired for this exact role. Certifications must TEST and MEASURE skill (a proctored or assessed exam from the vendor or professional body that hiring managers screen for). Course-completion certificates from learning platforms are never acceptable. Projects must be portfolio pieces a recruiter would open and be impressed by, never tutorial copies.`;
 
 /** Pure. How many projects and certifications a roadmap of this size deserves: more skills, more to build and more to earn. */
 export function extrasTargets(skillCount: number): { projects: [number, number]; certifications: [number, number] } {
@@ -100,8 +101,8 @@ export function extrasPrompt(input: { career: PromptCareer; skillNames: string[]
     `Career: "${input.career.name}".`,
     "",
     "RULES",
-    `- ${t.projects[0]} to ${t.projects[1]} projects, ordered from beginner to advanced, the last one a capstone that a hiring manager for this role would respect. Each is an original brief a student can build alone: title, difficulty, a description of what to build (2-3 sentences, using the tools employers expect for this role), 2-5 \`evidence\` items (concrete things a reviewer can check, like a repository, a deployed link, a test report, or drawings and photos for physical work), and 2-6 \`skills\`.`,
-    `- ${t.certifications[0]} to ${t.certifications[1]} certifications that employers in India recognise for this career: exact official name, provider, the official https URL of that certification's own page (not a homepage), difficulty, and 1-5 \`skills\`.`,
+    `- ${t.projects[0]} to ${t.projects[1]} projects, ordered from beginner to advanced, the last one a capstone that a hiring manager for this role would respect. Each is an original brief a student can build alone and put on a resume: title, difficulty, a description of what to build (2-3 sentences: a real problem, realistic data or constraints, and the tools job postings for this role ask for, so it reads like work done in the job and not like a classroom exercise), 2-5 \`evidence\` items (concrete things a reviewer can check: a repository with a README and results, a deployed link, a test or benchmark report, a measured outcome, or drawings, models and photos for physical work), and 2-6 \`skills\`. No to-do apps, tutorial clones or toy datasets unless the role truly starts there.`,
+    `- ${t.certifications[0]} to ${t.certifications[1]} certifications that employers in India recognise for this career and that are earned by passing an exam or assessment (vendor role credentials, industry or professional-body certifications, licences): exact official name, provider, the official https URL of that certification's own page (not a homepage), difficulty, and 1-5 \`skills\`. Do NOT include certificates from Coursera, Udemy, edX, NPTEL, LinkedIn Learning or similar course platforms. If the field has few exams, return fewer certifications rather than a course certificate.`,
     "- `skills` values must be copied EXACTLY from the list below. Every skill on the list should be covered by at least one project.",
     "",
     "SKILLS ON THIS CAREER'S ROADMAP",
