@@ -9,9 +9,9 @@ const skill = (id: string, status: PassportSkill["status"], practiceLevel: numbe
 describe("pickTarget", () => {
   const area = (id: string) => (id === "b" ? "rest-api" : null);
   it("prefers the skill already started and closest to a badge", () => {
-    const t = pickTarget([skill("a", "baseline", null), skill("b", "practising", 15), skill("c", "practising", 5)], area);
+    const t = pickTarget([skill("a", "baseline", null), skill("b", "practising", 9), skill("c", "practising", 3)], area);
     expect(t).toMatchObject({ skillId: "b", areaKey: "rest-api" });
-    expect(t!.progress).toBeCloseTo(15 / 20);
+    expect(t!.progress).toBeCloseTo(9 / 15); // the first badge (Foundation) starts at 15
   });
   it("then a skill only the assessment has seen, then anything untouched", () => {
     expect(pickTarget([skill("n", "not-assessed", null), skill("a", "baseline", null)], area)?.skillId).toBe("a");
