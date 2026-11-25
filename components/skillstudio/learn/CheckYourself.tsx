@@ -13,7 +13,9 @@ export interface Verdict { correct: boolean; answerIndex: number; why: string }
 /** A question as the page holds it. Where the answers must not reach the browser they are left out and `grade` asks the server instead. */
 export interface CheckItem { question: string; options: string[]; answerIndex?: number; why?: string }
 
-export function CheckYourself({ questions, id, onDone, grade, initial }: {
+export function CheckYourself({ questions, id, onDone, grade, initial, proveHref }: {
+  /** where the coding proof for this lesson lives (Arena); shown after the questions when the lesson has one */
+  proveHref?: string;
   questions: CheckItem[];
   id: string;
   onDone?: (right: number, total: number) => void;
@@ -84,8 +86,8 @@ export function CheckYourself({ questions, id, onDone, grade, initial }: {
         <p role="status" className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[var(--m-ground)] px-4 py-3 text-[14.5px] text-[var(--m-ink)]">
           <CircleCheck size={16} aria-hidden className="shrink-0" />
           <span className="ss-num font-bold">{right} of {questions.length} right.</span>
-          <span>{right === questions.length ? "Now prove it on real work in Arena." : "Go back over the parts you missed, then try again."}</span>
-          <Link href="/arena" className="font-bold text-[var(--m-accent-ink)] hover:underline">Open Arena</Link>
+          <span>{right === questions.length ? (proveHref ? "Now prove it with code in Arena." : "Well done.") : "Go back over the parts you missed, then try again."}</span>
+          {proveHref && <Link href={proveHref} className="font-bold text-[var(--m-accent-ink)] hover:underline">Prove it in Arena</Link>}
         </p>
       )}
     </section>

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Loader2 } from "lucide-react";
-import { planFromText, type PrepareState } from "@/app/(app)/arena/prepare/actions";
+import { planFromText, type PrepareState } from "@/app/(app)/arena/(gated)/prepare/actions";
 import type { PreparationView } from "@/lib/launchpad/prepare-server";
 import { PreparationPlan } from "./PreparationPlan";
 

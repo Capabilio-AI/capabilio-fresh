@@ -10,6 +10,11 @@ import { RoleBuildingBanner } from "@/components/arena/RoleBuildingBanner";
 import { ArenaSubNav } from "@/components/arena/ArenaSubNav";
 import { AreaHero, HeroStat } from "@/components/metro/AreaHero";
 import { LiveRefresh } from "@/components/live/LiveRefresh";
+import { ProveYourCourses } from "@/components/arena/ProveYourCourses";
+import { TRACKS } from "@/lib/languages";
+import { loadModuleProofs } from "@/lib/languages/module-proof";
+import { nextProof, type NextProof } from "@/lib/languages/next-proof";
+import { loadProgress } from "@/lib/languages/progress";
 
 export const metadata: Metadata = { title: "Arena | Capabilio AI", description: "Execute, compete, and prove your skills." };
 
@@ -24,6 +29,11 @@ export default async function ArenaHubPage() {
     getRoleTaskAvailability(service, user.id, stage === "student").catch((): RoleTaskAvailability => ({ state: "unknown" })),
   ]);
   const viewer = leaderboard.find((e) => e.isViewer);
+  // the next step to prove in each course the student has started; a problem reading it must never hide the rest of Arena
+  const courseProofs = (await Promise.all(TRACKS.map(async (t): Promise<NextProof | null> => {
+    const progress = await loadProgress(service, user.id, t.key).catch(() => ({}));
+    return Object.keys(progress).length === 0 ? null : nextProof(t, progress, await loadModuleProofs(service, user.id, t.key).catch(() => ({})));
+  }))).filter((x): x is NextProof => x !== null);
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,6 +47,8 @@ export default async function ArenaHubPage() {
       />
 
       {tasks.state === "building" && <RoleBuildingBanner careerName={tasks.careerName} />}
+
+      <ProveYourCourses items={courseProofs} />
 
       {profile && <SkillMatrix rows={profile.rows} level={profile.level} careerName={profile.careerName} />}
     </div>

@@ -35,7 +35,7 @@ export function LessonStudio({ track, lessonKey, title, minutes, lesson, analogy
           <ProvePanel track={track} lessonKey={lessonKey} lesson={lesson} example={examples[at] ?? null} step={step} onStep={setStep} stage={stage} onStage={setStage} initialAnswers={initialAnswers} />
         </div>
       </div>
-      <MasteryStrip step={step} next={next} moduleTest={moduleTest} />
+      <MasteryStrip step={step} next={next} moduleTest={moduleTest} proveHref={step.challenge !== "none" ? `/arena/prove/${track}/${lessonKey}` : undefined} />
     </div>
   );
 }

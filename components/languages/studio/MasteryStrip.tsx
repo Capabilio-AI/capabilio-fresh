@@ -8,11 +8,11 @@ import type { StepState } from "@/lib/languages/step-proof";
  * The strip along the bottom: how much of this step the learner has mastered, exactly what moves that number, and the way on. The next step opens only when the
  * server says this one is complete, so the button here is the same rule the server enforces, not a decoration.
  */
-export function MasteryStrip({ step, next, moduleTest }: { step: StepState; next: { href: string; title: string } | null; moduleTest: { href: string; moduleTitle: string } | null }) {
+export function MasteryStrip({ step, next, moduleTest, proveHref }: { step: StepState; proveHref?: string; next: { href: string; title: string } | null; moduleTest: { href: string; moduleTitle: string } | null }) {
   const m = stepMastery(step);
   const missing = [
     !step.checkDone ? `answer ${step.total - step.answered} more ${step.total - step.answered === 1 ? "question" : "questions"}` : null,
-    step.challenge === "open" ? "pass the coding challenge" : null,
+    step.challenge === "open" ? "pass the coding challenge in Arena" : null,
   ].filter((x): x is string => x !== null);
   return (
     <section aria-label="Your mastery of this step" className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-3xl border border-[var(--m-rule)] bg-white p-5">
@@ -33,7 +33,9 @@ export function MasteryStrip({ step, next, moduleTest }: { step: StepState; next
         ? (moduleTest
           ? <Link href={moduleTest.href} className="inline-flex items-center gap-2 rounded-xl bg-[var(--m-accent)] px-5 py-2.5 text-[14.5px] font-bold text-white">Take the {moduleTest.moduleTitle} test<ArrowRight size={15} aria-hidden /></Link>
           : next && <Link href={next.href} className="inline-flex items-center gap-2 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 text-[14.5px] font-bold text-white">Next: {next.title}<ArrowRight size={15} aria-hidden /></Link>)
-        : <span className="inline-flex items-center gap-2 rounded-xl bg-[var(--m-ground)] px-5 py-2.5 text-[14px] font-bold text-[var(--m-muted)]" aria-disabled="true">Next step is locked</span>}
+        : step.checkDone && step.challenge === "open" && proveHref
+          ? <Link href={proveHref} className="inline-flex items-center gap-2 rounded-xl bg-[var(--m-accent)] px-5 py-2.5 text-[14.5px] font-bold text-white">Prove it in Arena<ArrowRight size={15} aria-hidden /></Link>
+          : <span className="inline-flex items-center gap-2 rounded-xl bg-[var(--m-ground)] px-5 py-2.5 text-[14px] font-bold text-[var(--m-muted)]" aria-disabled="true">Next step is locked</span>}
     </section>
   );
 }
