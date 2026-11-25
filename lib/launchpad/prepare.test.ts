@@ -13,17 +13,17 @@ describe("buildPreparation", () => {
   it("turns each gap into an Arena step with an honest ticket estimate, weakest first", () => {
     const p = prep(["SQL", "Excel", "Statistics"]);
     expect(p.steps.map((s) => s.skill)).toEqual(["Statistics", "Excel"]);
-    // Arena adds about 25 levels per verified ticket: 60 from nothing is 3 tickets, 25 short is 1
-    expect(p.steps[0]).toMatchObject({ state: "unmeasured", ticketsNeeded: 3, level: null });
-    expect(p.steps[1]).toMatchObject({ state: "building", ticketsNeeded: 1, level: 35 });
+    // Arena adds about 3 levels per verified ticket: 60 from nothing is 20 tickets, 25 short is 9
+    expect(p.steps[0]).toMatchObject({ state: "unmeasured", ticketsNeeded: 20, level: null });
+    expect(p.steps[1]).toMatchObject({ state: "building", ticketsNeeded: 9, level: 35 });
     expect(p.steps[0].action).toEqual({ kind: "arena", areaKey: "statistics", areaName: "Statistics", href: "/arena/challenges/domain?focus=statistics" });
   });
 
   it("totals tickets, minutes and days at one ticket a day", () => {
     const p = prep(["SQL", "Excel", "Statistics"]);
-    expect(p.totalTickets).toBe(4);
-    expect(p.totalMinutes).toBe(4 * TYPICAL_TICKET_MINUTES);
-    expect(p.days).toBe(4);
+    expect(p.totalTickets).toBe(29);
+    expect(p.totalMinutes).toBe(29 * TYPICAL_TICKET_MINUTES);
+    expect(p.days).toBe(29);
   });
 
   it("sends a gap Arena cannot build to SkillStudio and gives no estimate for it", () => {

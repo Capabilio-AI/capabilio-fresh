@@ -1,6 +1,6 @@
 import type { EvidenceKind } from "@/lib/capability/read-model";
 import { levelLabel } from "@/lib/capability/matrix";
-import { ARENA_POINTS_PER_PASS, type EvidenceLine } from "@/lib/roadmap-visual/capability";
+import { ARENA_POINTS_PER_PASS, MAX_WITHOUT_INTERVIEW, proofCeiling, type EvidenceLine } from "@/lib/roadmap-visual/capability";
 
 /**
  * A badge is recognition of demonstrated work, never of a quiz answer or a claim. The initial assessment gives a baseline (where you start) and
@@ -13,24 +13,27 @@ export type BadgeLevel = (typeof BADGE_LEVELS)[number];
 export const PRACTICAL_KINDS: ReadonlySet<EvidenceKind> = new Set<EvidenceKind>(["ARENA", "PROJECT", "GITHUB", "MENTOR_EVALUATION"]);
 
 /**
- * Practice level (0-100) needed for each badge, and how many pieces of work must back it. A medium Arena task is worth 25 (easy 20, hard 30), so two
- * medium tasks make a Proficient badge. A badge is an achievement and does not fade: it is scored on the work as done, not as aged by capability.v2's
- * recency decay (how recent the work is shows separately, as `lastWorkAt`).
+ * Practice level (0-100) needed for each badge, and how many pieces of work must back it. A medium Arena task is worth 3 points (easy 2.4, hard 3.6), so a Foundation badge
+ * takes 5 pieces of work, Proficient 15 and Advanced 25: a recruiter reading a badge can trust it took repeated, real work. A badge is an achievement and does not fade: it is
+ * scored on the work as done, not as aged by the capability model's recency decay (how recent the work is shows separately, as `lastWorkAt`).
  */
 export const BADGE_RULES: Record<BadgeLevel, { from: number; items: number }> = {
-  Foundation: { from: 20, items: 1 },
-  Proficient: { from: 50, items: 2 },
-  Advanced: { from: 75, items: 3 },
+  Foundation: { from: 15, items: 5 },
+  Proficient: { from: 45, items: 15 },
+  Advanced: { from: 75, items: 25 },
 };
 
 /** Pure. The level of a set of evidence lines without ageing: Arena tasks add up by difficulty, other evidence is averaged, and the higher counts. */
-export function levelOfLines(lines: readonly EvidenceLine[]): number | null {
+export function levelOfLines(lines: readonly EvidenceLine[], depth = true): number | null {
   const arena = lines.filter((l) => l.kind === "ARENA");
   const rest = lines.filter((l) => l.kind !== "ARENA");
   const parts: number[] = [];
-  if (arena.length) parts.push(Math.min(100, arena.reduce((s, l) => s + ARENA_POINTS_PER_PASS * l.components.difficulty, 0)));
+  if (arena.length) parts.push(Math.min(MAX_WITHOUT_INTERVIEW, arena.reduce((s, l) => s + ARENA_POINTS_PER_PASS * l.components.difficulty, 0)));
   if (rest.length) parts.push(rest.reduce((s, l) => s + l.contribution, 0) / rest.length);
-  return parts.length ? Math.round(Math.max(...parts)) : null;
+  // depth caps what the evidence can show, the same rule the skill score uses
+  const verified = lines.filter((l) => l.verified);
+  const level = parts.length ? Math.max(...parts) : null;
+  return level === null ? null : Math.round(depth && verified.length ? Math.min(level, proofCeiling(verified.reduce((s, l) => s + l.components.difficulty, 0))) : level);
 }
 
 export function badgeLevelFor(level: number | null, items: number): BadgeLevel | null {
@@ -49,7 +52,7 @@ export interface Badge {
   skillId: string;
   name: string;
   level: BadgeLevel;
-  /** backed by a single piece of work so far */
+  /** still resting on few pieces of work (fewer than a Proficient badge asks for) */
   provisional: boolean;
   /** pieces of demonstrated work behind the badge */
   evidenceCount: number;
@@ -103,7 +106,7 @@ export function passportSkill(s: SkillInput): PassportSkill {
   const practical = s.lines.filter((l) => PRACTICAL_KINDS.has(l.kind));
   const baselineLines = s.lines.filter((l) => !PRACTICAL_KINDS.has(l.kind));
   const practiceLevel = levelOfLines(practical);
-  const baselineLevel = levelOfLines(baselineLines);
+  const baselineLevel = levelOfLines(baselineLines, false); // where the assessment started this skill: a measured start, not a proof, so depth does not cap it
   const level = badgeLevelFor(practiceLevel, practical.length);
   const evidence = [...s.lines].sort((a, b) => byDate(b, a)).map(toEvidence);
   const lastWorkAt = practical.map((l) => l.observedAt).filter((d): d is string => Boolean(d)).sort().at(-1) ?? null;
@@ -114,7 +117,7 @@ export function passportSkill(s: SkillInput): PassportSkill {
 
   if (level) {
     const dates = levelDates(practical);
-    return { ...base, status: "earned", next, badge: { skillId: s.skillId, name: s.name, level, provisional: practical.length < 2, evidenceCount: practical.length, earnedAt: dates[level] ?? null, levelDates: dates, evidence: practical.sort(byDate).reverse().map(toEvidence) } };
+    return { ...base, status: "earned", next, badge: { skillId: s.skillId, name: s.name, level, provisional: practical.length < BADGE_RULES.Proficient.items, evidenceCount: practical.length, earnedAt: dates[level] ?? null, levelDates: dates, evidence: practical.sort(byDate).reverse().map(toEvidence) } };
   }
   return { ...base, badge: null, next, status: practical.length > 0 ? "practising" : baselineLevel !== null ? "baseline" : "not-assessed" };
 }

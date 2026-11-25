@@ -6,6 +6,7 @@ import { badgeLevelFor, levelDates, passportSkill, passportSkills } from "./badg
 const NOW = new Date("2026-10-16T00:00:00Z");
 const day = (n: number) => new Date(NOW.getTime() - n * 86_400_000);
 const item = (kind: EvidenceKind, n: number, extra: Partial<EvidenceInput> = {}): EvidenceInput => ({ kind, level: kind === "ARENA" ? null : 80, observedAt: day(n), label: `${kind} ${n}`, difficulty: "medium", ...extra });
+const times = (n: number, make: (i: number) => EvidenceInput): EvidenceInput[] => Array.from({ length: n }, (_, i) => make(i));
 const skill = (id: string, items: EvidenceInput[]) => ({ skillId: id, name: id, lines: scoreSkill(items, NOW).lines });
 
 describe("badges come from demonstrated work only", () => {
@@ -19,53 +20,55 @@ describe("badges come from demonstrated work only", () => {
   it("courses, certificates and self-declared skills do not earn badges either", () => {
     for (const kind of ["LEARNING_MODULE", "COURSE_PERFORMANCE", "CERTIFICATION", "SELF_DECLARED"] as EvidenceKind[]) expect(passportSkill(skill("x", [item(kind, 3, { level: 90 })])).badge).toBeNull();
   });
-  it("one verified Arena task earns a provisional Foundation badge with a date", () => {
-    const s = passportSkill(skill("api", [item("ARENA", 4)]));
+  it("a few verified Arena tasks are not a badge yet: five pieces of work earn a provisional Foundation badge with a date", () => {
+    expect(passportSkill(skill("api", [item("ARENA", 4)])).badge).toBeNull();
+    const s = passportSkill(skill("api", times(5, (i) => item("ARENA", 10 - i))));
     expect(s.badge?.level).toBe("Foundation");
     expect(s.badge?.provisional).toBe(true);
-    expect(s.badge?.earnedAt).toBe(day(4).toISOString());
+    expect(s.badge?.earnedAt).toBe(day(6).toISOString());
   });
-  it("levels step up with more work: two tasks for Proficient, three for Advanced", () => {
-    expect(passportSkill(skill("a", [item("ARENA", 9), item("ARENA", 5)])).badge?.level).toBe("Proficient");
-    const adv = passportSkill(skill("a", [item("ARENA", 20), item("ARENA", 12), item("ARENA", 3, { difficulty: "hard" })]));
+  it("levels step up with real depth: 5 pieces of work for Foundation, 15 for Proficient, 25 for Advanced", () => {
+    expect(passportSkill(skill("a", times(15, (i) => item("ARENA", 30 - i)))).badge?.level).toBe("Proficient");
+    const adv = passportSkill(skill("a", times(25, (i) => item("ARENA", 60 - i, { difficulty: "hard" }))));
     expect(adv.badge?.level).toBe("Advanced");
     expect(adv.badge?.provisional).toBe(false);
   });
   it("records when each level was first reached", () => {
-    const lines = scoreSkill([item("ARENA", 30), item("ARENA", 20), item("ARENA", 10)], NOW).lines;
+    const lines = scoreSkill(times(25, (i) => item("ARENA", 100 - i * 2)), NOW).lines;
     const dates = levelDates(lines);
-    expect(dates.Foundation).toBe(day(30).toISOString());
-    expect(dates.Proficient).toBe(day(20).toISOString());
-    expect(dates.Advanced).toBe(day(10).toISOString());
+    expect(dates.Foundation).toBe(day(92).toISOString()); // the 5th piece of work
+    expect(dates.Proficient).toBe(day(72).toISOString()); // the 15th
+    expect(dates.Advanced).toBe(day(52).toISOString()); // the 25th
   });
   it("a project or GitHub evidence counts as work; the baseline stays separate", () => {
-    const s = passportSkill(skill("py", [item("ASSESSMENT", 40, { level: 70 }), item("PROJECT", 6, { level: 80 }), item("GITHUB", 2, { level: 75 })]));
-    expect(s.badge?.level).toBe("Proficient");
+    const s = passportSkill(skill("py", [item("ASSESSMENT", 40, { level: 70 }), ...times(5, (i) => item(i % 2 ? "PROJECT" : "GITHUB", 6 - i, { level: 80 }))]));
+    expect(s.badge?.level).toBe("Foundation");
     expect(s.baselineLevel).toBe(70);
-    expect(s.practiceCount).toBe(2);
-    expect(s.badge?.evidence.map((e) => e.kind).sort()).toEqual(["GITHUB", "PROJECT"]);
+    expect(s.practiceCount).toBe(5);
+    expect([...new Set(s.badge?.evidence.filter((e) => e.kind !== "ASSESSMENT").map((e) => e.kind))].sort()).toEqual(["GITHUB", "PROJECT"]);
   });
   it("says what the next badge needs, and 'practising' when work is too old or too thin to count", () => {
     const s = passportSkill(skill("api", [item("ARENA", 4)]));
-    expect(s.next).toEqual({ level: "Proficient", moreItems: 1, morePoints: expect.any(Number) });
+    expect(s.next).toEqual({ level: "Foundation", moreItems: 4, morePoints: expect.any(Number) });
     const thin = passportSkill(skill("api", [item("PROJECT", 5, { level: 10 })]));
     expect(thin.badge).toBeNull();
     expect(thin.status).toBe("practising");
   });
   it("an earned badge does not fade as the work ages, but the date of the last work is kept", () => {
-    const old = passportSkill(skill("api", [item("ARENA", 900)]));
+    const old = passportSkill(skill("api", times(5, (i) => item("ARENA", 900 - i))));
     expect(old.badge?.level).toBe("Foundation");
-    expect(old.lastWorkAt).toBe(day(900).toISOString());
+    expect(old.lastWorkAt).toBe(day(896).toISOString());
   });
   it("needs both enough points and enough pieces of work", () => {
-    expect(badgeLevelFor(80, 1)).toBe("Foundation");
-    expect(badgeLevelFor(80, 2)).toBe("Proficient");
-    expect(badgeLevelFor(80, 3)).toBe("Advanced");
-    expect(badgeLevelFor(19, 5)).toBeNull();
+    expect(badgeLevelFor(80, 5)).toBe("Foundation");
+    expect(badgeLevelFor(80, 15)).toBe("Proficient");
+    expect(badgeLevelFor(80, 25)).toBe("Advanced");
+    expect(badgeLevelFor(80, 4)).toBeNull();
+    expect(badgeLevelFor(14, 30)).toBeNull();
     expect(badgeLevelFor(null, 5)).toBeNull();
   });
   it("orders earned badges first, then practising, baseline and not assessed", () => {
-    const out = passportSkills([skill("none", []), skill("base", [item("ASSESSMENT", 3)]), skill("earned", [item("ARENA", 3)]), skill("adv", [item("ARENA", 9), item("ARENA", 6), item("ARENA", 2, { difficulty: "hard" })])]);
+    const out = passportSkills([skill("none", []), skill("base", [item("ASSESSMENT", 3)]), skill("earned", times(5, (i) => item("ARENA", 10 - i))), skill("adv", times(25, (i) => item("ARENA", 50 - i, { difficulty: "hard" })))]);
     expect(out.map((s) => [s.name, s.status])).toEqual([["adv", "earned"], ["earned", "earned"], ["base", "baseline"], ["none", "not-assessed"]]);
   });
 });

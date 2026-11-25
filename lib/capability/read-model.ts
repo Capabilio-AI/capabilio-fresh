@@ -8,7 +8,7 @@ import type { Database } from "@/lib/supabase/types";
 import { untyped } from "@/lib/org/db";
 import { loadSkillIndex } from "@/lib/skills/store";
 import { resolveSkill } from "@/lib/skills/resolve";
-import { scoreSkill, type Difficulty, type EvidenceInput, type SkillScore } from "@/lib/roadmap-visual/capability";
+import { ARENA_POINTS_PER_PASS, MAX_WITHOUT_INTERVIEW, scoreSkill, type Difficulty, type EvidenceInput, type SkillScore } from "@/lib/roadmap-visual/capability";
 
 export type EvidenceKind = "ASSESSMENT" | "ARENA" | "PROJECT" | "COURSE_PERFORMANCE" | "CERTIFICATION" | "MENTOR_EVALUATION" | "GITHUB" | "LEARNING_MODULE" | "SELF_DECLARED";
 export interface SkillCapability extends Pick<SkillScore, "confidence" | "verified" | "verifiedLevel" | "selfDeclaredLevel" | "breakdown" | "lines" | "formula" | "evidenceCount"> {
@@ -17,14 +17,14 @@ export interface SkillCapability extends Pick<SkillScore, "confidence" | "verifi
   level: number | null;
 }
 
-/** Arena: each verified task is worth 25 points of level, so 4 verified tasks = 100. */
-export const ARENA_LEVEL_PER_VERIFIED = 25;
+/** Arena: each verified task is worth 3 points of level (30 tasks = 90), the same constant the scoring model uses. */
+export const ARENA_LEVEL_PER_VERIFIED = ARENA_POINTS_PER_PASS;
 /** A self-declared skill can never show above this, and carries no confidence of its own. */
 export const SELF_DECLARED_MAX_LEVEL = 40;
 /** capabilities.confidence (low/medium/high) as a number. */
 export const CONFIDENCE_VALUE = { low: 0.4, medium: 0.7, high: 0.9 } as const;
 
-export const arenaLevel = (verifiedCount: number): number => Math.min(100, Math.max(0, verifiedCount) * ARENA_LEVEL_PER_VERIFIED);
+export const arenaLevel = (verifiedCount: number): number => Math.min(MAX_WITHOUT_INTERVIEW, Math.max(0, verifiedCount) * ARENA_LEVEL_PER_VERIFIED);
 export const arenaConfidence = (verifiedCount: number): number => (verifiedCount >= 3 ? 0.9 : verifiedCount === 2 ? 0.7 : verifiedCount === 1 ? 0.5 : 0);
 
 export function kindOfSource(source: string | null | undefined): EvidenceKind {

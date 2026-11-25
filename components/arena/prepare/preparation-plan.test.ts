@@ -21,7 +21,7 @@ describe("PreparationPlan", () => {
     const out = html(["SQL", "Excel", "Statistics", "Power BI"]);
     expect(out).toContain("Your preparation for Data Analyst, Acme");
     expect(out).toContain("% match today");
-    expect(out).toContain("3 Arena tickets");
+    expect(out).toContain("29 Arena tickets");
     expect(out).toContain("12 minutes each");
     expect(out).toContain("/arena/challenges/domain?focus=statistics");
     expect(out).toContain("Practise Statistics in Arena");

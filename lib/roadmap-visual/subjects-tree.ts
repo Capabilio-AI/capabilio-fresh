@@ -31,7 +31,7 @@ const CAPTION = { COMPLETED: "Completed", CURRENT: "This semester", UPCOMING: "C
 function node(over: Partial<GraphNode> & Pick<GraphNode, "key" | "type" | "title">): GraphNode {
   return {
     id: over.key, parentKey: null, description: "", stage: "FOUNDATION", side: "CENTER", importance: "RECOMMENDED", skill: null, target: null, level: null, confidence: null,
-    verified: false, status: "NOT_ASSESSED", userState: null, skipReason: null, progress: null, evidenceCoverage: null, topics: 0, assessedTopics: 0, needsCheck: null, locked: false,
+    verified: false, proofs: 0, status: "NOT_ASSESSED", userState: null, skipReason: null, progress: null, evidenceCoverage: null, topics: 0, assessedTopics: 0, needsCheck: null, locked: false,
     coverage: null, practice: { arena: 0, projects: 0, certifications: 0, learning: 0 }, prerequisites: [], unlocks: [], resource: null, box: { x: 0, y: 0, w: 0, h: 0 }, ...over,
   };
 }

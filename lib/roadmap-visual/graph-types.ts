@@ -99,6 +99,8 @@ export interface GraphNode {
   level: number | null;
   confidence: number | null;
   verified: boolean;
+  /** how many verified pieces of evidence back this topic (learning a lesson is not one) */
+  proofs: number;
   status: NodeStatus;
   userState: UserNodeState;
   skipReason: string | null;
