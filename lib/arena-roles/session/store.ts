@@ -48,5 +48,7 @@ export interface SessionStore {
   events(sessionId: string): Promise<unknown[]>;
   saveReport(sessionId: string, rubricVersion: string, report: unknown): Promise<void>;
   report(sessionId: string, rubricVersion: string): Promise<unknown | null>;
+  /** the spec keys of this student's finished sessions in this role */
+  finishedSpecKeys(userId: string, roleKey: string): Promise<string[]>;
   closeSession(sessionId: string, status: Exclude<SessionStatus, "open">): Promise<void>;
 }

@@ -32,6 +32,12 @@ export function supabaseSessionStore(service: SupabaseClient<Database>): Session
       return data ? toSession(data as SessionDb) : null;
     },
 
+    async finishedSpecKeys(userId, roleKey) {
+      const { data, error } = await db.from("arena_proof_sessions").select("spec_key").eq("user_id", userId).eq("role_key", roleKey).eq("status", "finished");
+      fail(error, "load finished sessions");
+      return [...new Set(((data ?? []) as { spec_key: string }[]).map((r) => r.spec_key))];
+    },
+
     async hasOpenDailyTicket(userId, roleKey) {
       const { data, error } = await db.from("arena_domain_assignments").select("id").eq("user_id", userId).eq("role_key", roleKey).is("completed_at", null).is("proof_session_id", null).order("id").limit(1);
       fail(error, "check daily ticket");

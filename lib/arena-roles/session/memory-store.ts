@@ -14,6 +14,9 @@ export function memoryStore(opts: { openDailyTicket?: (userId: string, roleKey: 
     async openSession(userId, roleKey) {
       return sessions.find((s) => s.userId === userId && s.roleKey === roleKey && s.status === "open") ?? null;
     },
+    async finishedSpecKeys(userId, roleKey) {
+      return [...new Set(sessions.filter((s) => s.userId === userId && s.roleKey === roleKey && s.status === "finished").map((s) => s.specKey))];
+    },
     async hasOpenDailyTicket(userId, roleKey) {
       return opts.openDailyTicket?.(userId, roleKey) ?? false;
     },

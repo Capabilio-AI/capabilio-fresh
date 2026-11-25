@@ -12,8 +12,9 @@ describe("tier proof set", () => {
   it("returns fewer when the bank is short, so the caller can refuse instead of passing", () => {
     expect(pickBySeed(["a", "b"], "s", 4)).toHaveLength(2);
   });
-  it("makes higher tiers harder and keeps four problems each", () => {
-    for (const t of [1, 2, 3, 4] as const) expect(proofMix(t)).toHaveLength(4);
+  it("makes higher tiers harder: four problems each, and eight in the final year", () => {
+    for (const t of [1, 2, 3] as const) expect(proofMix(t)).toHaveLength(4);
+    expect(proofMix(4)).toHaveLength(8);
     expect(proofMix(1).every((d) => d === "easy")).toBe(true);
     expect(proofMix(4).filter((d) => d === "hard").length).toBeGreaterThan(proofMix(2).filter((d) => d === "hard").length);
   });
