@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { gateModules, pathProven, walkOrder } from "./sequence";
 import type { LearningModule, ModuleTopic } from "./modules";
 
-const topic = (key: string, p: Partial<ModuleTopic> = {}): ModuleTopic => ({ key, title: key, description: "", userState: null, level: null, target: 70, status: "NOT_ASSESSED", learning: 0, provable: true, ...p });
+const topic = (key: string, p: Partial<ModuleTopic> = {}): ModuleTopic => ({ key, title: key, description: "", userState: null, level: null, target: 70, status: "NOT_ASSESSED", learning: 0, provable: true, proofs: 0, ...p });
 const mod = (key: string, position: number, topics: ModuleTopic[], p: Partial<LearningModule> = {}): LearningModule => ({
   key, position, title: key, description: "", stage: "CORE", focus: false, progress: null, assessed: 0, topics, practice: { arena: 0, projects: 0, certifications: 0, learning: 0 }, ...p,
 });
-const met = (key: string) => topic(key, { status: "TARGET_MET", level: 80 });
+const met = (key: string) => topic(key, { status: "TARGET_MET", level: 80, proofs: 3 });
 const gates = (ms: LearningModule[]) => Object.fromEntries([...gateModules(ms)].map(([k, v]) => [k, v.gate]));
 
 describe("module gate", () => {

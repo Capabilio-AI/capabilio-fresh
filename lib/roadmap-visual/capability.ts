@@ -7,17 +7,24 @@
  *     difficulty:   easy 0.8, medium 1, hard 1.2 (1 when unknown)
  *
  *   snapshotLevel = Σ weight × level / Σ weight        over assessments, projects, certifications, course performance, mentor evaluations, ...
- *   practiceLevel = min(100, Σ 25 × recency × difficulty)  over verified Arena passes (practice accumulates; each fresh medium pass is worth 25)
- *   level         = the higher of the two that exist, or NULL when there is no evidence at all (never 0, never "verified")
+ *   practiceLevel = Σ 3 × recency × difficulty          over verified Arena passes (each fresh medium pass is worth 3 points)
+ *   ceiling       = min(90, 3 × Σ weight of VERIFIED evidence): depth. One proof cannot show a skill; about 30 recent medium proofs reach 90.
+ *   level         = min(ceiling, the higher of the two that exist), or a self-declared level (at most 40); NULL when there is no evidence at all
+ *   100           = reserved for a verified interview with a live challenge. Until that exists nothing shows above 90.
+ *   Learning a lesson is not proof: learning-module items carry no weight.
  *   confidence    = (1 − e^(−0.8 × Σ weight)) × (0.85 + 0.15 × min(1, (distinct verified kinds − 1) / 2)), at most 0.95;
  *                   a self-declared-only skill has at most 0.2
  */
 import type { EvidenceKind } from "@/lib/capability/read-model";
 
-export const FORMULA_VERSION = "capability.v2";
+export const FORMULA_VERSION = "capability.v3";
 export const SELF_DECLARED_CAP = 40;
 export const SELF_DECLARED_WEIGHT = 0.25;
-export const ARENA_POINTS_PER_PASS = 25;
+/** Proofs for a full all-round skill, and the points each is worth (3 x 30 = 90). The last 10 are for the verified interview with a live challenge. */
+export const MASTERY_PROOFS = 30;
+export const MAX_WITHOUT_INTERVIEW = 90;
+export const POINTS_PER_PROOF = MAX_WITHOUT_INTERVIEW / MASTERY_PROOFS;
+export const ARENA_POINTS_PER_PASS = POINTS_PER_PROOF;
 const MIN_RECENCY = 0.25;
 const UNDATED_RECENCY = 0.5;
 const CONFIDENCE_RATE = 0.8;
@@ -99,19 +106,28 @@ function lineFor(item: EvidenceInput, now: Date): EvidenceLine {
   };
 }
 
+/** Pure. How deep the verified evidence is: 3 points for each fresh, medium proof, never above 90. One proof, or a few, can never show a whole skill. */
+export const proofCeiling = (verifiedWeight: number): number => Math.min(MAX_WITHOUT_INTERVIEW, POINTS_PER_PROOF * Math.max(0, verifiedWeight));
+
 function levelOf(lines: EvidenceLine[]): { level: number | null; snapshot: number | null; practice: number | null } {
   const snap = lines.filter((l) => l.kind !== "ARENA");
   const practice = lines.filter((l) => l.kind === "ARENA");
   const w = snap.reduce((n, l) => n + l.weight, 0);
   const snapshot = snap.length && w > 0 ? snap.reduce((n, l) => n + l.weight * l.contribution, 0) / w : null;
-  const practiceLevel = practice.length ? Math.min(100, practice.reduce((n, l) => n + l.contribution, 0)) : null;
+  const practiceLevel = practice.length ? Math.min(MAX_WITHOUT_INTERVIEW, practice.reduce((n, l) => n + l.contribution, 0)) : null;
   const parts = [snapshot, practiceLevel].filter((v): v is number => v !== null);
-  return { level: parts.length ? Math.round(Math.max(...parts)) : null, snapshot: snapshot === null ? null : round1(snapshot), practice: practiceLevel === null ? null : round1(practiceLevel) };
+  // depth caps what verified evidence can show; a self-declared claim has its own cap and is not capped by depth
+  const verified = lines.filter((l) => l.verified);
+  const ceiling = proofCeiling(verified.reduce((n, l) => n + l.weight, 0));
+  const raw = parts.length ? Math.max(...parts) : null;
+  const level = raw === null ? null : verified.length ? Math.min(raw, ceiling) : raw;
+  return { level: level === null ? null : Math.round(level), snapshot: snapshot === null ? null : round1(snapshot), practice: practiceLevel === null ? null : round1(practiceLevel) };
 }
 
 /** Pure. Scores one skill from its evidence. No evidence -> level null. */
 export function scoreSkill(items: EvidenceInput[], now: Date = new Date()): SkillScore {
-  const lines = items.map((i) => lineFor(i, now)).sort((a, b) => (b.observedAt ?? "").localeCompare(a.observedAt ?? ""));
+  // having learned something is not proof of it: learning-module items never count
+  const lines = items.filter((i) => i.kind !== "LEARNING_MODULE").map((i) => lineFor(i, now)).sort((a, b) => (b.observedAt ?? "").localeCompare(a.observedAt ?? ""));
   const all = levelOf(lines);
   const verifiedLines = lines.filter((l) => l.verified);
   const verifiedLevel = verifiedLines.length ? levelOf(verifiedLines).level : null;
@@ -141,5 +157,6 @@ export function scoreSkill(items: EvidenceInput[], now: Date = new Date()): Skil
 /** The formula in plain words, for the "Why this score" panel (kept next to the code that implements it). */
 export const FORMULA_TEXT =
   "Each piece of evidence counts in proportion to how verified it is, how recent it is and how hard it was. " +
-  "Assessments, projects and similar results are averaged by that weight; Arena passes add up (each recent medium pass is worth 25). " +
-  "Your level is the higher of the two. A self-declared claim counts for a quarter and never shows above 40. With no evidence there is no level.";
+  "Assessments, projects and similar results are averaged by that weight; Arena passes add up (each recent medium pass is worth 3 points). " +
+  "Your level is the higher of the two, but never more than the depth of your proof allows: about 30 recent proofs reach 90, and 100 is for a verified interview with a live challenge. " +
+  "Learning a lesson is not proof. A self-declared claim counts for a quarter and never shows above 40. With no evidence there is no level.";

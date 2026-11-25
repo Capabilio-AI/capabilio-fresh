@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { courseState, courseStats, filterCourses, neighbours, nextPick, overall, recommended } from "./catalog";
 import type { LearningModule, ModuleTopic } from "./modules";
 
-const topic = (key: string, p: Partial<ModuleTopic> = {}): ModuleTopic => ({ key, title: key, description: "", userState: null, level: null, target: 70, status: "NOT_ASSESSED", learning: 0, provable: true, ...p });
+const topic = (key: string, p: Partial<ModuleTopic> = {}): ModuleTopic => ({ key, title: key, description: "", userState: null, level: null, target: 70, status: "NOT_ASSESSED", learning: 0, provable: true, proofs: 0, ...p });
 const mod = (key: string, topics: ModuleTopic[], p: Partial<LearningModule> = {}): LearningModule => ({
   key, position: 0, title: key, description: "", stage: "CORE", focus: false, progress: null, assessed: 0, topics, practice: { arena: 0, projects: 0, certifications: 0, learning: 0 }, ...p,
 });

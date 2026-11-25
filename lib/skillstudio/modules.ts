@@ -16,6 +16,8 @@ export interface ModuleTopic {
   learning: number;
   /** something can prove this topic (Arena challenges, projects or certifications are linked to it); a topic nothing can prove yet never blocks the next module */
   provable: boolean;
+  /** verified proofs behind this topic; the course gate asks for PATH_PROOFS of them */
+  proofs: number;
 }
 export interface LearningModule {
   key: string;
@@ -57,7 +59,7 @@ export function modulesFromGraph(graph: RoadmapGraph): ModulesView {
     return {
       key: g.key, position, title: g.title, description: g.description, stage: g.stage, focus: year === null || focusStages.has(g.stage),
       progress: g.progress, assessed: topics.filter((t) => t.level !== null).length,
-      topics: topics.map((t) => ({ key: t.key, title: t.title, description: t.description, userState: t.userState, level: t.level, target: t.target, status: t.status, learning: t.practice.learning, provable: t.practice.arena + t.practice.projects + t.practice.certifications > 0 })),
+      topics: topics.map((t) => ({ key: t.key, title: t.title, description: t.description, userState: t.userState, level: t.level, target: t.target, status: t.status, learning: t.practice.learning, provable: t.practice.arena + t.practice.projects + t.practice.certifications > 0, proofs: t.proofs })),
       practice: topics.reduce((a, t) => ({ arena: a.arena + t.practice.arena, projects: a.projects + t.practice.projects, certifications: a.certifications + t.practice.certifications, learning: a.learning + t.practice.learning }), { arena: 0, projects: 0, certifications: 0, learning: 0 }),
     };
   });

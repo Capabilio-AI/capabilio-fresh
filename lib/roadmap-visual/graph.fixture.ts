@@ -19,8 +19,11 @@ export const EDGES: GraphContext["edges"] = [{ from: "sql", to: "joins", type: "
 
 const ev = (kind: EvidenceInput["kind"], level: number | null, over: Partial<EvidenceInput> = {}): EvidenceInput => ({ kind, level, observedAt: NOW, label: kind, ...over });
 
-export function makeContext(over: Partial<GraphContext> = {}, inputs: Record<string, EvidenceInput[]> = {}): GraphContext {
-  const evidence = new Map(Object.entries(inputs));
+/** These tests are about how the graph reads a skill, not about how deep proof must be: each item given stands for a deep body of evidence, so its stated level shows as it is (capability.v3 would otherwise hold one proof to 3 points). */
+const deep = (list: EvidenceInput[]): EvidenceInput[] => list.flatMap((i) => Array.from({ length: 30 }, () => i));
+
+export function makeContext(over: Partial<GraphContext> = {}, inputs: Record<string, EvidenceInput[]> = {}, opts: { deep?: boolean } = {}): GraphContext {
+  const evidence = new Map(Object.entries(inputs).map(([k, v]) => [k, opts.deep === false ? v : deep(v)]));
   return {
     career: { id: "c1", key: "data-analyst", name: "Data Analyst" }, template: { id: "t1", version: 1, title: "Data Analyst roadmap", publishedAt: "2026-10-07" },
     nodes: NODES, edges: EDGES,

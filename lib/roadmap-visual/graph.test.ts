@@ -86,11 +86,13 @@ describe("explainNode", () => {
   const dbms = course("dbms", { year: 3, links: [{ skillId: "s-joins", tier: "INFERRED", confidence: 0.9, level: "UNIT", unitId: "dbms-u1" }, { skillId: "s-joins", tier: "INFERRED", confidence: 0.9, level: "OUTCOME", outcomeId: "dbms-o1" }] });
   const ctx = makeContext(
     { curriculum: { state: "PUBLISHED", courses: [dbms, course("x"), course("y")], versionNo: 2, regulation: "R23", branch: "cse" }, resources: { bySkill: new Map([["s-joins", [resource({ id: "f1" }), resource({ id: "p1", tier: "PREMIUM", type: "COURSE", title: "Paid course" }), resource({ id: "a1", kind: "ARENA", title: "SQL ticket", difficulty: "medium", url: "/arena/challenges/domain" })]]]), byNode: new Map() } },
-    { "s-joins": [{ kind: "ASSESSMENT", level: 20, observedAt: new Date("2026-10-01"), label: "Assessment" }] }
+    { "s-joins": [{ kind: "ASSESSMENT", level: 20, observedAt: new Date("2026-10-01"), label: "Assessment" }] },
+    { deep: false } // one real piece of evidence, so the explanation shows the depth rule at work
   );
   const joins = explainNode(ctx, "joins")!;
   it("explains the score with formula, evidence, target and its source", () => {
-    expect(joins.score).toMatchObject({ level: 20, noEvidence: false, target: { level: 60 } });
+    // one assessment is one proof: a score of 20 shows as 3 points of depth
+    expect(joins.score).toMatchObject({ level: 3, noEvidence: false, target: { level: 60 } });
     expect(joins.score!.evidence).toHaveLength(1);
     expect(joins.score!.formula.text).toMatch(/Each piece of evidence counts/);
     const sql = explainNode(ctx, "sql")!;
@@ -107,8 +109,8 @@ describe("explainNode", () => {
     expect(explainNode(ctx, "stats")!.resources).toEqual({ free: [], premium: [], none: true });
   });
   it("offers a what-if only when the practice would really raise the level", () => {
-    expect(joins.whatIf).toEqual([expect.objectContaining({ kind: "ARENA", resourceId: "a1", from: 20 })]);
-    expect(joins.whatIf[0].to).toBe(25);
+    expect(joins.whatIf).toEqual([expect.objectContaining({ kind: "ARENA", resourceId: "a1", from: 3 })]);
+    expect(joins.whatIf[0].to).toBe(6);
   });
   it("lists prerequisites and what it unlocks, and warns when skipping something others depend on", () => {
     expect(joins.prerequisites.map((p) => p.key)).toEqual(["sql"]);

@@ -25,7 +25,7 @@ export function PreparationPlan({ view }: { view: PreparationView }) {
         <>
           <p className="mt-5 rounded-2xl bg-[var(--m-accent-soft)] px-4 py-3 font-lp-body text-[14px] font-semibold text-[var(--m-accent-ink)]">
             {p.totalTickets > 0
-              ? `About ${p.totalTickets} Arena ticket${p.totalTickets === 1 ? "" : "s"}, roughly ${hours(p.totalMinutes)} of work (${TYPICAL_TICKET_MINUTES} minutes each). At one ticket a day that is about ${p.days} day${p.days === 1 ? "" : "s"}.`
+              ? `About ${p.totalTickets} Arena ticket${p.totalTickets === 1 ? "" : "s"}, ${hours(p.totalMinutes)} of work (${TYPICAL_TICKET_MINUTES} minutes each). At one ticket a day that is about ${p.days} day${p.days === 1 ? "" : "s"}.`
               : "These skills are built in SkillStudio, so there is no ticket estimate."}
           </p>
           <ol className="mt-5 flex flex-col gap-3">

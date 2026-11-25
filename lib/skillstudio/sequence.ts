@@ -2,8 +2,8 @@ import type { Stage } from "@/lib/roadmap-visual/graph-types";
 import type { LearningModule, ModuleTopic } from "./modules";
 
 /**
- * The path is walked one module at a time. A module is PROVEN when every topic that can be proven (it has Arena challenges, projects or certifications behind it) has reached
- * its target on evidence; the next module opens only then. A topic nothing can prove yet never blocks anyone, and neither does a topic the student skipped count as proof:
+ * The path is walked one module at a time. A module is PROVEN when every topic that can be proven (it has Arena challenges, projects or certifications behind it) has PATH_PROOFS
+ * verified proofs, which is far fewer than the 30 a full skill needs: the next module opens after a first real proof and the student keeps proving as they go. A topic nothing can prove yet never blocks anyone, and neither does a topic the student skipped count as proof:
  * only evidence opens the next module. Pure, so the page and the server pages apply one rule.
  */
 const STAGE_ORDER: Stage[] = ["FOUNDATION", "CORE", "SPECIALIZATION", "JOB_READY"];
@@ -15,7 +15,10 @@ export interface GateInfo { gate: ModuleGate; /** the module that must be proven
 export const walkOrder = (modules: readonly LearningModule[]): LearningModule[] =>
   [...modules].sort((a, b) => STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage) || a.position - b.position);
 
-const toProve = (m: LearningModule): ModuleTopic[] => m.topics.filter((t) => t.provable && t.status !== "TARGET_MET");
+/** Verified proofs a topic needs before the next module opens. A skill is only complete much later (30 proofs, then the interview). */
+export const PATH_PROOFS = 3;
+
+const toProve = (m: LearningModule): ModuleTopic[] => m.topics.filter((t) => t.provable && t.proofs < PATH_PROOFS);
 
 export function gateModules(modules: readonly LearningModule[]): Map<string, GateInfo> {
   const out = new Map<string, GateInfo>();
