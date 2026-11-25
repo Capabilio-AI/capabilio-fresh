@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, Award, Check, FolderKanban, Hammer, Layers, Rocket, Sparkles, Target, type LucideIcon } from "lucide-react";
+import { ArrowRight, Award, Check, FolderKanban, Hammer, Layers, Lock, Rocket, Sparkles, Target, type LucideIcon } from "lucide-react";
 import type { Stage } from "@/lib/roadmap-visual/graph-types";
 import { courseHref, courseState, courseStats } from "@/lib/skillstudio/catalog";
 import type { LearningModule } from "@/lib/skillstudio/modules";
+import type { GateInfo } from "@/lib/skillstudio/sequence";
 import { courseColor, STAGE_NAME } from "./palette";
 import { RouteGlyph } from "./RouteGlyph";
 import { SegmentBar } from "./SegmentBar";
@@ -14,8 +15,19 @@ const RING_R = 15;
 const RING_C = 2 * Math.PI * RING_R;
 
 /** One course on the shelf, compact. The cover is the course's route map in its own colour; the body says what is next and what practice backs it. */
-export function CourseCard({ m }: { m: LearningModule }) {
+export function CourseCard({ m, gate }: { m: LearningModule; gate?: GateInfo }) {
   const color = courseColor(m.key);
+  if (gate?.gate === "locked") {
+    return (
+      <li>
+        <div aria-disabled="true" className="flex h-full flex-col gap-2 rounded-xl border border-dashed border-[var(--m-rule)] bg-[var(--m-ground)] p-4 text-[var(--m-muted)]">
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11.5px] font-bold"><Lock size={12} aria-hidden />Locked</span>
+          <p className="font-lp-display text-[17px] font-bold leading-snug text-[var(--m-ink)]">{m.title}</p>
+          <p className="text-[13px] leading-snug">Opens when <span className="font-bold text-[var(--m-ink)]">{gate.blockedBy}</span> is proven.</p>
+        </div>
+      </li>
+    );
+  }
   const stats = courseStats(m);
   const state = courseState(m);
   const StageIcon = STAGE_ICON[m.stage];
@@ -37,7 +49,7 @@ export function CourseCard({ m }: { m: LearningModule }) {
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1 text-[11px] font-bold">
               <span className="inline-flex items-center gap-1 rounded-full bg-black/25 px-2 py-0.5"><StageIcon size={11} aria-hidden />{STAGE_NAME[m.stage]}</span>
-              {m.focus && <span className="rounded-full bg-white px-2 py-0.5" style={{ color }}>Learn now</span>}
+              {gate?.gate === "open" ? <span className="rounded-full bg-white px-2 py-0.5" style={{ color }}>Open now{gate.remaining > 0 ? ` · ${gate.remaining} to prove` : ""}</span> : gate?.gate === "proven" ? <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5" style={{ color }}><Check size={11} aria-hidden />Proven</span> : m.focus && <span className="rounded-full bg-white px-2 py-0.5" style={{ color }}>Learn now</span>}
             </div>
             <div className="relative size-9 shrink-0" role="img" aria-label={stats.pct === null ? "Not measured yet" : `${pct}% complete`}>
               <svg viewBox="0 0 36 36" className="size-full -rotate-90">
