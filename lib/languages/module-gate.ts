@@ -1,4 +1,6 @@
 import { pickBySeed } from "./tier-proof";
+import { levelOfModule, provenLevels } from "./levels";
+import type { TierNumber } from "./tiers";
 import { judge0Configured } from "@/lib/code-execution/judge0";
 import { isHtmlChallenge, isSqlChallenge, type Track, type TrackModule } from "./types";
 
@@ -45,12 +47,16 @@ export const isProven = (track: Pick<Track, "runnerLanguage">, m: Pick<TrackModu
   Boolean(row?.assessmentPassedAt) && (!needsProblem(track, m) || Boolean(row?.problemPassedAt));
 
 /** Pure. Proven, open or locked for each module in order: the first is open, and each next one opens only when the one before it is proven. */
-export function moduleStatuses(track: Track, rows: Readonly<Record<string, ModuleProofRow>>): ModuleStatus[] {
+export function moduleStatuses(track: Track, rows: Readonly<Record<string, ModuleProofRow>>, examPassed: readonly number[]): ModuleStatus[] {
   let previousProven = true;
+  const proven = provenLevels(track, (m) => isProven(track, m, rows[m.key]), examPassed);
   return track.modules.map((m) => {
-    const proven = isProven(track, m, rows[m.key]);
-    const status: ModuleStatus = proven ? "proven" : previousProven ? "open" : "locked";
-    previousProven = proven;
+    const level = levelOfModule(track, m.key);
+    const done = isProven(track, m, rows[m.key]);
+    // a module of Level 2 or above opens only when the level below is proven: its modules and, where the language has one, its year exam
+    const levelOpen = level === 1 || proven.includes((level - 1) as TierNumber);
+    const status: ModuleStatus = done ? "proven" : previousProven && levelOpen ? "open" : "locked";
+    previousProven = done;
     return status;
   });
 }

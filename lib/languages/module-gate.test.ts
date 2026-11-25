@@ -12,8 +12,8 @@ const PASSED = "2026-11-22T00:00:00Z";
 describe("module gate", () => {
   it("opens only the first module until it is proven, then the next, and so on", () => {
     const t = track("python", [mod("a", true), mod("b", true), mod("c", true)]);
-    expect(moduleStatuses(t, {})).toEqual(["open", "locked", "locked"]);
-    expect(moduleStatuses(t, { a: row({ assessmentPassedAt: PASSED, problemPassedAt: PASSED }) })).toEqual(["proven", "open", "locked"]);
+    expect(moduleStatuses(t, {}, [])).toEqual(["open", "locked", "locked"]);
+    expect(moduleStatuses(t, { a: row({ assessmentPassedAt: PASSED, problemPassedAt: PASSED }) }, [])).toEqual(["proven", "open", "locked"]);
   });
   it("needs the problem as well as the assessment when the module has one the judge can run", () => {
     const t = track("python", [mod("a", true), mod("b", true)]);

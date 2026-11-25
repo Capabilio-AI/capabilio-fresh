@@ -8,7 +8,10 @@ import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { findTrack } from "@/lib/languages";
 import { loadProgress, trackProgress } from "@/lib/languages/progress";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
-import { moduleStatuses, needsProblem } from "@/lib/languages/module-gate";
+import { LevelRail } from "@/components/languages/LevelRail";
+import { levelRows } from "@/lib/languages/levels";
+import { loadExamLevels } from "@/lib/languages/year-exam";
+import { isProven, moduleStatuses, needsProblem } from "@/lib/languages/module-gate";
 import "@/components/skillstudio/learn/studio.css";
 
 export const metadata: Metadata = { title: "Language track | SkillStudio | Capabilio AI" };
@@ -22,7 +25,8 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
   const service = createServiceClient();
   const [progress, proofs] = await Promise.all([loadProgress(service, user.id, track.key), loadModuleProofs(service, user.id, track.key)]);
   const stats = trackProgress(track, progress);
-  const statuses = moduleStatuses(track, proofs);
+  const examLevels = await loadExamLevels(service, user.id, track.key);
+  const statuses = moduleStatuses(track, proofs, examLevels);
 
   return (
     <div className="ss-studio">
@@ -40,6 +44,8 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
           </Link>
         )}
       </header>
+
+      <LevelRail trackKey={track.key} courseTitle={track.title} rows={levelRows(track, (m) => isProven(track, m, proofs[m.key]), examLevels)} />
 
       <ol className="mt-8 flex flex-col gap-5">
         {track.modules.map((m, mi) => {

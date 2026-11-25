@@ -6,8 +6,8 @@ import type { Track } from "./types";
 export interface NextProof { track: string; trackTitle: string; title: string; href: string; kind: "step" | "module" }
 
 /** Pure. The one thing a student should prove next in a course: the first unfinished step of the first module that is open, or that module's test when its steps are done. */
-export function nextProof(track: Track, progress: ProgressMap, proofs: Readonly<Record<string, ModuleProofRow>>): NextProof | null {
-  const statuses = moduleStatuses(track, proofs);
+export function nextProof(track: Track, progress: ProgressMap, proofs: Readonly<Record<string, ModuleProofRow>>, examLevels: readonly number[] = []): NextProof | null {
+  const statuses = moduleStatuses(track, proofs, examLevels);
   for (let i = 0; i < track.modules.length; i++) {
     const m = track.modules[i];
     if (statuses[i] === "locked") return null;

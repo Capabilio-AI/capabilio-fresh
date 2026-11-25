@@ -8,6 +8,7 @@ import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { ModuleTest } from "@/components/languages/ModuleTest";
 import { findTrack } from "@/lib/languages";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
+import { loadExamLevels } from "@/lib/languages/year-exam";
 import { moduleStatuses } from "@/lib/languages/module-gate";
 import "@/components/skillstudio/learn/studio.css";
 
@@ -21,8 +22,9 @@ export default async function ModuleTestPage({ params }: { params: Promise<{ tra
   if (!track || index === -1) notFound();
   const m = track.modules[index];
   const { user } = await requireAuthedUser();
-  const proofs = await loadModuleProofs(createServiceClient(), user.id, track.key);
-  if (moduleStatuses(track, proofs)[index] === "locked") redirect(`/skillstudio/courses/${track.key}?locked=${m.key}`);
+  const service = createServiceClient();
+  const proofs = await loadModuleProofs(service, user.id, track.key);
+  if (moduleStatuses(track, proofs, await loadExamLevels(service, user.id, track.key))[index] === "locked") redirect(`/skillstudio/courses/${track.key}?locked=${m.key}`);
   const nextModule = track.modules[index + 1];
   return (
     <div className="ss-studio">

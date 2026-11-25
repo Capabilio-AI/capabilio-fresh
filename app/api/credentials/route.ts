@@ -7,6 +7,7 @@ import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { findTrack } from "@/lib/languages";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
 import { trackEvidence } from "@/lib/credentials/credential";
+import { allLevelsProven } from "@/lib/languages/year-exam";
 import { loadKeys } from "@/lib/credentials/sign";
 import { issueTrackCredential } from "@/lib/credentials/store";
 
@@ -30,8 +31,10 @@ export async function POST(request: Request) {
   if (!track) return NextResponse.json({ error: "That course does not exist." }, { status: 404 });
 
   const service = createServiceClient();
-  const evidence = trackEvidence(track, await loadModuleProofs(service, auth.userId, track.key));
+  const proofs = await loadModuleProofs(service, auth.userId, track.key);
+  const evidence = trackEvidence(track, proofs);
   if (!evidence.ok) return NextResponse.json({ error: "Prove every module first.", remaining: evidence.remaining }, { status: 409 });
+  if (!(await allLevelsProven(service, auth.userId, track, proofs))) return NextResponse.json({ error: "Pass the year exam of every level first." }, { status: 409 });
 
   let holder: string | null = null;
   if (body.data.showName) {

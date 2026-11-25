@@ -7,6 +7,7 @@ import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { findTrack } from "@/lib/languages";
 import { loadProgress } from "@/lib/languages/progress";
 import { currentAssessment, emptyProof, loadModuleProofs, ProofConflict, publicChallenge, publicHtmlChallenge, publicSqlChallenge, recordProblem, submitAssessment } from "@/lib/languages/module-proof";
+import { loadExamLevels } from "@/lib/languages/year-exam";
 import { moduleStatuses, needsProblem, publicQuestion, unfinishedLessons } from "@/lib/languages/module-gate";
 import { judge } from "@/lib/arena-challenges/leetcode/judge";
 import { judgeSqlChallenge, MAX_SQL_CHARS } from "@/lib/languages/sql-judge";
@@ -30,7 +31,7 @@ async function context(userId: string, trackKey: string, moduleKey: string): Pro
   if (!track || !m) return { error: NextResponse.json({ error: "That module does not exist." }, { status: 404 }) };
   const service = createServiceClient();
   const [proofs, done] = await Promise.all([loadModuleProofs(service, userId, track.key), loadProgress(service, userId, track.key)]);
-  const status = moduleStatuses(track, proofs)[track.modules.indexOf(m)];
+  const status = moduleStatuses(track, proofs, await loadExamLevels(service, userId, track.key))[track.modules.indexOf(m)];
   if (status === "locked") return { error: NextResponse.json({ error: "Prove the module before this one first." }, { status: 403 }) };
   const left = unfinishedLessons(m, done);
   if (left.length > 0) return { error: NextResponse.json({ error: "Finish every lesson of this module first.", unfinished: left }, { status: 409 }) };
