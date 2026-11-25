@@ -52,6 +52,10 @@ describe("buildPreviewDoc", () => {
 });
 
 describe("pythonProgram", () => {
+  it("silences library warnings only when asked, so a data lesson's output stays clean", () => {
+    expect(pythonProgram("print(1)", "")).not.toContain("filterwarnings");
+    expect(pythonProgram("print(1)", "", true)).toContain("filterwarnings('ignore')");
+  });
   it("runs the student's code in a fresh scope with input() reading the input box", () => {
     const p = pythonProgram("name = input()\nprint(name)", "Ada\nBob");
     expect(p).toContain("exec(compile(");

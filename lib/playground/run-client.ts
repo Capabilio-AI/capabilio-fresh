@@ -26,6 +26,26 @@ export async function runPython(code: string, stdin: string, onStatus: (s: strin
   }
 }
 
+// ---- Python with data libraries (numpy, pandas): a second runtime, started only for data lessons, so ordinary Python lessons stay light.
+let dataPython: PythonRunner | null = null;
+let dataStarting: Promise<void> | null = null;
+
+export async function runPythonData(code: string, stdin: string, onStatus: (s: string) => void): Promise<RunResult> {
+  try {
+    dataPython ??= new PythonRunner(["numpy", "pandas"], [], 30_000);
+    if (!dataPython.isRunning) {
+      onStatus("Loading Python with pandas. The first run takes about half a minute, then it is instant.");
+      dataStarting ??= dataPython.start().finally(() => { dataStarting = null; });
+      await dataStarting;
+    }
+    onStatus("Running…");
+    const out = await dataPython.run(pythonProgram(code, stdin, true));
+    return out.error ? { ok: true, text: [out.stdout, friendlyPythonError(out.error)].filter(Boolean).join("\n"), isError: true } : { ok: true, text: out.stdout || "(no output)", isError: false };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Python could not start. Check your connection and try again." };
+  }
+}
+
 // ---- JavaScript: a Web Worker with console.log captured, so an endless loop can be stopped and the page cannot freeze.
 const JS_WORKER = `self.onmessage = (e) => {
   const out = [];

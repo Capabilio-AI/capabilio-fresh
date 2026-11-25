@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Loader2, Play, RotateCcw } from "lucide-react";
 import { PREVIEW_SANDBOX_CSP, buildPreviewDoc, canRunInBrowser, type PlaygroundLanguage } from "@/lib/playground/playground";
-import { runJavaScript, runOnServer, runPython, type RunResult } from "@/lib/playground/run-client";
+import { runJavaScript, runOnServer, runPython, runPythonData, type RunResult } from "@/lib/playground/run-client";
 import type { RunnableLanguage } from "@/lib/practice/practice";
 import { CodeEditor } from "./CodeEditor";
 
@@ -23,7 +23,7 @@ function CopyButton({ text }: { text: string }) {
  * "Try it Yourself": the example's code on the left, its result on the right, one Run button. Python, JavaScript, HTML and CSS run in the
  * student's own browser, so they are instant; C, C++ and Java run on the server's code runner. SQL examples are shown with a Copy button.
  */
-export function Playground({ code: original, language, title, stacked = false }: { code: string; language: PlaygroundLanguage; title: string; /** editor above result, for a narrow column (the lesson's side pane) */ stacked?: boolean }) {
+export function Playground({ code: original, language, title, stacked = false, data = false }: { code: string; language: PlaygroundLanguage; title: string; /** a data-science example: Python with numpy and pandas */ data?: boolean; /** editor above result, for a narrow column (the lesson's side pane) */ stacked?: boolean }) {
   const [code, setCode] = useState(original);
   const [stdin, setStdin] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export function Playground({ code: original, language, title, stacked = false }:
     setResult(null);
     let r: RunResult;
     if (language === "html" || language === "css") { setPage(buildPreviewDoc(language, code)); setBusy(null); return; }
-    if (language === "python") r = await runPython(code, stdin, (s) => live.current && setBusy(s));
+    if (language === "python") r = await (data ? runPythonData : runPython)(code, stdin, (s) => live.current && setBusy(s));
     else if (language === "javascript") r = await runJavaScript(code);
     else r = await runOnServer(language as RunnableLanguage, code, stdin);
     if (!live.current) return;
