@@ -7,6 +7,7 @@ import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { findTrack } from "@/lib/languages";
 import { gradeLessonCheck } from "@/lib/languages/lesson-check";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
+import { loadExamLevels } from "@/lib/languages/year-exam";
 import { moduleStatuses } from "@/lib/languages/module-gate";
 import { loadProgress } from "@/lib/languages/progress";
 import { finishStepIfReady, isStepOpen, recordAnswer } from "@/lib/languages/step-proof";
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
   const m = track.modules.find((x) => x.key === verdict.moduleKey)!;
   // a locked module's questions are not for reading yet, and a step opens only after the steps before it are done
   const proofs = await loadModuleProofs(service, auth.userId, track.key);
-  if (moduleStatuses(track, proofs)[track.modules.indexOf(m)] === "locked") return NextResponse.json({ error: "Prove the module before this one first." }, { status: 403 });
+  if (moduleStatuses(track, proofs, await loadExamLevels(service, auth.userId, track.key))[track.modules.indexOf(m)] === "locked") return NextResponse.json({ error: "Prove the module before this one first." }, { status: 403 });
   if (!isStepOpen(m, body.data.lessonKey, await loadProgress(service, auth.userId, track.key))) return NextResponse.json({ error: "Finish the steps before this one first." }, { status: 403 });
 
   // the server records the answer (the first answer to a question stands) and decides where the step stands; the browser's own count is never used

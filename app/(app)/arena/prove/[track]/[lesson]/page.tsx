@@ -7,6 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { AreaHero } from "@/components/metro/AreaHero";
 import { CourseProof } from "@/components/arena/CourseProof";
 import { findTrack } from "@/lib/languages";
+import { loadExamLevels } from "@/lib/languages/year-exam";
 import { moduleStatuses } from "@/lib/languages/module-gate";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
 import { loadProgress } from "@/lib/languages/progress";
@@ -28,7 +29,7 @@ export default async function CourseProofPage({ params }: { params: Promise<{ tr
   const service = createServiceClient();
   const lessonHref = `/skillstudio/courses/${track.key}/${current.key}`;
   const [progress, proofs] = await Promise.all([loadProgress(service, user.id, track.key), loadModuleProofs(service, user.id, track.key)]);
-  if (moduleStatuses(track, proofs)[track.modules.indexOf(unit)] === "locked" || !isStepOpen(unit, current.key, progress)) redirect(lessonHref);
+  if (moduleStatuses(track, proofs, await loadExamLevels(service, user.id, track.key))[track.modules.indexOf(unit)] === "locked" || !isStepOpen(unit, current.key, progress)) redirect(lessonHref);
 
   const challenge = await challengeFor(service, user.id, track.key, current.key);
   if (!challenge.hasChallenge) redirect(lessonHref);

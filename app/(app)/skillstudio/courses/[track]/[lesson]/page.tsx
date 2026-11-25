@@ -13,6 +13,7 @@ import { findTrack } from "@/lib/languages";
 import { ANALOGIES } from "@/lib/languages/analogies";
 import { canGuess } from "@/lib/languages/guess";
 import { gradeLessonCheck, publicLesson } from "@/lib/languages/lesson-check";
+import { loadExamLevels } from "@/lib/languages/year-exam";
 import { moduleStatuses } from "@/lib/languages/module-gate";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
 import { exampleLanguage } from "@/lib/languages/playground-language";
@@ -42,7 +43,8 @@ export default async function LanguageLessonPage({ params }: { params: Promise<{
   const { user } = await requireAuthedUser();
   const service = createServiceClient();
   const [progress, proofs] = await Promise.all([loadProgress(service, user.id, track.key), loadModuleProofs(service, user.id, track.key)]);
-  const statuses = moduleStatuses(track, proofs);
+  const examLevels = await loadExamLevels(service, user.id, track.key);
+  const statuses = moduleStatuses(track, proofs, examLevels);
   // a lesson of a module that is not open yet cannot be read: prove the module before it first
   if (statuses[track.modules.indexOf(unit)] === "locked") redirect(`/skillstudio/courses/${track.key}?locked=${unit.key}`);
   // a step opens only after the steps before it in its module are complete

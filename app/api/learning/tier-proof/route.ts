@@ -4,14 +4,15 @@ import { proofGate } from "@/lib/languages/proof-gate";
 import { checkRateLimit, rateLimitedResponse } from "@/lib/rate-limit/check";
 import { isSupportedLanguage } from "@/lib/code-execution/wandbox";
 import { judge, mapLimit } from "@/lib/arena-challenges/leetcode/judge";
-import { canAttemptTier, tierPassed, type TierNumber } from "@/lib/languages/tiers";
-import { PROOF_AREAS, PROOF_READY, loadProofSet, loadProvenTiers, recordTierProof } from "@/lib/languages/tier-proof";
+import { tierPassed, type TierNumber } from "@/lib/languages/tiers";
+import { isProofArea, loadProofSet, recordTierProof } from "@/lib/languages/tier-proof";
+import { examGate } from "@/lib/languages/year-exam";
 
 export const maxDuration = 300;
 
-const Query = z.object({ area: z.enum(PROOF_AREAS), tier: z.coerce.number().int().min(1).max(4) });
+const Query = z.object({ area: z.string().refine(isProofArea), tier: z.coerce.number().int().min(1).max(4) });
 const Body = z.object({
-  area: z.enum(PROOF_AREAS),
+  area: z.string().refine(isProofArea),
   tier: z.number().int().min(1).max(4),
   /** one entry per proof problem; each may be written in a different language */
   answers: z.array(z.object({ challengeId: z.string().uuid(), language: z.string().min(1).max(20), code: z.string().max(20000) })).min(1).max(8),
@@ -27,12 +28,11 @@ export async function GET(request: Request) {
   if (!q.success) return NextResponse.json({ error: "Choose an area and a tier from 1 to 4." }, { status: 400 });
   const { area } = q.data;
   const tier = q.data.tier as TierNumber;
-  if (!PROOF_READY.includes(area)) return NextResponse.json({ error: "This area's proof test is not open yet." }, { status: 409 });
-  const proven = await loadProvenTiers(g.service, g.userId, area);
-  if (!canAttemptTier(tier, proven)) return NextResponse.json({ error: "Prove the tier before this one first." }, { status: 403 });
+  const gate = await examGate(g.service, g.userId, area, tier);
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const set = await loadProofSet(g.service, g.userId, tier);
   if (!set) return NextResponse.json({ error: "Not enough problems are ready for this tier yet." }, { status: 503 });
-  return NextResponse.json({ alreadyProven: proven.includes(tier), problems: set.problems });
+  return NextResponse.json({ alreadyProven: gate.proven.includes(tier), problems: set.problems });
 }
 
 /** Judges every answer on its own hidden tests, in whatever language the student wrote it, and records the proof when enough pass. */
@@ -45,11 +45,11 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "That submission is not valid." }, { status: 400 });
   const { area, answers } = parsed.data;
   const tier = parsed.data.tier as TierNumber;
-  if (!PROOF_READY.includes(area)) return NextResponse.json({ error: "This area's proof test is not open yet." }, { status: 409 });
   if (answers.some((a) => !isSupportedLanguage(a.language))) return NextResponse.json({ error: "Unsupported language." }, { status: 400 });
-
-  const proven = await loadProvenTiers(g.service, g.userId, area);
-  if (!canAttemptTier(tier, proven)) return NextResponse.json({ error: "Prove the tier before this one first." }, { status: 403 });
+  const gate = await examGate(g.service, g.userId, area, tier);
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  // a language's year exam is written in that language
+  if (gate.language && answers.some((a) => a.language !== gate.language)) return NextResponse.json({ error: `This exam is written in ${gate.language}.` }, { status: 400 });
   const set = await loadProofSet(g.service, g.userId, tier);
   if (!set) return NextResponse.json({ error: "Not enough problems are ready for this tier yet." }, { status: 503 });
 

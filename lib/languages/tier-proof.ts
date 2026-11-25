@@ -4,11 +4,16 @@ import { currentWeekStart } from "@/lib/arena-challenges/week";
 import type { JudgeTest } from "@/lib/arena-challenges/leetcode/judge";
 import type { PublicProblem } from "@/lib/arena-challenges/leetcode/problem";
 import { TIERS, type TierNumber } from "./tiers";
+import { hasArenaExam } from "./levels";
 
 /** Learning areas that can carry a tier proof. Only Basic Programming has proof problems today; IT and Stream follow when their content exists. */
 export const PROOF_AREAS = ["basic-programming", "it", "stream"] as const;
-export type ProofArea = (typeof PROOF_AREAS)[number];
-export const PROOF_READY: readonly ProofArea[] = ["basic-programming"];
+/** A language's year exams are recorded under `lang-<track>` (see levels.ts). */
+export type ProofArea = (typeof PROOF_AREAS)[number] | `lang-${string}`;
+export const PROOF_READY: readonly string[] = ["basic-programming"];
+export const isProofArea = (a: unknown): a is ProofArea => typeof a === "string" && ((PROOF_AREAS as readonly string[]).includes(a) || /^lang-[a-z]+$/.test(a));
+/** Whether an area's proof may be taken: Basic Programming, or a language that has an Arena year exam. */
+export const proofReady = (a: ProofArea): boolean => PROOF_READY.includes(a) || (a.startsWith("lang-") && hasArenaExam(a.slice(5)));
 
 type Difficulty = "easy" | "medium" | "hard";
 /** What a proof attempt is made of, per tier: harder tiers lean on harder problems. */
@@ -16,7 +21,8 @@ const MIX: Record<TierNumber, readonly Difficulty[]> = {
   1: ["easy", "easy", "easy", "easy"],
   2: ["easy", "easy", "medium", "medium"],
   3: ["easy", "medium", "medium", "hard"],
-  4: ["medium", "medium", "hard", "hard"],
+  // the final year: eight problems, half of them hard
+  4: ["medium", "medium", "medium", "medium", "hard", "hard", "hard", "hard"],
 };
 export const proofMix = (tier: TierNumber): readonly Difficulty[] => MIX[tier];
 

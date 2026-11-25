@@ -22,19 +22,20 @@ async function post(path: string, body: unknown) {
   return data;
 }
 
-interface Props { area: ProofArea; tier: TierNumber; tierLabel: string; problems: ProofProblem[] }
+interface Props { area: ProofArea; tier: TierNumber; tierLabel: string; problems: ProofProblem[]; /** the one language the exam must be written in, or null for any */ only?: string | null }
 
 /** The proof test runs in the exam lock: full screen, strikes for leaving it or switching tabs, and a test the lock ends is submitted as it stands. */
 export function TierProofScreen(props: Props) {
   return (
-    <ExamLock area="skillstudio" title={`${props.tierLabel} proof`} storageKey={`proof-${props.area}-${props.tier}`} rules={[...DEFAULT_RULES, `You can write each problem in a different language. ${TIER_PASS_PCT}% of the problems must pass every hidden test.`]}>
+    <ExamLock area="skillstudio" title={`${props.tierLabel} proof`} storageKey={`proof-${props.area}-${props.tier}`} rules={[...DEFAULT_RULES, `${props.only ? `Write every problem in ${props.only}. ` : ""}You can write each problem in a different language. ${TIER_PASS_PCT}% of the problems must pass every hidden test.`]}>
       <ProofRunner {...props} />
     </ExamLock>
   );
 }
 
 /** The proof test: every problem has its own language choice and editor; the examples can be run any time, and one Submit judges all on hidden tests. */
-function ProofRunner({ area, tier, tierLabel, problems }: Props) {
+function ProofRunner({ area, tier, tierLabel, problems, only }: Props) {
+  const fallback = (only as JudgeLanguage | null | undefined) ?? "python";
   const lock = useExamLock();
   const lockRef = useRef(lock);
   useEffect(() => { lockRef.current = lock; });
@@ -47,7 +48,7 @@ function ProofRunner({ area, tier, tierLabel, problems }: Props) {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
 
   const p = problems[at];
-  const lang = langs[p.id] ?? "python";
+  const lang = langs[p.id] ?? fallback;
   const keyed = `${p.id}:${lang}`;
   const code = codes[keyed] ?? starterFor(p.problem, lang);
 
@@ -73,7 +74,7 @@ function ProofRunner({ area, tier, tierLabel, problems }: Props) {
   async function submit() {
     setBusy("submit"); setError(null);
     try {
-      const answers = problems.map((q) => { const l = langs[q.id] ?? "python"; return { challengeId: q.id, language: l, code: codes[`${q.id}:${l}`] ?? "" }; });
+      const answers = problems.map((q) => { const l = langs[q.id] ?? fallback; return { challengeId: q.id, language: l, code: codes[`${q.id}:${l}`] ?? "" }; });
       setOutcome(await post("/api/learning/tier-proof", { area, tier, answers }));
       lockRef.current?.release();
     } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
@@ -121,7 +122,7 @@ function ProofRunner({ area, tier, tierLabel, problems }: Props) {
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-[13px] font-bold text-[var(--m-ink)]" htmlFor="proof-lang">Language</label>
             <select id="proof-lang" value={lang} onChange={(e) => setLangs((l) => ({ ...l, [p.id]: e.target.value as JudgeLanguage }))} disabled={busy !== null} className="rounded-lg border border-[var(--m-rule)] bg-white px-2.5 py-1.5 text-[13px]">
-              {JUDGE_LANGUAGES.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+              {JUDGE_LANGUAGES.filter((l) => !only || l.id === only).map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
             </select>
             <button type="button" onClick={run} disabled={busy !== null || code.trim() === ""} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--m-rule)] px-3.5 py-1.5 text-[13px] font-bold disabled:opacity-50"><Play size={14} aria-hidden />{busy === "run" ? "Running…" : "Run examples"}</button>
           </div>

@@ -7,6 +7,7 @@ import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { TRACKS } from "@/lib/languages";
 import { loadProgress, trackProgress } from "@/lib/languages/progress";
 import { loadModuleProofs } from "@/lib/languages/module-proof";
+import { loadExamLevels } from "@/lib/languages/year-exam";
 import { moduleStatuses } from "@/lib/languages/module-gate";
 import { allLessons } from "@/lib/languages/types";
 import "@/components/skillstudio/learn/studio.css";
@@ -25,7 +26,7 @@ export default async function BasicProgrammingPage() {
   const service = createServiceClient();
   const rows = await Promise.all(TRACKS.map(async (t) => {
     const progress = trackProgress(t, await loadProgress(service, user.id, t.key));
-    const statuses = moduleStatuses(t, await loadModuleProofs(service, user.id, t.key));
+    const statuses = moduleStatuses(t, await loadModuleProofs(service, user.id, t.key), await loadExamLevels(service, user.id, t.key));
     return { track: t, progress, proven: statuses.filter((s) => s === "proven").length };
   }));
   return (
