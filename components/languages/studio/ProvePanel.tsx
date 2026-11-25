@@ -5,7 +5,8 @@ import clsx from "clsx";
 import { CheckCircle2, ClipboardCheck, Code2, Target } from "lucide-react";
 import { CheckYourself, type Verdict } from "@/components/skillstudio/learn/CheckYourself";
 import { GuessBox } from "@/components/languages/GuessBox";
-import { BuildChallenge } from "./BuildChallenge";
+import Link from "next/link";
+import { ArrowRight, Swords } from "lucide-react";
 import type { StudioExample } from "./ConceptPanel";
 import type { RecordedAnswer } from "./types";
 import type { PublicLesson } from "@/lib/languages/lesson-check";
@@ -32,7 +33,7 @@ export function ProvePanel({ track, lessonKey, lesson, example, step, onStep, st
 
   const tabs: { id: Stage; label: string; Icon: typeof Target; done: boolean }[] = [
     { id: "predict", label: "Predict", Icon: Target, done: predicted },
-    { id: "build", label: "Build", Icon: Code2, done: step.challenge === "passed" },
+    { id: "build", label: "Arena", Icon: Code2, done: step.challenge === "passed" },
     { id: "prove", label: "Prove", Icon: ClipboardCheck, done: step.checkDone },
   ];
   const doneCount = tabs.filter((t) => t.done).length;
@@ -55,12 +56,26 @@ export function ProvePanel({ track, lessonKey, lesson, example, step, onStep, st
       {stage === "predict" && (example?.guessable && example.language
         ? <GuessBox key={example.title} code={example.code} language={example.language} title={example.title} onChange={() => onStage("build")} onChecked={() => setPredicted(true)} />
         : <p className="rounded-xl bg-[var(--m-ground)] p-4 text-[14.5px] text-[var(--m-ink)]">There is no example to guess for this step. Go to <button type="button" onClick={() => onStage("build")} className="font-bold underline">Build</button>.</p>)}
-      {stage === "build" && <BuildChallenge track={track} lessonKey={lessonKey} step={step} onStep={onStep} />}
+      {stage === "build" && <ArenaLaunch href={`/arena/prove/${track}/${lessonKey}`} challenge={step.challenge} />}
       {stage === "prove" && (
         <div className="-mx-1">
-          <CheckYourself id="step-check" questions={lesson.check} grade={grade} initial={initialAnswers} />
+          <CheckYourself id="step-check" questions={lesson.check} grade={grade} initial={initialAnswers} proveHref={step.challenge !== "none" ? `/arena/prove/${track}/${lessonKey}` : undefined} />
         </div>
       )}
     </section>
+  );
+}
+
+/** The coding proof of a step lives in Arena, on the same judge as the Arena challenges. This card is the way there and shows where the step stands. */
+function ArenaLaunch({ href, challenge }: { href: string; challenge: StepState["challenge"] }) {
+  if (challenge === "none") return <p className="rounded-xl bg-[var(--m-ground)] p-4 text-[14.5px] text-[var(--m-ink)]">This step has no coding challenge. The questions finish it.</p>;
+  const passed = challenge === "passed";
+  return (
+    <div className="flex flex-col items-start gap-3 rounded-2xl bg-[var(--m-ground)] p-5">
+      <span aria-hidden className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--m-ink)] text-white"><Swords size={22} /></span>
+      <p className="font-lp-display text-[19px] font-bold leading-tight text-[var(--m-ink)]">{passed ? "Proven in Arena. Nice work." : "Prove this step with code in Arena"}</p>
+      <p className="text-[14px] leading-relaxed text-[var(--m-muted)]">{passed ? "Your pass is recorded. You can open the challenge again any time." : "You get a real problem, an editor and a judge with hidden tests. When you pass, this step counts as a proven skill and the next one opens."}</p>
+      <Link href={href} className="inline-flex items-center gap-2 rounded-xl bg-[var(--m-ink)] px-5 py-2.5 text-[14.5px] font-bold text-white">{passed ? "Open the challenge" : "Open the Arena challenge"}<ArrowRight size={15} aria-hidden /></Link>
+    </div>
   );
 }
