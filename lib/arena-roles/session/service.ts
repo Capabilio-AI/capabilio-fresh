@@ -1,6 +1,7 @@
 import type { ExperienceLevel } from "@/lib/workplace/level";
 import { DATA_ANALYST_STORY, type ProofSessionSpec, type SessionStage } from "../sessions/data-analyst-story";
 import { BACKEND_SERVICE } from "../sessions/backend-developer-service";
+import { DATA_SCIENTIST_PATH } from "../sessions/data-scientist-path";
 import { parseEvents } from "./events";
 import { buildReport, type SessionReport, type StageResult } from "./report";
 import { StoreConflict, type NewEvent, type SessionRow, type SessionStore, type StageRow } from "./store";
@@ -8,7 +9,26 @@ import { StoreConflict, type NewEvent, type SessionRow, type SessionStore, type 
 export const RUBRIC_VERSION = "signals.v1";
 
 /** The session spec each role runs. A role without an entry has no Proof Session: nothing is substituted. */
-export const SPECS: Readonly<Record<string, ProofSessionSpec>> = { "data-analyst": DATA_ANALYST_STORY, "backend-developer": BACKEND_SERVICE };
+export const SPECS: Readonly<Record<string, ProofSessionSpec>> = { "data-analyst": DATA_ANALYST_STORY, "backend-developer": BACKEND_SERVICE, "data-scientist": DATA_SCIENTIST_PATH[0] };
+
+/** Roles whose Proof Sessions form a path of levels, in the order they are walked. A role with no entry runs the one session in SPECS. */
+export const LADDERS: Readonly<Record<string, readonly ProofSessionSpec[]>> = { "data-scientist": DATA_SCIENTIST_PATH };
+
+export type LevelStatus = "done" | "open" | "locked";
+export interface LadderLevel { specKey: string; level: number; title: string; intro: string; status: LevelStatus }
+
+/** Pure. The path as the student sees it: finished levels are done, the first level not finished is open, and every one after it is locked. Levels are opened one after another. */
+export function ladderStatus(ladder: readonly ProofSessionSpec[], finishedKeys: readonly string[]): LadderLevel[] {
+  const done = new Set(finishedKeys);
+  let openGiven = false;
+  return ladder.map((spec, i) => {
+    const status: LevelStatus = done.has(spec.key) ? "done" : !openGiven ? ((openGiven = true), "open") : "locked";
+    return { specKey: spec.key, level: i + 1, title: spec.title, intro: spec.intro, status };
+  });
+}
+
+/** The spec a stored session runs: the one it was started from, so a session keeps its own stages whatever happens to the path later. */
+export const specForSession = (roleKey: string, specKey: string): ProofSessionSpec | undefined => LADDERS[roleKey]?.find((s) => s.key === specKey) ?? SPECS[roleKey];
 
 export class SessionError extends Error {
   constructor(message: string, readonly status: number, readonly reason: string) {
@@ -47,10 +67,21 @@ const specFor = (roleKey: string): ProofSessionSpec => {
 };
 
 /** Starts a session, or returns the one already open (a repeated request never creates a second). Refuses while a daily ticket is open. */
-export async function startSession(store: SessionStore, input: { userId: string; roleKey: string; level: ExperienceLevel }): Promise<SessionView> {
-  const spec = specFor(input.roleKey);
+export async function startSession(store: SessionStore, input: { userId: string; roleKey: string; level: ExperienceLevel; specKey?: string }): Promise<SessionView> {
   const existing = await store.openSession(input.userId, input.roleKey);
-  if (existing) return view(store, spec, input.level, existing);
+  if (existing) return view(store, specForSession(input.roleKey, existing.specKey) ?? specFor(input.roleKey), input.level, existing);
+  let spec = specFor(input.roleKey);
+  const ladder = LADDERS[input.roleKey];
+  if (ladder) {
+    const levels = ladderStatus(ladder, await store.finishedSpecKeys(input.userId, input.roleKey));
+    const next = levels.find((l) => l.status === "open");
+    if (!next) throw new SessionError("You have finished every level of this path.", 409, "path_complete");
+    if (input.specKey && input.specKey !== next.specKey) {
+      const asked = levels.find((l) => l.specKey === input.specKey);
+      throw new SessionError(asked?.status === "done" ? "You have already proven that level." : "Prove the level before it first.", 409, asked?.status === "done" ? "level_done" : "level_locked");
+    }
+    spec = ladder.find((s) => s.key === next.specKey)!;
+  }
   if (await store.hasOpenDailyTicket(input.userId, input.roleKey)) throw new SessionError("Finish or close your open daily ticket before starting a Proof Session.", 409, "daily_ticket_open");
 
   const stages = spec.stagesFor(input.level);
@@ -61,7 +92,7 @@ export async function startSession(store: SessionStore, input: { userId: string;
     // two requests raced: the other one won, so return its session
     if (e instanceof StoreConflict) {
       const winner = await store.openSession(input.userId, input.roleKey);
-      if (winner) return view(store, spec, input.level, winner);
+      if (winner) return view(store, specForSession(input.roleKey, winner.specKey) ?? spec, input.level, winner);
     }
     throw e;
   }
@@ -71,7 +102,7 @@ export async function startSession(store: SessionStore, input: { userId: string;
 export async function currentSession(store: SessionStore, input: { userId: string; roleKey: string; level: ExperienceLevel }): Promise<SessionView | null> {
   const spec = specFor(input.roleKey);
   const open = await store.openSession(input.userId, input.roleKey);
-  return open ? view(store, spec, input.level, open) : null;
+  return open ? view(store, specForSession(input.roleKey, open.specKey) ?? spec, input.level, open) : null;
 }
 
 async function owned(store: SessionStore, userId: string, sessionId: string): Promise<SessionRow> {
@@ -119,7 +150,7 @@ export async function recordStageResult(store: SessionStore, input: { sessionId:
 /** Builds and stores the report once every stage is passed. Idempotent: a second call returns the stored report. */
 export async function finalizeReport(store: SessionStore, input: { userId: string; sessionId: string; level: ExperienceLevel }): Promise<SessionReport> {
   const session = await owned(store, input.userId, input.sessionId);
-  const spec = specFor(session.roleKey);
+  const spec = specForSession(session.roleKey, session.specKey) ?? specFor(session.roleKey);
   const stored = await store.report(session.id, RUBRIC_VERSION);
   if (stored) return stored as SessionReport;
 

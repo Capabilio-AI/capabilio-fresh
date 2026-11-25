@@ -1,15 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, Loader2, Lock } from "lucide-react";
 import { WorkstationShell, type PublicAttempt } from "../workstations/WorkstationShell";
 import { ExplainWork } from "../domain/ExplainWork";
 import { ReportView } from "./ReportView";
-import type { SessionView } from "@/lib/arena-roles/session/service";
+import type { LadderLevel, SessionView } from "@/lib/arena-roles/session/service";
 
 interface State {
   available: boolean;
   spec?: { title: string; intro: string };
+  /** a role with a path of levels: every level and where the student stands */
+  ladder?: LadderLevel[] | null;
   session: SessionView | null;
   anchorAttempt: PublicAttempt | null;
   latestFinishedSessionId: string | null;
@@ -48,10 +50,10 @@ export function SessionWorkspace() {
   if (!state || !state.available) return null;
   const { session } = state;
 
-  const start = async () => {
+  const start = async (specKey?: string) => {
     setBusy(true);
     setError(null);
-    const r = await post("/api/arena/sessions");
+    const r = await post("/api/arena/sessions", specKey ? { specKey } : undefined);
     setBusy(false);
     if (!r.ok) return setError(String(r.data.error ?? "Could not start the session."));
     await load();
@@ -72,6 +74,39 @@ export function SessionWorkspace() {
     setOpen((r.data as { attempt: PublicAttempt }).attempt);
   };
 
+  if (!session && state.ladder) {
+    const open = state.ladder.find((l) => l.status === "open") ?? null;
+    return (
+      <section className={`${BOX} mb-6`} aria-label="Your path">
+        <h3 className="font-lp-display text-[20px] font-bold text-[var(--m-ink)]">Your path to job-ready</h3>
+        <p className="mt-1 max-w-xl font-lp-body text-[13.5px] leading-relaxed text-app-muted">Four levels, opened one after another. Each is a connected piece of the job on your own company data. Passing one proves its skills in your portfolio and opens the next.</p>
+        <ol className="mt-4 grid gap-3 sm:grid-cols-2">
+          {state.ladder.map((l) => (
+            <li key={l.specKey} className={`flex flex-col gap-2 rounded-2xl border p-4 ${l.status === "done" ? "border-[#17784a] bg-[#e8f5ee]" : l.status === "open" ? "border-[var(--m-ink)]" : "border-[var(--m-rule)] bg-[var(--m-ground)] text-app-muted"}`}>
+              <p className="flex items-center justify-between font-lp-body text-[12px] font-bold uppercase tracking-wide opacity-70"><span>Level {l.level}</span><span>{l.status === "done" ? "Proven" : l.status === "open" ? "Open" : "Locked"}</span></p>
+              <p className="font-lp-display text-[17px] font-bold leading-tight text-[var(--m-ink)]">{l.title.replace(/^Level \d: /, "")}</p>
+              {l.status === "open" && <p className="font-lp-body text-[13px] leading-relaxed text-[var(--m-ink)]">{l.intro}</p>}
+              {l.status === "locked" && <p className="inline-flex items-center gap-1.5 font-lp-body text-[13px]"><Lock size={13} aria-hidden />Opens when Level {l.level - 1} is proven</p>}
+              {l.status === "done" && <p className="inline-flex items-center gap-1.5 font-lp-body text-[13px] font-bold text-[#0f5132]"><CheckCircle2 size={14} aria-hidden />Badge earned</p>}
+            </li>
+          ))}
+        </ol>
+        {error && <p className="mt-3 font-lp-body text-[13px] text-app-rose">{error}</p>}
+        {open ? (
+          <button type="button" onClick={() => start(open.specKey)} disabled={busy} className={`${PRIMARY} mt-4`}>
+            {busy ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} />}
+            Start Level {open.level}
+          </button>
+        ) : <p className="mt-4 font-lp-body text-[14px] font-bold text-[#0f5132]">You have proven every level of this path.</p>}
+        {state.latestFinishedSessionId && (
+          <div className="mt-6">
+            <ReportView sessionId={state.latestFinishedSessionId} />
+          </div>
+        )}
+      </section>
+    );
+  }
+
   if (!session) {
     return (
       <section className={`${BOX} mb-6`} aria-label="Proof Session">
@@ -80,7 +115,7 @@ export function SessionWorkspace() {
           {state.spec?.intro}
         </p>
         {error && <p className="mt-3 font-lp-body text-[13px] text-app-rose">{error}</p>}
-        <button type="button" onClick={start} disabled={busy} className={`${PRIMARY} mt-4`}>
+        <button type="button" onClick={() => start()} disabled={busy} className={`${PRIMARY} mt-4`}>
           {busy ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} />}
           Start a Proof Session
         </button>
