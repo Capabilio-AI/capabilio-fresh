@@ -8,6 +8,9 @@ import { findTrack } from "@/lib/languages";
 import { STAGES, topicTrack } from "@/lib/courses/find";
 import { loadRoleRoadmap } from "@/lib/courses/roles-db";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
+import { RoleProofPath } from "@/components/skillstudio/RoleProofPath";
+import { ladderStatus, LADDERS } from "@/lib/arena-roles/session/service";
+import { supabaseSessionStore } from "@/lib/arena-roles/session/supabase-store";
 import "@/components/skillstudio/learn/studio.css";
 
 export const metadata: Metadata = { title: "Job path | SkillStudio | Capabilio AI" };
@@ -17,7 +20,7 @@ export const metadata: Metadata = { title: "Job path | SkillStudio | Capabilio A
  * it; the others say they are coming, so a student never taps a button that leads nowhere.
  */
 export default async function RolePathPage({ params }: { params: Promise<{ key: string }> }) {
-  await requireAuthedUser();
+  const { user } = await requireAuthedUser();
   const { key } = await params;
   let road;
   try { road = await loadRoleRoadmap(createServiceClient(), key); } catch (e) {
@@ -25,6 +28,9 @@ export default async function RolePathPage({ params }: { params: Promise<{ key: 
     return <div className="ss-studio"><SkillStudioSubNav /><p role="alert" className="pt-8 text-[15px] font-semibold text-red-700">This path could not be loaded. Please try again in a minute.</p></div>;
   }
   if (!road) notFound();
+  // a role with a path of Arena levels shows where the student stands, so learning here and proving in Arena are one path
+  const ladder = LADDERS[road.role.key];
+  const levels = ladder ? ladderStatus(ladder, await supabaseSessionStore(createServiceClient()).finishedSpecKeys(user.id, road.role.key).catch(() => [])) : null;
 
   const withCourse = road.topics.flatMap((t) => { const k = topicTrack(t.title); return k ? [k] : []; });
   const startNow = [...new Set(withCourse)].map((k) => findTrack(k)).filter((t) => t !== undefined);
@@ -42,6 +48,8 @@ export default async function RolePathPage({ params }: { params: Promise<{ key: 
         {road.role.description && <p className="mt-2 text-[16px] leading-relaxed text-[var(--m-muted)]">{road.role.description}</p>}
         <p className="mt-2 text-[14.5px] font-bold text-[var(--m-ink)]">{road.topics.length} topics, in 4 stages. Go from the top to the bottom.</p>
       </header>
+
+      {levels && <RoleProofPath roleName={road.role.name} levels={levels} />}
 
       {startNow.length > 0 && (
         <section aria-labelledby="start-now" className="mt-6 rounded-2xl border-2 border-[var(--m-ink)] bg-white p-5">
