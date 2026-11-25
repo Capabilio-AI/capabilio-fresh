@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Info, Lock } from "lucide-react";
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { lessonFrom, loadLearning } from "@/lib/skillstudio/lesson";
+import { gateModules } from "@/lib/skillstudio/sequence";
 import { courseHref, lessonHref, neighbours } from "@/lib/skillstudio/catalog";
 import { STATUS_META } from "@/components/roadmap/visual/meta";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
@@ -35,6 +36,7 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
   if (!load.ok) redirect("/skillstudio");
   const lesson = lessonFrom(load, decode(p.module), decode(p.topic));
   if (!lesson) notFound();
+  if (gateModules(load.view.modules).get(lesson.module.key)?.gate === "locked") redirect(`/skillstudio?locked=${encodeURIComponent(lesson.module.key)}`);
 
   const { module: m, topic: t, explanation: e, courseOf } = lesson;
   const { prev, next } = neighbours(m, t.key);

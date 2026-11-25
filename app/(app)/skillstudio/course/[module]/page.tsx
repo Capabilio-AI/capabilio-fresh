@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, BookOpen, FolderKanban, Swords, Award } from "lu
 import { requireAuthedUser } from "@/lib/supabase/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadLearning } from "@/lib/skillstudio/lesson";
+import { gateModules } from "@/lib/skillstudio/sequence";
 import { courseState, courseStats, lessonHref } from "@/lib/skillstudio/catalog";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
@@ -28,7 +29,10 @@ export default async function CoursePage({ params }: { params: Promise<{ module:
   }
   const m = load.view.modules.find((x) => x.key === key);
   if (!m) notFound();
+  // modules are walked one at a time: a locked one is reached through the one that must be proven first
+  if (gateModules(load.view.modules).get(m.key)?.gate === "locked") redirect(`/skillstudio?locked=${encodeURIComponent(m.key)}`);
 
+  const gate = gateModules(load.view.modules).get(m.key);
   const color = courseColor(m.key);
   const stats = courseStats(m);
   const state = courseState(m);
@@ -63,6 +67,11 @@ export default async function CoursePage({ params }: { params: Promise<{ module:
           <Link href={lessonHref(m.key, resume.key)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-[15px] font-bold transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.97] motion-reduce:transition-none motion-reduce:hover:translate-y-0" style={{ color }}>
             {state === "new" ? "Start the first lesson" : `Continue: ${resume.title}`} <ArrowRight size={16} aria-hidden />
           </Link>
+        )}
+        {gate && gate.gate !== "proven" && m.practice.arena > 0 && (
+          <p className="mt-4 max-w-[60ch] text-[14.5px] text-white/90">
+            {gate.remaining} {gate.remaining === 1 ? "lesson is" : "lessons are"} left to prove. Learn each one, then <Link href="/arena/challenges/domain" className="font-bold underline">prove it in Arena</Link>. When all are proven, the next course opens.
+          </p>
         )}
       </header>
 

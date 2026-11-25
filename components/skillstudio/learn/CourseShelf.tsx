@@ -5,12 +5,13 @@ import { Search, SearchX } from "lucide-react";
 import clsx from "clsx";
 import { filterCourses, type CourseFilter } from "@/lib/skillstudio/catalog";
 import type { LearningModule } from "@/lib/skillstudio/modules";
+import type { GateInfo } from "@/lib/skillstudio/sequence";
 import { CourseCard } from "./CourseCard";
 import { STAGE_NAME, STAGE_ORDER } from "./palette";
 import "./studio.css";
 
 /** The path as a shelf of courses. Search and filters work instantly in the browser; nothing is requested while typing. */
-export function CourseShelf({ modules, careerName }: { modules: LearningModule[]; careerName: string }) {
+export function CourseShelf({ modules, careerName, gates }: { modules: LearningModule[]; careerName: string; gates: Record<string, GateInfo> }) {
   const [stage, setStage] = useState<CourseFilter>("all");
   const [query, setQuery] = useState("");
 
@@ -62,7 +63,7 @@ export function CourseShelf({ modules, careerName }: { modules: LearningModule[]
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {shown.map((m) => <CourseCard key={m.key} m={m} />)}
+          {shown.map((m) => <CourseCard key={m.key} m={m} gate={gates[m.key]} />)}
         </ul>
       )}
     </section>

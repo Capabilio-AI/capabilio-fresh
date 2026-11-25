@@ -14,9 +14,13 @@ export interface ModuleTopic {
   target: number | null;
   status: GraphNode["status"];
   learning: number;
+  /** something can prove this topic (Arena challenges, projects or certifications are linked to it); a topic nothing can prove yet never blocks the next module */
+  provable: boolean;
 }
 export interface LearningModule {
   key: string;
+  /** where the path lists this module; the walking order is stage, then this */
+  position: number;
   title: string;
   description: string;
   stage: Stage;
@@ -48,12 +52,12 @@ export function modulesFromGraph(graph: RoadmapGraph): ModulesView {
   const topicsOf = new Map<string, GraphNode[]>();
   for (const n of graph.nodes) if (n.type === "TOPIC" && !n.resource && n.parentKey) topicsOf.set(n.parentKey, [...(topicsOf.get(n.parentKey) ?? []), n]);
 
-  const modules = graph.nodes.filter((n) => n.type === "GROUP" && (topicsOf.get(n.key)?.length ?? 0) > 0).map((g): LearningModule => {
+  const modules = graph.nodes.filter((n) => n.type === "GROUP" && (topicsOf.get(n.key)?.length ?? 0) > 0).map((g, position): LearningModule => {
     const topics = topicsOf.get(g.key)!;
     return {
-      key: g.key, title: g.title, description: g.description, stage: g.stage, focus: year === null || focusStages.has(g.stage),
+      key: g.key, position, title: g.title, description: g.description, stage: g.stage, focus: year === null || focusStages.has(g.stage),
       progress: g.progress, assessed: topics.filter((t) => t.level !== null).length,
-      topics: topics.map((t) => ({ key: t.key, title: t.title, description: t.description, userState: t.userState, level: t.level, target: t.target, status: t.status, learning: t.practice.learning })),
+      topics: topics.map((t) => ({ key: t.key, title: t.title, description: t.description, userState: t.userState, level: t.level, target: t.target, status: t.status, learning: t.practice.learning, provable: t.practice.arena + t.practice.projects + t.practice.certifications > 0 })),
       practice: topics.reduce((a, t) => ({ arena: a.arena + t.practice.arena, projects: a.projects + t.practice.projects, certifications: a.certifications + t.practice.certifications, learning: a.learning + t.practice.learning }), { arena: 0, projects: 0, certifications: 0, learning: 0 }),
     };
   });
