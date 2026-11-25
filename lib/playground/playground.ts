@@ -47,10 +47,11 @@ export function buildPreviewDoc(language: "html" | "css", code: string): string 
  * and the code runs in a fresh scope, so nothing from the previous Run is still defined. Code and lines are embedded as JSON inside a string
  * literal, so no quote, backslash or line break in them can break out of it.
  */
-export function pythonProgram(code: string, stdin: string): string {
+export function pythonProgram(code: string, stdin: string, quietWarnings = false): string {
   const lines = JSON.stringify(JSON.stringify(stdin.replace(/\r\n/g, "\n").split("\n").filter((_, i, all) => !(i === all.length - 1 && all[i] === ""))));
   return [
     "import builtins as _b, json as _j",
+    ...(quietWarnings ? ["import warnings as _w", "_w.filterwarnings('ignore')"] : []),
     `_lines = iter(_j.loads(${lines}))`,
     "def _input(prompt=''):",
     "    try:",

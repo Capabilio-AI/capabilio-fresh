@@ -9,6 +9,7 @@ import { STAGES, topicTrack } from "@/lib/courses/find";
 import { loadRoleRoadmap } from "@/lib/courses/roles-db";
 import { SkillStudioSubNav } from "@/components/skillstudio/SkillStudioSubNav";
 import { RoleProofPath } from "@/components/skillstudio/RoleProofPath";
+import { lessonsOfRole } from "@/lib/role-lessons";
 import { ladderStatus, LADDERS } from "@/lib/arena-roles/session/service";
 import { supabaseSessionStore } from "@/lib/arena-roles/session/supabase-store";
 import "@/components/skillstudio/learn/studio.css";
@@ -29,6 +30,7 @@ export default async function RolePathPage({ params }: { params: Promise<{ key: 
   }
   if (!road) notFound();
   // a role with a path of Arena levels shows where the student stands, so learning here and proving in Arena are one path
+  const lessons = lessonsOfRole(road.role.key);
   const ladder = LADDERS[road.role.key];
   const levels = ladder ? ladderStatus(ladder, await supabaseSessionStore(createServiceClient()).finishedSpecKeys(user.id, road.role.key).catch(() => [])) : null;
 
@@ -48,6 +50,21 @@ export default async function RolePathPage({ params }: { params: Promise<{ key: 
         {road.role.description && <p className="mt-2 text-[16px] leading-relaxed text-[var(--m-muted)]">{road.role.description}</p>}
         <p className="mt-2 text-[14.5px] font-bold text-[var(--m-ink)]">{road.topics.length} topics, in 4 stages. Go from the top to the bottom.</p>
       </header>
+
+      {lessons.length > 0 && (
+        <section aria-labelledby="role-lessons-h" className="mt-6 rounded-2xl border border-[var(--m-rule)] bg-white p-5">
+          <h2 id="role-lessons-h" className="font-lp-display text-[22px] font-bold text-[var(--m-ink)]">Learn it hands-on</h2>
+          <p className="mt-1 text-[14.5px] text-[var(--m-muted)]">Level 1: read the data. Every example runs in your browser, with real {road.role.name} tools.</p>
+          <ol className="mt-3 flex flex-col gap-2">
+            {lessons.map((l, i) => (
+              <li key={l.key}><Link href={`/skillstudio/courses/role/${road.role.key}/learn/${l.key}`} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--m-rule)] px-4 py-3 hover:border-[var(--m-ink)]">
+                <span className="min-w-0"><span className="ss-num text-[var(--m-muted)]">{i + 1}.</span> <span className="text-[15.5px] font-bold text-[var(--m-ink)]">{l.title}</span><span className="block text-[13.5px] text-[var(--m-muted)]">{l.summary}</span></span>
+                <span className="ss-num shrink-0 text-[12.5px] text-[var(--m-muted)]">{l.minutes} min</span>
+              </Link></li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {levels && <RoleProofPath roleName={road.role.name} levels={levels} />}
 
