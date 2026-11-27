@@ -31,7 +31,8 @@ function Ring({ score, required, color }: { score: number | null; required: numb
   );
 }
 
-export function SkillGapAnalysis({ roleName, readiness, skills }: { roleName: string; readiness: number | null; skills: GapSkill[] }) {
+/** `readiness` is the PROVEN figure (only skills backed by a passed practical task; 0 until real work exists). `screened` is where the assessment alone puts the student: a starting point, never a claim. */
+export function SkillGapAnalysis({ roleName, readiness, screened = null, skills }: { roleName: string; readiness: number | null; screened?: number | null; skills: GapSkill[] }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -65,7 +66,7 @@ export function SkillGapAnalysis({ roleName, readiness, skills }: { roleName: st
   if (skills.length === 0) return <p className="rounded-xl border border-dashed border-[var(--m-off)] bg-white px-6 py-12 text-center font-lp-body text-[14px] text-app-muted">We don&apos;t have a skill list for {roleName} yet.</p>;
 
   const tiles = [
-    { label: "Role readiness", value: readiness === null ? "–" : `${readiness}%`, tone: "text-[var(--m-ink)]" },
+    { label: "Proven readiness", value: readiness === null ? "–" : `${readiness}%`, tone: "text-[var(--m-ink)]", note: screened !== null && screened > (readiness ?? 0) ? `Assessment start: ${screened}%` : readiness === 0 ? "Moves with passed Arena work" : undefined },
     { label: "Critical gaps", value: counts.critical, tone: "text-[#9b1c1c]" },
     { label: "Moderate gaps", value: counts.moderate, tone: "text-[#8a5a00]" },
     { label: "On target", value: counts.met, tone: "text-[#0d6b3a]" },
@@ -79,6 +80,7 @@ export function SkillGapAnalysis({ roleName, readiness, skills }: { roleName: st
           <li key={t.label} className="rounded-xl border border-[var(--m-rule)] bg-white p-4">
             <p className={`font-lp-display text-[28px] font-bold leading-none ${t.tone}`}>{t.value}</p>
             <p className="mt-1.5 text-[12px] text-app-muted">{t.label}</p>
+            {"note" in t && t.note && <p className="mt-0.5 text-[11.5px] text-app-muted">{t.note}</p>}
           </li>
         ))}
       </ul>

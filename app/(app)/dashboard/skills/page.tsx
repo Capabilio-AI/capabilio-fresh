@@ -50,7 +50,7 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
         {!match ? <RoleAssessmentPending roleName={await chosenRoleName(db as never, user.id)} /> : (
           <>
             {!showGaps && <ProfileEloCard initial={profile} />}
-            {showGaps ? <SkillGapAnalysis roleName={match.careerRole} readiness={profile.readiness} skills={gapSkills} /> : <SkillGapsTab matches={[match]} practiceRecency={practiceRecency} section="graph" />}
+            {showGaps ? <SkillGapAnalysis roleName={match.careerRole} readiness={profile.proven ?? 0} screened={profile.readiness} skills={gapSkills} /> : <SkillGapsTab matches={[match]} practiceRecency={practiceRecency} section="graph" />}
           </>
         )}
         {!showGaps && profile.common && <CommonProgress bars={profile.common} />}
