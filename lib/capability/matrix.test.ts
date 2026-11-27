@@ -54,3 +54,11 @@ describe("buildSkillMatrix", () => {
     expect(buildSkillMatrix({ capabilities: new Map(), arenaPasses: new Map(), names, practisable: new Map(), targets: new Map() })).toEqual([]);
   });
 });
+
+describe("buildSkillMatrix: the label of a skill with no level", () => {
+  const base = { arenaPasses: new Map<string, number>(), names: new Map([["a", "Python"]]), practisable: new Map(), targets: new Map([["a", 80]]), only: new Set(["a"]) };
+  it("says Not assessed by default and uses the label the caller gives (the Arena profile says Not proven yet)", () => {
+    expect(buildSkillMatrix({ ...base, capabilities: new Map() })[0]).toMatchObject({ level: null, label: "Not assessed" });
+    expect(buildSkillMatrix({ ...base, capabilities: new Map(), unmeasuredLabel: "Not proven yet" })[0]).toMatchObject({ level: null, label: "Not proven yet" });
+  });
+});

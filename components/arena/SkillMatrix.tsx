@@ -10,7 +10,7 @@ function Bar({ row }: { row: MatrixRow }) {
   return (
     <div
       role="img"
-      aria-label={measured ? `${row.name}: level ${Math.round(row.level!)} of 100${row.target !== null ? `, target ${row.target}` : ""}` : `${row.name}: not assessed`}
+      aria-label={measured ? `${row.name}: level ${Math.round(row.level!)} of 100${row.target !== null ? `, target ${row.target}` : ""}` : `${row.name}: ${row.label.toLowerCase()}`}
       className={`relative mt-2 h-2 rounded-full ${measured ? "bg-[var(--m-rule)]" : "border border-dashed border-[var(--m-soft)]"}`}
     >
       {measured && <div className={`h-full rounded-full ${row.lastResult === "failed" ? "bg-app-rose" : row.lastResult === "passed" ? "bg-app-success" : "bg-[var(--m-muted)]"}`} style={{ width: `${Math.max(2, Math.min(100, row.level!))}%` }} />}
@@ -40,7 +40,7 @@ function Row({ row }: { row: MatrixRow }) {
       </div>
       <Bar row={row} />
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12px] text-[var(--m-muted)]">
-        <span className={row.lastResult === "failed" ? "text-app-rose" : row.lastResult === "passed" ? "text-app-success" : undefined}>{note || (row.level === null ? "Nothing measured yet" : "")}</span>
+        <span className={row.lastResult === "failed" ? "text-app-rose" : row.lastResult === "passed" ? "text-app-success" : undefined}>{note || (row.level === null ? "Nothing proven yet" : "")}</span>
         {wantsPractice && (
           <Link href={`/arena/challenges/domain?focus=${row.practise!.areaKey}`} className="inline-flex items-center gap-1 font-bold text-[var(--m-accent-ink)] hover:underline">
             Practise {row.practise!.areaName} <ArrowRight size={12} aria-hidden />
@@ -60,7 +60,7 @@ export function SkillMatrix({ rows, level, careerName = null }: { rows: MatrixRo
         <p className="text-[13px] font-semibold text-[var(--m-muted)]">Tickets are matched to your experience: {LEVEL_TEXT[level]}</p>
       </div>
       <p className="mt-1 max-w-2xl font-lp-body text-[13.5px] leading-relaxed text-app-muted">
-        {careerName ? `Starting skills for ${careerName}. ` : ""}Measured from your assessments, Arena tickets and projects. Each skill has its own level. The dark tick marks what your target role asks for.
+        {careerName ? `Starting skills for ${careerName}. ` : ""}Proven by your Arena tickets and projects. What the assessment measured is on the Skills page, in the Assessment tab. Each skill has its own level. The dark tick marks what your target role asks for.
       </p>
       {rows.length === 0 ? (
         <p className="mt-5 rounded-2xl bg-[var(--m-ground)] px-4 py-5 font-lp-body text-[14px] text-[var(--m-muted)]">
