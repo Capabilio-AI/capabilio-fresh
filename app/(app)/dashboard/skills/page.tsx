@@ -10,6 +10,7 @@ import { CommonProgress } from "@/components/assess/result/CommonProgress";
 import { ProfileEloCard } from "@/components/assess/result/ProfileViews";
 import { SkillGapsTab } from "@/components/dashboard/SkillGapsTab";
 import { SkillGapAnalysis } from "@/components/dashboard/SkillGapAnalysis";
+import { AssessmentSkills } from "@/components/dashboard/AssessmentSkills";
 import { loadGapSkills } from "@/lib/dashboard/skill-groups";
 import { RoleAssessmentPending } from "@/components/dashboard/RoleAssessmentPending";
 import { chosenRoleName } from "@/lib/careers/has-role";
@@ -25,7 +26,9 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
   await keepProfessionalOut(); // not a professional's page
   await requireRoleChosen(); // a student who skipped the role has none of this
 
-  const showGaps = (await searchParams).view === "gaps";
+  const view = (await searchParams).view;
+  const showGaps = view === "gaps";
+  const showAssessment = view === "assessment";
   const { supabase, user } = await requireAuthedUser();
   const db = createServiceClient() as unknown as Db;
   const gate = await studentGate(db, user.id);
@@ -43,14 +46,15 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
         <SegmentedLinks
           label="Skills view"
           segments={[
-            { label: "Skill graph", href: "/dashboard/skills", active: !showGaps },
+            { label: "Skill graph", href: "/dashboard/skills", active: !showGaps && !showAssessment },
             { label: "Skill gap analysis", href: "/dashboard/skills?view=gaps", detail: critical > 0 ? `${critical} critical` : undefined, active: showGaps },
+            { label: "Assessment", href: "/dashboard/skills?view=assessment", active: showAssessment },
           ]}
         />
         {!match ? <RoleAssessmentPending roleName={await chosenRoleName(db as never, user.id)} /> : (
           <>
-            {!showGaps && <ProfileEloCard initial={profile} />}
-            {showGaps ? <SkillGapAnalysis roleName={match.careerRole} readiness={profile.proven ?? 0} screened={profile.readiness} skills={gapSkills} /> : <SkillGapsTab matches={[match]} practiceRecency={practiceRecency} section="graph" />}
+            {!showGaps && !showAssessment && <ProfileEloCard initial={profile} />}
+            {showAssessment ? <AssessmentSkills roleName={match.careerRole} skills={profile.skills} /> : showGaps ? <SkillGapAnalysis roleName={match.careerRole} readiness={profile.proven ?? 0} screened={profile.readiness} skills={gapSkills} /> : <SkillGapsTab matches={[match]} practiceRecency={practiceRecency} section="graph" />}
           </>
         )}
         {!showGaps && profile.common && <CommonProgress bars={profile.common} />}

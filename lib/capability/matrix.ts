@@ -35,10 +35,12 @@ export interface MatrixInput {
   /** when given, the matrix shows exactly these skills (the target role's) and nothing else the user happens to have measured */
   only?: ReadonlySet<string>;
   limit?: number;
+  /** the label of a skill with no level: "Not assessed" by default; the Arena profile shows only proven work, so it says "Not proven yet" */
+  unmeasuredLabel?: string;
 }
 
 /** Measured skills first (strongest first), then the skills Arena can build or the target role needs but nobody has measured yet. */
-export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable, targets, results, only, limit = 10 }: MatrixInput): MatrixRow[] {
+export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable, targets, results, only, limit = 10, unmeasuredLabel = "Not assessed" }: MatrixInput): MatrixRow[] {
   const ids = only ? new Set(only) : new Set([...capabilities.keys(), ...practisable.keys(), ...targets.keys()]);
   const rows = [...ids].flatMap((skillId): MatrixRow[] => {
     const name = names.get(skillId);
@@ -47,7 +49,7 @@ export function buildSkillMatrix({ capabilities, arenaPasses, names, practisable
     const level = c?.level ?? null;
     const target = targets.get(skillId) ?? null;
     return [{
-      skillId, name, level, label: levelLabel(level), verified: c?.verified ?? false, confidence: c ? c.confidence : null, evidenceCount: c?.evidenceCount ?? 0,
+      skillId, name, level, label: level === null ? unmeasuredLabel : levelLabel(level), verified: c?.verified ?? false, confidence: c ? c.confidence : null, evidenceCount: c?.evidenceCount ?? 0,
       arenaPasses: arenaPasses.get(skillId) ?? 0, target, gap: target !== null && level !== null ? Math.max(0, Math.round(target - level)) : null, practise: practisable.get(skillId),
       lastResult: results?.get(practisable.get(skillId)?.areaKey ?? "") ?? null,
     }];

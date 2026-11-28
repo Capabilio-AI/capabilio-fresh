@@ -15,7 +15,7 @@ describe("SkillMatrix", () => {
     expect(out).toContain("SQL");
     expect(out).toContain("Advanced");
     expect(out).toContain("82");
-    expect(out).toContain("3 of 30 proofs");
+    expect(out).toContain("3 Arena passes");
     expect(out).toContain("Verified by evidence");
   });
 
@@ -29,7 +29,7 @@ describe("SkillMatrix", () => {
 
   it("says how far a skill is from the target, and stops offering practice once it is met", () => {
     const short = html([row({ level: 50, label: "Proficient", target: 70, gap: 20, practise: { areaKey: "sql", areaName: "SQL" } })]);
-    expect(short).toContain("about 7 more proofs to reach the target of 70");
+    expect(short).toContain("20 to reach the target of 70");
     expect(short).toContain("Practise SQL");
     const met = html([row({ level: 80, target: 70, gap: 0, practise: { areaKey: "sql", areaName: "SQL" } })]);
     expect(met).toContain("target 70 met");

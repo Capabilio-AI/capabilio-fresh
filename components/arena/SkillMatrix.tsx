@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck } from "lucide-react";
 import type { MatrixRow } from "@/lib/capability/matrix";
 import type { ExperienceLevel } from "@/lib/workplace/level";
-import { MASTERY_PROOFS, POINTS_PER_PROOF } from "@/lib/roadmap-visual/capability";
 
 const LEVEL_TEXT: Record<ExperienceLevel, string> = { fresher: "Fresher", junior: "Junior", mid: "Mid-level", senior: "Senior", expert: "Expert" };
 
@@ -11,7 +10,7 @@ function Bar({ row }: { row: MatrixRow }) {
   return (
     <div
       role="img"
-      aria-label={measured ? `${row.name}: level ${Math.round(row.level!)} of 100${row.target !== null ? `, target ${row.target}` : ""}` : `${row.name}: not assessed`}
+      aria-label={measured ? `${row.name}: level ${Math.round(row.level!)} of 100${row.target !== null ? `, target ${row.target}` : ""}` : `${row.name}: ${row.label.toLowerCase()}`}
       className={`relative mt-2 h-2 rounded-full ${measured ? "bg-[var(--m-rule)]" : "border border-dashed border-[var(--m-soft)]"}`}
     >
       {measured && <div className={`h-full rounded-full ${row.lastResult === "failed" ? "bg-app-rose" : row.lastResult === "passed" ? "bg-app-success" : "bg-[var(--m-muted)]"}`} style={{ width: `${Math.max(2, Math.min(100, row.level!))}%` }} />}
@@ -23,8 +22,8 @@ function Bar({ row }: { row: MatrixRow }) {
 function Row({ row }: { row: MatrixRow }) {
   const note = [
     row.lastResult === "failed" ? "last ticket not passed" : row.lastResult === "passed" ? "last ticket passed" : null,
-    row.verified && row.evidenceCount > 0 ? `${row.evidenceCount} of ${MASTERY_PROOFS} proofs` : null,
-    row.target !== null ? (row.gap === 0 ? `target ${row.target} met` : row.gap !== null ? `about ${Math.ceil(row.gap / POINTS_PER_PROOF)} more proofs to reach the target of ${row.target}` : `target ${row.target}`) : null,
+    row.arenaPasses > 0 ? `${row.arenaPasses} Arena pass${row.arenaPasses === 1 ? "" : "es"}` : null,
+    row.target !== null ? (row.gap === 0 ? `target ${row.target} met` : row.gap !== null ? `${row.gap} to reach the target of ${row.target}` : `target ${row.target}`) : null,
   ].filter(Boolean).join(" · ");
   const wantsPractice = row.practise && (row.level === null || (row.gap ?? 0) > 0);
   return (
@@ -41,7 +40,7 @@ function Row({ row }: { row: MatrixRow }) {
       </div>
       <Bar row={row} />
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12px] text-[var(--m-muted)]">
-        <span className={row.lastResult === "failed" ? "text-app-rose" : row.lastResult === "passed" ? "text-app-success" : undefined}>{note || (row.level === null ? "Nothing measured yet" : "")}</span>
+        <span className={row.lastResult === "failed" ? "text-app-rose" : row.lastResult === "passed" ? "text-app-success" : undefined}>{note || (row.level === null ? "Nothing proven yet" : "")}</span>
         {wantsPractice && (
           <Link href={`/arena/challenges/domain?focus=${row.practise!.areaKey}`} className="inline-flex items-center gap-1 font-bold text-[var(--m-accent-ink)] hover:underline">
             Practise {row.practise!.areaName} <ArrowRight size={12} aria-hidden />
@@ -49,33 +48,6 @@ function Row({ row }: { row: MatrixRow }) {
         )}
       </div>
     </li>
-  );
-}
-
-/** Pure. Where the student stands, in plain numbers: skills with a first proof, proofs in all, and the one skill to prove next. */
-export function standing(rows: MatrixRow[]) {
-  const started = rows.filter((r) => r.level !== null && r.verified);
-  const proofs = started.reduce((n, r) => n + r.evidenceCount, 0);
-  const next = [...rows].filter((r) => r.practise).sort((a, b) => (a.evidenceCount - b.evidenceCount) || ((b.target ?? 0) - (a.target ?? 0)))[0] ?? null;
-  return { skills: rows.length, started: started.length, proofs, next };
-}
-
-function Standing({ rows }: { rows: MatrixRow[] }) {
-  const s = standing(rows);
-  return (
-    <div className="mt-4 rounded-2xl bg-[var(--m-ground)] p-4">
-      <p className="font-lp-display text-[17px] font-bold text-[var(--m-ink)]">Where you stand</p>
-      <p className="mt-1 max-w-2xl text-[13.5px] leading-relaxed text-[var(--m-muted)]">
-        {s.proofs === 0 ? "Nothing is proven yet. " : `${s.started} of ${s.skills} skills have a first proof, ${s.proofs} proofs in all. `}
-        A level here is how deeply a skill is proven, not how well one test went: each proof adds about {POINTS_PER_PROOF} points, about {MASTERY_PROOFS} proofs make a full skill, and 100 is for a verified interview with a live challenge. A first proof shows as {POINTS_PER_PROOF}, and that is honest.
-      </p>
-      <ul className="mt-3 flex flex-wrap gap-2 text-[13px] font-bold">
-        <li><Link href="/skillstudio" className="inline-flex items-center gap-1 rounded-full bg-white px-3.5 py-1.5 text-[var(--m-ink)]">Learn it in SkillStudio <ArrowRight size={12} aria-hidden /></Link></li>
-        <li><Link href="/dashboard/roadmap" className="inline-flex items-center gap-1 rounded-full bg-white px-3.5 py-1.5 text-[var(--m-ink)]">Build a project <ArrowRight size={12} aria-hidden /></Link></li>
-        {s.next?.practise && <li><Link href={`/arena/challenges/domain?focus=${s.next.practise.areaKey}`} className="inline-flex items-center gap-1 rounded-full bg-[var(--m-ink)] px-3.5 py-1.5 text-white">Prove {s.next.name} next <ArrowRight size={12} aria-hidden /></Link></li>}
-        <li><Link href="/dashboard/portfolio" className="inline-flex items-center gap-1 rounded-full bg-white px-3.5 py-1.5 text-[var(--m-ink)]">See your portfolio <ArrowRight size={12} aria-hidden /></Link></li>
-      </ul>
-    </div>
   );
 }
 
@@ -88,9 +60,8 @@ export function SkillMatrix({ rows, level, careerName = null }: { rows: MatrixRo
         <p className="text-[13px] font-semibold text-[var(--m-muted)]">Tickets are matched to your experience: {LEVEL_TEXT[level]}</p>
       </div>
       <p className="mt-1 max-w-2xl font-lp-body text-[13.5px] leading-relaxed text-app-muted">
-        {careerName ? `Starting skills for ${careerName}. ` : ""}Measured from your assessments, Arena tickets and projects. Each skill has its own level. The dark tick marks what your target role asks for.
+        {careerName ? `Starting skills for ${careerName}. ` : ""}Proven by your Arena tickets and projects. What the assessment measured is on the Skills page, in the Assessment tab. Each skill has its own level. The dark tick marks what your target role asks for.
       </p>
-      {rows.length > 0 && <Standing rows={rows} />}
       {rows.length === 0 ? (
         <p className="mt-5 rounded-2xl bg-[var(--m-ground)] px-4 py-5 font-lp-body text-[14px] text-[var(--m-muted)]">
           {careerName
