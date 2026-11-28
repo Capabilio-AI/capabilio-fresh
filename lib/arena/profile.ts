@@ -1,8 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { buildSkillMatrix, type MatrixRow } from "@/lib/capability/matrix";
-import { PRACTICAL_KINDS } from "@/lib/passport/badges";
-import { scoreSkill } from "@/lib/roadmap-visual/capability";
+import { scoreSkillClassic } from "@/lib/roadmap-visual/capability-classic";
 import { loadCareerSkills } from "@/lib/assess/db";
 import { getCareerIntent } from "@/lib/careers/intent";
 import { chooseDomainCareer } from "@/lib/arena-challenges/career-state";
@@ -39,14 +38,12 @@ export async function loadArenaProfile(service: SupabaseClient<Database>, userId
   // how each area's newest graded ticket ended, so a miss shows red and a pass green without waiting for a rating
   const { data: closed } = await untyped(service).from("arena_domain_assignments").select("skill_area_key, grade, assigned_at").eq("user_id", userId).not("grade", "is", null).order("assigned_at", { ascending: false }).limit(200);
   const results = latestResultByArea((closed ?? []) as { skill_area_key: string | null; grade: unknown; assigned_at: string }[]);
-  // The Arena profile shows what real work has proven: Arena passes, projects, GitHub and mentor reviews. What the assessment measured is a starting point and lives on the Skills page, Assessment tab.
-  const proven = new Map<string, { level: number | null; verified: boolean; confidence: number; evidenceCount: number }>();
+  // This tab keeps its classic rule: the sign-up assessment gives each skill its starting level, and Arena results (and projects) then move it. See capability-classic.ts.
+  const classic = new Map<string, { level: number | null; verified: boolean; confidence: number; evidenceCount: number }>();
   for (const [skillId, inputs] of ctx.capabilities.inputs) {
-    const practical = inputs.filter((i) => PRACTICAL_KINDS.has(i.kind));
-    if (practical.length === 0) continue;
-    const s = scoreSkill(practical);
-    proven.set(skillId, { level: s.level, verified: s.verified, confidence: s.confidence, evidenceCount: s.evidenceCount });
+    const s = scoreSkillClassic(inputs);
+    if (s.evidenceCount > 0) classic.set(skillId, { level: s.level, verified: s.verified, confidence: s.confidence, evidenceCount: s.evidenceCount });
   }
-  const rows = buildSkillMatrix({ capabilities: proven, unmeasuredLabel: "Not proven yet", arenaPasses, names: ctx.names, practisable: ctx.practisable, targets, results, only: new Set(targets.keys()), limit: MAX_ROWS });
+  const rows = buildSkillMatrix({ capabilities: classic, arenaPasses, names: ctx.names, practisable: ctx.practisable, targets, results, only: new Set(targets.keys()), limit: MAX_ROWS });
   return { rows, level, careerName: chosen.career.name };
 }
